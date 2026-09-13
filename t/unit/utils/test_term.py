@@ -1,8 +1,13 @@
+import os
+from base64 import b64encode
+from tempfile import NamedTemporaryFile
+from unittest.mock import patch
+
 import pytest
 
 import t.skip
 from celery.utils import term
-from celery.utils.term import colored, fg
+from celery.utils.term import _read_as_base64, colored, fg, supports_images
 
 
 @t.skip.if_win32
@@ -55,3 +60,28 @@ class test_colored:
         c2 = colored().blue('ƒƒz')
         c3 = c._add(c, c2)
         assert c3 == '\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m'
+
+    def test_read_as_base64(self):
+        test_data = b"The quick brown fox jumps over the lazy dog"
+        with NamedTemporaryFile(mode='wb') as temp_file:
+            temp_file.write(test_data)
+            temp_file.seek(0)
+            temp_file_path = temp_file.name
+
+            result = _read_as_base64(temp_file_path)
+            expected_result = b64encode(test_data).decode('ascii')
+
+            assert result == expected_result
+
+    @pytest.mark.parametrize('is_tty, iterm_profile, expected', [
+        (True, 'test_profile', True),
+        (False, 'test_profile', False),
+        (True, None, False),
+    ])
+    @patch('sys.stdin.isatty')
+    @patch.dict(os.environ, {'ITERM_PROFILE': 'test_profile'}, clear=True)
+    def test_supports_images(self, mock_isatty, is_tty, iterm_profile, expected):
+        mock_isatty.return_value = is_tty
+        if iterm_profile is None:
+            del os.environ['ITERM_PROFILE']
+        assert supports_images() == expected

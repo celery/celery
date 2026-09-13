@@ -81,7 +81,8 @@ with :meth:`@worker_main`:
     def add(x, y): return x + y
 
     if __name__ == '__main__':
-        app.worker_main()
+        args = ['worker', '--loglevel=INFO']
+        app.worker_main(argv=args)
 
 When this module is executed the tasks will be named starting with "``__main__``",
 but when the module is imported by another process, say to call a task,

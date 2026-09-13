@@ -25,11 +25,11 @@ set CELERYD_PID_FILE=%PATH_TO_PROJECT%\log\celerybeat.pid
 set CELERYD_LOG_FILE=%PATH_TO_PROJECT%\log\celerybeat.log
 set CELERYD_LOG_LEVEL=INFO
 
-rem CONFIG RELATED TO THE BEAT 
+rem CONFIG RELATED TO THE BEAT
 set CELERYD_DATABASE=django
 set CELERYD_SCHEDULER=django_celery_beat.schedulers:DatabaseScheduler
 
-rem You might need to change th path of the Python runing
+rem You might need to change th path of the Python running
 set PYTHONPATH=%PYTHONPATH%;%PATH_TO_PROJECT%;
 
 cd %PATH_TO_PROJECT%

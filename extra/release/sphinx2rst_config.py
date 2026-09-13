@@ -1,4 +1,4 @@
-REFBASE = 'http://docs.celeryproject.org/en/latest'
+REFBASE = 'https://docs.celeryq.dev/en/latest'
 REFS = {
     'mailing-list':
         'https://groups.google.com/group/celery-users',

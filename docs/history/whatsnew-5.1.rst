@@ -208,6 +208,26 @@ Kombu
 
 Starting from v5.1, the minimum required version is Kombu 5.1.0.
 
+Py-AMQP
+~~~~~~~
+
+Starting from Celery 5.1, py-amqp will always validate certificates received from the server
+and it is no longer required to manually set ``cert_reqs`` to ``ssl.CERT_REQUIRED``.
+
+The previous default, ``ssl.CERT_NONE`` is insecure and we its usage should be discouraged.
+If you'd like to revert to the previous insecure default set ``cert_reqs`` to ``ssl.CERT_NONE``
+
+.. code-block:: python
+
+    import ssl
+
+    broker_use_ssl = {
+      'keyfile': '/var/ssl/private/worker-key.pem',
+      'certfile': '/var/ssl/amqp-server-cert.pem',
+      'ca_certs': '/var/ssl/myca.pem',
+      'cert_reqs': ssl.CERT_NONE
+    }
+
 Billiard
 ~~~~~~~~
 
@@ -290,10 +310,10 @@ you should import `kombu.utils.encoding` instead.
 If you were using the `celery.task` module before, you should import directly
 from the `celery` module instead.
 
-If you were using `from celery.task import Task` you should use 
+If you were using `from celery.task import Task` you should use
 `from celery import Task` instead.
 
-If you were using the `celery.task` decorator you should use 
+If you were using the `celery.task` decorator you should use
 `celery.shared_task` instead.
 
 
@@ -330,7 +350,7 @@ Support for Redis username authentication
 Previously, the username was ignored from the URI.
 Starting from Redis>=6.0, that shouldn't be the case since ACL support has landed.
 
-Please refer to the :ref:`documentation <_conf-redis-result-backend>` for details.
+Please refer to the :ref:`documentation <conf-redis-result-backend>` for details.
 
 SQS transport - support back off policy
 ----------------------------------------
@@ -339,7 +359,7 @@ SQS now supports managed visibility timeout. This lets us implement a back off
 policy (for instance, an exponential policy) which means that the time between
 task failures will dynamically change based on the number of retries.
 
-Documentation: :doc:`reference/kombu.transport.SQS.rst`
+Documentation: :doc:`kombu:reference/kombu.transport.SQS`
 
 Duplicate successful tasks
 ---------------------------
@@ -393,7 +413,7 @@ SQS - support STS authentication with AWS
 The STS token requires a refresh after a certain period of time.
 After `sts_token_timeout` is reached, a new token will be created.
 
-Documentation: :doc:`getting-started/backends-and-brokers/sqs.rst`
+Documentation: :doc:`/getting-started/backends-and-brokers/sqs`
 
 Support Redis `health_check_interval`
 -------------------------------------
@@ -416,4 +436,4 @@ Support Redis Sentinel with SSL
 -------------------------------
 
 See documentation for more info:
-:doc:`getting-started/backends-and-brokers/redis.rst`
+:doc:`/getting-started/backends-and-brokers/redis`

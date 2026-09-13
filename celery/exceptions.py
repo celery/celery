@@ -42,6 +42,7 @@ Error Hierarchy
     - :class:`~celery.exceptions.CeleryWarning`
         - :class:`~celery.exceptions.AlwaysEagerIgnored`
         - :class:`~celery.exceptions.DuplicateNodenameWarning`
+        - :class:`~celery.exceptions.DuplicateTaskNameWarning`
         - :class:`~celery.exceptions.FixupWarning`
         - :class:`~celery.exceptions.NotConfigured`
         - :class:`~celery.exceptions.SecurityWarning`
@@ -53,8 +54,7 @@ Error Hierarchy
 
 import numbers
 
-from billiard.exceptions import (SoftTimeLimitExceeded, Terminated,
-                                 TimeLimitExceeded, WorkerLostError)
+from billiard.exceptions import SoftTimeLimitExceeded, Terminated, TimeLimitExceeded, WorkerLostError
 from click import ClickException
 from kombu.exceptions import OperationalError
 
@@ -63,7 +63,8 @@ __all__ = (
     # Warnings
     'CeleryWarning',
     'AlwaysEagerIgnored', 'DuplicateNodenameWarning',
-    'FixupWarning', 'NotConfigured', 'SecurityWarning',
+    'DuplicateTaskNameWarning', 'FixupWarning', 'NotConfigured',
+    'SecurityWarning',
 
     # Core errors
     'CeleryError',
@@ -97,6 +98,8 @@ __all__ = (
     'CeleryCommandException',
 )
 
+from celery.utils.serialization import get_pickleable_exception
+
 UNREGISTERED_FMT = """\
 Task of kind {0} never registered, please make sure it's imported.\
 """
@@ -119,6 +122,10 @@ class AlwaysEagerIgnored(CeleryWarning):
 
 class DuplicateNodenameWarning(CeleryWarning):
     """Multiple workers are using the same nodename."""
+
+
+class DuplicateTaskNameWarning(CeleryWarning):
+    """Multiple callables are registered under the same task name."""
 
 
 class FixupWarning(CeleryWarning):
@@ -161,7 +168,7 @@ class Retry(TaskPredicate):
         if isinstance(exc, str):
             self.exc, self.excs = None, exc
         else:
-            self.exc, self.excs = exc, safe_repr(exc) if exc else None
+            self.exc, self.excs = get_pickleable_exception(exc), safe_repr(exc) if exc else None
         self.when = when
         self.is_eager = is_eager
         self.sig = sig

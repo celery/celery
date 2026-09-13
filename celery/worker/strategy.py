@@ -2,7 +2,6 @@
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
-from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.app import trace as _app_trace
@@ -13,7 +12,7 @@ from celery.utils.saferepr import saferepr
 from celery.utils.time import timezone
 
 from .request import create_request_cls
-from .state import task_reserved
+from .state import task_reserved, task_scheduled
 
 __all__ = ('default',)
 
@@ -110,7 +109,6 @@ def default(task, app, consumer,
     hostname = consumer.hostname
     connection_errors = consumer.connection_errors
     _does_info = logger.isEnabledFor(logging.INFO)
-
     # task event related
     # (optimized to avoid calling request.send_event)
     eventer = consumer.event_dispatcher
@@ -126,7 +124,8 @@ def default(task, app, consumer,
     limit_task = consumer._limit_task
     limit_post_eta = consumer._limit_post_eta
     Request = symbol_by_name(task.Request)
-    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer, app=app)
+    Req = create_request_cls(Request, task, consumer.pool, hostname, eventer,
+                             app=app)
 
     revoked_tasks = consumer.controller.state.revoked
 
@@ -155,8 +154,9 @@ def default(task, app, consumer,
             context = {
                 'id': req.id,
                 'name': req.name,
-                'args': safe_repr(req.args),
-                'kwargs': safe_repr(req.kwargs),
+                'args': req.argsrepr,
+                'kwargs': req.kwargsrepr,
+                'eta': req.eta,
             }
             info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
         if (req.expires or req.id in revoked_tasks) and req.revoked():
@@ -192,11 +192,21 @@ def default(task, app, consumer,
 
         if eta and bucket:
             consumer.qos.increment_eventually()
-            return call_at(eta, limit_post_eta, (req, bucket, 1),
-                           priority=6)
+            req._eta_timer_entry = call_at(
+                eta, limit_post_eta, (req, bucket, 1), priority=6)
+            # Only make the request visible to on_close()/query_task() once
+            # its timer entry is attached, so a concurrent on_close() (e.g.
+            # celery.utils.timer2.Timer runs on its own thread for
+            # non-eventloop pools) can't observe it half-registered, drop
+            # its bookkeeping, and leave the entry with nothing to cancel it.
+            task_scheduled(req)
+            return
+
         if eta:
             consumer.qos.increment_eventually()
-            call_at(eta, apply_eta_task, (req,), priority=6)
+            req._eta_timer_entry = call_at(
+                eta, apply_eta_task, (req,), priority=6)
+            task_scheduled(req)
             return task_message_handler
         if bucket:
             return limit_task(req, bucket, 1)

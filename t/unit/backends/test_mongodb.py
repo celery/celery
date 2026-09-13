@@ -5,7 +5,6 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 import dns.version
 import pymongo
 import pytest
-import pytz
 from kombu.exceptions import EncodeError
 
 try:
@@ -13,8 +12,17 @@ try:
 except ImportError:
     ConfigurationError = None
 
+
+import sys
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
+
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
+from celery.contrib.abortable import ABORTED
 from celery.exceptions import ImproperlyConfigured
 from t.unit import conftest
 
@@ -77,7 +85,7 @@ class test_MongoBackend:
         'hostname.dom/database?replicaSet=rs'
     )
 
-    def setup(self):
+    def setup_method(self):
         self.patching('celery.backends.mongodb.MongoBackend.encode')
         self.patching('celery.backends.mongodb.MongoBackend.decode')
         self.patching('celery.backends.mongodb.Binary')
@@ -123,17 +131,21 @@ class test_MongoBackend:
                'celerydatabase?replicaSet=rs0')
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs0',
-        )
+        if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+            replicaset_option = 'replicaSet'
+        else:  # pragma: no cover  # pymongo < 4.14
+            replicaset_option = 'replicaset'
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs0',
+        }
         assert mb.user == CELERY_USER
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == CELERY_DATABASE
 
         # same uri, change some parameters in backend settings
         self.app.conf.mongodb_backend_settings = {
-            'replicaset': 'rs1',
+            replicaset_option: 'rs1',
             'user': 'backenduser',
             'database': 'another_db',
             'options': {
@@ -142,11 +154,11 @@ class test_MongoBackend:
         }
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs1',
-            socketKeepAlive=True,
-        )
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs1',
+            'socketKeepAlive': True,
+        }
         assert mb.user == 'backenduser'
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == 'another_db'
@@ -215,11 +227,15 @@ class test_MongoBackend:
 
         with patch('dns.resolver.resolve', side_effect=resolver):
             mb = self.perform_seedlist_assertions()
-            assert mb.options == dict(
-                mb._prepare_client_options(),
-                replicaset='rs0',
-                tls=True
-            )
+            if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                replicaset_option = 'replicaSet'
+            else:  # pragma: no cover  # pymongo < 4.14
+                replicaset_option = 'replicaset'
+            assert mb.options == {
+                **mb._prepare_client_options(),
+                replicaset_option: 'rs0',
+                'tls': True,
+            }
 
     def perform_seedlist_assertions(self):
         mb = MongoBackend(app=self.app, url=MONGODB_SEEDLIST_URI)
@@ -292,12 +308,15 @@ class test_MongoBackend:
             mb = MongoBackend(app=self.app, url=uri)
             mock_Connection.return_value = sentinel.connection
             connection = mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
                 username=CELERY_USER,
                 password=CELERY_PASSWORD,
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
             assert sentinel.connection == connection
 
@@ -312,10 +331,13 @@ class test_MongoBackend:
                 'SCRAM-SHA-256 requires a username.')
             with pytest.raises(ConfigurationError):
                 mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
@@ -369,7 +391,7 @@ class test_MongoBackend:
                                                             upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -396,7 +418,7 @@ class test_MongoBackend:
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -422,6 +444,123 @@ class test_MongoBackend:
         ])) == list(sorted(ret_val.keys()))
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = MagicMock()
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        mock_get_database.assert_called_once_with()
+        mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
+        assert list(sorted([
+            'status', 'task_id', 'date_done',
+            'traceback', 'result', 'children',
+            'name', 'args', 'queue', 'kwargs', 'worker', 'retries',
+        ])) == list(sorted(ret_val.keys()))
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_with_request(
+            self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {
+            '_id': sentinel.task_id,
+            'name': 'proj.tasks.add',
+            'args': sentinel.args,
+            'queue': 'celery',
+            'kwargs': sentinel.kwargs,
+            'status': states.SUCCESS,
+            'worker': 'worker1@example.com',
+            'retries': 2,
+            'children': [],
+            'date_done': sentinel.date_done,
+            'traceback': None,
+            'result': sentinel.result,
+        }
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['name'] == 'proj.tasks.add'
+        assert ret_val['args'] is sentinel.args
+        assert ret_val['queue'] == 'celery'
+        assert ret_val['kwargs'] is sentinel.kwargs
+        assert ret_val['status'] == states.SUCCESS
+        assert ret_val['worker'] == 'worker1@example.com'
+        assert ret_val['retries'] == 2
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_without_request(
+            self, mock_get_database):
+        # A result stored without a request (as AbortableAsyncResult.abort
+        # does) has no request-derived fields, see
+        # https://github.com/celery/celery/issues/8877
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {
+            '_id': sentinel.task_id,
+            'status': ABORTED,
+            'result': sentinel.result,
+            'traceback': None,
+            'children': None,
+            'date_done': None,
+        }
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['status'] == ABORTED
+        for key in ('name', 'args', 'queue', 'kwargs', 'worker', 'retries'):
+            assert ret_val[key] is None
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_aborted_roundtrip(
+            self, mock_get_database):
+        # End to end: store an aborted result the way
+        # AbortableAsyncResult.abort does, then read the stored document
+        # back through _get_task_meta_for.
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        self.backend.store_result(
+            sentinel.task_id, result=None, state=ABORTED, traceback=None,
+        )
+
+        stored = mock_collection.replace_one.call_args[0][1]
+        assert 'name' not in stored
+
+        mock_collection.find_one.return_value = stored
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['status'] == ABORTED
+        assert ret_val['name'] is None
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for_no_result(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -437,6 +576,30 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         assert {'status': states.PENDING, 'result': None} == ret_val
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {'_id': sentinel.task_id, 'status': 'SUCCESS'}
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is True
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_not_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = None
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is False
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_save_group(self, mock_get_database):
@@ -534,7 +697,10 @@ class test_MongoBackend:
         mock_database.__getitem__ = Mock(name='MD.__getitem__')
         mock_database.__getitem__.return_value = mock_collection
 
-        self.backend.app.now = datetime.datetime.utcnow
+        def now_func():
+            return datetime.datetime.now(datetime.timezone.utc)
+
+        self.backend.app.now = now_func
         self.backend.cleanup()
 
         mock_get_database.assert_called_once_with()
@@ -662,7 +828,7 @@ SUCCESS_RESULT_TEST_DATA = [
         "serializers": ["bson", "pickle", "yaml"],
     },
     {
-        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=pytz.utc),
+        "result": datetime.datetime(2000, 1, 1, 0, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "serializers": ["pickle", "yaml"],
     },
     # custom types
@@ -701,7 +867,7 @@ class test_MongoBackend_store_get_result:
         backend = mongo_backend_factory(serializer=serializer)
         backend.store_result(TASK_ID, result, 'SUCCESS')
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == result_type
+        assert isinstance(recovered, result_type)
         assert recovered == result
 
     @pytest.mark.parametrize("serializer",
@@ -725,5 +891,5 @@ class test_MongoBackend_store_get_result:
         traceback = 'Traceback:\n  Exception: Basic Exception\n'
         backend.store_result(TASK_ID, exception, 'FAILURE', traceback)
         recovered = backend.get_result(TASK_ID)
-        assert type(recovered) == type(exception)
+        assert isinstance(recovered, type(exception))
         assert recovered.args == exception.args

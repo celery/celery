@@ -10,9 +10,7 @@ This is a Celery application containing two example tasks.
 First you need to install Eventlet, and also recommended is the `dnspython`
 module (when this is installed all name lookups will be asynchronous)::
 
-    $ pip install eventlet
-    $ pip install dnspython
-    $ pip install requests
+    $ python -m pip install eventlet celery pybloom-live
 
 Before you run any of the example tasks you need to start
 the worker::
@@ -34,7 +32,7 @@ of the response body::
     $ cd examples/eventlet
     $ python
     >>> from tasks import urlopen
-    >>> urlopen.delay('http://www.google.com/').get()
+    >>> urlopen.delay('https://www.google.com/').get()
     9980
 
 To open several URLs at once you can do::
@@ -53,3 +51,12 @@ To open several URLs at once you can do::
 This is a simple recursive web crawler.  It will only crawl
 URLs for the current host name.  Please see comments in the
 `webcrawler.py` file.
+
+* `bulk_task_producer.ProducerPool`
+
+This demonstrates how to submit many tasks concurrently from a single
+process using a small, fixed-size pool of greenlets that each reuse
+their own broker connection, instead of opening a new connection for
+every call to ``apply_async``. This is useful when a client needs to 
+publish a large, bursty batch of tasks as quickly as possible. Please
+see the module docstring in `bulk_task_producer.py` for a usage example.

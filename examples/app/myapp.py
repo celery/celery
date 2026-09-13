@@ -22,6 +22,7 @@ name using the fully qualified form::
     $ celery -A myapp:app worker -l INFO
 
 """
+from time import sleep
 
 from celery import Celery
 
@@ -30,11 +31,13 @@ app = Celery(
     broker='amqp://guest@localhost//',
     # ## add result backend here if needed.
     # backend='rpc'
+    task_acks_late=True
 )
 
 
 @app.task
 def add(x, y):
+    sleep(10)
     return x + y
 
 

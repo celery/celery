@@ -22,7 +22,7 @@ pytest.importorskip('couchbase')
 
 class test_CouchbaseBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.backend = CouchbaseBackend(app=self.app)
 
     def test_init_no_couchbase(self):

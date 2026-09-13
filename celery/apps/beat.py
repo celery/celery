@@ -6,12 +6,17 @@ It does everything necessary to run that module
 as an actual application, like installing signal handlers
 and so on.
 """
+from __future__ import annotations
+
 import numbers
 import socket
 import sys
 from datetime import datetime
+from signal import Signals
+from types import FrameType
+from typing import Any
 
-from celery import VERSION_BANNER, beat, platforms
+from celery import VERSION_BANNER, Celery, beat, platforms
 from celery.utils.imports import qualname
 from celery.utils.log import LOG_LEVELS, get_logger
 from celery.utils.time import humanize_seconds
@@ -36,15 +41,16 @@ class Beat:
     """Beat as a service."""
 
     Service = beat.Service
-    app = None
+    app: Celery = None
 
-    def __init__(self, max_interval=None, app=None,
-                 socket_timeout=30, pidfile=None, no_color=None,
-                 loglevel='WARN', logfile=None, schedule=None,
-                 scheduler=None,
-                 scheduler_cls=None,  # XXX use scheduler
-                 redirect_stdouts=None,
-                 redirect_stdouts_level=None, **kwargs):
+    def __init__(self, max_interval: int | None = None, app: Celery | None = None,
+                 socket_timeout: int = 30, pidfile: str | None = None, no_color: bool | None = None,
+                 loglevel: str = 'WARN', logfile: str | None = None, schedule: str | None = None,
+                 scheduler: str | None = None,
+                 scheduler_cls: str | None = None,  # XXX use scheduler
+                 redirect_stdouts: bool | None = None,
+                 redirect_stdouts_level: str | None = None,
+                 quiet: bool = False, **kwargs: Any) -> None:
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
@@ -56,6 +62,7 @@ class Beat:
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
+        self.quiet = quiet
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -65,25 +72,25 @@ class Beat:
             enabled=not no_color if no_color is not None else no_color,
         )
         self.pidfile = pidfile
-
         if not isinstance(self.loglevel, numbers.Integral):
             self.loglevel = LOG_LEVELS[self.loglevel.upper()]
 
-    def run(self):
-        print(str(self.colored.cyan(
-            f'celery beat v{VERSION_BANNER} is starting.')))
+    def run(self) -> None:
+        if not self.quiet:
+            print(str(self.colored.cyan(
+                f'celery beat v{VERSION_BANNER} is starting.')))
         self.init_loader()
         self.set_process_title()
         self.start_scheduler()
 
-    def setup_logging(self, colorize=None):
+    def setup_logging(self, colorize: bool | None = None) -> None:
         if colorize is None and self.no_color is not None:
             colorize = not self.no_color
         self.app.log.setup(self.loglevel, self.logfile,
                            self.redirect_stdouts, self.redirect_stdouts_level,
                            colorize=colorize)
 
-    def start_scheduler(self):
+    def start_scheduler(self) -> None:
         if self.pidfile:
             platforms.create_pidlock(self.pidfile)
         service = self.Service(
@@ -93,7 +100,8 @@ class Beat:
             schedule_filename=self.schedule,
         )
 
-        print(self.banner(service))
+        if not self.quiet:
+            print(self.banner(service))
 
         self.setup_logging()
         if self.socket_timeout:
@@ -109,7 +117,7 @@ class Beat:
                             exc_info=True)
             raise
 
-    def banner(self, service):
+    def banner(self, service: beat.Service) -> str:
         c = self.colored
         return str(
             c.blue('__    ', c.magenta('-'),
@@ -118,13 +126,13 @@ class Beat:
                    c.reset(self.startup_info(service))),
         )
 
-    def init_loader(self):
+    def init_loader(self) -> None:
         # Run the worker init handler.
         # (Usually imports task modules and such.)
         self.app.loader.init_worker()
         self.app.finalize()
 
-    def startup_info(self, service):
+    def startup_info(self, service: beat.Service) -> str:
         scheduler = service.get_scheduler(lazy=True)
         return STARTUP_INFO_FMT.format(
             conninfo=self.app.connection().as_uri(),
@@ -138,15 +146,15 @@ class Beat:
             max_interval=scheduler.max_interval,
         )
 
-    def set_process_title(self):
+    def set_process_title(self) -> None:
         arg_start = 'manage' in sys.argv[0] and 2 or 1
         platforms.set_process_title(
             'celery beat', info=' '.join(sys.argv[arg_start:]),
         )
 
-    def install_sync_handler(self, service):
+    def install_sync_handler(self, service: beat.Service) -> None:
         """Install a `SIGTERM` + `SIGINT` handler saving the schedule."""
-        def _sync(signum, frame):
+        def _sync(signum: Signals, frame: FrameType) -> None:
             service.sync()
             raise SystemExit()
         platforms.signals.update(SIGTERM=_sync, SIGINT=_sync)

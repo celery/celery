@@ -8,13 +8,11 @@ from click import ParamType
 from click.types import StringParamType
 
 from celery import concurrency
-from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL,
-                             CeleryDaemonCommand, CeleryOption,
+from celery.bin.base import (COMMA_SEPARATED_LIST, LOG_LEVEL, CeleryDaemonCommand, CeleryOption,
                              handle_preload_options)
 from celery.concurrency.base import BasePool
 from celery.exceptions import SecurityError
-from celery.platforms import (EX_FAILURE, EX_OK, detached,
-                              maybe_drop_privileges)
+from celery.platforms import EX_FAILURE, EX_OK, detached, maybe_drop_privileges
 from celery.utils.log import get_logger
 from celery.utils.nodenames import default_nodename, host_format, node_format
 
@@ -168,8 +166,8 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=LOG_LEVEL,
               help_group="Worker Options",
               help="Logging level.")
-@click.option('optimization',
-              '-O',
+@click.option('-O',
+              '--optimization',
               default='default',
               cls=CeleryOption,
               type=click.Choice(('default', 'fair')),
@@ -184,6 +182,15 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Worker Options",
               help="Set custom prefetch multiplier value "
                    "for this worker instance.")
+@click.option('--disable-prefetch',
+              is_flag=True,
+              default=None,
+              callback=lambda ctx, _,
+              value: ctx.obj.app.conf.worker_disable_prefetch if value is None else value,
+              cls=CeleryOption,
+              help_group="Worker Options",
+              help="Disable broker prefetching. The worker will only fetch a task when a process slot is available. "
+                   "Only supported with Redis brokers.")
 @click.option('-c',
               '--concurrency',
               type=int,
@@ -229,6 +236,14 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Pool Options",
               help="Maximum number of tasks a pool worker can execute before "
                    "it's terminated and replaced by a new worker.")
+@click.option('--pool-start-method',
+              type=click.Choice(['fork', 'spawn']),
+              cls=CeleryOption,
+              help_group="Pool Options",
+              help="Start method used to create prefork pool child "
+                   "processes. 'fork' (default) is faster and shares memory "
+                   "copy-on-write but is unsafe with threads/C-extensions; "
+                   "'spawn' starts each child in a fresh interpreter.")
 @click.option('--max-memory-per-child',
               type=int,
               cls=CeleryOption,
@@ -302,8 +317,11 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
            **kwargs):
     """Start worker instance.
 
+    \b
     Examples
     --------
+
+    \b
     $ celery --app=proj worker -l INFO
     $ celery -A proj worker -l INFO -Q hipri,lopri
     $ celery -A proj worker --concurrency=4
@@ -313,6 +331,8 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
     """
     try:
         app = ctx.obj.app
+        if 'disable_prefetch' in kwargs and kwargs['disable_prefetch'] is not None:
+            app.conf.worker_disable_prefetch = kwargs.pop('disable_prefetch')
         if ctx.args:
             try:
                 app.config_from_cmdline(ctx.args, namespace='worker')
@@ -327,6 +347,10 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
                 argv.remove('--detach')
             if '-D' in argv:
                 argv.remove('-D')
+            if "--uid" in argv:
+                argv.remove('--uid')
+            if "--gid" in argv:
+                argv.remove('--gid')
 
             return detach(sys.executable,
                           argv,
@@ -349,7 +373,7 @@ def worker(ctx, hostname=None, pool_cls=None, app=None, uid=None, gid=None,
             quiet=ctx.obj.quiet,
             **kwargs)
         worker.start()
-        return worker.exitcode
+        ctx.exit(worker.exitcode)
     except SecurityError as e:
         ctx.obj.error(e.args[0])
         ctx.exit(1)

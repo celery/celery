@@ -20,14 +20,14 @@ class SomeClass:
 
 class test_CacheBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.app.conf.result_serializer = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
         self.old_get_best_memcached = backends['memcache']
         backends['memcache'] = lambda: (DummyClient, ensure_bytes)
 
-    def teardown(self):
+    def teardown_method(self):
         backends['memcache'] = self.old_get_best_memcached
 
     def test_no_backend(self):
@@ -143,7 +143,7 @@ class test_CacheBackend:
         assert b.as_uri() == backend
 
     def test_regression_worker_startup_info(self):
-        pytest.importorskip('memcached')
+        pytest.importorskip('memcache')
         self.app.conf.result_backend = (
             'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
         )

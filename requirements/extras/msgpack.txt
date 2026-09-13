@@ -1,1 +1,1 @@
-msgpack
+kombu[msgpack]

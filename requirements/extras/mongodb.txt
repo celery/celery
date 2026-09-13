@@ -1,1 +1,1 @@
-pymongo[srv]>=3.11.1
+kombu[mongodb]

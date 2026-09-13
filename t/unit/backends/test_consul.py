@@ -9,7 +9,7 @@ pytest.importorskip('consul')
 
 class test_ConsulBackend:
 
-    def setup(self):
+    def setup_method(self):
         self.backend = ConsulBackend(
             app=self.app, url='consul://localhost:800')
 

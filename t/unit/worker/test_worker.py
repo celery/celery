@@ -19,10 +19,10 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
-from celery.exceptions import (ImproperlyConfigured, InvalidTaskError,
-                               TaskRevokedError, WorkerShutdown,
+from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevokedError, WorkerShutdown,
                                WorkerTerminate)
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
@@ -33,6 +33,7 @@ from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+from t.unit.conftest import restore_execv_state
 
 
 def MockStep(step=None):
@@ -49,6 +50,7 @@ def mock_event_dispatcher():
     evd = Mock(name='event_dispatcher')
     evd.groups = ['worker']
     evd._outbound_buffer = deque()
+    evd.connection.get_heartbeat_interval.return_value = 0
     return evd
 
 
@@ -78,7 +80,7 @@ class ConsumerCase:
 
 class test_Consumer(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.buffer = FastQueue()
         self.timer = Timer()
 
@@ -87,7 +89,7 @@ class test_Consumer(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         self.timer.stop()
 
     def LoopConsumer(self, buffer=None, controller=None, timer=None, app=None,
@@ -111,6 +113,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock(name='.task_consumer')
         c.qos = QoS(c.task_consumer.qos, 10)
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.controller = c.app.WorkController()
         c.heart = Mock(name='.heart')
         c.controller.consumer = c
@@ -181,8 +185,19 @@ class test_Consumer(ConsumerCase):
         Events.shutdown(c)
         Heart = find_step(c, consumer.Heart)
         Heart.shutdown(c)
-        event_dispatcher.close.assert_called()
+        event_dispatcher.disable.assert_called()
         heart.stop.assert_called_with()
+
+    def test_events_start_updates_request_eventers_on_reconnect(self):
+        c = self.NoopConsumer()
+        events = find_step(c, consumer.Events)
+        prev = c.event_dispatcher
+        req = Mock(name='request')
+        req.eventer = prev
+        with patch('celery.worker.consumer.events.reserved_requests', {req}):
+            events.start(c)
+        assert c.event_dispatcher is not prev
+        assert req.eventer is c.event_dispatcher
 
     @patch('celery.worker.consumer.consumer.warn')
     def test_receive_message_unknown(self, warn):
@@ -221,8 +236,8 @@ class test_Consumer(ConsumerCase):
             Mock(), self.foo_task.name,
             args=(1, 2), kwargs='foobarbaz', id=1)
         c.update_strategies()
-        strat = c.strategies[self.foo_task.name] = Mock(name='strategy')
-        strat.side_effect = InvalidTaskError()
+        strategy = c.strategies[self.foo_task.name] = Mock(name='strategy')
+        strategy.side_effect = InvalidTaskError()
 
         callback = self._get_on_message(c)
         callback(m)
@@ -249,6 +264,8 @@ class test_Consumer(ConsumerCase):
         c.task_consumer = Mock()
         c.event_dispatcher = mock_event_dispatcher()
         c.connection = Mock(name='.connection')
+        c.connection.connection_errors = ()
+        c.connection.channel_errors = ()
         c.connection.get_heartbeat_interval.return_value = 0
         c.connection.drain_events.side_effect = WorkerShutdown()
 
@@ -294,6 +311,7 @@ class test_Consumer(ConsumerCase):
             yield SyntaxError('bar')
         c = self.NoopConsumer(task_events=False, pool=BasePool())
         c.loop.side_effect = loop_side_effect()
+        c.pool.num_processes = 2
         c.connection_errors = (KeyError,)
         try:
             with pytest.raises(SyntaxError):
@@ -697,7 +715,7 @@ class test_Consumer(ConsumerCase):
 
 class test_WorkController(ConsumerCase):
 
-    def setup(self):
+    def setup_method(self):
         self.worker = self.create_worker()
         self._logger = worker_module.logger
         self._comp_logger = components.logger
@@ -709,7 +727,7 @@ class test_WorkController(ConsumerCase):
             return x * y * z
         self.foo_task = foo_task
 
-    def teardown(self):
+    def teardown_method(self):
         worker_module.logger = self._logger
         components.logger = self._comp_logger
 
@@ -720,6 +738,17 @@ class test_WorkController(ConsumerCase):
 
     def test_on_consumer_ready(self):
         self.worker.on_consumer_ready(Mock())
+
+    def test_pool_start_method_default(self):
+        assert self.worker.pool_start_method == 'fork'
+
+    def test_pool_start_method_spawn(self):
+        worker = self.create_worker(pool_start_method='spawn')
+        assert worker.pool_start_method == 'spawn'
+
+    def test_pool_start_method_invalid(self):
+        with pytest.raises(ImproperlyConfigured):
+            self.create_worker(pool_start_method='forkserver')
 
     def test_setup_queues_worker_direct(self):
         self.app.conf.worker_direct = True
@@ -771,6 +800,140 @@ class test_WorkController(ConsumerCase):
     def test_shutdown_no_blueprint(self):
         self.worker.blueprint = None
         self.worker._shutdown()
+
+    def test_warm_shutdown_does_not_cap_the_broker_socket(self):
+        # A warm shutdown runs against a healthy broker and still has acks to
+        # flush.  Capping those writes would turn a slow broker into lost acks
+        # and redelivered - so twice-executed - tasks, which is worse than the
+        # hang it would prevent.  Bounding belongs in on_cold_shutdown, where
+        # the caller has already asked to stop now.
+        sock, peer = socket.socketpair()
+        try:
+            sock.settimeout(None)
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+            self.worker.consumer = Mock(name='consumer')
+            self.worker.consumer.connection = connection
+
+            seen = {}
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.stop.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            self.worker._shutdown()
+
+            assert seen['timeout'] is None, (
+                'warm shutdown must leave the broker socket unbounded so '
+                'in-flight acks can still be flushed'
+            )
+        finally:
+            sock.close()
+            peer.close()
+
+    def test_cold_shutdown_bounds_open_broker_sockets(self):
+        # Issue 975 has an earlier entry point than _shutdown(): the cold
+        # shutdown handler cancels the task consumer itself, and for amqp that
+        # is a basic_cancel which waits for a reply.  Reaching it means
+        # _shutdown() never runs, so the bound has to be applied here too.
+        from celery.apps.worker import on_cold_shutdown
+        # Import the module the same way on_cold_shutdown does, so the flags
+        # restored below are the ones it actually mutates.
+        from celery.worker import state as worker_state
+
+        sock, peer = socket.socketpair()
+        # on_cold_shutdown sets the global shutdown flags; leaving them set
+        # trips the sanity_no_shutdown_flags_set fixture for every test that
+        # runs after this one.
+        prev_flags = (worker_state.should_stop, worker_state.should_terminate)
+        try:
+            sock.settimeout(None)
+
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+
+            worker = Mock(name='worker')
+            worker.consumer.connection = connection
+            seen = {}
+            worker.consumer.task_consumer.cancel.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            with patch('celery.apps.worker.install_worker_term_hard_handler'), \
+                    patch('celery.apps.worker.safe_say'):
+                on_cold_shutdown(worker)
+
+            assert seen['timeout'] == worker_module.SHUTDOWN_SOCKET_TIMEOUT
+        finally:
+            worker_state.should_stop, worker_state.should_terminate = prev_flags
+            sock.close()
+            peer.close()
+
+    def test_cold_shutdown_survives_cancel_timeout(self):
+        # With the socket bounded, cancel() raises on a silent peer instead
+        # of hanging.  The handler must still cancel active requests and set
+        # the terminate flag, or the worker never shuts down.
+        from celery.apps.worker import on_cold_shutdown
+        from celery.worker import state as worker_state
+
+        prev_flags = (worker_state.should_stop, worker_state.should_terminate)
+        try:
+            worker = Mock(name='worker')
+            worker.consumer.connection = None
+            worker.consumer.connection_errors = (OSError,)
+            worker.consumer.channel_errors = ()
+            worker.consumer.task_consumer.cancel.side_effect = (
+                socket.timeout('timed out'))
+
+            with patch('celery.apps.worker.install_worker_term_hard_handler'), \
+                    patch('celery.apps.worker.safe_say'):
+                on_cold_shutdown(worker)
+
+            worker.consumer.cancel_active_requests.assert_called_once_with()
+            assert worker_state.should_terminate is True
+        finally:
+            worker_state.should_stop, worker_state.should_terminate = prev_flags
+
+    def test_terminate_without_consumer(self):
+        # terminate() must tolerate a worker whose consumer was never
+        # created, as signal_consumer_close() already does.
+        self.worker.__dict__.pop('consumer', None)
+        self.worker.blueprint = Mock(name='blueprint')
+        self.worker.blueprint.state = RUN
+        self.worker.terminate()
+        self.worker.blueprint.stop.assert_called_once()
+
+    def test_terminate_bounds_open_broker_sockets(self):
+        # Cold paths that never run on_cold_shutdown (WorkerTerminate raised
+        # by the consumer, embedded callers) all land in terminate().
+        sock, peer = socket.socketpair()
+        try:
+            sock.settimeout(None)
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+            self.worker.consumer = Mock(name='consumer')
+            self.worker.consumer.connection = connection
+
+            seen = {}
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.state = RUN
+            self.worker.blueprint.stop.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            self.worker.terminate()
+
+            assert seen['timeout'] == worker_module.SHUTDOWN_SOCKET_TIMEOUT
+        finally:
+            sock.close()
+            peer.close()
+
+    def test_shutdown_without_consumer_connection(self):
+        # Shutdown can run before the consumer ever connected.
+        self.worker.consumer = None
+        self.worker.blueprint = Mock(name='blueprint')
+        self.worker._shutdown()
+        self.worker.blueprint.stop.assert_called_once()
 
     @patch('celery.worker.worker.create_pidlock')
     def test_use_pidfile(self, create_pidlock):
@@ -1187,9 +1350,83 @@ class test_WorkController(ConsumerCase):
         w.use_eventloop = True
         w.consumer.restart_count = -1
         pool = components.Pool(w)
-        pool.create(w)
-        pool.register_with_event_loop(w, w.hub)
-        if sys.platform != 'win32':
-            assert isinstance(w.semaphore, LaxBoundedSemaphore)
-            P = w.pool
-            P.start()
+        # Starting the pool can mark this process as a spawned pool child,
+        # which changes how @app.task binds for every test that follows.
+        with restore_execv_state():
+            pool.create(w)
+            pool.register_with_event_loop(w, w.hub)
+            if sys.platform != 'win32':
+                assert isinstance(w.semaphore, LaxBoundedSemaphore)
+                P = w.pool
+                P.start()
+
+    def test_wait_for_soft_shutdown(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_soft_shutdown_timeout = 10
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        state.active_requests.clear()
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_called_with(worker.app.conf.worker_soft_shutdown_timeout)
+
+    def test_wait_for_soft_shutdown_no_wait(self):
+        worker = self.worker
+        request = Mock(name='task', id='1234213')
+        state.task_accepted(request)
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+    def test_wait_for_soft_shutdown_no_wait_no_tasks(self):
+        worker = self.worker
+        worker.app.conf.worker_enable_soft_shutdown_on_idle = True
+        with patch("celery.worker.worker.sleep") as sleep:
+            worker.wait_for_soft_shutdown()
+            sleep.assert_not_called()
+
+
+class test_WorkerApp:
+
+    def test_safe_say_defaults_to_stderr(self, capfd):
+        safe_say("hello")
+        captured = capfd.readouterr()
+        assert "\nhello\n" == captured.err
+        assert "" == captured.out
+
+    def test_safe_say_writes_to_std_out(self, capfd):
+        safe_say("out", sys.stdout)
+        captured = capfd.readouterr()
+        assert "\nout\n" == captured.out
+        assert "" == captured.err
+
+    def test_safe_say_uses_original_os_write(self):
+        from celery import _original_os_write
+        from celery.apps.worker import _original_os_write as worker_os_write
+
+        assert _original_os_write is not None
+        assert callable(_original_os_write)
+        assert worker_os_write is _original_os_write
+        assert _original_os_write.__name__ == 'write'
+
+    def test_safe_say_works_with_patched_os_write(self, capfd):
+        original_write = os.write
+
+        def patched_write(fd, data):
+            raise RuntimeError("do not call blocking functions from the mainloop")
+
+        try:
+            os.write = patched_write
+            safe_say("test message")
+            captured = capfd.readouterr()
+            assert "\ntest message\n" == captured.err
+        finally:
+            os.write = original_write

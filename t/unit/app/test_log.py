@@ -2,15 +2,14 @@ import logging
 import sys
 from collections import defaultdict
 from io import StringIO
-from tempfile import mktemp
+from tempfile import mkstemp
 from unittest.mock import Mock, patch
 
 import pytest
 
 from celery import signals, uuid
 from celery.app.log import TaskFormatter
-from celery.utils.log import (ColorFormatter, LoggingProxy, get_logger,
-                              get_task_logger, in_sighandler)
+from celery.utils.log import ColorFormatter, LoggingProxy, get_logger, get_task_logger, in_sighandler
 from celery.utils.log import logger as base_logger
 from celery.utils.log import logger_isa, task_logger
 from t.unit import conftest
@@ -32,6 +31,20 @@ class test_TaskFormatter:
         x.format(record)
         assert record.task_name == '???'
         assert record.task_id == '???'
+
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = TaskFormatter(
+            fmt='[%(asctime)s] %(task_name)s %(message)s',
+            datefmt='%Y%m%d-%H%M%S',
+            use_color=False,
+        )
+        assert x.datefmt == '%Y%m%d-%H%M%S'
+        asctime = x.format(record).split(']')[0].lstrip('[')
+        # the default asctime uses "-" and ":" separators plus a "," for msecs
+        assert ':' not in asctime and ',' not in asctime
 
 
 class test_logger_isa:
@@ -82,6 +95,27 @@ class test_logger_isa:
 
 
 class test_ColorFormatter:
+
+    def test_datefmt_defaults_to_none(self):
+        assert ColorFormatter().datefmt is None
+
+    def test_use_color_is_still_the_second_positional_arg(self):
+        # datefmt is appended last so that ColorFormatter(fmt, False)
+        # keeps meaning "no color" instead of "datefmt=False".
+        x = ColorFormatter('%(message)s', False)
+        assert x.use_color is False
+        assert x.datefmt is None
+
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = ColorFormatter(
+            fmt='[%(asctime)s] %(message)s',
+            datefmt='%H:%M:%S',
+            use_color=False,
+        )
+        assert x.format(record).split(']')[0].count(':') == 2
 
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
@@ -151,7 +185,7 @@ class test_default_logger:
 
         return logging.root
 
-    def setup(self):
+    def setup_method(self):
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
@@ -166,6 +200,30 @@ class test_default_logger:
 
     def test_setup_logging_subsystem_misc(self, restore_logging):
         self.app.log.setup_logging_subsystem(loglevel=None)
+
+    def test_setup_logging_subsystem_propagates_receiver_error(self, restore_logging):
+        from celery.app.log import Logging
+
+        self.app.log.already_setup = False
+        signals.setup_logging.receivers[:] = []
+        Logging._setup = False
+        signals.setup_logging.sender_receivers_cache.clear()
+
+        @signals.setup_logging.connect(weak=False)
+        def raise_error(**kwargs):
+            raise ValueError("logging setup failed")
+
+        try:
+            with pytest.raises(ValueError, match="logging setup failed"):
+                self.app.log.setup_logging_subsystem()
+            assert not self.app.log.already_setup
+
+            signals.setup_logging.disconnect(raise_error)
+            self.app.log.setup_logging_subsystem()
+            assert Logging._setup
+        finally:
+            signals.setup_logging.disconnect(raise_error)
+            Logging._setup = False
 
     def test_setup_logging_subsystem_misc2(self, restore_logging):
         self.app.conf.worker_hijack_root_logger = True
@@ -183,6 +241,33 @@ class test_default_logger:
     def test_setup_logging_subsystem_colorize(self, restore_logging):
         self.app.log.setup_logging_subsystem(colorize=None)
         self.app.log.setup_logging_subsystem(colorize=True)
+
+    def test_setup_handlers_datefmt(self):
+        logger = logging.getLogger('celery.test_setup_handlers_datefmt')
+        try:
+            self.app.log.setup_handlers(
+                logger, sys.stderr, '%(asctime)s', False,
+                datefmt='%Y%m%d',
+            )
+            assert logger.handlers[0].formatter.datefmt == '%Y%m%d'
+        finally:
+            logger.handlers[:] = []
+
+    def test_worker_log_datefmt_setting(self, restore_logging):
+        self.app.conf.worker_log_datefmt = '%Y%m%d'
+        self.app.conf.worker_task_log_datefmt = '%H%M%S'
+        log = self.app.log.__class__(self.app)
+        assert log.datefmt == '%Y%m%d'
+        assert log.task_datefmt == '%H%M%S'
+
+    def test_empty_datefmt_overrides_the_configured_one(self, restore_logging):
+        # '' is a valid datefmt for logging.Formatter, so it must not fall
+        # back to the configured default the way `datefmt or self.datefmt` did.
+        self.app.conf.worker_task_log_datefmt = '%Y%m%d'
+        log = self.app.log.__class__(self.app)
+        with patch.object(log, 'setup_handlers') as setup_handlers:
+            log.setup_task_loggers(datefmt='')
+        assert setup_handlers.call_args.kwargs['datefmt'] == ''
 
     @pytest.mark.masked_modules('billiard.util')
     def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):
@@ -211,7 +296,7 @@ class test_default_logger:
 
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
-        tempfile = mktemp(suffix='unittest', prefix='celery')
+        _, tempfile = mkstemp(suffix='unittest', prefix='celery')
         with patch('builtins.open') as osopen:
             with conftest.restore_logging_context_manager():
                 files = defaultdict(StringIO)
@@ -313,7 +398,7 @@ class test_default_logger:
 
 class test_task_logger(test_default_logger):
 
-    def setup(self):
+    def setup_method(self):
         logger = self.logger = get_logger('celery.task')
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
@@ -327,7 +412,7 @@ class test_task_logger(test_default_logger):
         from celery._state import _task_stack
         _task_stack.push(test_task)
 
-    def teardown(self):
+    def teardown_method(self):
         from celery._state import _task_stack
         _task_stack.pop()
 

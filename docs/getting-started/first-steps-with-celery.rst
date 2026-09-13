@@ -14,7 +14,7 @@ tools and support you need to run such a system in production.
 
 In this tutorial you'll learn the absolute basics of using Celery.
 
-Learn about;
+Learn about:
 
 - Choosing and installing a message transport (broker).
 - Installing Celery and creating your first task.
@@ -106,7 +106,7 @@ Installing Celery
 =================
 
 Celery is on the Python Package Index (PyPI), so it can be installed
-with standard Python tools like ``pip`` or ``easy_install``:
+with standard Python tools like ``pip``:
 
 .. code-block:: console
 
@@ -245,7 +245,7 @@ the message broker (a popular combination):
 
 To read more about result backends please see :ref:`task-result-backends`.
 
-Now with the result backend configured, close the current python session and import the
+Now with the result backend configured, restart the worker, close the current python session and import the
 ``tasks`` module again to put the changes into effect. This time you'll hold on to the
 :class:`~@AsyncResult` instance returned when you call a task:
 

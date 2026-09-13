@@ -9,8 +9,7 @@ import pytest
 
 from celery import states, uuid
 from celery.events import Event
-from celery.events.state import (HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW,
-                                 State, Task, Worker, heartbeat_expires)
+from celery.events.state import HEARTBEAT_DRIFT_MAX, HEARTBEAT_EXPIRE_WINDOW, State, Task, Worker, heartbeat_expires
 
 
 class replay:
@@ -127,7 +126,7 @@ class ev_logical_clock_ordering(replay):
             QTEV('succeeded', tB, 'w2', name='tB', clock=offset + 9),
             QTEV('started', tC, 'w2', name='tC', clock=offset + 10),
             QTEV('received', tA, 'w3', name='tA', clock=offset + 13),
-            QTEV('succeded', tC, 'w2', name='tC', clock=offset + 12),
+            QTEV('succeeded', tC, 'w2', name='tC', clock=offset + 12),
             QTEV('started', tA, 'w3', name='tA', clock=offset + 14),
             QTEV('succeeded', tA, 'w3', name='TA', clock=offset + 16),
         ]
@@ -665,6 +664,33 @@ class test_State:
 
         s._taskheap.append(s._taskheap[0])
         assert list(s.tasks_by_time())
+
+    def test_tasks_to_resolve_is_bounded(self):
+        # Children whose parent hasn't been seen yet register themselves in
+        # ``_tasks_to_resolve``. If the parent never shows up (e.g. it was
+        # already processed, or evicted from ``tasks``), that entry is never
+        # popped, so the mapping must be bounded like every other one on
+        # ``State`` -- otherwise a long-running monitor leaks memory
+        # (see issue #4832).
+        s = State(max_tasks_in_memory=10)
+        for _ in range(100):
+            parent_id = uuid()
+            s.event({
+                'type': 'task-received',
+                'uuid': uuid(),
+                'parent_id': parent_id,
+                'root_id': parent_id,
+                'name': 'task1',
+                'args': '()',
+                'kwargs': '{}',
+                'retries': 0,
+                'eta': None,
+                'hostname': 'utest1',
+                'clock': 0,
+                'timestamp': time(),
+                'local_received': time(),
+            })
+        assert len(s._tasks_to_resolve) <= s.max_tasks_in_memory
 
     def test_callback(self):
         scratch = {}

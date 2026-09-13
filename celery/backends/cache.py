@@ -47,7 +47,7 @@ def get_best_memcache(*args, **kwargs):
     Client = _Client = memcache.Client
 
     if not is_pylibmc:
-        def Client(*args, **kwargs):
+        def Client(*args, **kwargs):  # noqa: F811
             kwargs.pop('behaviors', None)
             return _Client(*args, **kwargs)
 

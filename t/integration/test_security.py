@@ -1,5 +1,6 @@
 import datetime
 import os
+import socket
 import tempfile
 
 import pytest
@@ -74,7 +75,7 @@ class test_security:
     def gen_certificate(self, key, common_name, issuer=None, sign_key=None):
         """generate a certificate with cryptography"""
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
 
         certificate = x509.CertificateBuilder().subject_name(
             x509.Name([
@@ -106,5 +107,12 @@ class test_security:
 
     @pytest.mark.xfail(reason="Issue #5269")
     def test_security_task_done(self):
-        t1 = add.delay(1, 1)
-        assert t1.get() == 2
+        t1 = add.apply_async((1, 1))
+        try:
+            result = t1.get(timeout=10)  # redis backend will timeout
+            assert result == 2
+        except (socket.timeout, TimeoutError) as e:
+            pytest.fail(
+                f"Timed out waiting for task result. Task was likely dropped by "
+                f"worker due to security misconfig. Exception details: {e}"
+            )

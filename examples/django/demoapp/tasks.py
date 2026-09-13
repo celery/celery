@@ -30,3 +30,23 @@ def rename_widget(widget_id, name):
     w = Widget.objects.get(id=widget_id)
     w.name = name
     w.save()
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 2, "countdown": 10 * 60},  # retry up to 2 times with 10 minutes between retries
+)
+def error_task(self):
+    raise Exception("Test error")
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_backoff=5,  # Factor in seconds (first retry: 5s, second: 10s, third: 20s, etc.)
+    retry_jitter=False,  # Set False to disable randomization (use exact values: 5s, 10s, 20s)
+    retry_kwargs={"max_retries": 3},
+)
+def error_backoff_test(self):
+    raise Exception("Test error")

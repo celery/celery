@@ -3,14 +3,18 @@
 Pool implementation using :mod:`multiprocessing`.
 """
 import os
+import threading
+import time
 
-from billiard import forking_enable
+from billiard import forking_enable, get_start_method, set_start_method
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
+from kombu.asynchronous import get_event_loop
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
+from celery.app import base as _app_base
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.utils.functional import noop
@@ -47,6 +51,16 @@ def process_initializer(app, hostname):
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
+    if get_start_method() != 'fork':
+        # billiard started this child as a fresh interpreter on its own (for
+        # example the macOS default since billiard 4.3), so announce it the
+        # same way the parent does for worker_pool_start_method 'spawn'.
+        # Both have to be set before init_worker() imports the task modules:
+        # the environment variable for whatever this process starts later,
+        # and the flag in the already-imported module that decides how
+        # @app.task binds.
+        os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+        _app_base.USING_EXECV = True
     # This is for Windows and other platforms not supporting
     # fork().  Note that init_worker makes sure it's only
     # run once per process.
@@ -62,7 +76,7 @@ def process_initializer(app, hostname):
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')),
                   hostname=hostname)
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
-        # pool did execv after fork
+        # the child is a fresh interpreter (spawn, forkserver or execv)
         trace.setup_worker_optimizations(app, hostname)
     else:
         app.set_current()
@@ -99,7 +113,23 @@ class TaskPool(BasePool):
     write_stats = None
 
     def on_start(self):
-        forking_enable(self.forking_enable)
+        if self.forking_enable:
+            forking_enable(True)
+        else:
+            # billiard's forking_enable(False) maps to the legacy execv
+            # mechanism, which depends on the optional _billiard C extension
+            # and is unavailable on CPython 3 (always warns and silently
+            # stays on fork). Use the modern 'spawn' start method instead,
+            # which is implemented in pure Python and actually takes effect.
+            #
+            # Each spawned child is a fresh interpreter and therefore must
+            # re-run the worker optimizations (task registry shortcut used by
+            # fast_trace_task, Django model validation, etc.). The rest of
+            # Celery keys this "fresh interpreter" behavior off the
+            # FORKED_BY_MULTIPROCESSING environment variable (historically set
+            # by billiard's execv path), so set it for the spawned children.
+            os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+            set_start_method('spawn', force=True)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
         proc_alive_timeout = (
@@ -140,7 +170,48 @@ class TaskPool(BasePool):
         """Gracefully stop the pool."""
         if self._pool is not None and self._pool._state in (RUN, CLOSE):
             self._pool.close()
-            self._pool.join()
+
+            # Keep firing timers (for heartbeats on async transports) while
+            # the pool drains. If not using an async transport, no hub exists
+            # and the timer thread is not created.
+            hub = get_event_loop()
+            if hub is not None:
+                shutdown_event = threading.Event()
+
+                def fire_timers_loop():
+                    while not shutdown_event.is_set():
+                        try:
+                            hub.fire_timers()
+                        except Exception:
+                            logger.warning(
+                                "Exception in timer thread during prefork on_stop()",
+                                exc_info=True,
+                            )
+                        # 0.5 seconds was chosen as a balance between joining quickly
+                        # after the pool join is complete and sleeping long enough to
+                        # avoid excessive CPU usage.
+                        time.sleep(0.5)
+
+                timer_thread = threading.Thread(
+                    target=fire_timers_loop,
+                    daemon=True,
+                    name="prefork-timer-shutdown",
+                )
+                timer_thread.start()
+
+                try:
+                    self._pool.join()
+                finally:
+                    shutdown_event.set()
+                    timer_thread.join(timeout=1.0)
+
+                    if timer_thread.is_alive():
+                        logger.warning(
+                            "Timer thread in prefork on_stop() did not terminate cleanly"
+                        )
+            else:
+                self._pool.join()
+
             self._pool = None
 
     def on_terminate(self):
@@ -155,7 +226,8 @@ class TaskPool(BasePool):
 
     def _get_info(self):
         write_stats = getattr(self._pool, 'human_write_stats', None)
-        return {
+        info = super()._get_info()
+        info.update({
             'max-concurrency': self.limit,
             'processes': [p.pid for p in self._pool._pool],
             'max-tasks-per-child': self._pool._maxtasksperchild or 'N/A',
@@ -163,7 +235,8 @@ class TaskPool(BasePool):
             'timeouts': (self._pool.soft_timeout or 0,
                          self._pool.timeout or 0),
             'writes': write_stats() if write_stats is not None else 'N/A',
-        }
+        })
+        return info
 
     @property
     def num_processes(self):

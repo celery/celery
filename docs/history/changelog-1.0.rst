@@ -164,7 +164,7 @@ News
 * New task option: `Task.acks_late` (default: :setting:`CELERY_ACKS_LATE`)
 
     Late ack means the task messages will be acknowledged **after** the task
-    has been executed, not *just before*, which is the default behavior.
+    has been executed, not *right before*, which is the default behavior.
 
     .. note::
 

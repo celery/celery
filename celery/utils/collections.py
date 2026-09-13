@@ -2,12 +2,11 @@
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
-from collections.abc import (Callable, Mapping, MutableMapping, MutableSet,
-                             Sequence)
+from collections.abc import Callable, Mapping, MutableMapping, MutableSet, Sequence
 from heapq import heapify, heappop, heappush
 from itertools import chain, count
 from queue import Empty
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List  # noqa
 
 from .functional import first, uniq
 from .text import match_case
@@ -114,8 +113,7 @@ class AttributeDictMixin:
             raise AttributeError(
                 f'{type(self).__name__!r} object has no attribute {k!r}')
 
-    def __setattr__(self, key, value):
-        # type: (str, Any) -> None
+    def __setattr__(self, key: str, value) -> None:
         """`d[key] = value -> d.key = value`."""
         self[key] = value
 
@@ -208,7 +206,7 @@ class ChainMap(MutableMapping):
     changes = None
     defaults = None
     maps = None
-    _observers = []
+    _observers = ()
 
     def __init__(self, *maps, **kwargs):
         # type: (*Mapping, **Any) -> None
@@ -218,6 +216,7 @@ class ChainMap(MutableMapping):
             maps=maps,
             changes=maps[0],
             defaults=maps[1:],
+            _observers=[],
         )
 
     def add_defaults(self, d):
@@ -228,8 +227,9 @@ class ChainMap(MutableMapping):
 
     def pop(self, key, *default):
         # type: (Any, *Any) -> Any
+        _key = self._key(key)
         try:
-            return self.maps[0].pop(key, *default)
+            return self.maps[0].pop(_key, *default)
         except KeyError:
             raise KeyError(
                 f'Key not found in the first mapping: {key!r}')
@@ -270,7 +270,7 @@ class ChainMap(MutableMapping):
     def get(self, key, default=None):
         # type: (Any, Any) -> Any
         try:
-            return self[self._key(key)]
+            return self[key]
         except KeyError:
             return default
 
@@ -293,7 +293,6 @@ class ChainMap(MutableMapping):
 
     def setdefault(self, key, default=None):
         # type: (Any, Any) -> None
-        key = self._key(key)
         if key not in self:
             self[key] = default
 
@@ -374,6 +373,15 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             _keys=keys,
         )
 
+    def copy(self):
+        # type: () -> 'ConfigurationView'
+        copied = self.__class__(
+            self.changes.copy(), self.defaults, self._keys, self.prefix,
+        )
+        copied.__dict__['key_t'] = self.key_t
+        return copied
+    __copy__ = copy
+
     def _to_keys(self, key):
         # type: (str) -> Sequence[str]
         prefix = self.prefix
@@ -385,20 +393,20 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        getitem = super().__getitem__
-        for k in keys + (
-                tuple(f(key) for f in self._keys) if self._keys else ()):
-            try:
-                return getitem(k)
-            except KeyError:
-                pass
+        all_keys = keys + (tuple(f(key) for f in self._keys) if self._keys else ())
+        for mapping in self.maps:
+            for k in all_keys:
+                try:
+                    return mapping[self._key(k)]
+                except KeyError:
+                    pass
         try:
             # support subclasses implementing __missing__
             return self.__missing__(key)
         except KeyError:
             if len(keys) > 1:
                 raise KeyError(
-                    'Key not found: {0!r} (with prefix: {0!r})'.format(*keys))
+                    'Key not found: {1!r} (with prefix: {0!r})'.format(*keys))
             raise
 
     def __setitem__(self, key, value):
@@ -423,8 +431,9 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
 
     def __contains__(self, key):
         # type: (str) -> bool
-        keys = self._to_keys(key)
-        return any(any(k in m for k in keys) for m in self.maps)
+        contains = super().__contains__
+        all_keys = self._to_keys(key) + (tuple(f(key) for f in self._keys) if self._keys else ())
+        return any(contains(k) for k in all_keys)
 
     def swap_with(self, other):
         # type: (ConfigurationView) -> None
@@ -435,6 +444,7 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             defaults=defaults,
             key_t=other.__dict__['key_t'],
             prefix=other.__dict__['prefix'],
+            _keys=other.__dict__['_keys'],
             maps=[changes] + defaults
         )
 
@@ -596,8 +606,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
-    def pop(self, default=None):
-        # type: (Any) -> Any
+    def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
             _, item = heappop(self._heap)
@@ -628,10 +637,6 @@ class LimitedSet:
     def __eq__(self, other):
         # type: (Any) -> bool
         return self._data == other._data
-
-    def __ne__(self, other):
-        # type: (Any) -> bool
-        return not self.__eq__(other)
 
     def __repr__(self):
         # type: () -> str
@@ -676,20 +681,17 @@ class Evictable:
 
     Empty = Empty
 
-    def evict(self):
-        # type: () -> None
+    def evict(self) -> None:
         """Force evict until maxsize is enforced."""
         self._evict(range=count)
 
-    def _evict(self, limit=100, range=range):
-        # type: (int) -> None
+    def _evict(self, limit: int = 100, range=range) -> None:
         try:
             [self._evict1() for _ in range(limit)]
         except IndexError:
             pass
 
-    def _evict1(self):
-        # type: () -> None
+    def _evict1(self) -> None:
         if self._evictcount <= self.maxsize:
             raise IndexError()
         try:
@@ -751,8 +753,7 @@ class Messagebuffer(Evictable):
         # type: () -> int
         return self._len()
 
-    def __contains__(self, item):
-        # type: () -> bool
+    def __contains__(self, item) -> bool:
         return item in self.data
 
     def __reversed__(self):

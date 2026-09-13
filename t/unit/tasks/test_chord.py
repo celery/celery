@@ -4,6 +4,7 @@ from unittest.mock import Mock, PropertyMock, patch, sentinel
 import pytest
 
 from celery import canvas, group, result, uuid
+from celery.canvas import Signature
 from celery.exceptions import ChordError, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
@@ -12,9 +13,14 @@ def passthru(x):
     return x
 
 
+class AnySignatureWithTask(Signature):
+    def __eq__(self, other):
+        return self.task == other.task
+
+
 class ChordCase:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):
@@ -75,6 +81,32 @@ class test_unlock_chord_task(ChordCase):
             )
             # didn't retry
             assert not retry.call_count
+
+    def test_unlock_ready_with_serialized_callback(self):
+
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        applied = []
+
+        def record_apply_async(args, kwargs, **options):
+            applied.append(args)
+
+        callback.apply_async = record_apply_async
+
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        unlock_chord(
+            'group_id', dict(callback.s()),
+            result=[],
+            GroupResult=AlwaysReady,
+        )
+
+        assert applied == [([2, 4],)]
 
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')
@@ -171,6 +203,21 @@ class test_unlock_chord_task(ChordCase):
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
 
+    def test_when_not_ready_preserves_exchange_type(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        with self._chord_context(
+            NeverReady, interval=10,
+            max_retries=30, _chord_unlock_exchange_type='headers',
+        ) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(
+                countdown=10,
+                max_retries=30,
+                exchange_type='headers',
+            )
+
     def test_when_not_ready_with_configured_chord_retry_interval(self):
         class NeverReady(TSR):
             is_ready = False
@@ -209,17 +256,26 @@ class test_unlock_chord_task(ChordCase):
     def test_unlock_join_timeout_custom(self):
         self._test_unlock_join_timeout(timeout=5.0)
 
-    def test_unlock_with_chord_params(self):
+    def test_unlock_with_chord_params_default(self):
         @self.app.task(shared=False)
         def mul(x, y):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async()
-            run.assert_called_once_with(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), (), task_id=None, interval=10)
+            run.assert_called_once_with(
+                AnySignatureWithTask(g),
+                mul.s(),
+                (),
+                task_id=None,
+                kwargs={},
+                interval=10,
+            )
 
     def test_unlock_with_chord_params_and_task_id(self):
         @self.app.task(shared=False)
@@ -227,15 +283,19 @@ class test_unlock_chord_task(ChordCase):
             return x * y
 
         from celery import chord
-        ch = chord(group(mul.s(1, 1), mul.s(2, 2)), mul.s(), interval=10)
+        g = group(mul.s(1, 1), mul.s(2, 2))
+        body = mul.s()
+        ch = chord(g, body, interval=10)
 
         with patch.object(ch, 'run') as run:
             ch.apply_async(task_id=sentinel.task_id)
+
             run.assert_called_once_with(
-                group(mul.s(1, 1), mul.s(2, 2)),
+                AnySignatureWithTask(g),
                 mul.s(),
                 (),
                 task_id=sentinel.task_id,
+                kwargs={},
                 interval=10,
             )
 
@@ -279,6 +339,40 @@ class test_chord(ChordCase):
         finally:
             chord.run = prev
 
+    def test_nested_chord_with_single_task_inner_chord(self):
+        """Regression test for #3885.
+
+        A nested chord containing an inner chord with a single task used to
+        raise KeyError: 0 when submitted with apply_async().
+        """
+        from celery import chord
+
+        workflow = chord(
+            [
+                chord(
+                    [
+                        self.add.s(1, 2),
+                        self.add.s(3, 4),
+                    ],
+                    body=self.add.s(4),
+                    app=self.app,
+                ),
+                chord(
+                    [
+                        self.add.s(5, 6),
+                    ],
+                    body=self.add.s(4),
+                    app=self.app,
+                ),
+            ],
+            body=self.add.s(4),
+            app=self.app,
+        )
+
+        result = workflow.apply_async()
+
+        assert result.id
+
     def test_init(self):
         from celery import chord
         from celery.utils.serialization import pickle
@@ -300,7 +394,7 @@ class test_chord(ChordCase):
 
 class test_add_to_chord:
 
-    def setup(self):
+    def setup_method(self):
 
         @self.app.task(shared=False)
         def add(x, y):

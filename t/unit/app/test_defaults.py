@@ -1,17 +1,16 @@
 import sys
 from importlib import import_module
 
-from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS,
-                                 _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS,
-                                 NAMESPACES, SETTING_KEYS)
+from celery.app.defaults import (_OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, NAMESPACES,
+                                 SETTING_KEYS)
 
 
 class test_defaults:
 
-    def setup(self):
+    def setup_method(self):
         self._prev = sys.modules.pop('celery.app.defaults', None)
 
-    def teardown(self):
+    def teardown_method(self):
         if self._prev:
             sys.modules['celery.app.defaults'] = self._prev
 
@@ -41,7 +40,11 @@ class test_defaults:
         find = self.defaults.find
 
         assert find('default_queue')[2].default == 'celery'
-        assert find('task_default_exchange')[2] is None
+        assert find('task_default_exchange')[2].default is None
+
+    def test_worker_pool_start_method_default(self):
+        assert self.defaults.NAMESPACES['worker']['pool_start_method'].default == 'fork'
+        assert self.defaults.DEFAULTS['worker_pool_start_method'] == 'fork'
 
     @property
     def defaults(self):

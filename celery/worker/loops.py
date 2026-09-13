@@ -57,6 +57,10 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     on_task_received = obj.create_task_handler()
 
     heartbeat_error = _enable_amqheartbeats(hub.timer, connection, rate=hbrate)
+    dispatcher_heartbeat_error = [None]
+    if obj.event_dispatcher:
+        dispatcher_heartbeat_error = _enable_amqheartbeats(
+            hub.timer, obj.event_dispatcher.connection, rate=hbrate)
 
     consumer.on_message = on_task_received
     obj.controller.register_with_event_loop(hub)
@@ -86,6 +90,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             state.maybe_shutdown()
             if heartbeat_error[0] is not None:
                 raise heartbeat_error[0]
+            if dispatcher_heartbeat_error[0] is not None:
+                raise dispatcher_heartbeat_error[0]
 
             # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote
@@ -97,12 +103,37 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
                 next(loop)
             except StopIteration:
                 loop = hub.create_loop()
-    finally:
+    except Exception:
+        # Reset the hub on error (e.g. connection loss) to clean up
+        # stale file descriptors and callbacks from the old connection.
+        # Also clear the timer queue so that stale periodic entries added by
+        # register_with_event_loop (e.g. maybe_restore_messages) do not fire
+        # against the broken connection after reconnect and trigger another
+        # crash before the new connection is fully established.
+        # All hub timers are re-registered during blueprint.start() once this
+        # exception propagates and the consumer reconnects.
+        # We intentionally do NOT reset on normal exit (graceful shutdown)
+        # so that timers (e.g. heartbeat) keep firing while the pool drains.
+        # WorkerShutdown/WorkerTerminate extend SystemExit (not Exception)
+        # so they won't be caught here.
         try:
             hub.reset()
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
+        # Clear stale timer entries accumulated across reconnects (e.g.
+        # maybe_restore_messages registered via call_repeatedly). Without
+        # this, each reconnect appends a new entry; all of them fire during
+        # the reconnect window, raise again, and trigger another restart.
+        # Use a separate try/except so this always runs even if hub.reset()
+        # raised above. Timers are re-registered by register_with_event_loop
+        # when blueprint.start() is called after reconnect.
+        try:
+            hub.timer.clear()
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception(
+                'Error clearing hub timer after event loop: %r', exc)
+        raise
 
 
 def synloop(obj, connection, consumer, blueprint, hub, qos,
@@ -112,17 +143,26 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
     heartbeat_error = [None]
-    if getattr(obj.pool, 'is_green', False):
+    dispatcher_heartbeat_error = [None]
+    is_green = getattr(obj.pool, 'is_green', False)
+    if is_green:
         heartbeat_error = _enable_amqheartbeats(obj.timer, connection, rate=hbrate)
+        if obj.event_dispatcher:
+            dispatcher_heartbeat_error = _enable_amqheartbeats(
+                obj.timer, obj.event_dispatcher.connection, rate=hbrate)
     consumer.on_message = on_task_received
     consumer.consume()
 
     obj.on_ready()
 
-    while blueprint.state == RUN and obj.connection:
-        state.maybe_shutdown()
+    def _loop_cycle():
+        """
+        Perform one iteration of the blocking event loop.
+        """
         if heartbeat_error[0] is not None:
             raise heartbeat_error[0]
+        if dispatcher_heartbeat_error[0] is not None:
+            raise dispatcher_heartbeat_error[0]
         if qos.prev != qos.value:
             qos.update()
         try:
@@ -133,3 +173,33 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         except OSError:
             if blueprint.state == RUN:
                 raise
+        # drain this connection so broker heartbeats are consumed.
+        if is_green and obj.amqheartbeat and obj.event_dispatcher:
+            connection_ = obj.event_dispatcher.connection
+            if connection_ and connection_.supports_heartbeats:
+                try:
+                    _quick_drain(obj.event_dispatcher.connection)
+                except OSError:
+                    if blueprint.state == RUN:
+                        raise
+
+    try:
+        while blueprint.state == RUN and obj.connection:
+            try:
+                state.maybe_shutdown()
+            finally:
+                _loop_cycle()
+    except Exception:
+        # Reset the hub on error (e.g. connection loss) to clean up
+        # stale state from the old connection, matching the cleanup
+        # already done in asynloop.  Without this, the synloop
+        # (used by gevent/eventlet pools) could leave stale callbacks
+        # that prevent consumer re-registration after reconnection.
+        # See: https://github.com/celery/celery/issues/9191
+        if hub is not None:
+            try:
+                hub.reset()
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception(
+                    'Error cleaning up after sync event loop: %r', exc)
+        raise

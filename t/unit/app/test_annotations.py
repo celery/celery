@@ -8,7 +8,7 @@ class MyAnnotation:
 
 class AnnotationCase:
 
-    def setup(self):
+    def setup_method(self):
         @self.app.task(shared=False)
         def add(x, y):
             return x + y
