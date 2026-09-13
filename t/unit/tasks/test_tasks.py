@@ -1554,6 +1554,23 @@ class test_tasks(TasksCase):
         except ValueError as e:
             assert str(e) == 'soft_time_limit must be less than or equal to time_limit'
 
+    def test_soft_time_limit_mixed_timedelta_and_int_raises_valueerror_not_typeerror(self):
+        """Comparing a timedelta soft_time_limit against an int time_limit must not raise TypeError."""
+        @self.app.task(soft_time_limit=timedelta(seconds=5), time_limit=3)
+        def zzz():
+            pass
+
+        with pytest.raises(ValueError, match='soft_time_limit must be less than or equal to time_limit'):
+            zzz.apply_async()
+
+    def test_soft_time_limit_both_timedelta_valid_does_not_raise(self):
+        """Two timedelta limits in valid order must not raise."""
+        @self.app.task(soft_time_limit=timedelta(seconds=3), time_limit=timedelta(seconds=5))
+        def www():
+            pass
+
+        www.apply_async()
+
 
 class test_task_routing_attribute_deprecation(TasksCase):
 
