@@ -339,6 +339,41 @@ class test_chord(ChordCase):
         finally:
             chord.run = prev
 
+    def test_nested_chord_with_single_task_inner_chord(self):
+        """Regression test for #3885.
+
+        A nested chord containing an inner chord with a single task used to
+        raise KeyError: 0 when submitted with apply_async().
+        """
+        from celery import chord
+
+        workflow = chord(
+            [
+                chord(
+                    [
+                        self.add.s(1, 2),
+                        self.add.s(3, 4),
+                    ],
+                    body=self.mul.s(4),
+                    app=self.app,
+                ),
+                chord(
+                    [
+                        self.add.s(5, 6),
+                    ],
+                    body=self.mul.s(4),
+                    app=self.app,
+                ),
+            ],
+            body=self.mul.s(4),
+            app=self.app,
+        )
+
+        result = workflow.apply_async()
+
+        assert result is not None
+        assert result.id
+
     def test_init(self):
         from celery import chord
         from celery.utils.serialization import pickle
