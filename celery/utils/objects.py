@@ -82,10 +82,12 @@ class FallbackContext:
     def __enter__(self):
         if self.provided is not None:
             return self.provided
-        context = self._context = self.fallback(
+        context = self.fallback(
             *self.fb_args, **self.fb_kwargs
-        ).__enter__()
-        return context
+        )
+        value = context.__enter__()
+        self._context = context
+        return value
 
     def __exit__(self, *exc_info):
         if self._context is not None:
