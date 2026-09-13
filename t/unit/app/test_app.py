@@ -207,6 +207,17 @@ class test_App:
         assert not _appbase.USING_EXECV
 
     @pytest.mark.usefixtures('depends_on_current_app')
+    def test_task_decorator_accepts_explicit_lazy_in_execv_mode(self):
+        """The execv decorator path must accept an explicit lazy=True option."""
+        with patch.object(_appbase, 'USING_EXECV', True):
+            @self.app.task(lazy=True)
+            def add(x, y):
+                return x + y
+
+            assert add._get_current_object() is self.app.tasks[add.name]
+            assert add(2, 3) == 5
+
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_execv_env_set_after_import(self):
         # a spawned pool child sets the variable from process_initializer()
         with patch.dict(os.environ, {'FORKED_BY_MULTIPROCESSING': '1'}):
@@ -994,6 +1005,16 @@ class test_App:
         """The eager path keeps working, and is not made silent by accident."""
         self.app.config_from_object('nonexistent.module', silent=True, force=True)
         assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__can_add_defaults_after_silent_reload_failure(self):
+        self.app.config_from_object({'worker_prefetch_multiplier': 10})
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        assert self.app.configured
+
+        self.app.config_from_object('nonexistent.module', silent=True)
+        self.app.add_defaults({'worker_prefetch_multiplier': 20})
+
+        assert self.app.conf.worker_prefetch_multiplier == 20
 
     def test_config_from_object__silent_survives_v1_pickle(self):
         """The flag must survive the deprecated v1 reduction too.

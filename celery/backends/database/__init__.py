@@ -138,15 +138,21 @@ class DatabaseBackend(BaseBackend):
             **self.engine_options)
 
     def _query_task(self, session, task_id):
-        """Query task by id, falling back to deferring stamps if missing from database."""
+        """Query task by id, falling back to deferring missing columns from database."""
         try:
             tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             return tasks and tasks[0]
         except DatabaseError as exc:
-            if 'stamps' in str(exc).lower() and hasattr(self.task_cls, 'stamps'):
-                tasks = list(session.query(self.task_cls).options(
-                    defer(self.task_cls.stamps)
-                ).filter(self.task_cls.task_id == task_id))
+            exc_str = str(exc).lower()
+            defers = []
+            if 'children' in exc_str and hasattr(self.task_cls, 'children'):
+                defers.append(defer(self.task_cls.children))
+            if 'stamps' in exc_str and hasattr(self.task_cls, 'stamps'):
+                defers.append(defer(self.task_cls.stamps))
+            if defers:
+                tasks = list(session.query(self.task_cls).options(*defers).filter(
+                    self.task_cls.task_id == task_id
+                ))
                 return tasks and tasks[0]
             raise
 
@@ -172,10 +178,10 @@ class DatabaseBackend(BaseBackend):
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
-        # Exclude the primary key id, task_id, and stamps columns
-        # as we should not set it None or handle stamps separately
+        # Exclude the primary key id, task_id, children, and stamps columns
+        # as we should not set it None or handle them separately
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name not in {'id', 'task_id', 'stamps'}]
+                   if column.name not in {'id', 'task_id', 'children', 'stamps'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -183,6 +189,13 @@ class DatabaseBackend(BaseBackend):
         for column in columns:
             value = meta.get(column)
             setattr(task, column, value)
+
+        if hasattr(task, 'children') and 'children' in self.task_cls.__table__.columns:
+            children = meta.get('children')
+            if children:
+                setattr(task, 'children', ensure_bytes(self.encode(children)))
+            else:
+                setattr(task, 'children', None)
 
         if hasattr(task, 'stamps') and 'stamps' in self.task_cls.__table__.columns:
             stamped_headers = meta.get('stamped_headers')
@@ -213,6 +226,8 @@ class DatabaseBackend(BaseBackend):
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
+            if data.get('children', None) is not None:
+                data['children'] = self.decode(data['children'])
             raw_stamps = data.pop('stamps', None)
             if raw_stamps is not None:
                 try:
