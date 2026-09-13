@@ -19,7 +19,7 @@ from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
-    'filter_hidden_settings', 'find_app',
+    'filter_hidden_settings', 'find_app', 'sanitize_url',
 )
 
 #: Format used to generate bug-report information.
@@ -325,6 +325,36 @@ def _unpickle_app_v2(cls, kwargs):
     return cls(**kwargs)
 
 
+def sanitize_url(url, mask='*' * 8):
+    """Sanitize URL, masking passwords.
+
+    Handles single and multi-server URLs (e.g. semicolon or comma separated).
+    """
+    if not url or not isinstance(url, str):
+        return url
+    if '://' in url:
+        scheme, _, rest = url.partition('://')
+        path = ''
+        if '/' in rest:
+            rest, _, path = rest.partition('/')
+            path = '/' + path
+        sep = ';' if ';' in rest else (',' if ',' in rest else None)
+        if sep:
+            servers = rest.split(sep)
+            sanitized_servers = []
+            for s in servers:
+                if not s:
+                    continue
+                san = maybe_sanitize_url(f'{scheme}://{s}', mask=mask)
+                _, _, netloc = san.partition('://')
+                sanitized_servers.append(netloc.rstrip('/'))
+            return f"{scheme}://{sep.join(sanitized_servers)}{path}"
+    try:
+        return maybe_sanitize_url(url, mask=mask)
+    except Exception:
+        return url
+
+
 def filter_hidden_settings(conf):
     """Filter sensitive settings."""
     def maybe_censor(key, value, mask='*' * 8):
@@ -337,7 +367,7 @@ def filter_hidden_settings(conf):
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
             elif 'backend' in key.lower():
-                return maybe_sanitize_url(value, mask=mask)
+                return sanitize_url(value, mask=mask)
 
         return value
 
@@ -370,7 +400,7 @@ def bugreport(app):
         py_v=_platform.python_version(),
         driver_v=driver_v,
         transport=transport,
-        results=maybe_sanitize_url(app.conf.result_backend or 'disabled'),
+        results=sanitize_url(app.conf.result_backend or 'disabled'),
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
     )

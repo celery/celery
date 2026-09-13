@@ -2,7 +2,7 @@ from collections.abc import Mapping, MutableMapping
 from unittest.mock import Mock
 
 from celery.app.defaults import Option
-from celery.app.utils import Settings, bugreport, filter_hidden_settings
+from celery.app.utils import Settings, bugreport, filter_hidden_settings, sanitize_url
 
 
 class test_Settings:
@@ -71,6 +71,19 @@ class test_filter_hidden_settings:
         assert 'pass' not in censored['broker_read_url']
         assert 'pass' not in censored['broker_write_url']
 
+    def test_censors_multiserver_backend_url(self):
+        conf = {
+            'result_backend': (
+                'cache+memcached://user:pass1@172.19.26.240:11211;'
+                'user:pass2@172.19.26.242:11211/'
+            ),
+        }
+        censored = filter_hidden_settings(conf)
+        assert 'pass1' not in censored['result_backend']
+        assert 'pass2' not in censored['result_backend']
+        assert 'user:********@172.19.26.240:11211' in censored['result_backend']
+        assert 'user:********@172.19.26.242:11211' in censored['result_backend']
+
 
 class test_bugreport:
 
@@ -80,3 +93,67 @@ class test_bugreport:
         conn.transport = None
 
         bugreport(self.app)
+
+    def test_bugreport_with_multiserver_result_backend(self):
+        self.app.conf.result_backend = (
+            'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+        )
+        report = bugreport(self.app)
+        assert (
+            'results:cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+            in report
+        )
+
+    def test_bugreport_with_multiserver_result_backend_passwords(self):
+        self.app.conf.result_backend = (
+            'cache+memcached://user:secret1@172.19.26.240:11211;'
+            'user:secret2@172.19.26.242:11211/'
+        )
+        report = bugreport(self.app)
+        assert 'secret1' not in report
+        assert 'secret2' not in report
+        assert 'user:********@172.19.26.240:11211' in report
+        assert 'user:********@172.19.26.242:11211' in report
+
+
+class test_sanitize_url:
+
+    def test_non_string_and_empty(self):
+        assert sanitize_url(None) is None
+        assert sanitize_url('') == ''
+        assert sanitize_url(12345) == 12345
+        assert sanitize_url([]) == []
+
+    def test_single_server_url(self):
+        assert sanitize_url('redis://localhost:6379/0') == 'redis://localhost:6379/0'
+        assert sanitize_url('redis://:mypass@localhost:6379/0') == 'redis://:********@localhost:6379/0'
+        assert sanitize_url('disabled') == 'disabled'
+
+    def test_multiserver_semicolon(self):
+        url = 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+        assert sanitize_url(url) == url
+
+        url_no_slash = 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211'
+        assert sanitize_url(url_no_slash) == url_no_slash
+
+        url_with_path = 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/myprefix?param=1'
+        assert sanitize_url(url_with_path) == url_with_path
+
+    def test_multiserver_semicolon_with_passwords(self):
+        url = 'cache+memcached://user:pass1@172.19.26.240:11211;user:pass2@172.19.26.242:11211/'
+        expected = 'cache+memcached://user:********@172.19.26.240:11211;user:********@172.19.26.242:11211/'
+        assert sanitize_url(url) == expected
+
+    def test_multiserver_comma_with_passwords(self):
+        url = 'mongodb://user:pass1@host1:27017,user:pass2@host2:27017/dbname?replicaSet=mySet'
+        expected = 'mongodb://user:********@host1:27017,user:********@host2:27017/dbname?replicaSet=mySet'
+        assert sanitize_url(url) == expected
+
+    def test_multiserver_empty_chunk(self):
+        url = 'cache+memcached://172.19.26.240:11211;;172.19.26.242:11211/'
+        expected = 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+        assert sanitize_url(url) == expected
+
+    def test_malformed_url_fallback(self):
+        url = 'invalid://bad:url:extra:colons'
+        assert sanitize_url(url) == url
