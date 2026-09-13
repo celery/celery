@@ -200,6 +200,68 @@ class test_App:
             self.app.register_task(T2())
         assert 'replaced' in str(w[0].message)
 
+    def test_duplicate_task_name_warns_once_per_name(self):
+        """A third callable under the same name must not warn again."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            first, second = make_scaler(2), make_scaler(3)
+            assert first.name == second.name
+
+        with warnings.catch_warnings(record=True) as again:
+            warnings.simplefilter('always')
+            third = make_scaler(4)
+            assert third.name == first.name
+        assert len(w) == 1
+        assert not [x for x in again
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__no_recorded_callable(self):
+        """A task registered by class carries no callable to compare."""
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'shared.name'
+
+            def run(self, x):
+                return x
+
+        self.app.register_task(T())
+
+        def other(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            task = self.app._task_from_fun(other, name='shared.name')
+            assert task.name == 'shared.name'
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_register_task_names_the_function(self):
+        """register_task reports a decorated task by its function."""
+        @self.app.task(name='taken.name', shared=False)
+        def decorated(x):
+            return x
+
+        assert decorated.name == 'taken.name'
+
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'taken.name'
+
+            def run(self, x):
+                return x
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            self.app.register_task(T())
+        assert 'decorated' in str(w[0].message)
+
     def test_duplicate_task_name_silent__explicit_names(self):
         """Negative control: distinct explicit names must not warn."""
         def make_scaler(factor):

@@ -112,6 +112,12 @@ decorator, or rename one of the callables.\
 """
 
 
+def frame_is_celery(frame):
+    """Return true if *frame* is executing Celery's own code."""
+    module = frame.f_globals.get('__name__', '')
+    return module == 'celery' or module.startswith('celery.')
+
+
 def caller_stacklevel():
     """Depth of the first frame outside Celery, for :func:`warnings.warn`.
 
@@ -121,12 +127,9 @@ def caller_stacklevel():
     assumed. Only reached when a warning is actually emitted.
     """
     frame, level = sys._getframe(1), 1
-    while frame is not None:
-        module = frame.f_globals.get('__name__', '')
-        if module != 'celery' and not module.startswith('celery.'):
-            return level
+    while frame is not None and frame_is_celery(frame):
         frame, level = frame.f_back, level + 1
-    return 2
+    return level
 
 
 def task_callable_qualname(task):
