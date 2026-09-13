@@ -77,6 +77,12 @@ class Request:
     _apply_result = None
     _tzlocal = None
 
+    #: Timer entry for this request's pending ETA/countdown callback, set by
+    #: :mod:`celery.worker.strategy` when the request is scheduled so that
+    #: :meth:`celery.worker.consumer.Consumer.on_close` can cancel it on
+    #: connection loss.  ``None`` for requests without an ETA.
+    _eta_timer_entry = None
+
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
             '_app', '_type', 'name', 'id', '_root_id', '_parent_id',
