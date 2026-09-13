@@ -2320,3 +2320,31 @@ class test_merge_dictionaries(CanvasCase):
     def test_none_values(self, d1, d2, expected_result):
         _merge_dictionaries(d1, d2)
         assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_result', [
+        (
+            True,
+            {'nested': {'shared': [1, 2], 'only_d1': 1, 'only_d2': 2}}
+        ),
+        (
+            False,
+            {'nested': {'shared': 1, 'only_d1': 1, 'only_d2': 2}}
+        ),
+    ])
+    def test_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_result):
+        """aggregate_duplicates must be propagated into nested dictionaries."""
+        d1 = {'nested': {'shared': 1, 'only_d1': 1}}
+        d2 = {'nested': {'shared': 2, 'only_d2': 2}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_value', [
+        (True, [1, 2]),
+        (False, 1),
+    ])
+    def test_deeply_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_value):
+        """aggregate_duplicates must survive more than one level of recursion."""
+        d1 = {'level1': {'level2': {'level3': {'shared': 1}}}}
+        d2 = {'level1': {'level2': {'level3': {'shared': 2}}}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == {'level1': {'level2': {'level3': {'shared': expected_value}}}}

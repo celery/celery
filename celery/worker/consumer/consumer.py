@@ -33,8 +33,8 @@ from celery.utils.text import truncate
 from celery.utils.threads import bound_open_broker_sockets
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, scheduled_requests,
+                                 successful_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -542,6 +542,30 @@ class Consumer:
                 requests.pop(r.id, None)
         reserved_requests.clear()
         reserved_requests.update(tuple(active_requests))
+        # Scheduled (ETA/countdown) requests never became reserved, so they
+        # aren't covered by the cleanup above. Cancel their pending timer
+        # entries (through self.timer.cancel(), not entry.cancel()
+        # directly, since e.g. the Eventlet timer relies on that to catch
+        # GreenletExit) so the callback can't fire after we've torn down
+        # this connection (the synloop error path doesn't clear the timer
+        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
+        # our copies since the broker may redeliver these tasks to another
+        # worker on reconnect.
+        for r in tuple(scheduled_requests):
+            entry = r._eta_timer_entry
+            if entry is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling ETA timer entry: %r', exc)
+            # A request can be in both sets: with a threaded timer an ETA
+            # already in the past fires immediately, so task_reserved() may
+            # have run before the strategy registered the request as
+            # scheduled.  Never drop one that's reserved/running.
+            if r not in active_requests and r not in reserved_requests:
+                requests.pop(r.id, None)
+        scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
 
