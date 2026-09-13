@@ -486,6 +486,37 @@ class test_chain(CanvasCase):
         assert x.clone().args == x.args
         assert isinstance(x.clone(), chain_type)
 
+    @pytest.mark.parametrize('depth', (1, 3))
+    @pytest.mark.parametrize('args,kwargs,expected', (
+        ((3,), {}, 50),
+        ((), {'x': 3}, 50),
+        ((3,), {'y': 4}, 70),
+    ))
+    def test_apply_nested_chain_with_arguments(
+        self, depth, args, kwargs, expected,
+    ):
+        workflow = chain(self.add.s(y=2), self.mul.s(10))
+        for _ in range(depth):
+            workflow = chain(workflow)
+        original = json.dumps(workflow)
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == expected
+        assert json.dumps(workflow) == original
+
+    def test_apply_nested_chain_with_immutable_first_task(self):
+        workflow = chain(chain(self.add.si(2, 3), self.mul.s(10)))
+
+        assert workflow.apply(args=(99,), kwargs={'y': 99}).get() == 50
+
+    def test_apply_nested_chain_with_tasks_keyword(self):
+        @self.app.task
+        def count_tasks(tasks):
+            return len(tasks)
+
+        workflow = chain(chain(count_tasks.s(), self.mul.s(10)))
+
+        assert workflow.apply(kwargs={'tasks': [1, 2, 3]}).get() == 30
+
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
         assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
@@ -830,6 +861,15 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    @pytest.mark.parametrize('args,kwargs', (((4,), {}), ((), {'x': 4})))
+    def test_apply_chord_in_chain_with_arguments(self, args, kwargs):
+        workflow = chain(
+            chord([self.add.s(y=2), self.add.s(y=3)], self.xsum.s()),
+            self.mul.s(10),
+        )
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == 130
 
     def test_apply_stops_chain_when_task_raises_ignore(self):
         executed = []
@@ -2320,3 +2360,31 @@ class test_merge_dictionaries(CanvasCase):
     def test_none_values(self, d1, d2, expected_result):
         _merge_dictionaries(d1, d2)
         assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_result', [
+        (
+            True,
+            {'nested': {'shared': [1, 2], 'only_d1': 1, 'only_d2': 2}}
+        ),
+        (
+            False,
+            {'nested': {'shared': 1, 'only_d1': 1, 'only_d2': 2}}
+        ),
+    ])
+    def test_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_result):
+        """aggregate_duplicates must be propagated into nested dictionaries."""
+        d1 = {'nested': {'shared': 1, 'only_d1': 1}}
+        d2 = {'nested': {'shared': 2, 'only_d2': 2}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_value', [
+        (True, [1, 2]),
+        (False, 1),
+    ])
+    def test_deeply_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_value):
+        """aggregate_duplicates must survive more than one level of recursion."""
+        d1 = {'level1': {'level2': {'level3': {'shared': 1}}}}
+        d2 = {'level1': {'level2': {'level3': {'shared': 2}}}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == {'level1': {'level2': {'level3': {'shared': expected_value}}}}

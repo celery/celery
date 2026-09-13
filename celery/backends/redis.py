@@ -1,5 +1,6 @@
 """Redis result store backend."""
 import time
+import warnings
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -45,6 +46,11 @@ the Redis result store backend.
 E_REDIS_SENTINEL_MISSING = """
 You need to install the redis library with support of \
 sentinel in order to use the Redis result store backend.
+"""
+
+W_REDIS_COMPRESSION_DISABLED = """\
+The Redis result backend is configured with decode_responses enabled.
+The result_compression setting is ignored and results are stored uncompressed.
 """
 
 W_REDIS_SSL_CERT_OPTIONAL = """
@@ -220,7 +226,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
-    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    # Redis preserves binary payloads; response decoding disables compression.
     supports_result_compression = True
 
     #: Maximal length of string value in Redis.
@@ -309,6 +315,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        if self.compression and self.connparams.get('decode_responses'):
+            warnings.warn(W_REDIS_COMPRESSION_DISABLED, UserWarning)
+            self.compression = None
 
         # If we've received SSL parameters via query string or the
         # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
