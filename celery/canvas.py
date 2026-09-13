@@ -826,8 +826,11 @@ class Signature(dict):
     __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return dict(self)  # TODO: Potential bug of being a shallow copy
+        clone = dict(self)
+        memo[id(self)] = clone
+        # Canvas preparation mutates execution options, but task arguments may be lazy.
+        clone['options'] = deepcopy(self.options, memo)
+        return clone
 
     def __invert__(self):
         return self.apply_async().get()
@@ -1306,8 +1309,9 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+            res = task.clone().apply(
+                (last.get(),) if last else fargs, fkwargs,
+                **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
             if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
                 break
