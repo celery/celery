@@ -371,7 +371,6 @@ class test_chord(ChordCase):
 
         result = workflow.apply_async()
 
-        assert result is not None
         assert result.id
 
     def test_init(self):
