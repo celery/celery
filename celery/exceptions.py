@@ -232,7 +232,6 @@ class NotRegistered(KeyError, TaskError):
 
 class AlreadyRegistered(TaskError):
     """The task is already registered."""
-    # XXX Unused
 
 
 class TimeoutError(TaskError):

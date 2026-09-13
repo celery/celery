@@ -10,6 +10,7 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
+from celery.exceptions import AlreadyRegistered
 from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
@@ -50,6 +51,23 @@ class test_class_based_tasks:
         celery_session_app.register_task(task)
         res = task.delay()
         assert res.get(timeout=TIMEOUT) == 1
+
+
+def test_task_registration_rejects_colliding_callables(celery_session_app):
+    celery_session_app.finalize()
+
+    def make_task(value):
+        @celery_session_app.task
+        def duplicate():
+            return value
+
+        return duplicate
+
+    first = make_task(1)
+    with pytest.raises(AlreadyRegistered, match='different callable'):
+        make_task(2)
+
+    assert first.run() == 1
 
 
 def _producer(j):

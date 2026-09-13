@@ -28,7 +28,7 @@ from vine import starpromise
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
-from celery.exceptions import AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
+from celery.exceptions import AlreadyRegistered, AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
@@ -78,6 +78,56 @@ if sys.version_info >= (3, 14):
 else:
     def _get_annotations(fun):
         return fun.__annotations__
+
+
+def _same_task_callable(first, second):
+    if first is second:
+        return True
+
+    first_self = getattr(first, '__self__', None)
+    second_self = getattr(second, '__self__', None)
+    if first_self is not None or second_self is not None:
+        return (
+            first_self is not None
+            and first_self is second_self
+            and getattr(first, '__func__', None) is getattr(second, '__func__', None)
+        )
+
+    if not inspect.isfunction(first) or not inspect.isfunction(second):
+        return False
+
+    first_code = first.__code__
+    second_code = second.__code__
+    if (
+        first.__module__, first.__qualname__, first_code.co_filename,
+        first_code.co_firstlineno,
+    ) != (
+        second.__module__, second.__qualname__, second_code.co_filename,
+        second_code.co_firstlineno,
+    ):
+        return False
+
+    if first.__defaults__ != second.__defaults__:
+        return False
+    if first.__kwdefaults__ != second.__kwdefaults__:
+        return False
+    if first.__closure__ is None or second.__closure__ is None:
+        return first.__closure__ is second.__closure__
+    if len(first.__closure__) != len(second.__closure__):
+        return False
+
+    for first_cell, second_cell in zip(first.__closure__, second.__closure__):
+        first_value = first_cell.cell_contents
+        second_value = second_cell.cell_contents
+        if first_value is second_value:
+            continue
+        try:
+            if not bool(first_value == second_value):
+                return False
+        except Exception:
+            return False
+    return True
+
 
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
@@ -557,7 +607,7 @@ class Celery:
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task
-            return shared_task(*args, lazy=False, **opts)
+            return shared_task(*args, lazy=False, _shared=True, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
             _filt = filter
@@ -565,7 +615,7 @@ class Celery:
             def _create_task_cls(fun):
                 if shared:
                     def cons(app):
-                        return app._task_from_fun(fun, **opts)
+                        return app._task_from_fun(fun, _shared=True, **opts)
 
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
@@ -605,14 +655,48 @@ class Celery:
         pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        _shared: bool = False,
         **options,
     ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        name = name or self.gen_task_name(fun.__name__, fun.__module__)
+        original_fun = fun
+        name_provided = name is not None
+        task_name = getattr(fun, '__qualname__', fun.__name__)
+        # Keep the historical name unless it collides with another callable.
+        # In that case, use the qualified name when it can disambiguate the
+        # callables; identical qualified names still fail loudly instead of
+        # silently reusing the first task.
+        default_task_name = fun.__name__
+        name = name or self.gen_task_name(default_task_name, fun.__module__)
         base = base or self.Task
 
-        if name not in self._tasks:
+        task = self._tasks.get(name)
+        if task is not None:
+            existing_fun = getattr(task, '_task_fun', None)
+            if (not _shared and getattr(task, '_app', None) is self
+                    and not _same_task_callable(existing_fun, original_fun)):
+                if not name_provided:
+                    existing_task_name = getattr(
+                        existing_fun, '__qualname__',
+                        getattr(existing_fun, '__name__', None),
+                    )
+                    qualified_name = self.gen_task_name(task_name, fun.__module__)
+                    qualified_task = self._tasks.get(qualified_name)
+                    if qualified_task is not None and _same_task_callable(
+                            getattr(qualified_task, '_task_fun', None), original_fun,
+                    ):
+                        return qualified_task
+                    if (task_name != existing_task_name
+                            and qualified_task is None):
+                        name = qualified_name
+                        task = None
+                if task is not None:
+                    raise AlreadyRegistered(
+                        f'Task {name!r} is already registered with a different callable. '
+                        'Use a unique task name.')
+
+        if task is None:
             if pydantic is True:
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
 
@@ -626,7 +710,8 @@ class Celery:
                 '__module__': fun.__module__,
                 '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
-                '__wrapped__': run}, **options))()
+                '__wrapped__': run,
+                '_task_fun': staticmethod(original_fun)}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.
             try:
@@ -636,8 +721,6 @@ class Celery:
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
             add_autoretry_behaviour(task, **options)
-        else:
-            task = self._tasks[name]
         return task
 
     def register_task(self, task, **options):
@@ -648,11 +731,17 @@ class Celery:
             style task classes, you should not need to use this for
             new projects.
         """
+        task = maybe_evaluate(task)
         task = inspect.isclass(task) and task() or task
         if not task.name:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
+        existing_task = self._tasks.get(task.name)
+        if (existing_task is not None and existing_task is not task
+                and type(existing_task) is not type(task)):
+            raise AlreadyRegistered(
+                f'Task {task.name!r} is already registered with a different task.')
         add_autoretry_behaviour(task, **options)
         self.tasks[task.name] = task
         task._app = self
@@ -673,11 +762,12 @@ class Celery:
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                _announce_app_finalized(self)
 
                 pending = self._pending
                 while pending:
                     maybe_evaluate(pending.popleft())
+
+                _announce_app_finalized(self)
 
                 for task in self._tasks.values():
                     task.bind(self)

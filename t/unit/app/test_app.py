@@ -5,6 +5,7 @@ import itertools
 import os
 import ssl
 import sys
+import types
 import typing
 import uuid
 from copy import deepcopy
@@ -29,7 +30,7 @@ from celery.app import defaults
 from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import ImproperlyConfigured, OperationalError
+from celery.exceptions import AlreadyRegistered, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -61,6 +62,18 @@ class ObjectConfig2:
     CALL_ME_BACK = 123456789
     WANT_ME_TO = False
     UNDERSTAND_ME = True
+
+
+class FirstTask:
+    @staticmethod
+    def handle():
+        return 'first'
+
+
+class SecondTask:
+    @staticmethod
+    def handle():
+        return 'second'
 
 
 class CustomReduceApp(Celery):
@@ -181,6 +194,237 @@ class test_App:
             task = app.task(fun)
             assert task.name == app.main + '.fun'
 
+    def test_task_names_include_qualified_owner(self):
+        with self.Celery('foozibari') as app:
+            first = app.task(FirstTask.handle)
+            second = app.task(SecondTask.handle)
+
+            assert first.name.endswith('.handle')
+            assert not first.name.endswith('.FirstTask.handle')
+            assert second.name.endswith('.SecondTask.handle')
+            assert first.name != second.name
+
+    def test_task_names_preserve_legacy_name_without_collision(self):
+        with self.Celery('foozibari') as app:
+            class Reports:
+                @app.task
+                def nightly():
+                    return 'ok'
+
+            assert Reports.nightly.name == app.gen_task_name('nightly', __name__)
+
+    def test_task_names_reuse_disambiguated_callable(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            def make_a():
+                def duplicate():
+                    return 1
+
+                return duplicate
+
+            def make_b():
+                def duplicate():
+                    return 2
+
+                return duplicate
+
+            first_fun = make_a()
+            second_fun = make_b()
+            first = app.task(first_fun)
+            second = app.task(second_fun)
+            repeated = app.task(second_fun)
+
+            assert first.name.endswith('.duplicate')
+            assert second.name.endswith('.make_b.<locals>.duplicate')
+            assert repeated is second
+
+    def test_task_registration_allows_repeated_bound_method(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            class Service:
+                def handle(self):
+                    return 1
+
+            service = Service()
+            first = app.task(service.handle)
+            second = app.task(service.handle)
+
+            assert first is second
+
+    def test_task_registration_allows_reloaded_callable(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            def task_body():
+                return 1
+
+            first = app.task(task_body)
+            reloaded = types.FunctionType(
+                task_body.__code__, task_body.__globals__, task_body.__name__,
+                task_body.__defaults__, task_body.__closure__,
+            )
+            reloaded.__qualname__ = task_body.__qualname__
+            second = app.task(reloaded)
+
+            assert first is second
+
+    def test_same_task_callable_handles_callable_shapes(self):
+        from celery.app.base import _same_task_callable
+
+        class Service:
+            def handle(self):
+                return 1
+
+            def other(self):
+                return 2
+
+        service = Service()
+        other_service = Service()
+        assert _same_task_callable(service.handle, service.handle)
+        assert not _same_task_callable(service.handle, other_service.handle)
+        assert not _same_task_callable(service.handle, service.other)
+        assert not _same_task_callable(object(), object())
+
+        def make_with_defaults(value):
+            def task(argument=value):
+                return argument
+
+            return task
+
+        assert _same_task_callable(make_with_defaults(1), make_with_defaults(1))
+        assert not _same_task_callable(make_with_defaults(1), make_with_defaults(2))
+
+        def make_with_kwdefaults(value):
+            def task(*, argument=value):
+                return argument
+
+            return task
+
+        assert not _same_task_callable(
+            make_with_kwdefaults(1), make_with_kwdefaults(2)
+        )
+
+        def make_with_closure(value):
+            def task():
+                return value
+
+            return task
+
+        shared_value = ['same']
+        assert _same_task_callable(
+            make_with_closure(shared_value), make_with_closure(shared_value)
+        )
+        assert _same_task_callable(
+            make_with_closure(['same']), make_with_closure(['same'])
+        )
+        assert not _same_task_callable(
+            make_with_closure(['first']), make_with_closure(['second'])
+        )
+
+        class BrokenEquality:
+            def __eq__(self, other):
+                raise RuntimeError('comparison failed')
+
+        assert not _same_task_callable(
+            make_with_closure(BrokenEquality()), make_with_closure(BrokenEquality())
+        )
+
+    def test_task_registration_rejects_different_callable_with_same_name(self):
+        with self.Celery('foozibari') as app:
+            def make_task(value):
+                @app.task
+                def duplicate():
+                    return value
+                return duplicate
+
+            first = make_task(1)
+            assert first.name
+            second = make_task(2)
+
+            with pytest.raises(AlreadyRegistered, match='different callable'):
+                second.name
+
+    def test_task_registration_allows_same_callable(self):
+        with self.Celery('foozibari') as app:
+            def task_body():
+                return 1
+
+            first = app.task(task_body)
+            second = app.task(task_body)
+
+            assert first.name == second.name
+            assert first._get_current_object() is second._get_current_object()
+
+    def test_register_task_allows_same_task_class(self):
+        with self.Celery('foozibari') as app:
+            class TaskClass(app.Task):
+                name = 'same_task_class'
+
+                def run(self):
+                    return 1
+
+            first = app.register_task(TaskClass())
+            second = app.register_task(TaskClass())
+
+            assert first is not second
+            assert app.tasks[TaskClass.name] is second
+
+    def test_register_task_generates_name_for_task_class(self):
+        with self.Celery('foozibari') as app:
+            class TaskClass(app.Task):
+                def run(self):
+                    return 1
+
+            task = app.register_task(TaskClass())
+
+            assert task.name == app.gen_task_name(
+                'TaskClass', TaskClass.__module__
+            )
+
+    def test_register_task_rejects_different_task_type_with_same_name(self):
+        with self.Celery('foozibari') as app:
+            class FirstTask(app.Task):
+                name = 'same_task'
+
+                def run(self):
+                    return 1
+
+            class SecondTask(app.Task):
+                name = 'same_task'
+
+                def run(self):
+                    return 2
+
+            app.register_task(FirstTask())
+            with pytest.raises(AlreadyRegistered, match='different task'):
+                app.register_task(SecondTask())
+
+    def test_register_task_accepts_shared_task_proxy(self):
+        with self.Celery('foozibari') as app:
+            @app.task
+            def shared_registration():
+                return 1
+
+            app.finalize()
+            task = app.register_task(shared_registration)
+
+            assert task is app.tasks[task.name]
+
+    def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari') as app:
+                @app.task
+                def repeated_task():
+                    return 1
+
+                app.finalize()
+                assert repeated_task.name in app.tasks
+        finally:
+            _state._on_app_finalizers = finalizers
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)
@@ -205,6 +449,23 @@ class test_App:
         finally:
             _appbase.USING_EXECV = prev
         assert not _appbase.USING_EXECV
+
+    def test_task_execv_shared_finalizer_does_not_collide(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with patch.object(_appbase, 'USING_EXECV', True):
+                with self.Celery('foozibari', set_as_current=True) as finalized_app:
+                    finalized_app.finalize()
+
+                    with self.Celery('baribaz', set_as_current=True) as app:
+                        @app.task
+                        def duplicate():
+                            return 1
+
+                        app.finalize()
+                        assert duplicate.apply().get() == 1
+        finally:
+            _state._on_app_finalizers = finalizers
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_execv_env_set_after_import(self):
@@ -1415,7 +1676,7 @@ class test_App:
 
         assert len(self.app.conf.beat_schedule) == 1
         assert caplog.records[0].message == (
-            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
+            f"Periodic task key='{add.name}(2, 2)' shadowed a"
             " previous unnamed periodic task. Pass a name kwarg to"
             " add_periodic_task to silence this warning."
         )
@@ -2278,6 +2539,70 @@ class test_pyimplementation:
 
 
 class test_shared_task:
+
+    def test_rejects_different_callable_with_same_name(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                app.finalize()
+
+                def make_task(value):
+                    @shared_task
+                    def duplicate():
+                        return value
+
+                    return duplicate
+
+                first = make_task(1)
+                with pytest.raises(AlreadyRegistered, match='different callable'):
+                    make_task(2)
+
+                assert first.apply().get() == 1
+        finally:
+            _state._on_app_finalizers = finalizers
+
+    def test_resolves_shared_task_after_name_disambiguation(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                app.finalize()
+
+                def make_first():
+                    @shared_task
+                    def duplicate():
+                        return 1
+
+                    return duplicate
+
+                def make_second():
+                    @shared_task
+                    def duplicate():
+                        return 2
+
+                    return duplicate
+
+                first = make_first()
+                second = make_second()
+
+                assert first.name != second.name
+                assert first.apply().get() == 1
+                assert second.apply().get() == 2
+        finally:
+            _state._on_app_finalizers = finalizers
+
+    def test_reports_unregistered_shared_task_for_current_app(self, monkeypatch):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari', set_as_current=True) as app:
+                @shared_task
+                def unregistered():
+                    return 1
+
+                monkeypatch.setattr(app, 'finalize', lambda: None)
+                with pytest.raises(RuntimeError, match='not registered'):
+                    unregistered.name
+        finally:
+            _state._on_app_finalizers = finalizers
 
     def test_registers_to_all_apps(self):
         with self.Celery('xproj', set_as_current=True) as xproj:

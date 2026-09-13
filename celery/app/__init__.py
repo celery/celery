@@ -1,4 +1,6 @@
 """Celery Application."""
+from weakref import WeakKeyDictionary
+
 from celery import _state
 from celery._state import app_or_default, disable_trace, enable_trace, pop_current_task, push_current_task
 from celery.local import Proxy
@@ -49,24 +51,37 @@ def shared_task(*args, **kwargs):
 
         def __inner(fun):
             name = options.get('name')
+
+            task_names = WeakKeyDictionary()
+
+            def register(app):
+                task = app._task_from_fun(fun, **options)
+                task_names[app] = task.name
+                return task
+
             # Set as shared task so that unfinalized apps,
             # and future apps will register a copy of this task.
-            _state.connect_on_app_finalize(
-                lambda app: app._task_from_fun(fun, **options)
-            )
+            _state.connect_on_app_finalize(register)
 
             # Force all finalized apps to take this task as well.
             for app in _state._get_active_apps():
                 if app.finalized:
                     with app._finalize_mutex:
-                        app._task_from_fun(fun, **options)
+                        register(app)
 
             # Return a proxy that always gets the task from the current
             # apps task registry.
             def task_by_cons():
                 app = _state.get_current_app()
+                if not app.finalized:
+                    app.finalize()
+                registered_name = task_names.get(app)
+                if registered_name is None:
+                    raise RuntimeError(
+                        'Shared task was not registered with the current app'
+                    )
                 return app.tasks[
-                    name or app.gen_task_name(fun.__name__, fun.__module__)
+                    name or registered_name
                 ]
             return Proxy(task_by_cons)
         return __inner

@@ -191,7 +191,13 @@ Every task must have a unique name.
 
 If no explicit name is provided the task decorator will generate one for you,
 and this name will be based on 1) the module the task is defined in, and 2)
-the name of the task function.
+the name of the task function. If a second callable would otherwise use the
+same generated name, Celery uses its qualified name to disambiguate the task.
+
+If two different callables still produce the same generated name, Celery raises
+:exc:`~celery.exceptions.AlreadyRegistered` instead of silently selecting one
+of them. Use an explicit name to distinguish tasks created by a factory or
+other callables that intentionally share a name.
 
 Example setting explicit name:
 
