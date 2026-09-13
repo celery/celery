@@ -72,9 +72,14 @@ class TaskExtended(Task):
     worker = sa.Column(sa.String(155), nullable=True)
     retries = sa.Column(sa.Integer, nullable=True)
     queue = sa.Column(sa.String(155), nullable=True)
+    stamps = sa.Column(sa.LargeBinary, nullable=True)
 
     def to_dict(self):
         task_dict = super().to_dict()
+        try:
+            stamps = self.stamps
+        except Exception:
+            stamps = None
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -82,6 +87,7 @@ class TaskExtended(Task):
             'worker': self.worker,
             'retries': self.retries,
             'queue': self.queue,
+            'stamps': stamps,
         })
         return task_dict
 

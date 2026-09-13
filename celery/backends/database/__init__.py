@@ -17,6 +17,7 @@ from .session import SessionManager
 
 try:
     from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
+    from sqlalchemy.orm import defer
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
@@ -136,13 +137,25 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
+    def _query_task(self, session, task_id):
+        """Query task by id, falling back to deferring stamps if missing from database."""
+        try:
+            tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
+            return tasks and tasks[0]
+        except DatabaseError as exc:
+            if 'stamps' in str(exc).lower() and hasattr(self.task_cls, 'stamps'):
+                tasks = list(session.query(self.task_cls).options(
+                    defer(self.task_cls.stamps)
+                ).filter(self.task_cls.task_id == task_id))
+                return tasks and tasks[0]
+            raise
+
     def _store_result(self, task_id, result, state, traceback=None,
                       request=None, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
-            task = task and task[0]
+            task = self._query_task(session, task_id)
             if not task:
                 task = self.task_cls(task_id)
                 task.task_id = task_id
@@ -159,10 +172,10 @@ class DatabaseBackend(BaseBackend):
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
-        # Exclude the primary key id and task_id columns
-        # as we should not set it None
+        # Exclude the primary key id, task_id, and stamps columns
+        # as we should not set it None or handle stamps separately
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name not in {'id', 'task_id'}]
+                   if column.name not in {'id', 'task_id', 'stamps'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -171,12 +184,25 @@ class DatabaseBackend(BaseBackend):
             value = meta.get(column)
             setattr(task, column, value)
 
+        if hasattr(task, 'stamps') and 'stamps' in self.task_cls.__table__.columns:
+            stamped_headers = meta.get('stamped_headers')
+            if stamped_headers:
+                stamps_data = {
+                    h: meta.get(h) for h in stamped_headers if h in meta
+                }
+                stamps_info = {
+                    'stamped_headers': stamped_headers,
+                    'stamps': stamps_data,
+                }
+                setattr(task, 'stamps', ensure_bytes(self.encode(stamps_info)))
+            elif getattr(task, 'stamps', None) is None:
+                setattr(task, 'stamps', None)
+
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
-            task = task and task[0]
+            task = self._query_task(session, task_id)
             if not task:
                 task = self.task_cls(task_id)
                 task.status = states.PENDING
@@ -187,6 +213,17 @@ class DatabaseBackend(BaseBackend):
                 data['args'] = self.decode(data['args'])
             if data.get('kwargs', None) is not None:
                 data['kwargs'] = self.decode(data['kwargs'])
+            raw_stamps = data.pop('stamps', None)
+            if raw_stamps is not None:
+                try:
+                    stamps_info = self.decode(raw_stamps)
+                    if isinstance(stamps_info, dict):
+                        if 'stamped_headers' in stamps_info:
+                            data['stamped_headers'] = stamps_info['stamped_headers']
+                        if 'stamps' in stamps_info and isinstance(stamps_info['stamps'], dict):
+                            data.update(stamps_info['stamps'])
+                except Exception:
+                    pass
             return self.meta_from_decoded(data)
 
     def _decode_stored_result(self, payload):
