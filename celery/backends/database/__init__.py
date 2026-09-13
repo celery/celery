@@ -136,13 +136,26 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
-    def _store_result(self, task_id, result, state, traceback=None,
-                      request=None, **kwargs):
+    def _query_task(self, session, task_id):
+        """Query task by id, falling back to deferring children if missing from database."""
+        try:
+            tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
+            return tasks and tasks[0]
+        except DatabaseError as exc:
+            if 'children' in str(exc).lower():
+                from sqlalchemy.orm import defer
+                tasks = list(session.query(self.task_cls).options(
+                    defer(self.task_cls.children)
+                ).filter(self.task_cls.task_id == task_id))
+                return tasks and tasks[0]
+            raise
+
+    def _store_result(self, task_id, result, state,
+                      traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
-            task = task and task[0]
+            task = self._query_task(session, task_id)
             if not task:
                 task = self.task_cls(task_id)
                 task.task_id = task_id
@@ -171,7 +184,7 @@ class DatabaseBackend(BaseBackend):
             value = meta.get(column)
             setattr(task, column, value)
 
-        if hasattr(task, 'children'):
+        if hasattr(task, 'children') and 'children' in self.task_cls.__table__.columns:
             children = meta.get('children')
             if children:
                 setattr(task, 'children', ensure_bytes(self.encode(children)))
@@ -182,8 +195,7 @@ class DatabaseBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         session = self.ResultSession()
         with session_cleanup(session):
-            task = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
-            task = task and task[0]
+            task = self._query_task(session, task_id)
             if not task:
                 task = self.task_cls(task_id)
                 task.status = states.PENDING

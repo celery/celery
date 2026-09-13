@@ -43,13 +43,17 @@ class Task(ResultModelBase):
         self.task_id = task_id
 
     def to_dict(self):
+        try:
+            children = self.children
+        except Exception:
+            children = None
         return {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
-            'children': self.children,
+            'children': children,
         }
 
     def __repr__(self):
