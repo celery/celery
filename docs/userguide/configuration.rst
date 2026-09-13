@@ -1076,7 +1076,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -2195,7 +2195,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
