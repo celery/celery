@@ -81,6 +81,18 @@ class Settings(ConfigurationView):
 
         self.deprecated_settings = deprecated_settings
 
+    def copy(self):
+        self.finalize()
+        copied = super().copy()
+        if 'deprecated_settings' in self.changes:
+            copied.changes['deprecated_settings'] = (
+                self.changes['deprecated_settings']
+            )
+        else:
+            copied.changes.pop('deprecated_settings', None)
+        return copied
+    __copy__ = copy
+
     @property
     def broker_read_url(self):
         return (
