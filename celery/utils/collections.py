@@ -373,6 +373,15 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             _keys=keys,
         )
 
+    def copy(self):
+        # type: () -> 'ConfigurationView'
+        copied = self.__class__(
+            self.changes.copy(), self.defaults, self._keys, self.prefix,
+        )
+        copied.__dict__['key_t'] = self.key_t
+        return copied
+    __copy__ = copy
+
     def _to_keys(self, key):
         # type: (str) -> Sequence[str]
         prefix = self.prefix
