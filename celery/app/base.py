@@ -818,8 +818,8 @@ class Celery:
         self._config_source_silent = silent
         self.namespace = namespace or self.namespace
         if force or self.configured:
-            self._conf = None
             if self.loader.config_from_object(obj, silent=silent):
+                self._conf = None
                 return self.conf
 
     def config_from_envvar(self, variable_name, silent=False, force=False):
