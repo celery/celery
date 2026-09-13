@@ -486,6 +486,37 @@ class test_chain(CanvasCase):
         assert x.clone().args == x.args
         assert isinstance(x.clone(), chain_type)
 
+    @pytest.mark.parametrize('depth', (1, 3))
+    @pytest.mark.parametrize('args,kwargs,expected', (
+        ((3,), {}, 50),
+        ((), {'x': 3}, 50),
+        ((3,), {'y': 4}, 70),
+    ))
+    def test_apply_nested_chain_with_arguments(
+        self, depth, args, kwargs, expected,
+    ):
+        workflow = chain(self.add.s(y=2), self.mul.s(10))
+        for _ in range(depth):
+            workflow = chain(workflow)
+        original = json.dumps(workflow)
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == expected
+        assert json.dumps(workflow) == original
+
+    def test_apply_nested_chain_with_immutable_first_task(self):
+        workflow = chain(chain(self.add.si(2, 3), self.mul.s(10)))
+
+        assert workflow.apply(args=(99,), kwargs={'y': 99}).get() == 50
+
+    def test_apply_nested_chain_with_tasks_keyword(self):
+        @self.app.task
+        def count_tasks(tasks):
+            return len(tasks)
+
+        workflow = chain(chain(count_tasks.s(), self.mul.s(10)))
+
+        assert workflow.apply(kwargs={'tasks': [1, 2, 3]}).get() == 30
+
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
         assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
@@ -830,6 +861,15 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    @pytest.mark.parametrize('args,kwargs', (((4,), {}), ((), {'x': 4})))
+    def test_apply_chord_in_chain_with_arguments(self, args, kwargs):
+        workflow = chain(
+            chord([self.add.s(y=2), self.add.s(y=3)], self.xsum.s()),
+            self.mul.s(10),
+        )
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == 130
 
     def test_apply_stops_chain_when_task_raises_ignore(self):
         executed = []
