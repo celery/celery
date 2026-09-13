@@ -56,7 +56,7 @@ def fixup(app: "Celery", env: str = 'DJANGO_SETTINGS_MODULE') -> Optional["Djang
         try:
             import django
         except ImportError:
-            warnings.warn(FixupWarning(ERR_NOT_INSTALLED))
+            warnings.warn(FixupWarning(ERR_NOT_INSTALLED), stacklevel=2)
         else:
             _verify_django_version(django)
             return DjangoFixup(app).install()

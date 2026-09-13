@@ -145,8 +145,12 @@ Commands
 
 * **inspect query_task**: Show information about task(s) by id.
 
-    Any worker having a task in this set of ids reserved/active will respond
-    with status and information.
+    Any worker having a task in this set of ids that is scheduled, reserved, or active
+    will respond with status and information.
+
+    .. versionchanged:: 5.7
+        Scheduled tasks (with an ETA/countdown that hasn't elapsed yet) are
+        now included; previously only reserved/active tasks were found.
 
     .. code-block:: console
 
@@ -839,7 +843,7 @@ Advanced users can configure the behavior of this mailbox by customizing how it 
 The following parameters are now supported by `Mailbox`:
 
 - ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
-- ``exclusive`` (default: ``False``): If set to ``True``, the exchanges will be usable by only one connection.
+- ``exclusive`` (default: ``True``): If set to ``True``, the exchanges will be usable by only one connection.
 
 .. warning::
 

@@ -80,9 +80,10 @@ class Drainer:
         wait = wait or self.result_consumer.drain_events
         time_start = time.monotonic()
 
-        while 1:
+        # Ready results take precedence over an exhausted timeout.
+        while not p.ready:
             # Total time spent may exceed a single call to wait()
-            if timeout and time.monotonic() - time_start >= timeout:
+            if timeout is not None and time.monotonic() - time_start >= timeout:
                 raise socket.timeout()
             try:
                 yield self.wait_for(p, wait, timeout=interval)
@@ -102,8 +103,6 @@ class Drainer:
 
             if on_interval:
                 on_interval()
-            if p.ready:  # got event on the wanted channel.
-                break
 
     def wait_for(self, p, wait, timeout=None):
         wait(timeout=timeout)
@@ -255,7 +254,10 @@ class AsyncBackendMixin:
                     yield node.id, node._cache
         while bucket:
             node = bucket.popleft()
-            yield node.id, node._cache
+            if not hasattr(node, '_cache'):
+                yield node.id, node.children
+            else:
+                yield node.id, node._cache
 
     def add_pending_result(self, result, weak=False, start_drainer=True):
         if start_drainer:
@@ -347,6 +349,12 @@ class BaseResultConsumer:
         """
         try:
             yield
+        except socket.timeout:
+            # socket.timeout (builtin TimeoutError) from drain_events(timeout=N)
+            # is normal polling behavior, not a connection error.
+            # Let it propagate as an expected polling timeout for the caller
+            # to handle.
+            raise
         except self._connection_errors:
             try:
                 self._reconnect()

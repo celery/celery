@@ -40,7 +40,11 @@ class test_defaults:
         find = self.defaults.find
 
         assert find('default_queue')[2].default == 'celery'
-        assert find('task_default_exchange')[2] is None
+        assert find('task_default_exchange')[2].default is None
+
+    def test_worker_pool_start_method_default(self):
+        assert self.defaults.NAMESPACES['worker']['pool_start_method'].default == 'fork'
+        assert self.defaults.DEFAULTS['worker_pool_start_method'] == 'fork'
 
     @property
     def defaults(self):

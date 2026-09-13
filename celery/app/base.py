@@ -57,6 +57,8 @@ if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
 
 __all__ = ('Celery',)
 
+_OMITTED = object()
+
 logger = get_logger(__name__)
 
 if sys.version_info >= (3, 14):
@@ -80,6 +82,9 @@ else:
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
+# Set from prefork.process_initializer() as well: a pool child started with
+# spawn imports this module before it knows it is one, and @app.task has to
+# bind differently once it does.
 USING_EXECV = os.environ.get('FORKED_BY_MULTIPROCESSING')
 
 ERR_ENVVAR_NOT_SET = """
@@ -343,7 +348,7 @@ class Celery:
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
                  autofinalize=True, namespace=None, strict_typing=True,
-                 **kwargs):
+                 config_source_silent=False, **kwargs):
 
         self._local = threading.local()
         self._backend_cache = None
@@ -358,8 +363,8 @@ class Celery:
         self._custom_task_cls_used = (
             # Custom task class provided as argument
             bool(task_cls)
-            # subclass of Celery with a task_cls attribute
-            or self.__class__ is not Celery and hasattr(self.__class__, 'task_cls')
+            # Custom task class set as a class attribute
+            or bool(app_has_custom(self, 'task_cls'))
         )
         self.task_cls = task_cls or self.task_cls
         self.set_as_current = set_as_current
@@ -372,6 +377,11 @@ class Celery:
 
         self.configured = False
         self._config_source = config_source
+        # `silent` from config_from_object(), remembered so the lazy load in
+        # _load_config() honours it too and not only the eager path. Carried
+        # through __reduce_keys__ so an app pickled before its configuration
+        # was read does not lose it.
+        self._config_source_silent = config_source_silent
         self._pending_defaults = deque()
         self._pending_periodic_tasks = deque()
 
@@ -716,6 +726,7 @@ class Celery:
                 By default the configuration will be read only when required.
         """
         self._config_source = obj
+        self._config_source_silent = silent
         self.namespace = namespace or self.namespace
         if force or self.configured:
             self._conf = None
@@ -843,11 +854,11 @@ class Celery:
 
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
-                  router=None, result_cls=None, expires=None,
+                  router=None, result_cls=None, expires=_OMITTED,
                   publisher=None, link=None, link_error=None,
                   add_to_parent=True, group_id=None, group_index=None,
                   retries=0, chord=None,
-                  reply_to=None, time_limit=None, soft_time_limit=None,
+                  reply_to=None, time_limit=_OMITTED, soft_time_limit=_OMITTED,
                   root_id=None, parent_id=None, route_name=None,
                   shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
         """Send task by name.
@@ -868,6 +879,62 @@ class Celery:
             warnings.warn(AlwaysEagerIgnored(
                 'task_always_eager has no effect on send_task',
             ), stacklevel=2)
+
+        # If the caller did not supply a task_type (i.e. a plain
+        # send_task("name", ...) call), look it up in the local registry
+        # and apply its execution options as defaults.  We intentionally
+        # skip this when task_type was already provided (e.g. from
+        # Task.apply_async) because apply_async already merged exec
+        # options — doing it again would override explicit caller values.
+        #
+        # Use the underlying registry directly here so send_task() does not
+        # auto-finalize the app (or raise when autofinalize=False) merely to
+        # check whether a locally registered task exists. Remote/unregistered
+        # task names should still be sendable without finalizing the app.
+        resolved_from_registry = False
+        if task_type is None:
+            registry = self._tasks
+            get = getattr(registry, 'get', None)
+            if callable(get):
+                task_type = get(name)
+            else:
+                try:
+                    task_type = registry[name]
+                except KeyError:
+                    task_type = None
+            resolved_from_registry = task_type is not None
+        if resolved_from_registry and hasattr(task_type, '_get_exec_options'):
+            get_exec_options = task_type._get_exec_options
+            if inspect.ismethod(get_exec_options):
+                task_exec_options = get_exec_options()
+            else:
+                task_exec_options = None
+            if task_exec_options:
+                # Only merge non-None values so we don't override
+                # defaults with None.
+                filtered_opts = {k: v for k, v in task_exec_options.items()
+                                 if v is not None}
+                if filtered_opts:
+                    options = dict(filtered_opts, **options)
+
+        # Some execution options (time_limit, soft_time_limit, expires)
+        # are also passed as explicit arguments to create_task_message.
+        # Pop them from options to avoid "got multiple values for argument"
+        # errors; use the task-level value as fallback only when the caller
+        # omitted the explicit argument.  An explicit ``None`` clears
+        # any task-level default merged into ``options``.
+        if time_limit is _OMITTED:
+            time_limit = options.pop('time_limit', None)
+        else:
+            options.pop('time_limit', None)
+        if soft_time_limit is _OMITTED:
+            soft_time_limit = options.pop('soft_time_limit', None)
+        else:
+            options.pop('soft_time_limit', None)
+        if expires is _OMITTED:
+            expires = options.pop('expires', None)
+        else:
+            options.pop('expires', None)
 
         ignore_result = options.pop('ignore_result', False)
         options = router.route(
@@ -1193,7 +1260,8 @@ class Celery:
             # used to be a method pre 4.0
             self.on_configure()
         if self._config_source:
-            self.loader.config_from_object(self._config_source)
+            self.loader.config_from_object(
+                self._config_source, silent=self._config_source_silent)
         self.configured = True
         settings = detect_settings(
             self.prepare_config(self.loader.conf), self._preconf,
@@ -1358,6 +1426,7 @@ class Celery:
             'control': self.control_cls,
             'fixups': self.fixups,
             'config_source': self._config_source,
+            'config_source_silent': self._config_source_silent,
             'task_cls': self.task_cls,
             'namespace': self.namespace,
         }
@@ -1367,7 +1436,7 @@ class Celery:
         return (self.main, self._conf.changes if self.configured else {},
                 self.loader_cls, self.backend_cls, self.amqp_cls,
                 self.events_cls, self.log_cls, self.control_cls,
-                False, self._config_source)
+                False, self._config_source, self._config_source_silent)
 
     @cached_property
     def Worker(self):

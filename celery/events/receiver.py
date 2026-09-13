@@ -24,7 +24,9 @@ class EventReceiver(ConsumerMixin):
     """Capture events.
 
     Arguments:
-        connection (kombu.Connection): Connection to the broker.
+        channel (kombu.Channel): Channel to consume events on. A
+            :class:`kombu.Connection` is also accepted, in which case its
+            default channel is used.
         handlers (Mapping[Callable]): Event handlers.
             This is  a map of event type names and their handlers.
             The special handler `"*"` captures all events that don't have a

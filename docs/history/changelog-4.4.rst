@@ -109,7 +109,7 @@ an overview of what's new in Celery 4.4.
 - Add integration tests for Elasticsearch and fix _update
 - feat(backend): Adds cleanup to ArangoDB backend
 - remove jython check
-- fix filesystem backend cannot not be serialized by picked
+- fix filesystem backend cannot be serialized by picked
 
 4.4.0
 =======

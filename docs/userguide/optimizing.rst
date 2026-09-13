@@ -169,6 +169,14 @@ possible with a catch. You can have a worker only reserve as many tasks as
 there are worker processes, with the condition that they are acknowledged
 late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
 
+This condition is required because, with the default early acknowledgment,
+a task is acknowledged just-in-time before being executed. Once that happens,
+the task no longer counts as an unacknowledged reserved
+message, so the broker is allowed to deliver another message up to the
+prefetch limit. With late acknowledgment enabled, executing tasks remain
+unacknowledged until they finish, which means they continue to occupy the
+worker's prefetch slots and prevent extra tasks from being reserved.
+
 For that, you need to enable  :term:`late acknowledgment`. Using this option over the
 default behavior means a task that's already started executing will be
 retried in the event of a power failure or the worker instance being killed
@@ -219,6 +227,37 @@ and your child process takes 1 second to start, then that child process would
 only be able to process a maximum of 60 tasks per minute (assuming the task ran
 instantly). A similar issue can occur when your tasks always exceed
 :setting:`worker_max_memory_per_child`.
+
+.. _optimizing-pool-start-method:
+
+Pool start method (fork vs spawn)
+---------------------------------
+
+.. versionadded:: 5.7
+
+By default the prefork pool creates its child processes with ``fork()``
+(:setting:`worker_pool_start_method` set to ``"fork"``). Forking is fast and
+lets children share the parent's already-imported modules and memory through
+copy-on-write, which is why it is the default and the right choice for most
+deployments.
+
+Forking is, however, **unsafe when the parent process has started threads or
+relies on C-extensions that are not fork-safe**. Common offenders are gRPC
+(used by some Google Cloud client libraries), ``psycopg`` and CUDA. After a
+``fork()`` only the forking thread survives in the child, while locks held by
+other threads remain locked forever, which typically shows up as children that
+hang, deadlock, or crash with corrupted internal state -- especially after a
+hard :setting:`task_time_limit` kill replaces a child.
+
+If you hit these problems, set :setting:`worker_pool_start_method` to
+``"spawn"`` so each child starts in a fresh interpreter::
+
+    worker_pool_start_method = "spawn"
+
+The trade-offs of ``"spawn"`` are slower start-up, higher memory usage (no
+copy-on-write sharing), and the requirement that your app and task arguments
+are picklable and that your worker entry point is guarded by
+``if __name__ == '__main__':``.
 
 
 .. rubric:: Footnotes

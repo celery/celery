@@ -157,8 +157,7 @@ def remove_repeating(substr: str, s: str) -> str:
     """Remove repeating module names from string.
 
     Arguments:
-        task_name (str): Task name (full path including module),
-            to use as the basis for removing module names.
+        substr (str): The substring to remove repeating occurrences of.
         s (str): The string we want to work on.
 
     Example:

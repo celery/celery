@@ -197,22 +197,24 @@ Example:
 .. code-block:: python
 
     # Put this in your conftest.py
-    @pytest.fixture(scope='session')
-    def celery_config():
-        return {
-            'broker_url': 'amqp://',
-            'result_backend': 'redis://'
-        }
+    @pytest.fixture(scope="session")
+    def celery_worker_parameters():
+        return {"shutdown_timeout": 30.0}
 
     def test_add(celery_worker):
         mytask.delay()
 
+.. note::
 
-    # If you wish to override some setting in one test cases
-    # only - you can use the ``celery`` mark:
-    @pytest.mark.celery(result_backend='rpc')
-    def test_other(celery_worker):
-        ...
+    The embedded ``celery_worker`` only runs tasks that are registered on the
+    ``celery_app`` fixture.  In practice this means tasks declared with
+    ``@shared_task`` (which are registered on every app), or tasks defined on
+    ``celery_app`` within the test (as shown in the ``celery_app`` example
+    above).  A task bound to a separately instantiated ``Celery()`` app is
+    registered only on that app and will **not** be found by the fixture
+    worker.  To make such a task available, declare it with ``@shared_task``,
+    define it on ``celery_app``, or register it on the fixture app before
+    calling ``celery_worker.reload()``.
 
 Heartbeats are disabled by default which means that the test worker doesn't
 send events for ``worker-online``, ``worker-offline`` and ``worker-heartbeat``.

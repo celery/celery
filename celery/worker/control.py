@@ -123,11 +123,14 @@ def _find_requests_by_id(ids,
 
 def _state_of_task(request,
                    is_active=worker_state.active_requests.__contains__,
-                   is_reserved=worker_state.reserved_requests.__contains__):
+                   is_reserved=worker_state.reserved_requests.__contains__,
+                   is_scheduled=worker_state.scheduled_requests.__contains__):
     if is_active(request):
         return 'active'
     elif is_reserved(request):
         return 'reserved'
+    elif is_scheduled(request):
+        return 'scheduled'
     return 'ready'
 
 
@@ -216,10 +219,16 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     terminated = set()
 
     worker_state.revoked.update(task_ids)
+    requests_by_id = {request.id: request for request in _find_requests_by_id(task_ids)}
 
     for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        if request and request in worker_state.active_requests:
+            continue
+        # Tasks may override their backend.
+        backend = request.task.backend if request else state.app.backend
         try:
-            state.app.backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+            backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:
             logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
 
@@ -345,6 +354,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -356,6 +367,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')
@@ -368,7 +381,8 @@ def heartbeat(state):
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
-    dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
+    if dispatcher:
+        dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
 # -- Worker
@@ -464,6 +478,8 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
     """
     reg = state.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
+    taskinfoitems = [item for item in taskinfoitems
+                     if isinstance(item, str) and not item.startswith('_')]
 
     tasks = reg if builtins else (
         task for task in reg if not task.startswith('celery.'))

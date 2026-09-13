@@ -422,7 +422,7 @@ class State:
         self._mutex = threading.Lock()
         self.handlers = {}
         self._seen_types = set()
-        self._tasks_to_resolve = {}
+        self._tasks_to_resolve = LRUCache(max_tasks_in_memory)
         self.rebuild_taskheap()
 
         self.tasks_by_type = CallableDefaultdict(

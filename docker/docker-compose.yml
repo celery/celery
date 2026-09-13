@@ -1,12 +1,13 @@
 services:
-  celery:
+  celery311:
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
-    image: celery/celery:dev
-    environment:
+        PYTHON_IMAGE: python:3.11-slim-bookworm
+    image: celery/celery:dev-py311
+    environment: &celery-environment
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
       PYTHONUNBUFFERED: 1
@@ -18,11 +19,67 @@ services:
     tty: true
     volumes:
       - ../.:/home/developer/celery
-    depends_on:
+    depends_on: &celery-depends-on
       - rabbit
       - redis
       - dynamodb
       - azurite
+
+  celery312:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER: developer
+        PYTHON_IMAGE: python:3.12-slim-bookworm
+    image: celery/celery:dev-py312
+    environment: *celery-environment
+    tty: true
+    volumes:
+      - ../.:/home/developer/celery
+    depends_on: *celery-depends-on
+
+  celery313:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER: developer
+        PYTHON_IMAGE: python:3.13-slim-bookworm
+    image: celery/celery:dev-py313
+    environment: *celery-environment
+    tty: true
+    volumes:
+      - ../.:/home/developer/celery
+    depends_on: *celery-depends-on
+
+  celery314:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER: developer
+        PYTHON_IMAGE: python:3.14-slim-bookworm
+    image: celery/celery:dev-py314
+    environment: *celery-environment
+    tty: true
+    volumes:
+      - ../.:/home/developer/celery
+    depends_on: *celery-depends-on
+
+  celerypypy311:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        CELERY_USER: developer
+        PYTHON_IMAGE: pypy:3.11-slim-bookworm
+    image: celery/celery:dev-pypy311
+    environment: *celery-environment
+    tty: true
+    volumes:
+      - ../.:/home/developer/celery
+    depends_on: *celery-depends-on
 
   rabbit:
     image: rabbitmq:management
@@ -42,7 +99,7 @@ services:
       context: ..
       dockerfile: docker/docs/Dockerfile
     volumes:
-        - ../docs:/docs:z
+      - ../docs:/docs:z
     ports:
       - "7001:7000"
     command: /start-docs

@@ -30,10 +30,11 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
+from celery.utils.threads import bound_open_broker_sockets
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, scheduled_requests,
+                                 successful_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -216,6 +217,12 @@ class Consumer:
         self.initial_prefetch_count = initial_prefetch_count
         self.prefetch_multiplier = prefetch_multiplier
         self._maximum_prefetch_restored = True
+        # Effective QoS mode, recorded by the Tasks bootstep once the
+        # connection is established. ``None`` means "unknown" and preserves
+        # legacy behavior; ``False`` indicates per-consumer QoS (e.g. quorum
+        # queues) where ``basic.qos`` updates do not propagate to already
+        # running consumers. See ``on_connection_error_after_connected``.
+        self.qos_global = None
 
         # this contains a tokenbucket for each task type by name, used for
         # rate limits, or None if rate limits are disabled for that task.
@@ -253,6 +260,30 @@ class Consumer:
         if self.hub:
             return self.hub.call_soon(p)
         self._pending_operations.append(p)
+        return p
+
+    def call_soon_ack(self, p, *args, **kwargs):
+        """Execute ack/reject callback immediately, bypassing _pending_operations.
+
+        In synloop (gevent/eventlet) workers, the standard call_soon defers
+        callbacks to _pending_operations, which are only drained at the top
+        of the next synloop iteration — after drain_events() returns.  With
+        acks_late and prefetch_multiplier=1 this means the broker cannot
+        deliver the next message until an unrelated AMQP frame arrives,
+        adding 50-400 ms of latency between every pair of tasks.
+
+        This method is intentionally scoped to ack/reject callbacks, which
+        only write an AMQP basic.ack/basic.reject frame to the broker socket.
+        Other call_soon users (e.g. remote-control commands from gPidbox)
+        continue to use deferred execution to preserve greenlet-safety.
+        """
+        p = ppartial(p, *args, **kwargs)
+        if self.hub:
+            return self.hub.call_soon(p)
+        try:
+            p()
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception('call_soon_ack immediate exec failed: %r', exc)
         return p
 
     def perform_pending_operations(self):
@@ -388,12 +419,10 @@ class Consumer:
 
     def on_connection_error_after_connected(self, exc):
         warn(CONNECTION_RETRY, exc_info=True)
+        # Bound the sockets that are already open before cleanup reads from
+        # them; collect()'s socket_timeout only applies to new sockets.
+        bound_open_broker_sockets(self.connection, COLLECT_SOCKET_TIMEOUT)
         try:
-            # Pass an explicit socket_timeout so that cleanup I/O on a
-            # broken connection (e.g. _brpop_read during Channel.close)
-            # cannot block indefinitely.  The default of None would set
-            # the global socket timeout to blocking-forever, which can
-            # cause the worker to hang here and never reach the reconnect.
             self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
@@ -412,24 +441,53 @@ class Consumer:
                 if request.task.acks_late and not request.acknowledged:
                     warn(TERMINATING_TASK_ON_RESTART_AFTER_A_CONNECTION_LOSS,
                          request)
-                    request.cancel(self.pool)
+                    try:
+                        request.cancel(self.pool)
+                    except Exception:  # pylint: disable=broad-except
+                        warn("Failed to cancel active request %r after connection loss", request, exc_info=True)
         else:
-            warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning)
+            warnings.warn(CANCEL_TASKS_BY_DEFAULT, CPendingDeprecationWarning, stacklevel=2)
 
         if self.app.conf.worker_enable_prefetch_count_reduction:
-            self.initial_prefetch_count = max(
-                self.prefetch_multiplier,
-                self.max_prefetch_count - len(tuple(active_requests)) * self.prefetch_multiplier
-            )
-
-            self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
-            if not self._maximum_prefetch_restored:
+            # Per-consumer QoS mode (quorum queues, apply_global=False) does
+            # not propagate ``basic.qos`` updates to already-running consumers
+            # so the gradual restoration step in
+            # ``_restore_prefetch_count_after_connection_restart`` is a no-op
+            # and the worker would stay stuck at the reduced count after one
+            # reconnect. Skip the reduction entirely in that mode. See #9512.
+            if self.qos_global is False:
+                # Also clear any reduced state left over from an earlier
+                # reconnect that took the legacy path (e.g. before
+                # ``Tasks.start()`` had a chance to record ``qos_global``).
+                # Without this reset the new consumer would be created with
+                # the stale reduced prefetch count.
+                self.initial_prefetch_count = self.max_prefetch_count
+                self._maximum_prefetch_restored = True
                 logger.info(
-                    f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
-                    f"over-fetching since {len(tuple(active_requests))} tasks are currently being processed.\n"
-                    f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
-                    "complete processing."
+                    "Skipping prefetch count reduction after connection "
+                    "restart because per-consumer QoS (apply_global=False) "
+                    "is in effect and broker-side prefetch updates would "
+                    "not reach the running consumer."
                 )
+            else:
+                # Snapshot the active request count once so the reduction
+                # math and the log message agree, and to avoid the O(n)
+                # ``tuple(active_requests)`` allocation that was being
+                # used purely to call ``len()`` on a WeakSet.
+                active_count = len(active_requests)
+                self.initial_prefetch_count = max(
+                    self.prefetch_multiplier,
+                    self.max_prefetch_count - active_count * self.prefetch_multiplier
+                )
+
+                self._maximum_prefetch_restored = self.initial_prefetch_count == self.max_prefetch_count
+                if not self._maximum_prefetch_restored:
+                    logger.info(
+                        f"Temporarily reducing the prefetch count to {self.initial_prefetch_count} to avoid "
+                        f"over-fetching since {active_count} tasks are currently being processed.\n"
+                        f"The prefetch count will be gradually restored to {self.max_prefetch_count} as the tasks "
+                        "complete processing."
+                    )
 
     def register_with_event_loop(self, hub):
         self.blueprint.send_all(
@@ -479,10 +537,35 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
-        for request_id in reserved_requests:
-            if request_id in requests:
-                del requests[request_id]
+        for r in tuple(reserved_requests):
+            if r not in active_requests:
+                requests.pop(r.id, None)
         reserved_requests.clear()
+        reserved_requests.update(tuple(active_requests))
+        # Scheduled (ETA/countdown) requests never became reserved, so they
+        # aren't covered by the cleanup above. Cancel their pending timer
+        # entries (through self.timer.cancel(), not entry.cancel()
+        # directly, since e.g. the Eventlet timer relies on that to catch
+        # GreenletExit) so the callback can't fire after we've torn down
+        # this connection (the synloop error path doesn't clear the timer
+        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
+        # our copies since the broker may redeliver these tasks to another
+        # worker on reconnect.
+        for r in tuple(scheduled_requests):
+            entry = r._eta_timer_entry
+            if entry is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling ETA timer entry: %r', exc)
+            # A request can be in both sets: with a threaded timer an ETA
+            # already in the past fires immediately, so task_reserved() may
+            # have run before the strategy registered the request as
+            # scheduled.  Never drop one that's reserved/running.
+            if r not in active_requests and r not in reserved_requests:
+                requests.pop(r.id, None)
+        scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
 
@@ -538,7 +621,8 @@ class Consumer:
                         "The broker_connection_retry configuration setting will no longer determine\n"
                         "whether broker connection retries are made during startup in Celery 6.0 and above.\n"
                         "If you wish to refrain from retrying connections on startup,\n"
-                        "you should set broker_connection_retry_on_startup to False instead.")
+                        "you should set broker_connection_retry_on_startup to False instead."),
+                    stacklevel=2,
                 )
         else:
             if self.first_connection_attempt:
@@ -576,7 +660,7 @@ class Consumer:
         # create queues when :setting:`task_create_missing_queues` is enabled.
         # (Issue #1079)
         if queue in queues:
-            q = queues[queue]
+            q = queues.select_add(queues[queue])
         else:
             exchange = queue if exchange is None else exchange
             exchange_type = ('direct' if exchange_type is None
@@ -665,7 +749,7 @@ class Consumer:
         on_unknown_task = self.on_unknown_task
         on_invalid_task = self.on_invalid_task
         callbacks = self.on_task_message
-        call_soon = self.call_soon
+        call_soon_ack = self.call_soon_ack
 
         def on_task_received(message):
             # payload will only be set for v1 protocol, since v2
@@ -691,12 +775,12 @@ class Consumer:
             else:
                 try:
                     ack_log_error_promise = promise(
-                        call_soon,
+                        call_soon_ack,
                         (message.ack_log_error,),
                         on_error=self._restore_prefetch_count_after_connection_restart,
                     )
                     reject_log_error_promise = promise(
-                        call_soon,
+                        call_soon_ack,
                         (message.reject_log_error,),
                         on_error=self._restore_prefetch_count_after_connection_restart,
                     )
