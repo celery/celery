@@ -76,6 +76,10 @@ class TaskExtended(Task):
 
     def to_dict(self):
         task_dict = super().to_dict()
+        try:
+            stamps = self.stamps
+        except Exception:
+            stamps = None
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -83,7 +87,7 @@ class TaskExtended(Task):
             'worker': self.worker,
             'retries': self.retries,
             'queue': self.queue,
-            'stamps': self.stamps,
+            'stamps': stamps,
         })
         return task_dict
 

@@ -948,6 +948,37 @@ class test_DatabaseBackend_result_extended():
         assert set(meta['stamped_headers']) == {'stamp_key', 'custom_run_id'}
         assert 'stamps' not in meta
 
+    def test_store_result_stamps_corrupt_unpicklable_decode_error(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask')
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid).first()
+        task.stamps = b'corrupt-unpicklable-blob'
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta = tb.get_task_meta(tid)
+        assert meta['result'] == 'res'
+        assert 'stamps' not in meta
+
+    def test_task_extended_to_dict_tolerant_of_stamps_error(self):
+        from unittest.mock import PropertyMock
+        from celery.backends.database.models import TaskExtended
+        task = TaskExtended('test-task')
+        with patch.object(TaskExtended, 'stamps', new_callable=PropertyMock, side_effect=Exception("error")):
+            d = task.to_dict()
+            assert d['stamps'] is None
+
+    def test_query_task_unrelated_database_error_raises(self):
+        from sqlalchemy.exc import DatabaseError
+        tb = DatabaseBackend(self.uri, app=self.app)
+        session = Mock()
+        session.query.side_effect = DatabaseError("SELECT", {}, Exception("unrelated connection lost"))
+        with pytest.raises(DatabaseError):
+            tb._query_task(session, 'some-id')
+
     @pytest.mark.parametrize(
         'result_serializer, args, kwargs',
         [
