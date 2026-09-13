@@ -1006,6 +1006,16 @@ class test_App:
         self.app.config_from_object('nonexistent.module', silent=True, force=True)
         assert self.app.conf.get('SOME_CONFIG') is None
 
+    def test_config_from_object__can_add_defaults_after_silent_reload_failure(self):
+        self.app.config_from_object({'worker_prefetch_multiplier': 10})
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        assert self.app.configured
+
+        self.app.config_from_object('nonexistent.module', silent=True)
+        self.app.add_defaults({'worker_prefetch_multiplier': 20})
+
+        assert self.app.conf.worker_prefetch_multiplier == 20
+
     def test_config_from_object__silent_survives_v1_pickle(self):
         """The flag must survive the deprecated v1 reduction too.
 
