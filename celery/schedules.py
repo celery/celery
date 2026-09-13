@@ -2,20 +2,19 @@
 from __future__ import annotations
 
 import re
-from bisect import bisect, bisect_left
 from collections import namedtuple
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Iterable, Mapping, Sequence, Union
+from typing import Any, Callable, Generator, Iterable, Mapping, Sequence, Union
 
+from dateutil.tz import resolve_imaginary
 from kombu.utils.objects import cached_property
 
 from celery import Celery
 
 from . import current_app
 from .exceptions import ImproperlyConfigured
-from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday, yearmonth)
+from .utils.time import (C_REMDEBUG, ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining,
+                         timezone, weekday, yearmonth)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -485,83 +484,6 @@ class crontab(BaseSchedule):
                     min=min_, max=max_ - 1 + min_, value=number))
         return result
 
-    def _delta_to_next(self, last_run_at: datetime, next_hour: int,
-                       next_minute: int) -> ffwd:
-        """Find next delta.
-
-        Takes a :class:`~datetime.datetime` of last run, next minute and hour,
-        and returns a :class:`~celery.utils.time.ffwd` for the next
-        scheduled day and time.
-
-        Only called when ``day_of_month`` and/or ``month_of_year``
-        cronspec is specified to further limit scheduled task execution.
-        """
-        datedata = AttributeDict(year=last_run_at.year)
-        days_of_month = sorted(self.day_of_month)
-        months_of_year = sorted(self.month_of_year)
-
-        def day_out_of_range(year: int, month: int, day: int) -> bool:
-            try:
-                datetime(year=year, month=month, day=day)
-            except ValueError:
-                return True
-            return False
-
-        def is_before_last_run(year: int, month: int, day: int) -> bool:
-            return self.maybe_make_aware(
-                datetime(year, month, day, next_hour, next_minute),
-                naive_as_utc=False) < last_run_at
-
-        def roll_over() -> None:
-            for _ in range(2000):
-                flag = (datedata.dom == len(days_of_month) or
-                        day_out_of_range(datedata.year,
-                                         months_of_year[datedata.moy],
-                                         days_of_month[datedata.dom]) or
-                        (is_before_last_run(datedata.year,
-                                            months_of_year[datedata.moy],
-                                            days_of_month[datedata.dom])))
-
-                if flag:
-                    datedata.dom = 0
-                    datedata.moy += 1
-                    if datedata.moy == len(months_of_year):
-                        datedata.moy = 0
-                        datedata.year += 1
-                else:
-                    break
-            else:
-                # Tried 2000 times, we're most likely in an infinite loop
-                raise RuntimeError('unable to rollover, '
-                                   'time specification is probably invalid')
-
-        if last_run_at.month in self.month_of_year:
-            datedata.dom = bisect(days_of_month, last_run_at.day)
-            datedata.moy = bisect_left(months_of_year, last_run_at.month)
-        else:
-            datedata.dom = 0
-            datedata.moy = bisect(months_of_year, last_run_at.month)
-            if datedata.moy == len(months_of_year):
-                datedata.moy = 0
-        roll_over()
-
-        while 1:
-            th = datetime(year=datedata.year,
-                          month=months_of_year[datedata.moy],
-                          day=days_of_month[datedata.dom])
-            if th.isoweekday() % 7 in self.day_of_week:
-                break
-            datedata.dom += 1
-            roll_over()
-
-        return ffwd(year=datedata.year,
-                    month=months_of_year[datedata.moy],
-                    day=days_of_month[datedata.dom],
-                    hour=next_hour,
-                    minute=next_minute,
-                    second=0,
-                    microsecond=0)
-
     def __repr__(self) -> str:
         return CRON_REPR.format(self)
 
@@ -578,6 +500,137 @@ class crontab(BaseSchedule):
         super().__init__(**state)
         self._orig_kwargs = dict(state)
 
+    def _next_occurrence(self, current: datetime) -> datetime:
+        """returns the date of next crontab execution after given current date.
+
+        The returned date is timezone aware and uses the same timezone as the given
+        `current` parameter.
+        """
+        # copy the date and stick seconds/microseconds to 0 to match crontab precision
+        candidate = current.replace(second=0, microsecond=0)
+        _crontab_has_day_of_week = len(self.day_of_week) < 7
+
+        def _generate_run_days_after(start: datetime) -> Generator[datetime]:
+            """yields candidate days for task execution after the current date.
+
+            We iterate on each possible days after the current one according to crontab resolution.
+            This is done by iterating only on months and days the crontab considers as valid.
+
+            The iteration runs on 8 years after current to deal with leap days but except
+            for a crontab(month_of_year=2, day_of_month=29) we should never need that much iteration.
+            """
+            sorted_month_of_year = sorted(self.month_of_year)
+            sorted_day_of_month = sorted(self.day_of_month)
+
+            # 50 years search should above possible time between 2 leap days
+            # with day of week specified in the crontab
+            for y in range(start.year, start.year + 50):
+                for m in [
+                    _m for _m in sorted_month_of_year
+                    if y != start.year or _m >= start.month
+                ]:
+                    for d in [
+                        _d for _d in sorted_day_of_month
+                        if y != start.year or m != start.month or _d > start.day
+                    ]:
+                        try:
+                            new_date = datetime(y, m, d, tzinfo=start.tzinfo)
+                        except ValueError:
+                            # feb 29th on non leap year and 31st on month with 30 days will raise an exception
+                            continue
+                        # check if we have constraint on day of week
+                        if not _crontab_has_day_of_week or new_date.isoweekday() % 7 in self.day_of_week:
+                            # at dst start for timezone that trigger the change at midnight,
+                            # we could be generating a non existent date
+                            yield resolve_imaginary(new_date)
+
+        def _generate_run_hours_after(d: datetime) -> Generator[datetime]:
+            """yields candidate hours for task execution.
+
+            We use a simple loop over the hours here to correctly handle DST changes.
+            """
+            original_day = d.day
+            # we should never try more than 24 hours for a complete day
+            # (23h til last hour + 1 potential duplicated hour during dst time end)
+            for _ in range(24 - d.hour):
+                d = _move_forward(d, timedelta(minutes=60 - d.minute))
+                # resolve time that do not exist in current timezone
+                # d = resolve_imaginary(d)
+                # check if this can make us change the day and get out if it does
+                if original_day != d.day:
+                    return
+                if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
+                    yield d
+
+        def _has_run_hours_after(d: datetime) -> bool:
+            """Is there any possibility for the task to run on that day ?
+
+            This takes timezone time shifting in consideration because, on a given day,
+            a certain times may not exist (when clock moves forward).
+            """
+            try:
+                next(_generate_run_hours_after(d))
+            except StopIteration:
+                return False
+            return True
+
+        def _get_next_run_hour(d: datetime) -> datetime:
+            """
+            returns the date with hour set to next execution, with minute reset to 0.
+
+            We iterate on hours one by one here to handle DST shift in the middle
+            of the day that will make an hour appear twice or disappear.
+            """
+            return next(_generate_run_hours_after(d))
+
+        def _get_run_minute(d: datetime) -> datetime:
+            """returns the date with minute set to next execution."""
+            next_minute = min(m for m in self.minute if m >= d.minute)
+            return _move_forward(d, timedelta(minutes=next_minute - d.minute))
+
+        def _move_forward(d: datetime, delta: timedelta) -> datetime:
+            """apply delta to d using constant (UTC) time."""
+            return (d.astimezone(timezone.utc) + delta).astimezone(d.tzinfo)
+
+        _may_run_today = (
+            candidate.month in self.month_of_year
+            and candidate.day in self.day_of_month
+            and candidate.isoweekday() % 7 in self.day_of_week
+        )
+
+        # first we do a quick check on current day
+        if _may_run_today:
+            _may_run_this_hour = (
+                candidate.hour in self.hour
+                and any(True for m in self.minute if m > candidate.minute)
+            )
+            if _may_run_this_hour:
+                # if there are slots later this hour, we can safely add one minute with worrying about hour change.
+                # the search for a correct minute will happen right after
+                candidate = _move_forward(candidate, timedelta(minutes=1))
+                return _get_run_minute(candidate)
+
+            if _has_run_hours_after(candidate):
+                # no more slots, go to the start of next hour
+                # candidate = _move_forward(candidate, timedelta(hours=1)).replace(minute=0)
+                candidate = _get_next_run_hour(candidate)
+                return _get_run_minute(candidate)
+
+            # in the end we did not find a slot that day (DST start day where an hour disappears, or just end of day)
+
+        # no possible run on current day, we look for another one
+        for _candidate in _generate_run_days_after(candidate):
+            _can_run_this_hour = _candidate.hour in self.hour
+            if _can_run_this_hour:
+                return _get_run_minute(_candidate)
+
+            if _has_run_hours_after(_candidate):
+                _candidate = _get_next_run_hour(_candidate)
+                _candidate = _get_run_minute(_candidate)
+                return _candidate
+
+        raise RuntimeError(f"unable to find a next occurrence for crontab {self}, start from {current}")
+
     def remaining_delta(self, last_run_at: datetime,
                         tz: str | tzinfo | None = None,
                         ffwd: type = ffwd) -> tuple[datetime, Any, datetime]:
@@ -589,69 +642,61 @@ class crontab(BaseSchedule):
         # in a different timezone (e.g. from django-celery-beat).
         last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
-        dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
-        execute_this_date = (
-            last_run_at.month in self.month_of_year and
-            last_run_at.day in self.day_of_month and
-            dow_num in self.day_of_week
+        _next = self._next_occurrence(last_run_at)
+        delta = ffwd(
+            year=_next.year if last_run_at.year != _next.year else None,
+            month=_next.month if last_run_at.month != _next.month else None,
+            day=_next.day if last_run_at.day != _next.day else None,
+            hour=_next.hour,
+            minute=_next.minute,
+            second=0,
+            microsecond=0
         )
-
-        execute_this_hour = (
-            execute_this_date and
-            last_run_at.hour in self.hour and
-            last_run_at.minute < max(self.minute)
-        )
-
-        if execute_this_hour:
-            next_minute = min(minute for minute in self.minute
-                              if minute > last_run_at.minute)
-            delta = ffwd(minute=next_minute, second=0, microsecond=0)
-        else:
-            next_minute = min(self.minute)
-            execute_today = (execute_this_date and
-                             last_run_at.hour < max(self.hour))
-
-            if execute_today:
-                next_hour = min(hour for hour in self.hour
-                                if hour > last_run_at.hour)
-                delta = ffwd(hour=next_hour, minute=next_minute,
-                             second=0, microsecond=0)
-            else:
-                next_hour = min(self.hour)
-                all_dom_moy = (self._orig_day_of_month == '*' and
-                               self._orig_month_of_year == '*')
-                if all_dom_moy:
-                    next_day = min([day for day in self.day_of_week
-                                    if day > dow_num] or self.day_of_week)
-                    add_week = next_day == dow_num
-
-                    delta = ffwd(
-                        weeks=add_week and 1 or 0,
-                        weekday=(next_day - 1) % 7,
-                        hour=next_hour,
-                        minute=next_minute,
-                        second=0,
-                        microsecond=0,
-                    )
-                else:
-                    delta = self._delta_to_next(last_run_at,
-                                                next_hour, next_minute)
         return last_run_at, delta, now
 
     def remaining_estimate(
             self, last_run_at: datetime, ffwd: type = ffwd) -> timedelta:
-        """Estimate of next run time.
+        """Estimate of next run time as a timedelta.
+
+        Computed as the difference between next run date and now in UTC to ensure
+        we get the real time difference, not impacted by timezone with DST switch.
 
         Returns when the periodic task should run next as a
         :class:`~datetime.timedelta`.
         """
         # pylint: disable=redefined-outer-name
         # caching global ffwd
-        return remaining(*self.remaining_delta(last_run_at, ffwd=ffwd))
+        schedule_tz: tzinfo = timezone.get_timezone(self.tz)
+        last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
+        now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
+
+        next_run_at = self._next_occurrence(last_run_at)
+
+        if C_REMDEBUG:  # pragma: no cover
+            print(
+                'rem: LAST:{}\nLAST_UTC:{}\nNOW:{}\nNOW_UTC:{}\n'
+                'NEXT_DATE:{}\nNEXT_DATE_UTC:{}\nREM:{}'.format(
+                    last_run_at,
+                    last_run_at.astimezone(timezone.utc),
+                    now,
+                    now.astimezone(timezone.utc),
+                    next_run_at,
+                    next_run_at.astimezone(timezone.utc),
+                    next_run_at.astimezone(timezone.utc) - now.astimezone(timezone.utc)
+                )
+            )
+        return next_run_at.astimezone(timezone.utc) - now.astimezone(timezone.utc)
 
     def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
-        """Return tuple of ``(is_due, next_time_to_run)``.
+        """Answers a double question: should a task run now (is_due) and what it is the
+        next time it should run ?
+
+        Returns tuple of ``(is_due, next_time_to_run)``.
+
+        This is done by first check if we exceeded the time between last_run and now.
+        If this is the case, a second computation is done to get the next_time_to_run
+        starting from now.
 
         If :setting:`beat_cron_starting_deadline`  has been specified, the
         scheduler will make sure that the `last_run_at` time is within the
