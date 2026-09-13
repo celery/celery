@@ -19,7 +19,9 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 import pytest
 from kombu import Exchange, Queue
 from kombu.exceptions import LimitExceeded
-from pydantic import BaseModel, ValidationInfo, model_validator
+from pydantic import BaseModel
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -229,6 +231,63 @@ class test_App:
             assert scale_a.name != scale_b.name
         assert not [x for x in w
                     if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_bound(self):
+        """Negative control: ``run`` is a bound method under bind=True."""
+        def plain(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(plain, bind=True)
+            second = self.app._task_from_fun(plain, bind=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_pydantic(self):
+        """Negative control: ``fun`` is rebound by the pydantic wrapper."""
+        class Args(PydanticBaseModel):
+            x: int
+
+        def pydantic_fun(args: Args):
+            return args.x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            second = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_warns__bound_closures(self):
+        """bind=True must still detect two distinct callables."""
+        def make_scaler(factor):
+            @self.app.task(shared=False, bind=True)
+            def scale(self, x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning):
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+    def test_duplicate_task_name_warning_points_at_the_caller(self):
+        """The warning must name the caller's frame, not celery's."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+        assert not w[0].filename.endswith(
+            os.path.join('celery', 'app', 'base.py'))
+        assert w[0].filename == __file__
 
     def test_duplicate_task_name_silent__same_function_twice(self):
         """Negative control: a re-imported module yields the same object."""

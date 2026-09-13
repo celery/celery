@@ -112,6 +112,28 @@ decorator, or rename one of the callables.\
 """
 
 
+def caller_stacklevel():
+    """Depth of the first frame outside Celery, for :func:`warnings.warn`.
+
+    A task can be registered straight from the decorator or later, when a
+    :class:`~celery.local.PromiseProxy` is first evaluated, and those two
+    paths sit at different depths -- so the level is found rather than
+    assumed. Only reached when a warning is actually emitted.
+    """
+    frame, level = sys._getframe(1), 1
+    while frame is not None:
+        module = frame.f_globals.get('__name__', '')
+        if module != 'celery' and not module.startswith('celery.'):
+            return level
+        frame, level = frame.f_back, level + 1
+    return 2
+
+
+def task_callable_qualname(task):
+    """Name the callable behind *task*, decorated or class-based."""
+    return qualname(getattr(task, '_decorated_fun', None) or type(task))
+
+
 def app_has_custom(app, attr):
     """Return true if app has customized method `attr`.
 
@@ -623,6 +645,10 @@ class Celery:
     ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
+        # the callable as the caller passed it, kept before the pydantic
+        # rebind below and before ``run`` turns it into a descriptor, so
+        # that a re-registration can be recognised by identity.
+        decorated_fun = fun
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
@@ -640,7 +666,8 @@ class Celery:
                 '__module__': fun.__module__,
                 '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
-                '__wrapped__': run}, **options))()
+                '__wrapped__': run,
+                '_decorated_fun': staticmethod(decorated_fun)}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.
             try:
@@ -652,7 +679,7 @@ class Celery:
             add_autoretry_behaviour(task, **options)
         else:
             task = self._tasks[name]
-            self._warn_if_duplicate_task_name(task, fun, name)
+            self._warn_if_duplicate_task_name(task, decorated_fun, name)
         return task
 
     def register_task(self, task, **options):
@@ -671,7 +698,8 @@ class Celery:
         existing = self.tasks.get(task.name)
         if existing is not None and existing is not task:
             self._warn_duplicate_task_name(
-                task.name, qualname(type(existing)), qualname(type(task)),
+                task.name, task_callable_qualname(existing),
+                task_callable_qualname(task),
                 'The new callable replaced the existing one; calls under this '
                 'name now reach the new callable.',
             )
@@ -687,8 +715,11 @@ class Celery:
         A module imported twice hands the same function object back, so
         identity -- not the name -- is what tells a re-registration apart
         from two distinct callables colliding under one generated name.
+        The comparison uses the callable as the caller passed it, since
+        ``__wrapped__`` holds ``run``, which is a bound method under
+        ``bind=True`` and the wrapper under ``pydantic=True``.
         """
-        existing_fun = getattr(task, '__wrapped__', None)
+        existing_fun = getattr(task, '_decorated_fun', None)
         if existing_fun is None or existing_fun is fun:
             return
         self._warn_duplicate_task_name(
@@ -698,9 +729,12 @@ class Celery:
         )
 
     def _warn_duplicate_task_name(self, name, existing, new, consequence):
-        # one warning per name: a colliding name is a single mistake, and
-        # a test suite or module that trips it repeatedly should not bury
-        # everything else in output.
+        # One warning per name. A colliding name is a single mistake, and
+        # a module or test suite that trips it repeatedly should not bury
+        # everything else in output. The set only grows, and a concurrent
+        # registration could race on this check and warn twice; both are
+        # accepted, as registration is an import-time, single-threaded
+        # activity and the cost of either is one extra line of output.
         if name in self._duplicate_task_names_warned:
             return
         self._duplicate_task_names_warned.add(name)
@@ -708,7 +742,7 @@ class Celery:
             DuplicateTaskNameWarning(
                 W_DUPTASK.format(name, existing, new, consequence),
             ),
-            stacklevel=3,
+            stacklevel=caller_stacklevel(),
         )
 
     def gen_task_name(self, name, module):
