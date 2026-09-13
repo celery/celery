@@ -5,12 +5,11 @@ from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
-
-from kombu.utils.encoding import ensure_bytes
 
 pytest.importorskip('sqlalchemy')
 
@@ -965,6 +964,7 @@ class test_DatabaseBackend_result_extended():
 
     def test_task_extended_to_dict_tolerant_of_stamps_error(self):
         from unittest.mock import PropertyMock
+
         from celery.backends.database.models import TaskExtended
         task = TaskExtended('test-task')
         with patch.object(TaskExtended, 'stamps', new_callable=PropertyMock, side_effect=Exception("error")):
