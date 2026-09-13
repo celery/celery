@@ -862,6 +862,15 @@ class test_chain(CanvasCase):
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
 
+    @pytest.mark.parametrize('args,kwargs', (((4,), {}), ((), {'x': 4})))
+    def test_apply_chord_in_chain_with_arguments(self, args, kwargs):
+        workflow = chain(
+            chord([self.add.s(y=2), self.add.s(y=3)], self.xsum.s()),
+            self.mul.s(10),
+        )
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == 130
+
     def test_apply_stops_chain_when_task_raises_ignore(self):
         executed = []
 

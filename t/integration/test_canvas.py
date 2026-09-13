@@ -2201,7 +2201,6 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
 
-    @pytest.mark.xfail(reason="Issue #6176")
     def test_chord_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
