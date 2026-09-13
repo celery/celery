@@ -354,18 +354,18 @@ class test_chord(ChordCase):
                         self.add.s(1, 2),
                         self.add.s(3, 4),
                     ],
-                    body=self.mul.s(4),
+                    body=self.add.s(4),
                     app=self.app,
                 ),
                 chord(
                     [
                         self.add.s(5, 6),
                     ],
-                    body=self.mul.s(4),
+                    body=self.add.s(4),
                     app=self.app,
                 ),
             ],
-            body=self.mul.s(4),
+            body=self.add.s(4),
             app=self.app,
         )
 
