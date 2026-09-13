@@ -375,6 +375,46 @@ class test_ControlPanel:
         finally:
             control.DEFAULT_TASK_INFO_ITEMS = prev
 
+    def test_dump_tasks_allows_public_attributes(self):
+        # public Task attributes (incl. non-defaults) remain available --
+        # this is the documented `registered('serializer', 'max_retries')`
+        # contract.
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks',
+            arguments={'taskinfoitems': ['rate_limit', 'max_retries']}))
+        assert 'rate_limit=200' in info
+        assert 'max_retries=3' in info
+
+    def test_dump_tasks_rejects_dunder_attributes(self):
+        # a dunder such as __dict__ would otherwise bulk-dump every instance
+        # attribute; private/dunder names must be refused.
+        self.mytask.injected_secret = 'TOPSECRET'
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks', arguments={'taskinfoitems': ['__dict__']}))
+        assert '__dict__' not in info
+        assert 'TOPSECRET' not in info
+
+    def test_dump_tasks_does_not_read_private_attributes(self):
+        # a private (underscore-prefixed) name must not reach getattr, so a
+        # side-effecting private property getter is never invoked.
+        from celery import Task
+        fired = []
+
+        class LeakyTask(Task):
+            @property
+            def _evil(self):
+                fired.append(True)
+                return 'leaked'
+
+        @self.app.task(base=LeakyTask, name='c.unittest.leaky', shared=False)
+        def leaky():
+            pass
+
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks', arguments={'taskinfoitems': ['_evil']}))
+        assert fired == []
+        assert 'leaked' not in info
+
     def test_stats(self):
         prev_count, worker_state.total_count = worker_state.total_count, 100
         try:
@@ -990,6 +1030,28 @@ class test_ControlPanel:
             assert ret[req1.id][0] == 'reserved'
         finally:
             worker_state.reserved_requests.clear()
+
+    def test_query_task_scheduled(self):
+        # Regression test for #5321: a task with an ETA/countdown that
+        # hasn't fired yet must still be found by `query_task`.
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        req1 = Request(
+            self.TaskMessage(self.mytask.name, args=(2, 2)),
+            app=self.app,
+        )
+        worker_state.task_scheduled(req1)
+        try:
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            assert req1.id in ret
+            assert ret[req1.id][0] == 'scheduled'
+            assert req1 not in worker_state.reserved_requests
+        finally:
+            worker_state.requests.pop(req1.id, None)
+            worker_state.scheduled_requests.discard(req1)
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):

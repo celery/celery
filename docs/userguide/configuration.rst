@@ -985,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
@@ -1073,7 +1076,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -2192,7 +2195,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
