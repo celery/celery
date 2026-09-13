@@ -2,11 +2,12 @@
 import time
 
 from kombu.utils.compat import register_after_fork
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
+from celery.utils.log import get_logger
 from celery.utils.time import get_exponential_backoff_interval
 
 try:
@@ -20,6 +21,8 @@ ResultModelBase = declarative_base()
 __all__ = ('SessionManager',)
 
 PREPARE_MODELS_MAX_RETRIES = 10
+
+logger = get_logger(__name__)
 
 
 def _after_fork_cleanup_session(session):
@@ -98,7 +101,39 @@ class SessionManager:
                         raise
                 else:
                     break
+            self._migrate_missing_columns(engine)
             self.prepared = True
+
+    def _migrate_missing_columns(self, engine):
+        """Add missing nullable columns to existing tables if needed."""
+        try:
+            inspector = inspect(engine)
+            preparer = engine.dialect.identifier_preparer
+            for table in ResultModelBase.metadata.tables.values():
+                actual_name = table.name
+                schema = table.schema
+                if not inspector.has_table(actual_name, schema=schema):
+                    continue
+                existing_cols = {
+                    col['name'] for col in inspector.get_columns(actual_name, schema=schema)
+                }
+                for col in table.columns:
+                    if col.name not in existing_cols and col.nullable:
+                        col_type = col.type.compile(engine.dialect)
+                        table_name = preparer.format_table(table)
+                        col_name = preparer.quote_identifier(col.name)
+                        alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"
+                        try:
+                            with engine.begin() as conn:
+                                conn.execute(text(alter_stmt))
+                        except Exception as exc:
+                            logger.warning(
+                                "Failed to add missing column %r to table %r. "
+                                "To enable storing task children, execute: %s. Error: %s",
+                                col.name, actual_name, alter_stmt, exc,
+                            )
+        except Exception as exc:
+            logger.warning("Failed to inspect or migrate database tables: %s", exc)
 
     def session_factory(self, dburi, **kwargs):
         engine, session = self.create_session(dburi, **kwargs)
