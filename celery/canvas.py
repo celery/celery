@@ -100,7 +100,7 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
-                _merge_dictionaries(d1[key], d2[key])
+                _merge_dictionaries(d1[key], d2[key], aggregate_duplicates)
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value] if aggregate_duplicates else value
@@ -1306,8 +1306,9 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+            res = task.clone().apply(
+                (last.get(),) if last else fargs, fkwargs,
+                **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
             if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
                 break
