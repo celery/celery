@@ -42,13 +42,15 @@ Definition
         # optional
         'meth': string method_name,
         'shadow': string alias_name,
-        'eta':  iso8601 ETA,
-        'expires'; iso8601 expires,
+        'eta': iso8601 ETA,
+        'expires': iso8601 expires,
         'retries': int retries,
         'timelimit': (soft, hard),
         'argsrepr': str repr(args),
         'kwargsrepr': str repr(kwargs),
         'origin': str nodename,
+        'replaced_task_nesting': int,
+        'compression': string compression_method (optional; omitted when no compression is used, matches kombu compressor names such as 'zlib', 'bzip2', 'gzip'),
     }
 
     body = (
@@ -79,7 +81,7 @@ This example sends a task message using version 2 of the protocol:
     args = (2, 2)
     kwargs = {}
     basic_publish(
-        message=json.dumps((args, kwargs, None),
+        message=json.dumps((args, kwargs, None)),
         application_headers={
             'lang': 'py',
             'task': 'proj.tasks.add',
@@ -168,7 +170,7 @@ Changes from version 1
 
             def apply_async(self, args, kwargs, **options):
                 fun, real_args = self.unpack_args(*args)
-                return super(PickleTask, self).apply_async(
+                return super().apply_async(
                     (fun, real_args, kwargs), shadow=qualname(fun), **options
                 )
 

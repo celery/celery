@@ -1,22 +1,19 @@
-# -*- coding: utf-8 -*-
 """Worker-level Bootsteps."""
-from __future__ import absolute_import, unicode_literals
-
 import atexit
 import warnings
 
-from kombu.async import Hub as _Hub, get_event_loop, set_event_loop
-from kombu.async.semaphore import DummyLock, LaxBoundedSemaphore
-from kombu.async.timer import Timer as _Timer
+from kombu.asynchronous import Hub as _Hub
+from kombu.asynchronous import get_event_loop, set_event_loop
+from kombu.asynchronous.semaphore import DummyLock, LaxBoundedSemaphore
+from kombu.asynchronous.timer import Timer as _Timer
 
 from celery import bootsteps
 from celery._state import _set_task_join_will_block
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t
 from celery.platforms import IS_WINDOWS
 from celery.utils.log import worker_logger as logger
 
-__all__ = ['Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer']
+__all__ = ('Timer', 'Hub', 'Pool', 'Beat', 'StateDB', 'Consumer')
 
 GREEN_POOLS = {'eventlet', 'gevent'}
 
@@ -63,7 +60,7 @@ class Hub(bootsteps.StartStopStep):
 
     def __init__(self, w, **kwargs):
         w.hub = None
-        super(Hub, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def include_if(self, w):
         return w.use_eventloop
@@ -78,7 +75,10 @@ class Hub(bootsteps.StartStopStep):
         return self
 
     def start(self, w):
-        pass
+        # Ensure the kombu hub's poller is initialized before the event loop starts.
+        # Since asynloop() no longer resets the hub on exit (to preserve timers
+        # during shutdown), we must initialize the poller upfront.
+        _ = w.hub.poller
 
     def stop(self, w):
         w.hub.close()
@@ -92,7 +92,7 @@ class Hub(bootsteps.StartStopStep):
         # multiprocessing's ApplyResult uses this lock.
         try:
             from billiard import pool
-        except ImportError:  # pragma: no cover
+        except ImportError:
             pass
         else:
             pool.Lock = DummyLock
@@ -119,13 +119,13 @@ class Pool(bootsteps.StartStopStep):
         w.max_concurrency = None
         w.min_concurrency = w.concurrency
         self.optimization = w.optimization
-        if isinstance(autoscale, string_t):
+        if isinstance(autoscale, str):
             max_c, _, min_c = autoscale.partition(',')
             autoscale = [int(max_c), min_c and int(min_c) or 0]
         w.autoscale = autoscale
         if w.autoscale:
             w.max_concurrency, w.min_concurrency = w.autoscale
-        super(Pool, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def close(self, w):
         if w.pool:
@@ -139,7 +139,7 @@ class Pool(bootsteps.StartStopStep):
         semaphore = None
         max_restarts = None
         if w.app.conf.worker_pool in GREEN_POOLS:  # pragma: no cover
-            warnings.warn(UserWarning(W_POOL_SETTING))
+            warnings.warn(UserWarning(W_POOL_SETTING), stacklevel=2)
         threaded = not w.use_eventloop or IS_WINDOWS
         procs = w.min_concurrency
         w.process_task = w._process_task
@@ -163,7 +163,7 @@ class Pool(bootsteps.StartStopStep):
             threads=threaded,
             max_restarts=max_restarts,
             allow_restart=allow_restart,
-            forking_enable=True,
+            forking_enable=w.pool_start_method == 'fork',
             semaphore=semaphore,
             sched_strategy=self.optimization,
             app=w.app,
@@ -190,11 +190,14 @@ class Beat(bootsteps.StartStopStep):
     def __init__(self, w, beat=False, **kwargs):
         self.enabled = w.beat = beat
         w.beat = None
-        super(Beat, self).__init__(w, beat=beat, **kwargs)
+        super().__init__(w, beat=beat, **kwargs)
 
     def create(self, w):
         from celery.beat import EmbeddedService
-        if w.pool_cls.__module__.endswith(('gevent', 'eventlet')):
+
+        # Defensive check: pool_cls may be a string (e.g., 'gevent') or a class
+        pool_module = w.pool_cls if isinstance(w.pool_cls, str) else w.pool_cls.__module__
+        if pool_module.endswith(('gevent', 'eventlet')):
             raise ImproperlyConfigured(ERR_B_GREEN)
         b = w.beat = EmbeddedService(w.app,
                                      schedule_filename=w.schedule_filename,
@@ -208,7 +211,7 @@ class StateDB(bootsteps.Step):
     def __init__(self, w, **kwargs):
         self.enabled = w.statedb
         w._persistence = None
-        super(StateDB, self).__init__(w, **kwargs)
+        super().__init__(w, **kwargs)
 
     def create(self, w):
         w._persistence = w.state.Persistent(w.state, w.statedb, w.app.clock)
@@ -222,7 +225,7 @@ class Consumer(bootsteps.StartStopStep):
 
     def create(self, w):
         if w.max_concurrency:
-            prefetch_count = max(w.min_concurrency, 1) * w.prefetch_multiplier
+            prefetch_count = max(w.max_concurrency, 1) * w.prefetch_multiplier
         else:
             prefetch_count = w.concurrency * w.prefetch_multiplier
         c = w.consumer = self.instantiate(

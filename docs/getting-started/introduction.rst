@@ -26,32 +26,35 @@ to high availability and horizontal scaling.
 
 Celery is written in Python, but the protocol can be implemented in any
 language. In addition to Python there's node-celery_ for Node.js,
-and a `PHP client`_.
+a `PHP client`_, `gocelery`_, `gopher-celery`_ for Go, and `rusty-celery`_ for Rust.
 
 Language interoperability can also be achieved
 exposing an HTTP endpoint and having a task that requests it (webhooks).
 
-.. _`PHP client`: https://github.com/gjedeer/celery-php
 .. _node-celery: https://github.com/mher/node-celery
+.. _`PHP client`: https://github.com/gjedeer/celery-php
+.. _`gocelery`: https://github.com/gocelery/gocelery
+.. _`gopher-celery`: https://github.com/marselester/gopher-celery
+.. _`rusty-celery`: https://github.com/rusty-celery/rusty-celery
 
 What do I need?
 ===============
 
 .. sidebar:: Version Requirements
-    :subtitle: Celery version 4.0 runs on
+    :subtitle: Celery version 5.5.x runs on:
 
-    - Python ❨2.7, 3.4, 3.5❩
-    - PyPy ❨5.4, 5.5❩
-
-    This is the last version to support Python 2.7,
-    and from the next version (Celery 5.x) Python 3.5 or newer is required.
+    - Python ❨3.8, 3.9, 3.10, 3.11, 3.12, 3.13❩
+    - PyPy3.9+ ❨v7.3.12+❩
 
     If you're running an older version of Python, you need to be running
     an older version of Celery:
 
+    - Python 3.7: Celery 5.2 or earlier.
+    - Python 3.6: Celery 5.1 or earlier.
+    - Python 2.7: Celery 4.x series.
     - Python 2.6: Celery series 3.1 or earlier.
     - Python 2.5: Celery series 3.0 or earlier.
-    - Python 2.4 was Celery series 2.2 or earlier.
+    - Python 2.4: Celery series 2.2 or earlier..
 
     Celery is a project with minimal funding,
     so we don't support Microsoft Windows.
@@ -87,7 +90,7 @@ Celery is…
         Celery is easy to use and maintain, and it *doesn't need configuration files*.
 
         It has an active, friendly community you can talk to for support,
-        including a `mailing-list`_ and an :ref:`IRC channel <irc-channel>`.
+        including a `getting-help`_ and an :ref:`IRC channel <getting-help>`.
 
         Here's one of the simplest applications you can make:
 
@@ -134,6 +137,7 @@ Celery is…
 
             - prefork (multiprocessing),
             - Eventlet_, gevent_
+            - thread (multithreaded)
             - `solo` (single threaded)
 
         - **Result Stores**
@@ -141,7 +145,12 @@ Celery is…
             - AMQP, Redis
             - Memcached,
             - SQLAlchemy, Django ORM
-            - Apache Cassandra, Elasticsearch
+            - Apache Cassandra, Elasticsearch, Riak
+            - MongoDB, CouchDB, Couchbase, ArangoDB
+            - Amazon DynamoDB, Amazon S3
+            - Microsoft Azure Block Blob, Microsoft Azure Cosmos DB
+            - Google Cloud Storage
+            - File system
 
         - **Serialization**
 
@@ -184,7 +193,7 @@ Features
         - **Scheduling**
 
             You can specify the time to run a task in seconds or a
-            :class:`~datetime.datetime`, or or you can use
+            :class:`~datetime.datetime`, or you can use
             periodic tasks for recurring events based on a
             simple interval, or Crontab expressions
             supporting minute, hour, day of week, day of month, and
@@ -227,6 +236,8 @@ integration packages:
     +--------------------+------------------------+
     | `Tornado`_         | :pypi:`tornado-celery` |
     +--------------------+------------------------+
+    | `Tryton`_          | :pypi:`celery_tryton`  |
+    +--------------------+------------------------+
 
 For `Django`_ see :ref:`django-first-steps`.
 
@@ -241,6 +252,7 @@ database connections at :manpage:`fork(2)`.
 .. _`Bottle`: https://bottlepy.org/
 .. _`Pyramid`: http://docs.pylonsproject.org/en/latest/docs/pyramid.html
 .. _`Tornado`: http://www.tornadoweb.org/
+.. _`Tryton`: http://www.tryton.org/
 .. _`tornado-celery`: https://github.com/mher/tornado-celery/
 
 Quick Jump

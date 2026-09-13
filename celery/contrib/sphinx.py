@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Sphinx documentation plugin used to document tasks.
 
 Introduction
@@ -6,6 +5,8 @@ Introduction
 
 Usage
 -----
+
+The Celery extension for Sphinx requires Sphinx 2.0 or later.
 
 Add the extension to your :file:`docs/conf.py` configuration module:
 
@@ -22,18 +23,36 @@ then you can change the ``celery_task_prefix`` configuration value:
     celery_task_prefix = '(task)'  # < default
 
 With the extension installed `autodoc` will automatically find
-task decorated objects and generate the correct (as well as
-add a ``(task)`` prefix), and you can also refer to the tasks
-using `:task:proj.tasks.add` syntax.
+task decorated objects (e.g. when using the automodule directive)
+and generate the correct (as well as add a ``(task)`` prefix),
+and you can also refer to the tasks using `:task:proj.tasks.add`
+syntax.
 
-Use ``.. autotask::`` to manually document a task.
+Use ``.. autotask::`` to alternatively manually document a task.
+
+Sphinx 9.0+ Compatibility
+-------------------------
+
+Sphinx 9.0 introduced a rewritten autodoc implementation. The Celery
+extension requires the legacy class-based autodoc mode to function
+correctly. When using Sphinx 9.0 or later, add the following to your
+:file:`conf.py`:
+
+.. code-block:: python
+
+    autodoc_use_legacy_class_based = True
+
+The extension will automatically enable this setting if not configured,
+but it is recommended to set it explicitly to avoid warnings.
 """
-from __future__ import absolute_import, unicode_literals
-from inspect import formatargspec
-from sphinx.domains.python import PyModulelevel
+import warnings
+from inspect import signature
+
+from docutils import nodes
+from sphinx.domains.python import PyFunction, PyXRefRole
 from sphinx.ext.autodoc import FunctionDocumenter
+
 from celery.app.task import BaseTask
-from celery.five import getfullargspec
 
 
 class TaskDocumenter(FunctionDocumenter):
@@ -49,25 +68,72 @@ class TaskDocumenter(FunctionDocumenter):
     def format_args(self):
         wrapped = getattr(self.object, '__wrapped__', None)
         if wrapped is not None:
-            argspec = getfullargspec(wrapped)
-            fmt = formatargspec(*argspec)
-            fmt = fmt.replace('\\', '\\\\')
-            return fmt
+            sig = signature(wrapped)
+            if "self" in sig.parameters or "cls" in sig.parameters:
+                sig = sig.replace(parameters=list(sig.parameters.values())[1:])
+            return str(sig)
         return ''
 
     def document_members(self, all_members=False):
         pass
 
+    def check_module(self):
+        # Normally checks if *self.object* is really defined in the module
+        # given by *self.modname*. But since functions decorated with the @task
+        # decorator are instances living in the celery.local, we have to check
+        # the wrapped function instead.
+        wrapped = getattr(self.object, '__wrapped__', None)
+        if wrapped and getattr(wrapped, '__module__') == self.modname:
+            return True
+        return super().check_module()
 
-class TaskDirective(PyModulelevel):
+
+class TaskDirective(PyFunction):
     """Sphinx task directive."""
 
     def get_signature_prefix(self, sig):
-        return self.env.config.celery_task_prefix
+        return [nodes.Text(self.env.config.celery_task_prefix)]
+
+
+def autodoc_skip_member_handler(app, what, name, obj, skip, options):
+    """Handler for autodoc-skip-member event."""
+    # Celery tasks created with the @task decorator have the property
+    # that *obj.__doc__* and *obj.__class__.__doc__* are equal, which
+    # trips up the logic in sphinx.ext.autodoc that is supposed to
+    # suppress repetition of class documentation in an instance of the
+    # class. This overrides that behavior.
+    if isinstance(obj, BaseTask) and getattr(obj, '__wrapped__'):
+        if skip:
+            return False
+    return None
 
 
 def setup(app):
     """Setup Sphinx extension."""
+    import sphinx
+
+    app.setup_extension('sphinx.ext.autodoc')
+
+    # Sphinx 9.0+ rewrote autodoc; TaskDocumenter requires legacy mode.
+    # See: https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+    sphinx_version = tuple(int(x) for x in sphinx.__version__.split('.')[:2])
+    if sphinx_version >= (9, 0):
+        if not getattr(app.config, 'autodoc_use_legacy_class_based', False):
+            warnings.warn(
+                "Sphinx 9.0+ detected. celery.contrib.sphinx requires "
+                "'autodoc_use_legacy_class_based = True' in conf.py. "
+                "Enabling it automatically.",
+                UserWarning,
+                stacklevel=2
+            )
+            app.config.autodoc_use_legacy_class_based = True
+
     app.add_autodocumenter(TaskDocumenter)
-    app.domains['py'].directives['task'] = TaskDirective
+    app.add_directive_to_domain('py', 'task', TaskDirective)
+    app.add_role_to_domain('py', 'task', PyXRefRole(fix_parens=True))
     app.add_config_value('celery_task_prefix', '(task)', True)
+    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
+
+    return {
+        'parallel_read_safe': True
+    }

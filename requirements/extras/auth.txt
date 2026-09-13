@@ -1,1 +1,1 @@
-pyOpenSSL
+cryptography==50.0.1

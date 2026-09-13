@@ -1,0 +1,2 @@
+brotlipy>=0.7.0;platform_python_implementation=="PyPy"
+brotli>=1.0.0;platform_python_implementation=="CPython"

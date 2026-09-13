@@ -1,36 +1,24 @@
-from __future__ import absolute_import, unicode_literals
-
 import logging
-import pytest
 import sys
-
 from collections import defaultdict
 from io import StringIO
-from tempfile import mktemp
+from tempfile import mkstemp
+from unittest.mock import Mock, patch
 
-from case import Mock, mock, patch, skip
-from case.utils import get_logger_handlers
+import pytest
 
-from celery import signals
-from celery import uuid
+from celery import signals, uuid
 from celery.app.log import TaskFormatter
-from celery.five import python_2_unicode_compatible
-from celery.utils.log import LoggingProxy
-from celery.utils.log import (
-    get_logger,
-    ColorFormatter,
-    logger as base_logger,
-    get_task_logger,
-    task_logger,
-    in_sighandler,
-    logger_isa,
-)
+from celery.utils.log import ColorFormatter, LoggingProxy, get_logger, get_task_logger, in_sighandler
+from celery.utils.log import logger as base_logger
+from celery.utils.log import logger_isa, task_logger
+from t.unit import conftest
 
 
 class test_TaskFormatter:
 
     def test_no_task(self):
-        class Record(object):
+        class Record:
             msg = 'hello world'
             levelname = 'info'
             exc_text = exc_info = None
@@ -43,6 +31,20 @@ class test_TaskFormatter:
         x.format(record)
         assert record.task_name == '???'
         assert record.task_id == '???'
+
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = TaskFormatter(
+            fmt='[%(asctime)s] %(task_name)s %(message)s',
+            datefmt='%Y%m%d-%H%M%S',
+            use_color=False,
+        )
+        assert x.datefmt == '%Y%m%d-%H%M%S'
+        asctime = x.format(record).split(']')[0].lstrip('[')
+        # the default asctime uses "-" and ":" separators plus a "," for msecs
+        assert ':' not in asctime and ',' not in asctime
 
 
 class test_logger_isa:
@@ -94,6 +96,27 @@ class test_logger_isa:
 
 class test_ColorFormatter:
 
+    def test_datefmt_defaults_to_none(self):
+        assert ColorFormatter().datefmt is None
+
+    def test_use_color_is_still_the_second_positional_arg(self):
+        # datefmt is appended last so that ColorFormatter(fmt, False)
+        # keeps meaning "no color" instead of "datefmt=False".
+        x = ColorFormatter('%(message)s', False)
+        assert x.use_color is False
+        assert x.datefmt is None
+
+    def test_datefmt(self):
+        record = logging.LogRecord(
+            'name', logging.INFO, 'path', 1, 'hello world', None, None,
+        )
+        x = ColorFormatter(
+            fmt='[%(asctime)s] %(message)s',
+            datefmt='%H:%M:%S',
+            use_color=False,
+        )
+        assert x.format(record).split(']')[0].count(':') == 2
+
     @patch('celery.utils.log.safe_str')
     @patch('logging.Formatter.formatException')
     def test_formatException_not_string(self, fe, safe_str):
@@ -113,8 +136,6 @@ class test_ColorFormatter:
             raise Exception()
         except Exception:
             assert x.formatException(sys.exc_info())
-        if sys.version_info[0] == 2:
-            safe_str.assert_called()
 
     @patch('logging.Formatter.format')
     def test_format_object(self, _format):
@@ -136,8 +157,7 @@ class test_ColorFormatter:
                 safe_str.side_effect = None
         safe_str.side_effect = on_safe_str
 
-        @python_2_unicode_compatible
-        class Record(object):
+        class Record:
             levelname = 'ERROR'
             msg = 'HELLO'
             exc_info = 1
@@ -157,22 +177,15 @@ class test_ColorFormatter:
         assert '<Unrepresentable' in msg
         assert safe_str.call_count == 1
 
-    @skip.if_python3()
-    @patch('celery.utils.log.safe_str')
-    def test_format_raises_no_color(self, safe_str):
-        x = ColorFormatter(use_color=False)
-        record = Mock()
-        record.levelname = 'ERROR'
-        record.msg = 'HELLO'
-        record.exc_text = 'error text'
-        x.format(record)
-        assert safe_str.call_count == 1
-
 
 class test_default_logger:
 
-    def setup(self):
-        self.setup_logger = self.app.log.setup_logger
+    def setup_logger(self, *args, **kwargs):
+        self.app.log.setup_logging_subsystem(*args, **kwargs)
+
+        return logging.root
+
+    def setup_method(self):
         self.get_logger = lambda n=None: get_logger(n) if n else logging.root
         signals.setup_logging.receivers[:] = []
         self.app.log.already_setup = False
@@ -185,12 +198,34 @@ class test_default_logger:
         logger = get_logger(base_logger.name)
         assert logger.parent is logging.root
 
-    @mock.restore_logging()
-    def test_setup_logging_subsystem_misc(self):
+    def test_setup_logging_subsystem_misc(self, restore_logging):
         self.app.log.setup_logging_subsystem(loglevel=None)
 
-    @mock.restore_logging()
-    def test_setup_logging_subsystem_misc2(self):
+    def test_setup_logging_subsystem_propagates_receiver_error(self, restore_logging):
+        from celery.app.log import Logging
+
+        self.app.log.already_setup = False
+        signals.setup_logging.receivers[:] = []
+        Logging._setup = False
+        signals.setup_logging.sender_receivers_cache.clear()
+
+        @signals.setup_logging.connect(weak=False)
+        def raise_error(**kwargs):
+            raise ValueError("logging setup failed")
+
+        try:
+            with pytest.raises(ValueError, match="logging setup failed"):
+                self.app.log.setup_logging_subsystem()
+            assert not self.app.log.already_setup
+
+            signals.setup_logging.disconnect(raise_error)
+            self.app.log.setup_logging_subsystem()
+            assert Logging._setup
+        finally:
+            signals.setup_logging.disconnect(raise_error)
+            Logging._setup = False
+
+    def test_setup_logging_subsystem_misc2(self, restore_logging):
         self.app.conf.worker_hijack_root_logger = True
         self.app.log.setup_logging_subsystem()
 
@@ -203,18 +238,42 @@ class test_default_logger:
         self.app.log._configure_logger(None, sys.stderr, None, '', False)
         logger.handlers[:] = []
 
-    @mock.restore_logging()
-    def test_setup_logging_subsystem_colorize(self):
+    def test_setup_logging_subsystem_colorize(self, restore_logging):
         self.app.log.setup_logging_subsystem(colorize=None)
         self.app.log.setup_logging_subsystem(colorize=True)
 
-    @mock.restore_logging()
-    def test_setup_logging_subsystem_no_mputil(self):
-        with mock.mask_modules('billiard.util'):
-            self.app.log.setup_logging_subsystem()
+    def test_setup_handlers_datefmt(self):
+        logger = logging.getLogger('celery.test_setup_handlers_datefmt')
+        try:
+            self.app.log.setup_handlers(
+                logger, sys.stderr, '%(asctime)s', False,
+                datefmt='%Y%m%d',
+            )
+            assert logger.handlers[0].formatter.datefmt == '%Y%m%d'
+        finally:
+            logger.handlers[:] = []
 
-    @mock.restore_logging()
-    def test_setup_logger(self):
+    def test_worker_log_datefmt_setting(self, restore_logging):
+        self.app.conf.worker_log_datefmt = '%Y%m%d'
+        self.app.conf.worker_task_log_datefmt = '%H%M%S'
+        log = self.app.log.__class__(self.app)
+        assert log.datefmt == '%Y%m%d'
+        assert log.task_datefmt == '%H%M%S'
+
+    def test_empty_datefmt_overrides_the_configured_one(self, restore_logging):
+        # '' is a valid datefmt for logging.Formatter, so it must not fall
+        # back to the configured default the way `datefmt or self.datefmt` did.
+        self.app.conf.worker_task_log_datefmt = '%Y%m%d'
+        log = self.app.log.__class__(self.app)
+        with patch.object(log, 'setup_handlers') as setup_handlers:
+            log.setup_task_loggers(datefmt='')
+        assert setup_handlers.call_args.kwargs['datefmt'] == ''
+
+    @pytest.mark.masked_modules('billiard.util')
+    def test_setup_logging_subsystem_no_mputil(self, restore_logging, mask_modules):
+        self.app.log.setup_logging_subsystem()
+
+    def test_setup_logger(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=True)
         logger.handlers = []
@@ -222,16 +281,14 @@ class test_default_logger:
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False, colorize=None)
         # setup_logger logs to stderr without logfile argument.
-        assert (get_logger_handlers(logger)[0].stream is
+        assert (conftest.get_logger_handlers(logger)[0].stream is
                 sys.__stderr__)
 
-    @mock.restore_logging()
-    def test_setup_logger_no_handlers_stream(self):
+    def test_setup_logger_no_handlers_stream(self, restore_logging):
         l = self.get_logger()
         l.handlers = []
 
-        with mock.stdouts() as outs:
-            stdout, stderr = outs
+        with conftest.stdouts() as (stdout, stderr):
             l = self.setup_logger(logfile=sys.stderr,
                                   loglevel=logging.INFO, root=False)
             l.info('The quick brown fox...')
@@ -239,11 +296,9 @@ class test_default_logger:
 
     @patch('os.fstat')
     def test_setup_logger_no_handlers_file(self, *args):
-        tempfile = mktemp(suffix='unittest', prefix='celery')
-        _open = ('builtins.open' if sys.version_info[0] == 3
-                 else '__builtin__.open')
-        with patch(_open) as osopen:
-            with mock.restore_logging():
+        _, tempfile = mkstemp(suffix='unittest', prefix='celery')
+        with patch('builtins.open') as osopen:
+            with conftest.restore_logging_context_manager():
                 files = defaultdict(StringIO)
 
                 def open_file(filename, *args, **kwargs):
@@ -258,16 +313,15 @@ class test_default_logger:
                 l = self.setup_logger(
                     logfile=tempfile, loglevel=logging.INFO, root=False,
                 )
-                assert isinstance(get_logger_handlers(l)[0],
+                assert isinstance(conftest.get_logger_handlers(l)[0],
                                   logging.FileHandler)
                 assert tempfile in files
 
-    @mock.restore_logging()
-    def test_redirect_stdouts(self):
+    def test_redirect_stdouts(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
         try:
-            with mock.wrap_logger(logger) as sio:
+            with conftest.wrap_logger(logger) as sio:
                 self.app.log.redirect_stdouts_to_logger(
                     logger, loglevel=logging.ERROR,
                 )
@@ -279,19 +333,21 @@ class test_default_logger:
         finally:
             sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
-    @mock.restore_logging()
-    def test_logging_proxy(self):
+    def test_logging_proxy(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
 
-        with mock.wrap_logger(logger) as sio:
+        with conftest.wrap_logger(logger) as sio:
             p = LoggingProxy(logger, loglevel=logging.ERROR)
             p.close()
             p.write('foo')
             assert 'foo' not in sio.getvalue()
             p.closed = False
-            p.write('foo')
-            assert 'foo' in sio.getvalue()
+            p.write('\n')
+            assert sio.getvalue() == ''
+            write_res = p.write('foo ')
+            assert sio.getvalue() == 'foo \n'
+            assert write_res == 4
             lines = ['baz', 'xuzzy']
             p.writelines(lines)
             for line in lines:
@@ -300,26 +356,49 @@ class test_default_logger:
             p.close()
             assert not p.isatty()
 
-            with mock.stdouts() as (stdout, stderr):
+            with conftest.stdouts() as (stdout, stderr):
                 with in_sighandler():
                     p.write('foo')
                     assert stderr.getvalue()
 
-    @mock.restore_logging()
-    def test_logging_proxy_recurse_protection(self):
+    def test_logging_proxy_bytes(self, restore_logging):
+        logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
+                                   root=False)
+
+        with conftest.wrap_logger(logger) as sio:
+            p = LoggingProxy(logger, loglevel=logging.ERROR)
+            p.close()
+            p.write(b'foo')
+            assert 'foo' not in str(sio.getvalue())
+            p.closed = False
+            p.write(b'\n')
+            assert str(sio.getvalue()) == ''
+            write_res = p.write(b'foo ')
+            assert str(sio.getvalue()) == 'foo \n'
+            assert write_res == 4
+            p.flush()
+            p.close()
+            assert not p.isatty()
+
+            with conftest.stdouts() as (stdout, stderr):
+                with in_sighandler():
+                    p.write(b'foo')
+                    assert stderr.getvalue()
+
+    def test_logging_proxy_recurse_protection(self, restore_logging):
         logger = self.setup_logger(loglevel=logging.ERROR, logfile=None,
                                    root=False)
         p = LoggingProxy(logger, loglevel=logging.ERROR)
         p._thread.recurse_protection = True
         try:
-            assert p.write('FOOFO') is None
+            assert p.write('FOOFO') == 0
         finally:
             p._thread.recurse_protection = False
 
 
 class test_task_logger(test_default_logger):
 
-    def setup(self):
+    def setup_method(self):
         logger = self.logger = get_logger('celery.task')
         logger.handlers = []
         logging.root.manager.loggerDict.pop(logger.name, None)
@@ -333,7 +412,7 @@ class test_task_logger(test_default_logger):
         from celery._state import _task_stack
         _task_stack.push(test_task)
 
-    def teardown(self):
+    def teardown_method(self):
         from celery._state import _task_stack
         _task_stack.pop()
 
@@ -357,7 +436,7 @@ class MockLogger(logging.Logger):
 
     def __init__(self, *args, **kwargs):
         self._records = []
-        logging.Logger.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def handle(self, record):
         self._records.append(record)

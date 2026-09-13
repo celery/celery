@@ -1,9 +1,11 @@
-setuptools>=20.6.7
-wheel>=0.29.0
-flake8>=2.5.4
-flakeplus>=1.1
-pydocstyle
-tox>=2.3.1
+setuptools>=40.8.0
+wheel>=0.48.0
+flake8>=3.8.3
+flake8-docstrings>=1.7.0
+pydocstyle==6.3.0
+tox>=4.61.2
 sphinx2rst>=1.0
-cyanide>=1.0.1
-bumpversion
+# Disable cyanide until it's fully updated.
+# cyanide>=1.0.1
+bumpversion==0.6.0
+pyperclip==1.11.0

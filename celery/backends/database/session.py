@@ -1,29 +1,40 @@
-# -*- coding: utf-8 -*-
 """SQLAlchemy session."""
-from __future__ import absolute_import, unicode_literals
+import time
+
+from kombu.utils.compat import register_after_fork
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
-from kombu.utils.compat import register_after_fork
+
+from celery.utils.time import get_exponential_backoff_interval
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # TODO: Remove this once we drop support for SQLAlchemy < 1.4.
+    from sqlalchemy.ext.declarative import declarative_base
 
 ResultModelBase = declarative_base()
 
-__all__ = ['SessionManager']
+__all__ = ('SessionManager',)
+
+PREPARE_MODELS_MAX_RETRIES = 10
 
 
 def _after_fork_cleanup_session(session):
     session._after_fork()
 
 
-class SessionManager(object):
+class SessionManager:
     """Manage SQLAlchemy sessions."""
 
-    def __init__(self):
+    def __init__(self, engine_callback=None):
         self._engines = {}
         self._sessions = {}
         self.forked = False
         self.prepared = False
+        self.engine_callback = engine_callback
         if register_after_fork is not None:
             register_after_fork(self, _after_fork_cleanup_session)
 
@@ -35,10 +46,21 @@ class SessionManager(object):
             try:
                 return self._engines[dburi]
             except KeyError:
-                engine = self._engines[dburi] = create_engine(dburi, **kwargs)
+                engine = create_engine(dburi, **kwargs)
+                if self.engine_callback is not None:
+                    self.engine_callback(engine)
+                self._engines[dburi] = engine
                 return engine
         else:
-            return create_engine(dburi, poolclass=NullPool)
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
+            kwargs = {
+                k: v for k, v in kwargs.items()
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
+            }
+            engine = create_engine(dburi, poolclass=NullPool, **kwargs)
+            if self.engine_callback is not None:
+                self.engine_callback(engine)
+            return engine
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
         engine = self.get_engine(dburi, **kwargs)
@@ -46,12 +68,36 @@ class SessionManager(object):
             if short_lived_sessions or dburi not in self._sessions:
                 self._sessions[dburi] = sessionmaker(bind=engine)
             return engine, self._sessions[dburi]
-        else:
-            return engine, sessionmaker(bind=engine)
+        return engine, sessionmaker(bind=engine)
+
+    def invalidate(self, dburi):
+        """Dispose cached engine/session state for a database URI."""
+        self._sessions.pop(dburi, None)
+        engine = self._engines.pop(dburi, None)
+        if engine is not None:
+            engine.dispose()
 
     def prepare_models(self, engine):
         if not self.prepared:
-            ResultModelBase.metadata.create_all(engine)
+            # SQLAlchemy will check if the items exist before trying to
+            # create them, which is a race condition. If it raises an error
+            # in one iteration, the next may pass all the existence checks
+            # and the call will succeed.
+            retries = 0
+            while True:
+                try:
+                    ResultModelBase.metadata.create_all(engine)
+                except DatabaseError:
+                    if retries < PREPARE_MODELS_MAX_RETRIES:
+                        sleep_amount_ms = get_exponential_backoff_interval(
+                            10, retries, 1000, True
+                        )
+                        time.sleep(sleep_amount_ms / 1000)
+                        retries += 1
+                    else:
+                        raise
+                else:
+                    break
             self.prepared = True
 
     def session_factory(self, dburi, **kwargs):

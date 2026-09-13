@@ -18,7 +18,7 @@ responsiveness at times of high load.
 Ensuring Operations
 ===================
 
-In the book `Programming Pearls`_, Jon Bentley presents the concept of
+In the book Programming Pearls, Jon Bentley presents the concept of
 back-of-the-envelope calculations by asking the question;
 
     ❝ How much water flows out of the Mississippi River in a day? ❞
@@ -38,8 +38,6 @@ You should set up alerts, that'll notify you as soon as any queue has
 reached an unacceptable size. This way you can take appropriate action
 like adding new worker nodes, or revoking unnecessary tasks.
 
-.. _`Programming Pearls`: http://www.cs.bell-labs.com/cm/cs/pearls/
-
 .. _`The back of the envelope`:
     http://books.google.com/books?id=kse_7qbWbjsC&pg=PA67
 
@@ -47,22 +45,6 @@ like adding new worker nodes, or revoking unnecessary tasks.
 
 General Settings
 ================
-
-.. _optimizing-librabbitmq:
-
-librabbitmq
------------
-
-If you're using RabbitMQ (AMQP) as the broker then you can install the
-:pypi:`librabbitmq` module to use an optimized client written in C:
-
-.. code-block:: console
-
-    $ pip install librabbitmq
-
-The 'amqp' transport will automatically use the librabbitmq module if it's
-installed, or you can also specify the transport you want directly by using
-the ``pyamqp://`` or ``librabbitmq://`` prefixes.
 
 .. _optimizing-connection-pools:
 
@@ -166,27 +148,39 @@ The task message is only deleted from the queue after the task is
 :term:`acknowledged`, so if the worker crashes before acknowledging the task,
 it can be redelivered to another worker (or the same after recovery).
 
-When using the default of early acknowledgment, having a prefetch multiplier setting
-of *one*, means the worker will reserve at most one extra task for every
-worker process: or in other words, if the worker is started with
-:option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
-tasks (10 unacknowledged tasks executing, and 10 unacknowledged reserved
-tasks) at any time.
-
-Often users ask if disabling "prefetching of tasks" is possible, but what
-they really mean by that, is to have a worker only reserve as many tasks as
-there are worker processes (10 unacknowledged tasks for
-:option:`-c 10 <celery worker -c>`)
-
-That's possible, but not without also enabling
-:term:`late acknowledgment`. Using this option over the
-default behavior means a task that's already started executing will be
-retried in the event of a power failure or the worker instance being killed
-abruptly, so this also means the task must be :term:`idempotent`
+Note that an exception is considered normal operation in Celery and it will be acknowledged.
+Acknowledgments are really used to safeguard against failures that can not be normally
+handled by the Python exception system (i.e. power failure, memory corruption, hardware failure, fatal signal, etc.).
+For normal exceptions you should use task.retry() to retry the task.
 
 .. seealso::
 
     Notes at :ref:`faq-acks_late-vs-retry`.
+
+When using the default of early acknowledgment, having a prefetch multiplier setting
+of *one*, means the worker will reserve at most one extra task for every
+worker process: or in other words, if the worker is started with
+:option:`-c 10 <celery worker -c>`, the worker may reserve at most 20
+tasks (10 acknowledged tasks executing, and 10 unacknowledged reserved
+tasks) at any time.
+
+Often users ask if disabling "prefetching of tasks" is possible, and it is
+possible with a catch. You can have a worker only reserve as many tasks as
+there are worker processes, with the condition that they are acknowledged
+late (10 unacknowledged tasks executing for :option:`-c 10 <celery worker -c>`)
+
+This condition is required because, with the default early acknowledgment,
+a task is acknowledged just-in-time before being executed. Once that happens,
+the task no longer counts as an unacknowledged reserved
+message, so the broker is allowed to deliver another message up to the
+prefetch limit. With late acknowledgment enabled, executing tasks remain
+unacknowledged until they finish, which means they continue to occupy the
+worker's prefetch slots and prevent extra tasks from being reserved.
+
+For that, you need to enable  :term:`late acknowledgment`. Using this option over the
+default behavior means a task that's already started executing will be
+retried in the event of a power failure or the worker instance being killed
+abruptly, so this also means the task must be :term:`idempotent`
 
 You can enable this behavior by using the following configuration options:
 
@@ -195,56 +189,76 @@ You can enable this behavior by using the following configuration options:
     task_acks_late = True
     worker_prefetch_multiplier = 1
 
-.. _prefork-pool-prefetch:
+If your tasks cannot be acknowledged late you can disable broker
+prefetching by enabling :setting:`worker_disable_prefetch`. With this
+setting the worker fetches a new task only when an execution slot is
+free, preventing tasks from waiting behind long running ones on busy
+workers. This can also be set from the command line using
+:option:`--disable-prefetch <celery worker --disable-prefetch>`. This feature
+is currently only supported when using Redis as the broker.
 
-Prefork pool prefetch settings
-------------------------------
+Memory Usage
+------------
 
-The prefork pool will asynchronously send as many tasks to the processes
-as it can and this means that the processes are, in effect, prefetching
-tasks.
+If you are experiencing high memory usage on a prefork worker, first you need
+to determine whether the issue is also happening on the Celery master
+process. The Celery master process's memory usage should not continue to
+increase drastically after start-up. If you see this happening, it may indicate
+a memory leak bug which should be reported to the Celery issue tracker.
 
-This benefits performance but it also means that tasks may be stuck
-waiting for long running tasks to complete::
+If only your child processes have high memory usage, this indicates an issue
+with your task.
 
-    -> send task T1 to process A
-    # A executes T1
-    -> send task T2 to process B
-    # B executes T2
-    <- T2 complete sent by process B
+Keep in mind, Python process memory usage has a "high watermark" and will not
+return memory to the operating system until the child process has stopped. This
+means a single high memory usage task could permanently increase the memory
+usage of a child process until it's restarted. Fixing this may require adding
+chunking logic to your task to reduce peak memory usage.
 
-    -> send task T3 to process A
-    # A still executing T1, T3 stuck in local buffer and won't start until
-    # T1 returns, and other queued tasks won't be sent to idle processes
-    <- T1 complete sent by process A
-    # A executes T3
+Celery workers have two main ways to help reduce memory usage due to the "high
+watermark" and/or memory leaks in child processes: the
+:setting:`worker_max_tasks_per_child` and :setting:`worker_max_memory_per_child`
+settings.
 
-The worker will send tasks to the process as long as the pipe buffer is
-writable. The pipe buffer size varies based on the operating system: some may
-have a buffer as small as 64KB but on recent Linux versions the buffer
-size is 1MB (can only be changed system wide).
+You must be careful not to set these settings too low, or else your workers
+will spend most of their time restarting child processes instead of processing
+tasks. For example, if you use a :setting:`worker_max_tasks_per_child` of 1
+and your child process takes 1 second to start, then that child process would
+only be able to process a maximum of 60 tasks per minute (assuming the task ran
+instantly). A similar issue can occur when your tasks always exceed
+:setting:`worker_max_memory_per_child`.
 
-You can disable this prefetching behavior by enabling the
-:option:`-Ofair <celery worker -O>` worker option:
+.. _optimizing-pool-start-method:
 
-.. code-block:: console
+Pool start method (fork vs spawn)
+---------------------------------
 
-    $ celery -A proj worker -l info -Ofair
+.. versionadded:: 5.7
 
-With this option enabled the worker will only write to processes that are
-available for work, disabling the prefetch behavior::
+By default the prefork pool creates its child processes with ``fork()``
+(:setting:`worker_pool_start_method` set to ``"fork"``). Forking is fast and
+lets children share the parent's already-imported modules and memory through
+copy-on-write, which is why it is the default and the right choice for most
+deployments.
 
-    -> send task T1 to process A
-    # A executes T1
-    -> send task T2 to process B
-    # B executes T2
-    <- T2 complete sent by process B
+Forking is, however, **unsafe when the parent process has started threads or
+relies on C-extensions that are not fork-safe**. Common offenders are gRPC
+(used by some Google Cloud client libraries), ``psycopg`` and CUDA. After a
+``fork()`` only the forking thread survives in the child, while locks held by
+other threads remain locked forever, which typically shows up as children that
+hang, deadlock, or crash with corrupted internal state -- especially after a
+hard :setting:`task_time_limit` kill replaces a child.
 
-    -> send T3 to process B
-    # B executes T3
+If you hit these problems, set :setting:`worker_pool_start_method` to
+``"spawn"`` so each child starts in a fresh interpreter::
 
-    <- T3 complete sent by process B
-    <- T1 complete sent by process A
+    worker_pool_start_method = "spawn"
+
+The trade-offs of ``"spawn"`` are slower start-up, higher memory usage (no
+copy-on-write sharing), and the requirement that your app and task arguments
+are picklable and that your worker entry point is guarded by
+``if __name__ == '__main__':``.
+
 
 .. rubric:: Footnotes
 

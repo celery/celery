@@ -1,21 +1,23 @@
 """Worker Pidbox (remote control)."""
-from __future__ import absolute_import, unicode_literals
 import socket
 import threading
+
 from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
+
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import pass1
 from celery.utils.log import get_logger
+
 from . import control
 
-__all__ = ['Pidbox', 'gPidbox']
+__all__ = ('Pidbox', 'gPidbox')
 
 logger = get_logger(__name__)
 debug, error, info = logger.debug, logger.error, logger.info
 
 
-class Pidbox(object):
+class Pidbox:
     """Worker mailbox."""
 
     consumer = None
@@ -63,6 +65,9 @@ class Pidbox(object):
         self.start(self.c)
 
     def _close_channel(self, c):
+        if self.consumer:
+            ignore_errors(c, self.consumer.cancel)
+            self.consumer = None
         if self.node and self.node.channel:
             ignore_errors(c, self.node.channel.close)
 
@@ -71,6 +76,7 @@ class Pidbox(object):
         if self.consumer:
             debug('Canceling broadcast consumer...')
             ignore_errors(c, self.consumer.cancel)
+            self.consumer = None
         self.stop(self.c)
 
 

@@ -1,8 +1,10 @@
-from __future__ import absolute_import, unicode_literals
-import time
 import itertools
-from case import skip
+import time
+
+import pytest
 from billiard.einfo import ExceptionInfo
+
+pytest.importorskip('multiprocessing')
 
 
 def do_something(i):
@@ -20,10 +22,9 @@ def raise_something(i):
         return ExceptionInfo()
 
 
-@skip.unless_module('multiprocessing')
 class test_TaskPool:
 
-    def setup(self):
+    def setup_method(self):
         from celery.concurrency.prefork import TaskPool
         self.TaskPool = TaskPool
 

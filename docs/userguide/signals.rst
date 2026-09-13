@@ -7,7 +7,7 @@ Signals
 .. contents::
     :local:
 
-Signals allows decoupled applications to receive notifications when
+Signals allow decoupled applications to receive notifications when
 certain actions occur elsewhere in the application.
 
 Celery ships with many signals that your application can hook into
@@ -88,8 +88,10 @@ Provides arguments:
 
     Task message body.
 
-    This is a mapping containing the task message fields
-    (see :ref:`message-protocol-task-v1`).
+    This is a mapping containing the task message fields,
+    see :ref:`message-protocol-task-v2`
+    and :ref:`message-protocol-task-v1`
+    for a reference of possible fields that can be defined.
 
 * ``exchange``
 
@@ -133,13 +135,13 @@ Provides arguments:
 * ``headers``
 
     The task message headers, see :ref:`message-protocol-task-v2`
-    and :ref:`message-protocol-task-v1`.
+    and :ref:`message-protocol-task-v1`
     for a reference of possible fields that can be defined.
 
 * ``body``
 
     The task message body, see :ref:`message-protocol-task-v2`
-    and :ref:`message-protocol-task-v1`.
+    and :ref:`message-protocol-task-v1`
     for a reference of possible fields that can be defined.
 
 * ``exchange``
@@ -237,6 +239,12 @@ Provides arguments:
     Detailed exception information, including traceback
     (a :class:`billiard.einfo.ExceptionInfo` object).
 
+.. note::
+
+    Only the ``request`` argument is guaranteed to be provided in all cases.
+    The ``reason`` and ``einfo`` arguments may be ``None`` or not provided
+    in certain scenarios, such as when a task is cancelled and retried.
+    Signal handlers should not assume these arguments are always present.
 
 .. signal:: task_success
 
@@ -251,6 +259,14 @@ Provides arguments
 
 * ``result``
     Return value of the task.
+
+* ``runtime``
+    Time in seconds the task took, measured from the start of tracing until
+    the return value has been stored in the result backend and 
+    callbacks/chains have been dispatched. 
+    This is the same value shown as succeeded in Xs in the worker log.
+    
+    .. versionadded:: 5.7
 
 .. signal:: task_failure
 
@@ -287,6 +303,66 @@ Provides arguments:
 
     The :class:`billiard.einfo.ExceptionInfo` instance.
 
+``task_internal_error``
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when an internal Celery error occurs while executing the task.
+
+Sender is the task object executed.
+
+.. signal:: task_internal_error
+
+Provides arguments:
+
+* ``task_id``
+
+    Id of the task.
+
+* ``args``
+
+    Positional arguments the task was called with.
+
+* ``kwargs``
+
+    Keyword arguments the task was called with.
+
+* ``request``
+
+    The original request dictionary.
+    This is provided as the ``task.request`` may not be ready by the time
+    the exception is raised.
+
+* ``exception``
+
+    Exception instance raised.
+
+* ``traceback``
+
+    Stack trace object.
+
+* ``einfo``
+
+    The :class:`billiard.einfo.ExceptionInfo` instance.
+
+``task_received``
+~~~~~~~~~~~~~~~~~
+
+Dispatched when a task is received from the broker and is ready for execution.
+
+Sender is the consumer object.
+
+.. signal:: task_received
+
+Provides arguments:
+
+* ``request``
+
+    This is a :class:`~celery.worker.request.Request` instance, and not
+    ``task.request``. When using the prefork pool this signal
+    is dispatched in the parent process, so ``task.request`` isn't available
+    and shouldn't be used. Use this object instead, as they share many
+    of the same fields.
+
 .. signal:: task_revoked
 
 ``task_revoked``
@@ -300,7 +376,7 @@ Provides arguments:
 
 * ``request``
 
-    This is a :class:`~celery.worker.request.Request` instance, and not
+    This is a :class:`~celery.app.task.Context` instance, and not
     ``task.request``. When using the prefork pool this signal
     is dispatched in the parent process, so ``task.request`` isn't available
     and shouldn't be used. Use this object instead, as they share many
@@ -481,6 +557,20 @@ Provides arguments:
 
 Dispatched before the worker is started.
 
+.. signal:: worker_before_create_process
+
+``worker_before_create_process``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched in the parent process, just before new child process is created in the prefork pool.
+It can be used to clean up instances that don't behave well when forking.
+
+.. code-block:: python
+
+    @signals.worker_before_create_process.connect
+    def clean_channels(**kwargs):
+        grpc_singleton.clean_channel()
+
 .. signal:: worker_ready
 
 ``worker_ready``
@@ -496,6 +586,27 @@ Dispatched when the worker is ready to accept work.
 Dispatched when Celery sends a worker heartbeat.
 
 Sender is the :class:`celery.worker.heartbeat.Heart` instance.
+
+.. signal:: worker_shutting_down
+
+``worker_shutting_down``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dispatched when the worker begins the shutdown process.
+
+Provides arguments:
+
+* ``sig``
+
+    The POSIX signal that was received.
+
+* ``how``
+
+    The shutdown method, warm or cold.
+
+* ``exitcode``
+
+    The exitcode that will be used when the main process exits.
 
 .. signal:: worker_process_init
 
@@ -723,20 +834,23 @@ It can be used to add additional command-line arguments to the
 
 .. code-block:: python
 
-    from celery import Celery
-    from celery import signals
-    from celery.bin.base import Option
+    from celery import Celery, signals
+    from click import Option
 
     app = Celery()
+    
+    # Celery 5.0+ uses click for its command-line interface.
+    # Use click.option to add new command-line arguments.
     app.user_options['preload'].add(Option(
-        '--monitoring', action='store_true',
+        ('--monitoring',), is_flag=True,
         help='Enable our external monitoring utility, blahblah',
     ))
 
     @signals.user_preload_options.connect
     def handle_preload_options(options, **kwargs):
-        if options['monitoring']:
+        if options.get('monitoring'):
             enable_monitoring()
+
 
 
 Sender is the :class:`~celery.bin.base.Command` instance, and the value depends

@@ -1,24 +1,16 @@
-from __future__ import absolute_import, unicode_literals
-
 import pickle
-import pytest
-
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import count
-from time import time
+from time import monotonic
+from unittest.mock import Mock
 
-from case import skip
+import pytest
 from billiard.einfo import ExceptionInfo
 
-from celery.utils.collections import (
-    AttributeDict,
-    BufferMap,
-    ConfigurationView,
-    DictAttribute,
-    LimitedSet,
-    Messagebuffer,
-)
-from celery.five import items
+import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
+from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
+                                      LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
 
 
@@ -62,7 +54,7 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
-    def setup(self):
+    def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
             [
@@ -81,15 +73,83 @@ class test_ConfigurationView:
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
 
+    def test_getitem_respects_map_order(self):
+        # Changes are searched before defaults.
+        view = ConfigurationView(
+            {'foo': 1},
+            [{'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # Default mappings are also searched in order.
+        view = ConfigurationView(
+            {},
+            [{'foo': 1}, {'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # An old key in an earlier map wins over a new key in a later map.
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': 1},
+            [{'task_always_eager': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['task_always_eager'] == 1
+
+        # The same applies when the earlier map uses the new key.
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            [{'CELERY_ALWAYS_EAGER': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
+    def test_missing_key_with_prefix(self):
+        view = ConfigurationView({}, prefix='celery')
+        with pytest.raises(KeyError) as exc_info:
+            view['nonexisting']
+        assert exc_info.value.args[0] == (
+            "Key not found: 'nonexisting' (with prefix: 'celery_nonexisting')"
+        )
+
     def test_update(self):
         changes = dict(self.view.changes)
         self.view.update(a=1, b=2, c=3)
         assert self.view.changes == dict(changes, a=1, b=2, c=3)
 
+    def test_swap_with_keys(self):
+        view = ConfigurationView({})
+        other = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert other['CELERY_ALWAYS_EAGER'] == 1
+
+        view.swap_with(other)
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
     def test_contains(self):
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
         assert 'new' not in self.view
+
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
 
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
@@ -101,7 +161,7 @@ class test_ConfigurationView:
             'default_key': 1,
             'both': 2,
         }
-        assert dict(items(self.view)) == expected
+        assert dict(self.view.items()) == expected
         assert sorted(list(iter(self.view))) == sorted(list(expected.keys()))
         assert sorted(list(self.view.keys())) == sorted(list(expected.keys()))
         assert (sorted(list(self.view.values())) ==
@@ -137,12 +197,8 @@ class test_ConfigurationView:
         self.view.clear()
         assert len(self.view) == 2
 
-    def test_isa_mapping(self):
-        from collections import Mapping
-        assert issubclass(ConfigurationView, Mapping)
-
     def test_isa_mutable_mapping(self):
-        from collections import MutableMapping
+        from collections.abc import MutableMapping
         assert issubclass(ConfigurationView, MutableMapping)
 
 
@@ -155,14 +211,14 @@ class test_ExceptionInfo:
         except Exception:
             einfo = ExceptionInfo()
             assert str(einfo) == einfo.traceback
-            assert isinstance(einfo.exception, LookupError)
-            assert einfo.exception.args == ('The quick brown fox jumps...',)
+            assert isinstance(einfo.exception.exc, LookupError)
+            assert einfo.exception.exc.args == ('The quick brown fox jumps...',)
             assert einfo.traceback
 
             assert repr(einfo)
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_LimitedSet:
 
     def test_add(self):
@@ -187,7 +243,7 @@ class test_LimitedSet:
 
     def test_purge(self):
         # purge now enforces rules
-        # cant purge(1) now. but .purge(now=...) still works
+        # can't purge(1) now. but .purge(now=...) still works
         s = LimitedSet(maxlen=10)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
@@ -198,21 +254,21 @@ class test_LimitedSet:
         s = LimitedSet(maxlen=10, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=time() + 100)
+        s.purge(now=monotonic() + 100)
         assert len(s) == 0
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=lambda: time() - 100)
+        s.purge(now=lambda: monotonic() - 100)
         assert len(s) == 2
 
         # expired -> minsize
         s = LimitedSet(maxlen=10, minlen=10, expires=1)
         [s.add(i) for i in range(20)]
         s.minlen = 3
-        s.purge(now=time() + 3)
+        s.purge(now=monotonic() + 3)
         assert s.minlen == len(s)
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
@@ -293,8 +349,6 @@ class test_LimitedSet:
 
     def test_iterable_and_ordering(self):
         s = LimitedSet(maxlen=35, expires=None)
-        # we use a custom clock here, as time.time() does not have enough
-        # precision when called quickly (can return the same value twice).
         clock = count(1)
         for i in reversed(range(15)):
             s.add(i, now=next(clock))
@@ -460,3 +514,40 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+
+class test_ChainMap:
+
+    def test_observers_not_shared(self):
+        a = ChainMap()
+        b = ChainMap()
+        callback = Mock()
+        a.bind_to(callback)
+        b.update(x=1)
+        callback.assert_not_called()
+        a.update(x=1)
+        callback.assert_called_once_with(x=1)
+
+    def test_pop_applies_key_t(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.pop('foo') == 1
+        assert 'foo' not in cm
+
+    def test_get_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.get('foo') == 1
+        assert cm.get('missing', 'fallback') == 'fallback'
+
+    def test_setdefault_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm.setdefault('foo', 1)
+        assert cm.changes == {'foo!': 1}
+        cm.setdefault('foo', 2)
+        assert cm.changes == {'foo!': 1}
+
+    def test_getitem_respects_map_order(self):
+        cm = ChainMap({'foo': 1}, {'foo': 2, 'bar': 3})
+        assert cm['foo'] == 1
+        assert cm['bar'] == 3

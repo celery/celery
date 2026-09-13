@@ -1,33 +1,34 @@
-# -*- coding: utf-8 -*-
 """MongoDB result store backend."""
-from __future__ import absolute_import, unicode_literals
-from datetime import datetime, timedelta
-from kombu.utils.objects import cached_property
-from kombu.utils.url import maybe_sanitize_url
+from datetime import datetime, timedelta, timezone
+
 from kombu.exceptions import EncodeError
+from kombu.utils.objects import cached_property
+from kombu.utils.url import maybe_sanitize_url, urlparse
+
 from celery import states
 from celery.exceptions import ImproperlyConfigured
-from celery.five import string_t, items
+
 from .base import BaseBackend
 
 try:
     import pymongo
-except ImportError:  # pragma: no cover
-    pymongo = None   # noqa
+except ImportError:
+    pymongo = None
 
 if pymongo:
     try:
         from bson.binary import Binary
-    except ImportError:                     # pragma: no cover
-        from pymongo.binary import Binary   # noqa
-    from pymongo.errors import InvalidDocument  # noqa
+    except ImportError:
+        from pymongo.binary import Binary
+    from pymongo import uri_parser
+    from pymongo.errors import InvalidDocument
 else:                                       # pragma: no cover
-    Binary = None                           # noqa
+    Binary = None
 
-    class InvalidDocument(Exception):       # noqa
+    class InvalidDocument(Exception):
         pass
 
-__all__ = ['MongoBackend']
+__all__ = ('MongoBackend',)
 
 BINARY_CODECS = frozenset(['pickle', 'msgpack'])
 
@@ -53,12 +54,15 @@ class MongoBackend(BaseBackend):
 
     supports_autoexpire = False
 
+    # Bytes round-trip through BSON as a binary field.
+    supports_result_compression = True
+
     _connection = None
 
     def __init__(self, app=None, **kwargs):
         self.options = {}
 
-        super(MongoBackend, self).__init__(app, **kwargs)
+        super().__init__(app, **kwargs)
 
         if not pymongo:
             raise ImproperlyConfigured(
@@ -66,18 +70,17 @@ class MongoBackend(BaseBackend):
                 'MongoDB backend.')
 
         # Set option defaults
-        for key, value in items(self._prepare_client_options()):
+        for key, value in self._prepare_client_options().items():
             self.options.setdefault(key, value)
 
         # update conf with mongo uri data, only if uri was given
         if self.url:
-            if self.url == 'mongodb://':
-                self.url += 'localhost'
+            self.url = self._ensure_mongodb_uri_compliance(self.url)
 
-            uri_data = pymongo.uri_parser.parse_uri(self.url)
+            uri_data = uri_parser.parse_uri(self.url)
             # build the hosts list to create a mongo connection
             hostslist = [
-                '{0}:{1}'.format(x[0], x[1]) for x in uri_data['nodelist']
+                f'{x[0]}:{x[1]}' for x in uri_data['nodelist']
             ]
             self.user = uri_data['username']
             self.password = uri_data['password']
@@ -116,12 +119,23 @@ class MongoBackend(BaseBackend):
             self.options.update(config.pop('options', {}))
             self.options.update(config)
 
+    @staticmethod
+    def _ensure_mongodb_uri_compliance(url):
+        parsed_url = urlparse(url)
+        if not parsed_url.scheme.startswith('mongodb'):
+            url = f'mongodb+{url}'
+
+        if url == 'mongodb://':
+            url += 'localhost'
+
+        return url
+
     def _prepare_client_options(self):
-            if pymongo.version_tuple >= (3,):
-                return {'maxPoolSize': self.max_pool_size}
-            else:  # pragma: no cover
-                return {'max_pool_size': self.max_pool_size,
-                        'auto_start_request': False}
+        if pymongo.version_tuple >= (3,):
+            return {'maxPoolSize': self.max_pool_size}
+        else:  # pragma: no cover
+            return {'max_pool_size': self.max_pool_size,
+                    'auto_start_request': False}
 
     def _get_connection(self):
         """Connect to the MongoDB server."""
@@ -137,12 +151,16 @@ class MongoBackend(BaseBackend):
                 # This enables the use of replica sets and sharding.
                 # See pymongo.Connection() for more info.
                 host = self.host
-                if isinstance(host, string_t) \
+                if isinstance(host, str) \
                    and not host.startswith('mongodb://'):
-                    host = 'mongodb://{0}:{1}'.format(host, self.port)
+                    host = f'mongodb://{host}:{self.port}'
             # don't change self.options
             conf = dict(self.options)
             conf['host'] = host
+            if self.user:
+                conf['username'] = self.user
+            if self.password:
+                conf['password'] = self.password
 
             self._connection = MongoClient(**conf)
 
@@ -152,7 +170,7 @@ class MongoBackend(BaseBackend):
         if self.serializer == 'bson':
             # mongodb handles serialization
             return data
-        payload = super(MongoBackend, self).encode(data)
+        payload = super().encode(data)
 
         # serializer which are in a unsupported format (pickle/binary)
         if self.serializer in BINARY_CODECS:
@@ -162,26 +180,21 @@ class MongoBackend(BaseBackend):
     def decode(self, data):
         if self.serializer == 'bson':
             return data
-        return super(MongoBackend, self).decode(data)
+        return super().decode(data)
 
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        meta = {
-            '_id': task_id,
-            'status': state,
-            'result': self.encode(result),
-            'date_done': datetime.utcnow(),
-            'traceback': self.encode(traceback),
-            'children': self.encode(
-                self.current_task_children(request),
-            ),
-        }
+        meta = self._get_result_meta(result=self.encode(result), state=state,
+                                     traceback=traceback, request=request,
+                                     format_date=False)
+        # Add the _id for mongodb
+        meta['_id'] = task_id
 
         try:
-            self.collection.save(meta)
+            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
-            raise EncodeError(exc)
+            raise EncodeError(exc) from exc
 
         return result
 
@@ -189,23 +202,51 @@ class MongoBackend(BaseBackend):
         """Get task meta-data for a task by id."""
         obj = self.collection.find_one({'_id': task_id})
         if obj:
+            if self.app.conf.find_value_for_key('extended', 'result'):
+                # The request-derived fields are only written by
+                # ``_get_result_meta`` when a request is available, so a
+                # document stored without one (for example by
+                # ``AbortableAsyncResult.abort``) does not carry them.
+                # Default them to None instead of raising KeyError.
+                return self.meta_from_decoded({
+                    'name': obj.get('name'),
+                    'args': obj.get('args'),
+                    'task_id': obj['_id'],
+                    'queue': obj.get('queue'),
+                    'kwargs': obj.get('kwargs'),
+                    'status': obj['status'],
+                    'worker': obj.get('worker'),
+                    'retries': obj.get('retries'),
+                    'children': obj['children'],
+                    'date_done': obj['date_done'],
+                    'traceback': obj['traceback'],
+                    'result': self.decode(obj['result']),
+                })
             return self.meta_from_decoded({
                 'task_id': obj['_id'],
                 'status': obj['status'],
                 'result': self.decode(obj['result']),
                 'date_done': obj['date_done'],
-                'traceback': self.decode(obj['traceback']),
-                'children': self.decode(obj['children']),
+                'traceback': obj['traceback'],
+                'children': obj['children'],
             })
         return {'status': states.PENDING, 'result': None}
 
+    def task_result_exists(self, task_id):
+        """Check if a result exists in MongoDB for the given task ID.
+
+        .. versionadded:: 5.7.0
+        """
+        return bool(self.collection.find_one({"_id": task_id}))
+
     def _save_group(self, group_id, result):
         """Save the group result."""
-        self.group_collection.save({
+        meta = {
             '_id': group_id,
             'result': self.encode([i.id for i in result]),
-            'date_done': datetime.utcnow(),
-        })
+            'date_done': datetime.now(timezone.utc),
+        }
+        self.group_collection.replace_one({'_id': group_id}, meta, upsert=True)
         return result
 
     def _restore_group(self, group_id):
@@ -223,7 +264,7 @@ class MongoBackend(BaseBackend):
 
     def _delete_group(self, group_id):
         """Delete a group by id."""
-        self.group_collection.remove({'_id': group_id})
+        self.group_collection.delete_one({'_id': group_id})
 
     def _forget(self, task_id):
         """Remove result from MongoDB.
@@ -235,29 +276,28 @@ class MongoBackend(BaseBackend):
         # By using safe=True, this will wait until it receives a response from
         # the server.  Likewise, it will raise an OperationsError if the
         # response was unable to be completed.
-        self.collection.remove({'_id': task_id})
+        self.collection.delete_one({'_id': task_id})
 
     def cleanup(self):
         """Delete expired meta-data."""
-        self.collection.remove(
+        if not self.expires:
+            return
+
+        self.collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
-        self.group_collection.remove(
+        self.group_collection.delete_many(
             {'date_done': {'$lt': self.app.now() - self.expires_delta}},
         )
 
-    def __reduce__(self, args=(), kwargs={}):
-        return super(MongoBackend, self).__reduce__(
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(
             args, dict(kwargs, expires=self.expires, url=self.url))
 
     def _get_database(self):
         conn = self._get_connection()
-        db = conn[self.database_name]
-        if self.user and self.password:
-            if not db.authenticate(self.user, self.password):
-                raise ImproperlyConfigured(
-                    'Invalid MongoDB username or password.')
-        return db
+        return conn[self.database_name]
 
     @cached_property
     def database(self):
@@ -274,7 +314,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property
@@ -284,7 +324,7 @@ class MongoBackend(BaseBackend):
 
         # Ensure an index on date_done is there, if not process the index
         # in the background.  Once completed cleanup will be much faster
-        collection.ensure_index('date_done', background='true')
+        collection.create_index('date_done', background=True)
         return collection
 
     @cached_property

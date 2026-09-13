@@ -53,10 +53,10 @@ Naming
             pass
 
         # - "action" class (verb)
-        class UpdateTwitterStatus(object):    # BAD
+        class UpdateTwitterStatus:    # BAD
             pass
 
-        class update_twitter_status(object):    # GOOD
+        class update_twitter_status:    # GOOD
             pass
 
     .. note::
@@ -71,7 +71,7 @@ Naming
 
     .. code-block:: python
 
-        class Celery(object):
+        class Celery:
 
             def consumer_factory(self):     # BAD
                 ...
@@ -89,11 +89,11 @@ as this means that they can be set by either instantiation or inheritance.
 
 .. code-block:: python
 
-    class Producer(object):
+    class Producer:
         active = True
         serializer = 'json'
 
-        def __init__(self, serializer=None):
+        def __init__(self, serializer=None, active=None):
             self.serializer = serializer or self.serializer
 
             # must check for None when value can be false-y
@@ -130,7 +130,7 @@ the exception class from the instance directly.
     class Empty(Exception):
         pass
 
-    class Queue(object):
+    class Queue:
         Empty = Empty
 
         def get(self):
@@ -157,7 +157,7 @@ saved us from many a monkey patch).
 
 .. code-block:: python
 
-    class Worker(object):
+    class Worker:
         Consumer = Consumer
 
         def __init__(self, connection, consumer_cls=None):
@@ -176,7 +176,7 @@ a large potential user base.
 
 In Django there's a global settings object, so multiple Django projects
 can't co-exist in the same process space, this later posed a problem
-for using Celery with frameworks that doesn't have this limitation.
+for using Celery with frameworks that don't have this limitation.
 
 Therefore the app concept was introduced. When using apps you use 'celery'
 objects instead of importing things from Celery sub-modules, this
@@ -267,7 +267,7 @@ Module Overview
 
 - celery.concurrency
 
-    Execution pool implementations (prefork, eventlet, gevent, solo).
+    Execution pool implementations (prefork, eventlet, gevent, solo, thread).
 
 - celery.db
 

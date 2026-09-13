@@ -1,4 +1,4 @@
-.. image:: http://docs.celeryproject.org/en/latest/_images/celery-banner-small.png
+.. image:: https://docs.celeryq.dev/en/latest/_images/celery-banner-small.png
 
 |build-status| |license| |wheel| |pyversion| |pyimp|
 
@@ -8,12 +8,12 @@
 
 .. include:: ../includes/resources.txt
 
-.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=master
+.. |build-status| image:: https://secure.travis-ci.org/celery/celery.png?branch=main
     :alt: Build status
     :target: https://travis-ci.org/celery/celery
 
-.. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=master
-    :target: https://codecov.io/github/celery/celery?branch=master
+.. |coverage| image:: https://codecov.io/github/celery/celery/coverage.svg?branch=main
+    :target: https://codecov.io/github/celery/celery?branch=main
 
 .. |license| image:: https://img.shields.io/pypi/l/celery.svg
     :alt: BSD License
@@ -21,12 +21,12 @@
 
 .. |wheel| image:: https://img.shields.io/pypi/wheel/celery.svg
     :alt: Celery can be installed via wheel
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyversion| image:: https://img.shields.io/pypi/pyversions/celery.svg
     :alt: Supported Python versions.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/
 
 .. |pyimp| image:: https://img.shields.io/pypi/implementation/celery.svg
     :alt: Support Python implementations.
-    :target: https://pypi.python.org/pypi/celery/
+    :target: https://pypi.org/project/celery/

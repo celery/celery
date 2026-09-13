@@ -1,10 +1,10 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock
+
 import pytest
-from case import Mock
+
 from celery import uuid
 from celery.app import control
-from celery.exceptions import DuplicateNodenameWarning
-from celery.five import items
+from celery.exceptions import DuplicateNodenameWarning, ImproperlyConfigured
 from celery.utils.collections import LimitedSet
 
 
@@ -12,7 +12,7 @@ def _info_for_commandclass(type_):
     from celery.worker.control import Panel
     return [
         (name, info)
-        for name, info in items(Panel.meta)
+        for name, info in Panel.meta.items()
         if info.type == type_
     ]
 
@@ -44,7 +44,7 @@ class test_flatten_reply:
         with pytest.warns(DuplicateNodenameWarning) as w:
             nodes = control.flatten_reply(reply)
 
-        assert 'Received multiple replies from node name: {0}.'.format(
+        assert 'Received multiple replies from node name: {}.'.format(
             next(iter(reply[0]))) in str(w[0].message.args[0])
         assert 'foo@example.com' in nodes
         assert 'bar@example.com' in nodes
@@ -52,7 +52,7 @@ class test_flatten_reply:
 
 class test_inspect:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
         self.inspect = self.app.control.inspect()
@@ -77,11 +77,15 @@ class test_inspect:
                                 limit=None,
                                 timeout=None,
                                 reply=True,
+                                pattern=None,
+                                matcher=None,
                                 **arguments):
         self.app.control.broadcast.assert_called_with(
             command,
             arguments=arguments,
             destination=destination or self.inspect.destination,
+            pattern=pattern or self.inspect.pattern,
+            matcher=matcher or self.inspect.destination,
             callback=callback or self.inspect.callback,
             connection=connection or self.inspect.connection,
             limit=limit if limit is not None else self.inspect.limit,
@@ -91,7 +95,11 @@ class test_inspect:
 
     def test_active(self):
         self.inspect.active()
-        self.assert_broadcast_called('active')
+        self.assert_broadcast_called('active', safe=None)
+
+    def test_active_safe(self):
+        self.inspect.active(safe=True)
+        self.assert_broadcast_called('active', safe=True)
 
     def test_clock(self):
         self.inspect.clock()
@@ -113,7 +121,7 @@ class test_inspect:
     def test_hello__with_revoked(self):
         revoked = LimitedSet(100)
         for i in range(100):
-            revoked.add('id{0}'.format(i))
+            revoked.add(f'id{i}')
         self.inspect.hello('george@vandelay.com', revoked=revoked._data)
         self.assert_broadcast_called(
             'hello', from_node='george@vandelay.com', revoked=revoked._data)
@@ -166,6 +174,16 @@ class test_inspect:
         self.inspect.ping()
         self.assert_broadcast_called('ping')
 
+    def test_ping_matcher_pattern(self):
+        orig_inspect = self.inspect
+        self.inspect = self.app.control.inspect(pattern=".*", matcher="pcre")
+        self.inspect.ping()
+        try:
+            self.assert_broadcast_called('ping', pattern=".*", matcher="pcre")
+        except AssertionError as e:
+            self.inspect = orig_inspect
+            raise e
+
     def test_active_queues(self):
         self.inspect.active_queues()
         self.assert_broadcast_called('active_queues')
@@ -189,7 +207,7 @@ class test_inspect:
 
 class test_Control_broadcast:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.mailbox = Mock(name='mailbox')
 
     def test_broadcast(self):
@@ -213,7 +231,7 @@ class test_Control_broadcast:
 
 class test_Control:
 
-    def setup(self):
+    def setup_method(self):
         self.app.control.broadcast = Mock(name='broadcast')
         self.app.control.broadcast.return_value = {}
 
@@ -226,6 +244,12 @@ class test_Control:
                                         _options=None, **args):
         self.app.control.broadcast.assert_called_with(
             name, destination=destination, arguments=args, **_options or {})
+
+    def test_serializer(self):
+        self.app.conf['task_serializer'] = 'test'
+        self.app.conf['accept_content'] = ['test']
+        assert control.Control(self.app).mailbox.serializer == 'test'
+        assert control.Control(self.app).mailbox.accept == ['test']
 
     def test_purge(self):
         self.app.amqp.TaskConsumer = Mock(name='TaskConsumer')
@@ -267,6 +291,7 @@ class test_Control:
             self.mytask.name, soft=10, hard=20,
             destination='a@q.com', limit=99,
         )
+
         self.assert_control_called_with_args(
             'time_limit',
             destination='a@q.com',
@@ -400,6 +425,16 @@ class test_Control:
             terminate=False,
         )
 
+    def test_revoke_by_stamped_headers(self):
+        self.app.control.revoke_by_stamped_headers({'foo': 'bar'})
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination=None,
+            headers={'foo': 'bar'},
+            signal=control.TERM_SIGNAME,
+            terminate=False,
+        )
+
     def test_revoke__with_options(self):
         self.app.control.revoke(
             'foozbaaz',
@@ -412,6 +447,23 @@ class test_Control:
             'revoke',
             destination='a@q.com',
             task_id='foozbaaz',
+            signal='KILL',
+            terminate=True,
+            _options={'limit': 404},
+        )
+
+    def test_revoke_by_stamped_headers__with_options(self):
+        self.app.control.revoke_by_stamped_headers(
+            {'foo': 'bar'},
+            destination='a@q.com',
+            terminate=True,
+            signal='KILL',
+            limit=404,
+        )
+        self.assert_control_called_with_args(
+            'revoke_by_stamped_headers',
+            destination='a@q.com',
+            headers={'foo': 'bar'},
             signal='KILL',
             terminate=True,
             _options={'limit': 404},
@@ -475,6 +527,14 @@ class test_Control:
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
 
+    def test_revoke_by_stamped_headers_from_result(self):
+        self.app.control.revoke_by_stamped_headers = Mock(name='revoke_by_stamped_headers')
+        self.app.AsyncResult('foozbazzbar').revoke_by_stamped_headers({'foo': 'bar'})
+        self.app.control.revoke_by_stamped_headers.assert_called_with(
+            {'foo': 'bar'},
+            connection=None, reply=False, signal=None,
+            terminate=False, timeout=None)
+
     def test_revoke_from_resultset(self):
         self.app.control.revoke = Mock(name='revoke')
         uuids = [uuid() for _ in range(10)]
@@ -485,3 +545,38 @@ class test_Control:
             uuids,
             connection=None, reply=False, signal=None,
             terminate=False, timeout=None)
+
+    def test_after_fork_clears_mailbox_pool(self):
+        amqp = Mock(name='amqp')
+        self.app.amqp = amqp
+        closed_pool = Mock(name='closed pool')
+        amqp.producer_pool = closed_pool
+        assert closed_pool is self.app.control.mailbox.producer_pool
+        self.app.control._after_fork()
+        new_pool = Mock(name='new pool')
+        amqp.producer_pool = new_pool
+        assert new_pool is self.app.control.mailbox.producer_pool
+
+    def test_control_exchange__default(self):
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'celery'
+
+    def test_control_exchange__setting(self):
+        self.app.conf.control_exchange = 'test_exchange'
+        c = control.Control(self.app)
+        assert c.mailbox.namespace == 'test_exchange'
+
+    def test_control_mailbox_queue_options(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = False
+
+        c = control.Control(self.app)
+        assert c.mailbox.queue_durable is True
+        assert c.mailbox.queue_exclusive is False
+
+    def test_control_mailbox_invalid_combination(self):
+        self.app.conf.control_queue_durable = True
+        self.app.conf.control_queue_exclusive = True
+
+        with pytest.raises(ImproperlyConfigured):
+            control.Control(self.app)

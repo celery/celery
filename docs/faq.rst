@@ -99,10 +99,6 @@ that these improvements will be merged back into Python one day.
 It's also used for compatibility with older Python versions
 that don't come with the multiprocessing module.
 
-- :pypi:`pytz`
-
-The pytz module provides timezone definitions and related tools.
-
 kombu
 ~~~~~
 
@@ -175,7 +171,7 @@ See :ref:`brokers` for more information.
 Redis as a broker won't perform as well as
 an AMQP broker, but the combination RabbitMQ as broker and Redis as a result
 store is commonly used. If you have strict reliability requirements you're
-encouraged to use RabbitMQ or another AMQP broker. Some transports also uses
+encouraged to use RabbitMQ or another AMQP broker. Some transports also use
 polling, so they're likely to consume more resources. However, if you for
 some reason aren't able to use AMQP, feel free to use these alternatives.
 They will probably work fine for most use cases, and note that the above
@@ -195,11 +191,13 @@ language has an AMQP client, there shouldn't be much work to create a worker
 in your language. A Celery worker is just a program connecting to the broker
 to process messages.
 
-Also, there's another way to be language independent, and that's to use REST
+Also, there's another way to be language-independent, and that's to use REST
 tasks, instead of your tasks being functions, they're URLs. With this
 information you can even create simple web servers that enable preloading of
 code. Simply expose an endpoint that performs an operation, and create a task
 that just performs an HTTP request to that endpoint.
+
+You can also use `Flower's <https://flower.readthedocs.io>`_ `REST API <https://flower.readthedocs.io/en/latest/api.html#post--api-task-async-apply-(.+)>`_ to invoke tasks.
 
 .. _faq-troubleshooting:
 
@@ -218,7 +216,7 @@ You can do that by adding the following to your :file:`my.cnf`::
     [mysqld]
     transaction-isolation = READ-COMMITTED
 
-For more information about InnoDB`s transaction model see `MySQL - The InnoDB
+For more information about InnoDB’s transaction model see `MySQL - The InnoDB
 Transaction Model and Locking`_ in the MySQL user manual.
 
 (Thanks to Honza Kral and Anton Tsigularov for this solution)
@@ -230,8 +228,8 @@ Transaction Model and Locking`_ in the MySQL user manual.
 The worker isn't doing anything, just hanging
 ---------------------------------------------
 
-**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_.
-            or `Why is Task.delay/apply\* just hanging?`.
+**Answer:** See `MySQL is throwing deadlock errors, what can I do?`_,
+or `Why is Task.delay/apply\*/the worker just hanging?`_.
 
 .. _faq-results-unreliable:
 
@@ -314,7 +312,7 @@ them:
     $ pkill 'celery worker'
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill
+    $ # ps auxww | awk '/celery worker/ {print $2}' | xargs kill
 
 You may have to wait a while until all workers have finished executing
 tasks. If it's still hanging after a long time you can kill them by force
@@ -325,7 +323,7 @@ with:
     $ pkill -9 'celery worker'
 
     $ # - If you don't have pkill use:
-    $ # ps auxww | grep 'celery worker' | awk '{print $2}' | xargs kill -9
+    $ # ps auxww | awk '/celery worker/ {print $2}' | xargs kill -9
 
 .. _faq-task-does-not-run:
 
@@ -463,7 +461,7 @@ Can messages be encrypted?
 You can enable this using the :setting:`broker_use_ssl` setting.
 
 It's also possible to add additional encryption and security to messages,
-if you have a need for this then you should contact the :ref:`mailing-list`.
+if you have a need for this then you should contact the :ref:`getting-help`.
 
 Is it safe to run :program:`celery worker` as root?
 ---------------------------------------------------
@@ -619,6 +617,17 @@ using an AMQP client:
 
     >>> app.send_task('tasks.add', args=[2, 2], kwargs={})
     <AsyncResult: 373550e8-b9a0-4666-bc61-ace01fa4f91d>
+
+To use ``chain``, ``chord`` or ``group`` with tasks called by name,
+use the :meth:`@Celery.signature` method:
+
+.. code-block:: python
+
+    >>> chain(
+    ...     app.signature('tasks.add', args=[2, 2], kwargs={}),
+    ...     app.signature('tasks.add', args=[1, 1], kwargs={})
+    ... ).apply_async()
+    <AsyncResult: e9d52312-c161-46f0-9013-2713e6df812d>
 
 .. _faq-get-current-task-id:
 
@@ -779,6 +788,11 @@ to describe the task prefetching *limit*.  There's no actual prefetching involve
 Disabling the prefetch limits is possible, but that means the worker will
 consume as many tasks as it can, as fast as possible.
 
+You can use the :option:`--disable-prefetch <celery worker --disable-prefetch>`
+flag (or set :setting:`worker_disable_prefetch` to ``True``) so that a worker
+only fetches a task when one of its processes is free. This feature is currently
+only supported when using Redis as the broker.
+
 A discussion on prefetch limits, and configuration settings for a worker
 that only reserves one task at a time is found here:
 :ref:`optimizing-prefetch-limit`.
@@ -826,11 +840,13 @@ to use both.
 is catch-able with the :keyword:`try` block. The AMQP transaction isn't used
 for these errors: **if the task raises an exception it's still acknowledged!**
 
-The `acks_late` setting would be used when you need the task to be
-executed again if the worker (for some reason) crashes mid-execution.
-It's important to note that the worker isn't known to crash, and if
-it does it's usually an unrecoverable error that requires human
-intervention (bug in the worker, or task code).
+The `acks_late` setting controls when the message is acknowledged; it does not
+call `Task.retry` and is not an automatic retry policy. A task exception still
+results in an acknowledgment, and the worker also acknowledges the message when
+the child process is terminated by `sys.exit()` or a signal. Redelivery can
+instead occur when the worker loses the message before acknowledging it, for
+example after a worker or broker-connection failure. The exact behavior depends
+on the worker pool and message transport.
 
 In an ideal world you could safely retry any task that's failed, but
 this is rarely the case. Imagine the following task:
@@ -864,12 +880,11 @@ is required.
 Can I schedule tasks to execute at a specific time?
 ---------------------------------------------------
 
-.. module:: celery.app.task
-
 **Answer**: Yes. You can use the `eta` argument of :meth:`Task.apply_async`.
+Note that using distant `eta` times is not recommended, and in such case
+:ref:`periodic tasks<guide-beat>` should be preferred.
 
-See also :ref:`guide-beat`.
-
+See :ref:`calling-eta` for more details.
 
 .. _faq-safe-worker-shutdown:
 

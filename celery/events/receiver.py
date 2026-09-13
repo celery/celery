@@ -1,8 +1,5 @@
 """Event receiver implementation."""
-from __future__ import absolute_import, unicode_literals
-
 import time
-
 from operator import itemgetter
 
 from kombu import Queue
@@ -11,11 +8,12 @@ from kombu.mixins import ConsumerMixin
 
 from celery import uuid
 from celery.app import app_or_default
+from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import adjust_timestamp
 
 from .event import get_exchange
 
-__all__ = ['EventReceiver']
+__all__ = ('EventReceiver',)
 
 CLIENT_CLOCK_SKEW = -1
 
@@ -26,7 +24,9 @@ class EventReceiver(ConsumerMixin):
     """Capture events.
 
     Arguments:
-        connection (kombu.Connection): Connection to the broker.
+        channel (kombu.Channel): Channel to consume events on. A
+            :class:`kombu.Connection` is also accepted, in which case its
+            default channel is used.
         handlers (Mapping[Callable]): Event handlers.
             This is  a map of event type names and their handlers.
             The special handler `"*"` captures all events that don't have a
@@ -37,7 +37,9 @@ class EventReceiver(ConsumerMixin):
 
     def __init__(self, channel, handlers=None, routing_key='#',
                  node_id=None, app=None, queue_prefix=None,
-                 accept=None, queue_ttl=None, queue_expires=None):
+                 accept=None, queue_ttl=None, queue_expires=None,
+                 queue_exclusive=None,
+                 queue_durable=None):
         self.app = app_or_default(app or self.app)
         self.channel = maybe_channel(channel)
         self.handlers = {} if handlers is None else handlers
@@ -45,16 +47,28 @@ class EventReceiver(ConsumerMixin):
         self.node_id = node_id or uuid()
         self.queue_prefix = queue_prefix or self.app.conf.event_queue_prefix
         self.exchange = get_exchange(
-            self.connection or self.app.connection_for_write())
+            self.connection or self.app.connection_for_write(),
+            name=self.app.conf.event_exchange)
         if queue_ttl is None:
             queue_ttl = self.app.conf.event_queue_ttl
         if queue_expires is None:
             queue_expires = self.app.conf.event_queue_expires
+        if queue_exclusive is None:
+            queue_exclusive = self.app.conf.event_queue_exclusive
+        if queue_durable is None:
+            queue_durable = self.app.conf.event_queue_durable
+        if queue_exclusive and queue_durable:
+            raise ImproperlyConfigured(
+                'Queue cannot be both exclusive and durable, '
+                'choose one or the other.'
+            )
         self.queue = Queue(
             '.'.join([self.queue_prefix, self.node_id]),
             exchange=self.exchange,
             routing_key=self.routing_key,
-            auto_delete=True, durable=False,
+            auto_delete=not queue_durable,
+            durable=queue_durable,
+            exclusive=queue_exclusive,
             message_ttl=queue_ttl,
             expires=queue_expires,
         )
@@ -90,7 +104,8 @@ class EventReceiver(ConsumerMixin):
         unless :attr:`EventDispatcher.should_stop` is set to True, or
         forced via :exc:`KeyboardInterrupt` or :exc:`SystemExit`.
         """
-        return list(self.consume(limit=limit, timeout=timeout, wakeup=wakeup))
+        for _ in self.consume(limit=limit, timeout=timeout, wakeup=wakeup):
+            pass
 
     def wakeup_workers(self, channel=None):
         self.app.control.broadcast('heartbeat',
@@ -125,7 +140,7 @@ class EventReceiver(ConsumerMixin):
         return type, body
 
     def _receive(self, body, message, list=list, isinstance=isinstance):
-        if isinstance(body, list):  # celery 4.0: List of events
+        if isinstance(body, list):  # celery 4.0+: List of events
             process, from_message = self.process, self.event_from_message
             [process(*from_message(event)) for event in body]
         else:

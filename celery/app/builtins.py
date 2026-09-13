@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
 """Built-in Tasks.
 
 The built-in tasks are always available in all app instances.
 """
-from __future__ import absolute_import, unicode_literals
 from celery._state import connect_on_app_finalize
 from celery.utils.log import get_logger
 
-__all__ = []
+__all__ = ()
 logger = get_logger(__name__)
 
 
@@ -42,12 +40,12 @@ def add_unlock_chord_task(app):
     Will joins chord by creating a task chain polling the header
     for completion.
     """
+    from celery.backends.base import _create_chord_error_with_cause
     from celery.canvas import maybe_signature
-    from celery.exceptions import ChordError
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
-              default_retry_delay=1, ignore_result=True, lazy=False, bind=True)
+              default_retry_delay=app.conf.result_chord_retry_interval, ignore_result=True, lazy=False, bind=True)
     def unlock_chord(self, group_id, callback, interval=None,
                      max_retries=None, result=None,
                      Result=app.AsyncResult, GroupResult=app.GroupResult,
@@ -56,7 +54,6 @@ def add_unlock_chord_task(app):
             interval = self.default_retry_delay
 
         # check if the task group is ready, and if so apply the callback.
-        callback = maybe_signature(callback, app)
         deps = GroupResult(
             group_id,
             [result_from_tuple(r, app=app) for r in result],
@@ -64,37 +61,48 @@ def add_unlock_chord_task(app):
         )
         j = deps.join_native if deps.supports_native_join else deps.join
 
+        # Preserve exchange_type for retries; it is not included in delivery_info.
+        exchange_type = kwargs.pop('_chord_unlock_exchange_type', None)
+        retry_options = {}
+        if exchange_type is not None:
+            retry_options['exchange_type'] = exchange_type
         try:
             ready = deps.ready()
         except Exception as exc:
             raise self.retry(
                 exc=exc, countdown=interval, max_retries=max_retries,
+                **retry_options,
             )
         else:
             if not ready:
-                raise self.retry(countdown=interval, max_retries=max_retries)
+                raise self.retry(
+                    countdown=interval, max_retries=max_retries,
+                    **retry_options,
+                )
 
         callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
-                ret = j(timeout=3.0, propagate=True)
+                ret = j(
+                    timeout=app.conf.result_chord_join_timeout,
+                    propagate=True,
+                )
         except Exception as exc:  # pylint: disable=broad-except
             try:
                 culprit = next(deps._failed_join_report())
-                reason = 'Dependency {0.id} raised {1!r}'.format(culprit, exc)
+                reason = f'Dependency {culprit.id} raised {exc!r}'
             except StopIteration:
                 reason = repr(exc)
             logger.exception('Chord %r raised: %r', group_id, exc)
-            app.backend.chord_error_from_stack(callback, ChordError(reason))
+            chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+            app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
         else:
             try:
                 callback.delay(ret)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', group_id, exc)
-                app.backend.chord_error_from_stack(
-                    callback,
-                    exc=ChordError('Callback error: {0!r}'.format(exc)),
-                )
+                chord_error = _create_chord_error_with_cause(message=f'Callback error: {exc!r}', original_exc=exc)
+                app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
     return unlock_chord
 
 
@@ -165,7 +173,8 @@ def add_chain_task(app):
 @connect_on_app_finalize
 def add_chord_task(app):
     """No longer used, but here for backwards compatibility."""
-    from celery import group, chord as _chord
+    from celery import chord as _chord
+    from celery import group
     from celery.canvas import maybe_signature
 
     @app.task(name='celery.chord', bind=True, ignore_result=False,

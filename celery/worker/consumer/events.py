@@ -2,12 +2,14 @@
 
 ``Events`` -> :class:`celery.events.EventDispatcher`.
 """
-from __future__ import absolute_import, unicode_literals
 from kombu.common import ignore_errors
+
 from celery import bootsteps
+from celery.worker.state import reserved_requests
+
 from .connection import Connection
 
-__all__ = ['Events']
+__all__ = ('Events',)
 
 
 class Events(bootsteps.StartStopStep):
@@ -26,14 +28,16 @@ class Events(bootsteps.StartStopStep):
             not without_gossip or
             not without_heartbeat
         )
+        self.enabled = self.send_events
         c.event_dispatcher = None
-        super(Events, self).__init__(c, **kwargs)
+        super().__init__(c, **kwargs)
 
     def start(self, c):
         # flush events sent while connection was down.
         prev = self._close(c)
+        conn = c.connection_for_write(heartbeat=c.amqheartbeat)
         dis = c.event_dispatcher = c.app.events.Dispatcher(
-            c.connection_for_write(),
+            conn,
             hostname=c.hostname,
             enabled=self.send_events,
             groups=self.groups,
@@ -42,9 +46,14 @@ class Events(bootsteps.StartStopStep):
             buffer_group=['task'] if c.hub else None,
             on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
+        # register for reads so broker heartbeats are consumed.
+        if c.hub and c.amqheartbeat and conn.supports_heartbeats:
+            conn.transport.register_with_event_loop(conn.connection, c.hub)
         if prev:
             dis.extend_buffer(prev)
             dis.flush()
+            for request in tuple(reserved_requests):
+                request.eventer = dis
 
     def stop(self, c):
         pass
@@ -58,7 +67,7 @@ class Events(bootsteps.StartStopStep):
             # close custom connection
             if dispatcher.connection:
                 ignore_errors(c, dispatcher.connection.close)
-            ignore_errors(c, dispatcher.close)
+            ignore_errors(c, dispatcher.disable)
             c.event_dispatcher = None
             return dispatcher
 

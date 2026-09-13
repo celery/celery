@@ -8,6 +8,15 @@ This document contains change notes for bugfix releases in the 3.1.x series
 (Cipater), please see :ref:`whatsnew-3.1` for an overview of what's
 new in Celery 3.1.
 
+.. _version-3.1.26:
+
+3.1.26
+======
+:release-date: 2018-23-03 16:00 PM IST
+:release-by: Omer Katz
+
+- Fixed a crash caused by tasks cycling between Celery 3 and Celery 4 workers.
+
 .. _version-3.1.25:
 
 3.1.25
@@ -44,7 +53,7 @@ new in Celery 3.1.
     messages from clients/workers running 4.0.
 
 .. _`new task message protocol`:
-    http://docs.celeryproject.org/en/master/internals/protocol.html#version-2
+    https://docs.celeryq.dev/en/master/internals/protocol.html#version-2
 
 - ``Task.send_events`` can now be set to disable sending of events
   for that task only.
@@ -629,7 +638,7 @@ new in Celery 3.1.
 
 - **Django**: Compatibility with Django 1.7 on Windows (Issue #2126).
 
-- **Programs**: :option:`--umask <celery --umask>` argument can now be
+- **Programs**: :option:`!--umask` argument can now be
   specified in both octal (if starting with 0) or decimal.
 
 
@@ -1022,7 +1031,7 @@ News
 - **Beat**: No longer attempts to upgrade a newly created database file
   (Issue #1923).
 
-- **Beat**: New setting :setting:``CELERYBEAT_SYNC_EVERY`` can be be used
+- **Beat**: New setting :setting:``CELERYBEAT_SYNC_EVERY`` can be used
   to control file sync by specifying the number of tasks to send between
   each sync.
 
@@ -1316,7 +1325,7 @@ white-list block:
 
 Note also that if you wait for the result of a subtask in any form
 when using the prefork pool you must also disable the pool prefetching
-behavior with the worker :ref:`-Ofair option <prefork-pool-prefetch>`.
+behavior with the worker :ref:`-Ofair option <optimizing-prefetch-limit>`.
 
 .. _v317-fixes:
 

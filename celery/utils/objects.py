@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """Object related utilities, including introspection, etc."""
-from __future__ import absolute_import, unicode_literals
+import types
 from functools import reduce
 
-__all__ = ['Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup']
+__all__ = ('Bunch', 'FallbackContext', 'getitem_property', 'mro_lookup')
 
 
-class Bunch(object):
+class Bunch:
     """Object that enables you to modify attributes."""
 
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
 
-def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
+def mro_lookup(cls, attr, stop=None, monkey_patched=None):
     """Return the first node by MRO order that defines an attribute.
 
     Arguments:
@@ -28,6 +27,8 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
     Returns:
         Any: The attribute value, or :const:`None` if not found.
     """
+    stop = set() if not stop else stop
+    monkey_patched = [] if not monkey_patched else monkey_patched
     for node in cls.mro():
         if node in stop:
             try:
@@ -43,7 +44,7 @@ def mro_lookup(cls, attr, stop=set(), monkey_patched=[]):
             return node
 
 
-class FallbackContext(object):
+class FallbackContext:
     """Context workaround.
 
     The built-in ``@contextmanager`` utility does not work well
@@ -81,17 +82,21 @@ class FallbackContext(object):
     def __enter__(self):
         if self.provided is not None:
             return self.provided
-        context = self._context = self.fallback(
+        context = self.fallback(
             *self.fb_args, **self.fb_kwargs
-        ).__enter__()
-        return context
+        )
+        value = context.__enter__()
+        self._context = context
+        return value
 
     def __exit__(self, *exc_info):
         if self._context is not None:
             return self._context.__exit__(*exc_info)
 
+    __class_getitem__ = classmethod(types.GenericAlias)
 
-class getitem_property(object):
+
+class getitem_property:
     """Attribute -> dict key descriptor.
 
     The target object must support ``__getitem__``,

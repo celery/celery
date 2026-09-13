@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pool Autoscaling.
 
 This module implements the internal thread responsible
@@ -8,24 +7,20 @@ current autoscale settings.
 The autoscale thread is only enabled if
 the :option:`celery worker --autoscale` option is used.
 """
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
+from time import monotonic, sleep
 
-from time import sleep
-
-from kombu.async.semaphore import DummyLock
+from kombu.asynchronous.semaphore import DummyLock
 
 from celery import bootsteps
-from celery.five import monotonic
 from celery.utils.log import get_logger
 from celery.utils.threads import bgThread
 
 from . import state
 from .components import Pool
 
-__all__ = ['Autoscaler', 'WorkerComponent']
+__all__ = ('Autoscaler', 'WorkerComponent')
 
 logger = get_logger(__name__)
 debug, info, error = logger.debug, logger.info, logger.error
@@ -58,6 +53,10 @@ class WorkerComponent(bootsteps.StartStopStep):
             w.autoscaler.keepalive, w.autoscaler.maybe_scale,
         )
 
+    def info(self, w):
+        """Return `Autoscaler` info."""
+        return {'autoscaler': w.autoscaler.info()}
+
 
 class Autoscaler(bgThread):
     """Background thread to autoscale pool workers."""
@@ -65,7 +64,7 @@ class Autoscaler(bgThread):
     def __init__(self, pool, max_concurrency,
                  min_concurrency=0, worker=None,
                  keepalive=AUTOSCALE_KEEPALIVE, mutex=None):
-        super(Autoscaler, self).__init__()
+        super().__init__()
         self.pool = pool
         self.mutex = mutex or threading.Lock()
         self.max_concurrency = max_concurrency
@@ -101,26 +100,13 @@ class Autoscaler(bgThread):
             if max is not None:
                 if max < self.processes:
                     self._shrink(self.processes - max)
+                self._update_consumer_prefetch_count(max)
                 self.max_concurrency = max
             if min is not None:
                 if min > self.processes:
                     self._grow(min - self.processes)
                 self.min_concurrency = min
             return self.max_concurrency, self.min_concurrency
-
-    def force_scale_up(self, n):
-        with self.mutex:
-            new = self.processes + n
-            if new > self.max_concurrency:
-                self.max_concurrency = new
-            self._grow(n)
-
-    def force_scale_down(self, n):
-        with self.mutex:
-            new = self.processes - n
-            if new < self.min_concurrency:
-                self.min_concurrency = max(new, 0)
-            self._shrink(min(n, self.processes))
 
     def scale_up(self, n):
         self._last_scale_up = monotonic()
@@ -134,7 +120,6 @@ class Autoscaler(bgThread):
     def _grow(self, n):
         info('Scaling up %s processes.', n)
         self.pool.grow(n)
-        self.worker.consumer._update_prefetch_count(n)
 
     def _shrink(self, n):
         info('Scaling down %s processes.', n)
@@ -144,7 +129,13 @@ class Autoscaler(bgThread):
             debug("Autoscaler won't scale down: all processes busy.")
         except Exception as exc:
             error('Autoscaler: scale_down: %r', exc, exc_info=True)
-        self.worker.consumer._update_prefetch_count(-n)
+
+    def _update_consumer_prefetch_count(self, new_max):
+        diff = new_max - self.max_concurrency
+        if diff:
+            self.worker.consumer._update_prefetch_count(
+                diff
+            )
 
     def info(self):
         return {

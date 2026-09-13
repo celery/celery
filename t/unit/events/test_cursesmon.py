@@ -1,17 +1,17 @@
-from __future__ import absolute_import, unicode_literals
-from case import skip
+import pytest
+
+pytest.importorskip('curses')
 
 
-class MockWindow(object):
+class MockWindow:
 
     def getmaxyx(self):
         return self.y, self.x
 
 
-@skip.unless_module('curses', import_errors=(ImportError, OSError))
 class test_CursesDisplay:
 
-    def setup(self):
+    def setup_method(self):
         from celery.events import cursesmon
         self.monitor = cursesmon.CursesMonitor(object(), app=self.app)
         self.win = MockWindow()

@@ -1,20 +1,23 @@
-from __future__ import absolute_import, unicode_literals
+import os
 import pickle
-import pytest
+import sys
+from importlib import import_module
 from time import time
-from case import Mock, patch
+from unittest.mock import Mock, patch
+
+import pytest
+
 from celery import uuid
-from celery.exceptions import WorkerShutdown, WorkerTerminate
-from celery.worker import state
+from celery.exceptions import ImproperlyConfigured, WorkerShutdown, WorkerTerminate
+from celery.platforms import EX_OK
 from celery.utils.collections import LimitedSet
+from celery.worker import state
 
 
 @pytest.fixture
 def reset_state():
     yield
-    state.active_requests.clear()
-    state.revoked.clear()
-    state.total_count.clear()
+    state.reset_state()
 
 
 class MockShelve(dict):
@@ -39,7 +42,7 @@ class MyPersistent(state.Persistent):
 
 class test_maybe_shutdown:
 
-    def teardown(self):
+    def teardown_method(self):
         state.should_stop = None
         state.should_terminate = None
 
@@ -77,7 +80,9 @@ class test_maybe_shutdown:
         else:
             raise RuntimeError('should have exited')
 
-    def test_should_terminate(self):
+    @pytest.mark.parametrize('should_stop', (None, False, True, EX_OK))
+    def test_should_terminate(self, should_stop):
+        state.should_stop = should_stop
         state.should_terminate = True
         with pytest.raises(WorkerTerminate):
             state.maybe_shutdown()
@@ -106,7 +111,7 @@ class test_Persistent:
 
     def add_revoked(self, p, *ids):
         for id in ids:
-            p.db.setdefault(str('revoked'), LimitedSet()).add(id)
+            p.db.setdefault('revoked', LimitedSet()).add(id)
 
     def test_merge(self, p, data=['foo', 'bar', 'baz']):
         state.revoked.update(data)
@@ -117,26 +122,26 @@ class test_Persistent:
     def test_merge_dict(self, p):
         p.clock = Mock()
         p.clock.adjust.return_value = 626
-        d = {str('revoked'): {str('abc'): time()}, str('clock'): 313}
+        d = {'revoked': {'abc': time()}, 'clock': 313}
         p._merge_with(d)
         p.clock.adjust.assert_called_with(313)
-        assert d[str('clock')] == 626
-        assert str('abc') in state.revoked
+        assert d['clock'] == 626
+        assert 'abc' in state.revoked
 
     def test_sync_clock_and_purge(self, p):
         passthrough = Mock()
         passthrough.side_effect = lambda x: x
         with patch('celery.worker.state.revoked') as revoked:
-            d = {str('clock'): 0}
+            d = {'clock': 0}
             p.clock = Mock()
             p.clock.forward.return_value = 627
             p._dumps = passthrough
             p.compress = passthrough
             p._sync_with(d)
             revoked.purge.assert_called_with()
-            assert d[str('clock')] == 627
-            assert str('revoked') not in d
-            assert d[str('zrevoked')] is revoked
+            assert d['clock'] == 627
+            assert 'revoked' not in d
+            assert d['zrevoked'] is revoked
 
     def test_sync(self, p,
                   data1=['foo', 'bar', 'baz'], data2=['baz', 'ini', 'koz']):
@@ -145,15 +150,15 @@ class test_Persistent:
             state.revoked.add(item)
         p.sync()
 
-        assert p.db[str('zrevoked')]
-        pickled = p.decompress(p.db[str('zrevoked')])
+        assert p.db['zrevoked']
+        pickled = p.decompress(p.db['zrevoked'])
         assert pickled
         saved = pickle.loads(pickled)
         for item in data2:
             assert item in saved
 
 
-class SimpleReq(object):
+class SimpleReq:
 
     def __init__(self, name):
         self.id = uuid()
@@ -183,3 +188,151 @@ class test_state:
         for request in requests:
             state.task_ready(request)
         assert len(state.active_requests) == 0
+
+    def test_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+        assert request not in state.reserved_requests
+        assert state.requests[request.id] is request
+
+    def test_reserved_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_reserved(request)
+        assert request not in state.scheduled_requests
+        assert request in state.reserved_requests
+
+    def test_ready_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_ready(request)
+        assert request not in state.scheduled_requests
+        assert request.id not in state.requests
+
+    def test_scheduled_is_noop_when_already_reserved(self):
+        """Regression: with a threaded timer (``celery.utils.timer2.Timer``,
+        used by the non-eventloop pools) an ETA already in the past fires on
+        the timer thread immediately, so ``apply_eta_task()`` ->
+        ``task_reserved()`` can run *before* the strategy reaches
+        ``task_scheduled()``.  Re-adding the request to
+        ``scheduled_requests`` then would misreport its state and let
+        ``Consumer.on_close()`` drop a still-running task from ``requests``.
+        """
+        request = SimpleReq('foo')
+        state.task_reserved(request)
+
+        state.task_scheduled(request)
+
+        assert request not in state.scheduled_requests
+        assert request in state.reserved_requests
+        assert state.requests[request.id] is request
+
+    def test_scheduled_is_noop_when_already_active(self):
+        request = SimpleReq('foo')
+        state.task_accepted(request)
+
+        state.task_scheduled(request)
+
+        assert request not in state.scheduled_requests
+        assert request in state.active_requests
+        assert state.requests[request.id] is request
+
+    def test_reset_state_clears_scheduled(self):
+        state.task_scheduled(SimpleReq('foo'))
+        assert len(state.scheduled_requests) == 1
+        state.reset_state()
+        assert len(state.scheduled_requests) == 0
+
+
+class test_state_configuration():
+
+    @staticmethod
+    def import_state():
+        worker_package = import_module('celery.worker')
+        original = sys.modules['celery.worker.state']
+        try:
+            with patch.dict(sys.modules):
+                del sys.modules['celery.worker.state']
+                return import_module('celery.worker.state')
+        finally:
+            # ``import_module`` also rebinds the ``state`` attribute on the
+            # ``celery.worker`` package, and ``patch.dict`` only restores
+            # ``sys.modules``.  Without putting the original back, every
+            # later ``from celery.worker import state`` would hand out this
+            # throwaway copy -- with its own empty ``requests`` /
+            # ``*_requests`` containers -- while the rest of celery (e.g.
+            # ``celery.worker.consumer.consumer``) keeps using the real
+            # ones, so any test touching both would silently work on two
+            # different sets of state.
+            worker_package.state = original
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': '50001',
+        'CELERY_WORKER_SUCCESSFUL_MAX': '1001',
+        'CELERY_WORKER_REVOKE_EXPIRES': '10801',
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': '10801',
+    })
+    def test_custom_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50001
+        assert state.SUCCESSFUL_MAX == 1001
+        assert state.REVOKE_EXPIRES == 10801
+        assert state.SUCCESSFUL_EXPIRES == 10801
+
+    def test_default_configuration(self):
+        state = self.import_state()
+        assert state.REVOKES_MAX == 50000
+        assert state.SUCCESSFUL_MAX == 1000
+        assert state.REVOKE_EXPIRES == 10800
+        assert state.SUCCESSFUL_EXPIRES == 10800
+
+    def test_default_float_type_preserved(self):
+        """Ensure float defaults remain float type, not int."""
+        state = self.import_state()
+        assert isinstance(state.REVOKE_EXPIRES, float)
+        assert isinstance(state.SUCCESSFUL_EXPIRES, float)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKES_MAX': 'abc',
+    })
+    def test_malformed_revokes_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKES_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'abc' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_MAX': 'not_a_number',
+    })
+    def test_malformed_successful_max_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_MAX' in str(exc_info.value)
+        assert 'expected int' in str(exc_info.value)
+        assert 'not_a_number' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_REVOKE_EXPIRES': 'invalid_float',
+    })
+    def test_malformed_revoke_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_REVOKE_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'invalid_float' in str(exc_info.value)
+
+    @patch.dict(os.environ, {
+        'CELERY_WORKER_SUCCESSFUL_EXPIRES': 'xyz',
+    })
+    def test_malformed_successful_expires_raises_improperly_configured(self):
+        with pytest.raises(ImproperlyConfigured) as exc_info:
+            self.import_state()
+        assert 'CELERY_WORKER_SUCCESSFUL_EXPIRES' in str(exc_info.value)
+        assert 'expected float' in str(exc_info.value)
+        assert 'xyz' in str(exc_info.value)

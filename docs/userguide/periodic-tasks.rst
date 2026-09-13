@@ -36,7 +36,7 @@ An example time zone could be `Europe/London`:
 
     timezone = 'Europe/London'
 
-This setting must be added to your app, either by configuration it directly
+This setting must be added to your app, either by configuring it directly
 using (``app.conf.timezone = 'Europe/London'``), or by adding
 it to your configuration module if you have set one up using
 ``app.config_from_object``. See :ref:`celerytut-configuration` for
@@ -50,7 +50,7 @@ schedule manually.
 
 .. admonition:: Django Users
 
-    Celery recommends and is compatible with the new ``USE_TZ`` setting introduced
+    Celery recommends and is compatible with the ``USE_TZ`` setting introduced
     in Django 1.4.
 
     For Django users the time zone specified in the ``TIME_ZONE`` setting
@@ -64,6 +64,14 @@ schedule manually.
 
         $ python manage.py shell
         >>> from djcelery.models import PeriodicTask
+        >>> PeriodicTask.objects.update(last_run_at=None)
+
+    Django-Celery only supports Celery 4.0 and below, for Celery 4.0 and above, do as follow:
+
+    .. code-block:: console
+
+        $ python manage.py shell
+        >>> from django_celery_beat.models import PeriodicTask
         >>> PeriodicTask.objects.update(last_run_at=None)
 
 .. _beat-entries:
@@ -82,9 +90,14 @@ beat schedule list.
     app = Celery()
 
     @app.on_after_configure.connect
-    def setup_periodic_tasks(sender, **kwargs):
+    def setup_periodic_tasks(sender: Celery, **kwargs):
         # Calls test('hello') every 10 seconds.
         sender.add_periodic_task(10.0, test.s('hello'), name='add every 10')
+
+        # Calls test('hello') every 30 seconds.
+        # It uses the same signature of previous task, an explicit name is
+        # defined to avoid this task replacing the previous one defined.
+        sender.add_periodic_task(30.0, test.s('hello'), name='add every 30')
 
         # Calls test('world') every 30 seconds
         sender.add_periodic_task(30.0, test.s('world'), expires=10)
@@ -99,13 +112,23 @@ beat schedule list.
     def test(arg):
         print(arg)
 
+    @app.task
+    def add(x, y):
+        z = x + y
+        print(z)
+
+
 
 Setting these up from within the :data:`~@on_after_configure` handler means
-that we'll not evaluate the app at module level when using ``test.s()``.
+that we'll not evaluate the app at module level when using ``test.s()``. Note that
+:data:`~@on_after_configure` is sent after the app is set up, so tasks outside the
+module where the app is declared (e.g. in a `tasks.py` file located by
+:meth:`celery.Celery.autodiscover_tasks`) must use a later signal, such as
+:data:`~@on_after_finalize`.
 
 The :meth:`~@add_periodic_task` function will add the entry to the
 :setting:`beat_schedule` setting behind the scenes, and the same setting
-can also can be used to set up periodic tasks manually:
+can also be used to set up periodic tasks manually:
 
 Example: Run the `tasks.add` task every 30 seconds.
 
@@ -143,6 +166,42 @@ before the next. If that's a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
 
+.. _beat-groups-workflows:
+
+Scheduling groups and other workflows
+-------------------------------------
+
+:command:`beat` schedules a single task by name, so you can't pass a
+:ref:`group <canvas-group>`, chain, or chord signature directly to
+:meth:`~@add_periodic_task` (or a :setting:`beat_schedule` entry) -- an entry only
+stores a task name with its arguments, not a workflow.
+
+To run a workflow periodically, wrap it in a regular task and schedule that task:
+
+.. code-block:: python
+
+    from celery import Celery, group
+
+    app = Celery()
+
+    @app.task
+    def add(x, y):
+        return x + y
+
+    @app.task
+    def run_add_group():
+        group(add.s(i, i) for i in range(10)).apply_async()
+
+    @app.on_after_configure.connect
+    def setup_periodic_tasks(sender: Celery, **kwargs):
+        sender.add_periodic_task(30.0, run_add_group.s(), name='add group every 30')
+
+The wrapper only *dispatches* the workflow with ``apply_async()`` and returns. Don't
+call ``get()`` on the result inside the task to wait for it to finish: blocking on a
+result from within a task ties up a worker process and is discouraged (see
+:ref:`task-synchronous-subtasks`). The group's tasks run independently on the workers,
+so the initiating task can return immediately.
+
 .. _beat-entry-fields:
 
 Available Fields
@@ -151,6 +210,10 @@ Available Fields
 * `task`
 
     The name of the task to execute.
+
+    Task names are described in the :ref:`task-names` section of the User Guide.
+    Note that this is not the import path of the task, even though the default
+    naming pattern is built like it is.
 
 * `schedule`
 
@@ -174,7 +237,7 @@ Available Fields
     Execution options (:class:`dict`).
 
     This can be any argument supported by
-    :meth:`~celery.task.base.Task.apply_async` --
+    :meth:`~celery.app.task.Task.apply_async` --
     `exchange`, `routing_key`, `expires`, and so on.
 
 * `relative`
@@ -257,7 +320,7 @@ Some examples:
 |                                         |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on every even numbered day.        |
-|         ``day_of_month='2-30/3')``      |                                            |
+|         ``day_of_month='2-30/2')``      |                                            |
 +-----------------------------------------+--------------------------------------------+
 | ``crontab(0, 0,``                       | Execute on the first and third weeks of    |
 |         ``day_of_month='1-7,15-21')``   | the month.                                 |
@@ -265,8 +328,8 @@ Some examples:
 | ``crontab(0, 0, day_of_month='11',``    | Execute on the eleventh of May every year. |
 |          ``month_of_year='5')``         |                                            |
 +-----------------------------------------+--------------------------------------------+
-| ``crontab(0, 0,``                       | Execute on the first month of every        |
-|         ``month_of_year='*/3')``        | quarter.                                   |
+| ``crontab(0, 0,``                       | Execute every day on the first month       |
+|         ``month_of_year='*/3')``        | of every quarter.                          |
 +-----------------------------------------+--------------------------------------------+
 
 See :class:`celery.schedules.crontab` for more documentation.
@@ -278,7 +341,16 @@ Solar schedules
 
 If you have a task that should be executed according to sunrise,
 sunset, dawn or dusk, you can use the
-:class:`~celery.schedules.solar` schedule type:
+:class:`~celery.schedules.solar` schedule type.
+
+Solar schedules require the :pypi:`ephem` library, so
+to use them you must install Celery with the ``solar`` extra:
+
+.. code-block:: console
+
+    $ pip install celery[solar]
+
+Example:
 
 .. code-block:: python
 
@@ -413,7 +485,7 @@ Using custom scheduler classes
 ------------------------------
 
 Custom scheduler classes can be specified on the command-line (the
-:option:`-S <celery beat -S>` argument).
+:option:`--scheduler <celery beat --scheduler>` argument).
 
 The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
@@ -447,10 +519,12 @@ To install and use this extension:
 
         $ python manage.py migrate
 
-#. Start the :program:`celery beat` service using the ``django`` scheduler:
+#. Start the :program:`celery beat` service using the ``django_celery_beat.schedulers:DatabaseScheduler`` scheduler:
 
     .. code-block:: console
 
-        $ celery -A proj beat -l info -S django
+        $ celery -A proj beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+   Note:  You may also add this as the :setting:`beat_scheduler` setting directly.
 
 #. Visit the Django-Admin interface to set up some periodic tasks.

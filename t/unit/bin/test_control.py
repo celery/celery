@@ -1,125 +1,257 @@
-from __future__ import absolute_import, unicode_literals
+import os
+import re
+from unittest.mock import patch
+
 import pytest
-from case import Mock, patch
-from celery.five import WhateverIO
-from celery.bin.base import Error
-from celery.bin.control import _RemoteControl, inspect, control, status
+from click.testing import CliRunner
+from kombu.exceptions import OperationalError
+
+from celery.bin.celery import celery
+from celery.platforms import EX_UNAVAILABLE
+
+_GLOBAL_OPTIONS = ['-A', 't.unit.bin.proj.app_with_custom_cmds', '--broker', 'memory://']
+_INSPECT_OPTIONS = ['--timeout', '0']  # Avoid waiting for the zero workers to reply
 
 
-class test_RemoteControl:
+@pytest.fixture(autouse=True)
+def clean_os_environ():
+    # Celery modifies os.environ when given the CLI option --broker memory://
+    # This interferes with other tests, so we need to reset os.environ
+    with patch.dict(os.environ, clear=True):
+        yield
 
-    def test_call_interface(self):
-        with pytest.raises(NotImplementedError):
-            _RemoteControl(app=self.app).call()
+
+@pytest.mark.parametrize(
+    ('celery_cmd', 'custom_cmd'),
+    [
+        ('inspect', ('custom_inspect_cmd', '123')),
+        ('control', ('custom_control_cmd', '123', '456')),
+    ],
+)
+def test_custom_remote_command(celery_cmd, custom_cmd, isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [*_GLOBAL_OPTIONS, celery_cmd, *_INSPECT_OPTIONS, *custom_cmd],
+        catch_exceptions=False,
+    )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert res.output.strip() == 'Error: No nodes replied within time constraint'
 
 
-class test_inspect:
+@pytest.mark.parametrize(
+    ('celery_cmd', 'remote_cmd'),
+    [
+        # Test nonexistent commands
+        ('inspect', 'this_command_does_not_exist'),
+        ('control', 'this_command_does_not_exist'),
+        # Test commands that exist, but are of the wrong type
+        ('inspect', 'custom_control_cmd'),
+        ('control', 'custom_inspect_cmd'),
+    ],
+)
+def test_unrecognized_remote_command(celery_cmd, remote_cmd, isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [*_GLOBAL_OPTIONS, celery_cmd, *_INSPECT_OPTIONS, remote_cmd],
+        catch_exceptions=False,
+    )
+    assert res.exit_code == 2, (res, res.output)
+    assert f'Error: Command {remote_cmd} not recognized. Available {celery_cmd} commands: ' in res.output
 
-    def test_usage(self):
-        assert inspect(app=self.app).usage('foo')
 
-    def test_command_info(self):
-        i = inspect(app=self.app)
-        assert i.get_command_info(
-            'ping', help=True, color=i.colored.red, app=self.app,
+_expected_inspect_regex = (
+    '\n  custom_inspect_cmd x\\s+Ask the workers to reply with x\\.\n'
+)
+_expected_control_regex = (
+    '\n  custom_control_cmd a b\\s+Ask the workers to reply with a and b\\.\n'
+)
+
+
+@pytest.mark.parametrize(
+    ('celery_cmd', 'expected_regex'),
+    [
+        ('inspect', re.compile(_expected_inspect_regex, re.MULTILINE)),
+        ('control', re.compile(_expected_control_regex, re.MULTILINE)),
+    ],
+)
+def test_listing_remote_commands(celery_cmd, expected_regex, isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [*_GLOBAL_OPTIONS, celery_cmd, '--list'],
+    )
+    assert res.exit_code == 0, (res, res.stdout)
+    assert expected_regex.search(res.stdout)
+
+
+def test_status_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect.ping',
+               side_effect=OperationalError('[Errno 61] Connection refused')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'status'],
+            catch_exceptions=False,
         )
-
-    def test_list_commands_color(self):
-        i = inspect(app=self.app)
-        assert i.list_commands(help=True, color=i.colored.red, app=self.app)
-        assert i.list_commands(help=False, color=None, app=self.app)
-
-    def test_epilog(self):
-        assert inspect(app=self.app).epilog
-
-    def test_do_call_method_sql_transport_type(self):
-        self.app.connection = Mock()
-        conn = self.app.connection.return_value = Mock(name='Connection')
-        conn.transport.driver_type = 'sql'
-        i = inspect(app=self.app)
-        with pytest.raises(i.Error):
-            i.do_call_method(['ping'])
-
-    def test_say_directions(self):
-        i = inspect(self.app)
-        i.out = Mock()
-        i.quiet = True
-        i.say_chat('<-', 'hello out')
-        i.out.assert_not_called()
-
-        i.say_chat('->', 'hello in')
-        i.out.assert_called()
-
-        i.quiet = False
-        i.out.reset_mock()
-        i.say_chat('<-', 'hello out', 'body')
-        i.out.assert_called()
-
-    @patch('celery.app.control.Control.inspect')
-    def test_run(self, real):
-        out = WhateverIO()
-        i = inspect(app=self.app, stdout=out)
-        with pytest.raises(Error):
-            i.run()
-        with pytest.raises(Error):
-            i.run('help')
-        with pytest.raises(Error):
-            i.run('xyzzybaz')
-
-        i.run('ping')
-        real.assert_called()
-        i.run('ping', destination='foo,bar')
-        assert real.call_args[1]['destination'], ['foo' == 'bar']
-        assert real.call_args[1]['timeout'] == 0.2
-        callback = real.call_args[1]['callback']
-
-        callback({'foo': {'ok': 'pong'}})
-        assert 'OK' in out.getvalue()
-
-        with patch('celery.bin.control.dumps') as dumps:
-            i.run('ping', json=True)
-            dumps.assert_called()
-
-        instance = real.return_value = Mock()
-        instance._request.return_value = None
-        with pytest.raises(Error):
-            i.run('ping')
-
-        out.seek(0)
-        out.truncate()
-        i.quiet = True
-        i.say_chat('<-', 'hello')
-        assert not out.getvalue()
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: [Errno 61] Connection refused' in res.output
+    assert 'Traceback' not in res.output
 
 
-class test_control:
-
-    def control(self, patch_call, *args, **kwargs):
-        kwargs.setdefault('app', Mock(name='app'))
-        c = control(*args, **kwargs)
-        if patch_call:
-            c.call = Mock(name='control.call')
-        return c
-
-    def test_call(self):
-        i = self.control(False)
-        i.call('foo', arguments={'kw': 2})
-        i.app.control.broadcast.assert_called_with(
-            'foo', arguments={'kw': 2}, reply=True)
+def test_status_unexpected_error_is_summarized(cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect.ping',
+               side_effect=RuntimeError('boom')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'status'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Unable to run the `status` command. Reason: boom' in res.output
+    assert 'Traceback' not in res.output
 
 
-class test_status:
+def test_graph_workers_shows_friendly_error_when_broker_unreachable(
+    cli_runner: CliRunner,
+):
+    with patch('celery.app.control.Inspect.stats',
+               side_effect=OperationalError('connection failed')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'graph', 'workers'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
 
-    @patch('celery.bin.control.inspect')
-    def test_run(self, inspect_):
-        out, err = WhateverIO(), WhateverIO()
-        ins = inspect_.return_value = Mock()
-        ins.run.return_value = []
-        s = status(self.app, stdout=out, stderr=err)
-        with pytest.raises(Error):
-            s.run()
 
-        ins.run.return_value = ['a', 'b', 'c']
-        s.run()
-        assert '3 nodes online' in out.getvalue()
-        s.run(quiet=True)
+def test_events_dump_shows_friendly_error_when_broker_unreachable(
+    cli_runner: CliRunner,
+):
+    with patch('celery.bin.events._run_evdump',
+               side_effect=OperationalError('connection failed')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'events', '--dump'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
+
+
+def test_handle_remote_command_error_reraises_click_exception():
+    """base.py: bare ``raise`` inside the ClickException branch must be covered."""
+    import click
+
+    from celery.bin.base import handle_remote_command_error
+
+    original = click.ClickException('original click error')
+    with pytest.raises(click.ClickException) as exc_info:
+        try:
+            raise original
+        except Exception as exc:
+            handle_remote_command_error('any', exc)
+    assert exc_info.value is original
+
+
+def test_inspect_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect._request',
+               side_effect=OperationalError('connection refused')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'inspect', *_INSPECT_OPTIONS, 'custom_inspect_cmd', '1'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection refused' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_inspect_unexpected_error_is_summarized(cli_runner: CliRunner):
+    with patch('celery.app.control.Inspect._request',
+               side_effect=RuntimeError('inspect boom')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'inspect', *_INSPECT_OPTIONS, 'custom_inspect_cmd', '1'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Unable to run the `inspect custom_inspect_cmd` command. Reason: inspect boom' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_control_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
+    with patch('celery.app.control.Control.broadcast',
+               side_effect=OperationalError('connection refused')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'control', *_INSPECT_OPTIONS, 'custom_control_cmd', '1', '2'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection refused' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_control_unexpected_error_is_summarized(cli_runner: CliRunner):
+    with patch('celery.app.control.Control.broadcast',
+               side_effect=RuntimeError('control boom')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'control', *_INSPECT_OPTIONS, 'custom_control_cmd', '1', '2'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Unable to run the `control custom_control_cmd` command. Reason: control boom' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_events_camera_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
+    with patch('celery.bin.events._run_evcam',
+               side_effect=OperationalError('connection failed')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'events', '--camera', 'myapp.MyCameraClass'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_events_evtop_shows_friendly_error_when_broker_unreachable(cli_runner: CliRunner):
+    with patch('celery.bin.events._run_evtop',
+               side_effect=OperationalError('connection failed')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'events'],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
+    assert 'Traceback' not in res.output
+
+
+def test_control_with_preload_option(isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [
+            *_GLOBAL_OPTIONS,
+            # --workdir is a preload option handled by handle_preload_options.
+            '--workdir', '.',
+            'control',
+            *_INSPECT_OPTIONS,
+            'custom_control_cmd',
+            '123',
+            '456',
+        ],
+        catch_exceptions=False,
+    )
+
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert res.output.strip() == 'Error: No nodes replied within time constraint'

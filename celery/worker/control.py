@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
 """Worker remote control command implementations."""
-from __future__ import absolute_import, unicode_literals
-
 import io
 import tempfile
-
-from collections import namedtuple
+from collections import UserDict, defaultdict, namedtuple
 
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
 from celery.exceptions import WorkerShutdown
-from celery.five import UserDict, items, string_t, text_t
+from celery.platforms import EX_OK
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe_list
 from celery.utils.log import get_logger
@@ -21,7 +17,7 @@ from celery.utils.time import rate
 from . import state as worker_state
 from .request import Request
 
-__all__ = ['Panel']
+__all__ = ('Panel',)
 
 DEFAULT_TASK_INFO_ITEMS = ('exchange', 'routing_key', 'rate_limit')
 logger = get_logger(__name__)
@@ -99,7 +95,7 @@ def conf(state, with_defaults=False, **kwargs):
 
 
 def _wanted_config_key(key):
-    return isinstance(key, string_t) and not key.startswith('__')
+    return isinstance(key, str) and not key.startswith('__')
 
 
 # -- Task
@@ -127,11 +123,14 @@ def _find_requests_by_id(ids,
 
 def _state_of_task(request,
                    is_active=worker_state.active_requests.__contains__,
-                   is_reserved=worker_state.reserved_requests.__contains__):
+                   is_reserved=worker_state.reserved_requests.__contains__,
+                   is_scheduled=worker_state.scheduled_requests.__contains__):
     if is_active(request):
         return 'active'
     elif is_reserved(request):
         return 'reserved'
+    elif is_scheduled(request):
+        return 'scheduled'
     return 'ready'
 
 
@@ -151,10 +150,88 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
     #     Outside of this scope that is a function.
     # supports list argument since 3.1
     task_ids, task_id = set(maybe_list(task_id) or []), None
+    task_ids = _revoke(state, task_ids, terminate, signal, **kwargs)
+    if isinstance(task_ids, dict) and 'ok' in task_ids:
+        return task_ids
+    return ok(f'tasks {task_ids} flagged as revoked')
+
+
+@control_command(
+    variadic='headers',
+    signature='[key1=value1 [key2=value2 [... [keyN=valueN]]]]',
+)
+def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kwargs):
+    """Revoke task by header (or list of headers).
+
+    Keyword Arguments:
+        headers(dictionary): Dictionary that contains stamping scheme name as keys and stamps as values.
+                             If headers is a list, it will be converted to a dictionary.
+        terminate (bool): Also terminate the process if the task is active.
+        signal (str): Name of signal to use for terminate (e.g., ``KILL``).
+    Sample headers input:
+        {'mtask_id': [id1, id2, id3]}
+    """
+    # pylint: disable=redefined-outer-name
+    # XXX Note that this redefines `terminate`:
+    #     Outside of this scope that is a function.
+    # supports list argument since 3.1
+    signum = _signals.signum(signal or TERM_SIGNAME)
+
+    if isinstance(headers, list):
+        headers = {h.split('=')[0]: h.split('=')[1] for h in headers}
+
+    for header, stamps in headers.items():
+        updated_stamps = maybe_list(worker_state.revoked_stamps.get(header) or []) + list(maybe_list(stamps))
+        worker_state.revoked_stamps[header] = updated_stamps
+
+    if not terminate:
+        return ok(f'headers {headers} flagged as revoked, but not terminated')
+
+    active_requests = list(worker_state.active_requests)
+
+    terminated_scheme_to_stamps_mapping = defaultdict(set)
+
+    # Terminate all running tasks of matching headers
+    # Go through all active requests, and check if one of the
+    # requests has a stamped header that matches the given headers to revoke
+
+    for req in active_requests:
+        # Check stamps exist
+        if hasattr(req, "stamps") and req.stamps:
+            # if so, check if any stamps match a revoked stamp
+            for expected_header_key, expected_header_value in headers.items():
+                if expected_header_key in req.stamps:
+                    expected_header_value = maybe_list(expected_header_value)
+                    actual_header = maybe_list(req.stamps[expected_header_key])
+                    matching_stamps_for_request = set(actual_header) & set(expected_header_value)
+                    # Check any possible match regardless if the stamps are a sequence or not
+                    if matching_stamps_for_request:
+                        terminated_scheme_to_stamps_mapping[expected_header_key].update(matching_stamps_for_request)
+                        req.terminate(state.consumer.pool, signal=signum)
+
+    if not terminated_scheme_to_stamps_mapping:
+        return ok(f'headers {headers} were not terminated')
+    return ok(f'headers {terminated_scheme_to_stamps_mapping} revoked')
+
+
+def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
     size = len(task_ids)
     terminated = set()
 
     worker_state.revoked.update(task_ids)
+    requests_by_id = {request.id: request for request in _find_requests_by_id(task_ids)}
+
+    for task_id in task_ids:
+        request = requests_by_id.get(task_id)
+        if request and request in worker_state.active_requests:
+            continue
+        # Tasks may override their backend.
+        backend = request.task.backend if request else state.app.backend
+        try:
+            backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
+        except Exception as exc:
+            logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
+
     if terminate:
         signum = _signals.signum(signal or TERM_SIGNAME)
         for request in _find_requests_by_id(task_ids):
@@ -167,16 +244,16 @@ def revoke(state, task_id, terminate=False, signal=None, **kwargs):
 
         if not terminated:
             return ok('terminate: tasks unknown')
-        return ok('terminate: {0}'.format(', '.join(terminated)))
+        return ok('terminate: {}'.format(', '.join(terminated)))
 
     idstr = ', '.join(task_ids)
     logger.info('Tasks flagged as revoked: %s', idstr)
-    return ok('tasks {0} flagged as revoked'.format(idstr))
+    return task_ids
 
 
 @control_command(
     variadic='task_id',
-    args=[('signal', text_t)],
+    args=[('signal', str)],
     signature='<signal> [id1 [id2 [... [idN]]]]'
 )
 def terminate(state, signal, task_id, **kwargs):
@@ -185,14 +262,14 @@ def terminate(state, signal, task_id, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('rate_limit', text_t)],
+    args=[('task_name', str), ('rate_limit', str)],
     signature='<task_name> <rate_limit (e.g., 5/s | 5/m | 5/h)>',
 )
 def rate_limit(state, task_name, rate_limit, **kwargs):
     """Tell worker(s) to modify the rate limit for a task by type.
 
     See Also:
-        :attr:`celery.task.base.Task.rate_limit`.
+        :attr:`celery.app.task.Task.rate_limit`.
 
     Arguments:
         task_name (str): Type of task to set rate limit for.
@@ -204,7 +281,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
     try:
         rate(rate_limit)
     except ValueError as exc:
-        return nok('Invalid rate limit string: {0!r}'.format(exc))
+        return nok(f'Invalid rate limit string: {exc!r}')
 
     try:
         state.app.tasks[task_name].rate_limit = rate_limit
@@ -225,7 +302,7 @@ def rate_limit(state, task_name, rate_limit, **kwargs):
 
 
 @control_command(
-    args=[('task_name', text_t), ('soft', float), ('hard', float)],
+    args=[('task_name', str), ('soft', float), ('hard', float)],
     signature='<task_name> <soft_secs> [hard_secs]',
 )
 def time_limit(state, task_name=None, hard=None, soft=None, **kwargs):
@@ -277,6 +354,8 @@ def election(state, id, topic, action=None, **kwargs):
 def enable_events(state):
     """Tell worker(s) to send task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -288,6 +367,8 @@ def enable_events(state):
 def disable_events(state):
     """Tell worker(s) to stop sending task-related events."""
     dispatcher = state.consumer.event_dispatcher
+    if dispatcher is None:
+        return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
         logger.info('Events of group {task} disabled by remote.')
@@ -300,7 +381,8 @@ def heartbeat(state):
     """Tell worker(s) to send event heartbeat immediately."""
     logger.debug('Heartbeat requested by remote.')
     dispatcher = state.consumer.event_dispatcher
-    dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
+    if dispatcher:
+        dispatcher.send('worker-heartbeat', freq=5, **worker_state.SOFTWARE_INFO)
 
 
 # -- Worker
@@ -315,6 +397,8 @@ def hello(state, from_node, revoked=None, **kwargs):
         logger.info('sync with %s', from_node)
         if revoked:
             worker_state.revoked.update(revoked)
+        # Do not send expired items to the other worker.
+        worker_state.revoked.purge()
         return {
             'revoked': worker_state.revoked._data,
             'clock': state.app.clock.forward(),
@@ -367,9 +451,9 @@ def reserved(state, **kwargs):
 
 
 @inspect_command(alias='dump_active')
-def active(state, **kwargs):
+def active(state, safe=False, **kwargs):
     """List of tasks currently being executed."""
-    return [request.info()
+    return [request.info(safe=safe)
             for request in state.tset(worker_state.active_requests)]
 
 
@@ -394,6 +478,8 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
     """
     reg = state.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
+    taskinfoitems = [item for item in taskinfoitems
+                     if isinstance(item, str) and not item.startswith('_')]
 
     tasks = reg if builtins else (
         task for task in reg if not task.startswith('celery.'))
@@ -404,8 +490,8 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
             if getattr(task, field, None) is not None
         }
         if fields:
-            info = ['='.join(f) for f in items(fields)]
-            return '{0} [{1}]'.format(task.name, ' '.join(info))
+            info = ['='.join(f) for f in fields.items()]
+            return '{} [{}]'.format(task.name, ' '.join(info))
         return task.name
 
     return [_extract_info(reg[task]) for task in sorted(tasks)]
@@ -415,7 +501,7 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
 
 @inspect_command(
     default_timeout=60.0,
-    args=[('type', text_t), ('num', int), ('max_depth', int)],
+    args=[('type', str), ('num', int), ('max_depth', int)],
     signature='[object_type=Request] [num=200 [max_depth=10]]',
 )
 def objgraph(state, num=200, max_depth=10, type='Request'):  # pragma: no cover
@@ -470,7 +556,7 @@ def memdump(state, samples=10, **kwargs):  # pragma: no cover
 def pool_grow(state, n=1, **kwargs):
     """Grow pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_up(n)
+        return nok("pool_grow is not supported with autoscale. Adjust autoscale range instead.")
     else:
         state.consumer.pool.grow(n)
         state.consumer._update_prefetch_count(n)
@@ -484,7 +570,7 @@ def pool_grow(state, n=1, **kwargs):
 def pool_shrink(state, n=1, **kwargs):
     """Shrink pool by n processes/threads."""
     if state.consumer.controller.autoscaler:
-        state.consumer.controller.autoscaler.force_scale_down(n)
+        return nok("pool_shrink is not supported with autoscale. Adjust autoscale range instead.")
     else:
         state.consumer.pool.shrink(n)
         state.consumer._update_prefetch_count(-n)
@@ -510,7 +596,7 @@ def autoscale(state, max=None, min=None):
     autoscaler = state.consumer.controller.autoscaler
     if autoscaler:
         max_, min_ = autoscaler.update(max, min)
-        return ok('autoscale now max={0} min={1}'.format(max_, min_))
+        return ok(f'autoscale now max={max_} min={min_}')
     raise ValueError('Autoscale not enabled')
 
 
@@ -518,17 +604,17 @@ def autoscale(state, max=None, min=None):
 def shutdown(state, msg='Got shutdown from remote', **kwargs):
     """Shutdown worker(s)."""
     logger.warning(msg)
-    raise WorkerShutdown(msg)
+    raise WorkerShutdown(EX_OK)
 
 
 # -- Queues
 
 @control_command(
     args=[
-        ('queue', text_t),
-        ('exchange', text_t),
-        ('exchange_type', text_t),
-        ('routing_key', text_t),
+        ('queue', str),
+        ('exchange', str),
+        ('exchange_type', str),
+        ('routing_key', str),
     ],
     signature='<queue> [exchange [type [routing_key]]]',
 )
@@ -538,11 +624,11 @@ def add_consumer(state, queue, exchange=None, exchange_type=None,
     state.consumer.call_soon(
         state.consumer.add_task_queue,
         queue, exchange, exchange_type or 'direct', routing_key, **options)
-    return ok('add consumer {0}'.format(queue))
+    return ok(f'add consumer {queue}')
 
 
 @control_command(
-    args=[('queue', text_t)],
+    args=[('queue', str)],
     signature='<queue>',
 )
 def cancel_consumer(state, queue, **_):
@@ -550,12 +636,12 @@ def cancel_consumer(state, queue, **_):
     state.consumer.call_soon(
         state.consumer.cancel_task_queue, queue,
     )
-    return ok('no longer consuming from {0}'.format(queue))
+    return ok(f'no longer consuming from {queue}')
 
 
 @inspect_command()
 def active_queues(state):
-    """List the task queues a worker are currently consuming from."""
+    """List the task queues a worker is currently consuming from."""
     if state.consumer.task_consumer:
         return [dict(queue.as_dict(recurse=True))
                 for queue in state.consumer.task_consumer.queues]

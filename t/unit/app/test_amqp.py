@@ -1,11 +1,11 @@
-from __future__ import absolute_import, unicode_literals
+from datetime import datetime, timedelta, timezone
+from unittest.mock import Mock, patch
+
 import pytest
-from datetime import datetime, timedelta
-from case import Mock
 from kombu import Exchange, Queue
+
 from celery import uuid
 from celery.app.amqp import Queues, utf8dict
-from celery.five import keys
 from celery.utils.time import to_utc
 
 
@@ -89,39 +89,36 @@ class test_Queues:
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
 
-    @pytest.mark.parametrize('ha_policy,qname,q,qargs,expected', [
-        (None, 'xyz', 'xyz', None, None),
-        (None, 'xyz', 'xyz', {'x-foo': 'bar'}, {'x-foo': 'bar'}),
-        ('all', 'foo', Queue('foo'), None, {'x-ha-policy': 'all'}),
-        ('all', 'xyx2',
-         Queue('xyx2', queue_arguments={'x-foo': 'bari'}),
-         None,
-         {'x-ha-policy': 'all', 'x-foo': 'bari'}),
-        (['A', 'B', 'C'], 'foo', Queue('foo'), None, {
-            'x-ha-policy': 'nodes',
-            'x-ha-policy-params': ['A', 'B', 'C']}),
-    ])
-    def test_with_ha_policy(self, ha_policy, qname, q, qargs, expected):
-        queues = Queues(ha_policy=ha_policy, create_missing=False)
-        queues.add(q, queue_arguments=qargs)
-        assert queues[qname].queue_arguments == expected
-
     def test_select_add(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.select_add('baz')
-        assert sorted(keys(q._consume_from)) == ['bar', 'baz', 'foo']
+        assert sorted(q._consume_from.keys()) == ['bar', 'baz', 'foo']
+
+    def test_select_add_without_selection_extends_default(self):
+        q = Queues([Queue('default')])
+        q.select_add('worker.dq2')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['default', 'worker.dq2']
 
     def test_deselect(self):
         q = Queues()
         q.select(['foo', 'bar'])
         q.deselect('bar')
-        assert sorted(keys(q._consume_from)) == ['foo']
+        assert sorted(q._consume_from.keys()) == ['foo']
 
-    def test_with_ha_policy_compat(self):
-        q = Queues(ha_policy='all')
-        q.add('bar')
-        assert q['bar'].queue_arguments == {'x-ha-policy': 'all'}
+    def test_deselect_without_explicit_consume_selection_removes_excluded_queue(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
+
+    def test_deselect_without_explicit_consume_selection_keeps_routing_only_queue_unconsumed(self):
+        q = Queues([Queue('foo'), Queue('bar')])
+        q.add('routing_only')
+        q.deselect('bar')
+        assert q._consume_from is None
+        assert sorted(q.consume_from.keys()) == ['foo']
 
     def test_add_default_exchange(self):
         ex = Exchange('fff', 'fanout')
@@ -134,25 +131,30 @@ class test_Queues:
         q.add(Queue('foo', alias='barfoo'))
         assert q['barfoo'] is q['foo']
 
+    def test_deselect_by_real_name_removes_queue_selected_by_alias(self):
+        q = Queues()
+        q.add(Queue('foo', alias='barfoo'))
+
+        q.select(['barfoo'])
+        assert list(q._consume_from) == ['foo']
+        assert q._consume_from['foo'] is q['foo']
+
+        q.deselect('foo')
+        assert q._consume_from == {}
+
     @pytest.mark.parametrize('queues_kwargs,qname,q,expected', [
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'foo', 'foo', {'x-max-priority': 10}),
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'xyz', Queue('xyz', queue_arguments={'x-max-priority': 3}),
          {'x-max-priority': 3}),
-        (dict(max_priority=10),
+        ({'max_priority': 10},
          'moo', Queue('moo', queue_arguments=None),
          {'x-max-priority': 10}),
-        (dict(ha_policy='all', max_priority=5),
-         'bar', 'bar',
-         {'x-ha-policy': 'all', 'x-max-priority': 5}),
-        (dict(ha_policy='all', max_priority=5),
-         'xyx2', Queue('xyx2', queue_arguments={'x-max-priority': 2}),
-         {'x-ha-policy': 'all', 'x-max-priority': 2}),
-        (dict(max_priority=None),
+        ({'max_priority': None},
          'foo2', 'foo2',
          None),
-        (dict(max_priority=None),
+        ({'max_priority': None},
          'xyx3', Queue('xyx3', queue_arguments={'x-max-priority': 7}),
          {'x-max-priority': 7}),
 
@@ -162,20 +164,31 @@ class test_Queues:
         queues.add(q)
         assert queues[qname].queue_arguments == expected
 
+    def test_missing_queue_quorum(self):
+        queues = Queues(create_missing_queue_type="quorum",
+                        create_missing_queue_exchange_type="topic")
+
+        q = queues.new_missing("spontaneous")
+        assert q.name == "spontaneous"
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
 
 class test_default_queues:
 
+    @pytest.mark.parametrize('default_queue_type', ['classic', 'quorum'])
     @pytest.mark.parametrize('name,exchange,rkey', [
         ('default', None, None),
         ('default', 'exchange', None),
         ('default', 'exchange', 'routing_key'),
         ('default', None, 'routing_key'),
     ])
-    def test_setting_default_queue(self, name, exchange, rkey):
+    def test_setting_default_queue(self, name, exchange, rkey, default_queue_type):
         self.app.conf.task_queues = {}
         self.app.conf.task_default_exchange = exchange
         self.app.conf.task_default_routing_key = rkey
         self.app.conf.task_default_queue = name
+        self.app.conf.task_default_queue_type = default_queue_type
         assert self.app.amqp.queues.default_exchange.name == exchange or name
         queues = dict(self.app.amqp.queues)
         assert len(queues) == 1
@@ -183,6 +196,40 @@ class test_default_queues:
         assert queue.exchange.name == exchange or name
         assert queue.exchange.type == 'direct'
         assert queue.routing_key == rkey or name
+
+        if default_queue_type == 'quorum':
+            assert queue.queue_arguments == {'x-queue-type': 'quorum'}
+        else:
+            assert queue.queue_arguments is None
+
+
+class test_default_exchange:
+
+    @pytest.mark.parametrize('name,exchange,rkey', [
+        ('default', 'foo', None),
+        ('default', 'foo', 'routing_key'),
+    ])
+    def test_setting_default_exchange(self, name, exchange, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange = exchange
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.name == exchange
+
+    @pytest.mark.parametrize('name,extype,rkey', [
+        ('default', 'direct', None),
+        ('default', 'direct', 'routing_key'),
+        ('default', 'topic', None),
+        ('default', 'topic', 'routing_key'),
+    ])
+    def test_setting_default_exchange_type(self, name, extype, rkey):
+        q = Queue(name, routing_key=rkey)
+        self.app.conf.task_queues = {q}
+        self.app.conf.task_default_exchange_type = extype
+        queues = dict(self.app.amqp.queues)
+        queue = queues[name]
+        assert queue.exchange.type == extype
 
 
 class test_AMQP_proto1:
@@ -204,15 +251,17 @@ class test_AMQP_proto1:
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
 
-class test_AMQP:
-
-    def setup(self):
+class test_AMQP_Base:
+    def setup_method(self):
         self.simple_message = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=True,
         )
         self.simple_message_no_sent_event = self.app.amqp.as_task_v2(
             uuid(), 'foo', create_sent_event=False,
         )
+
+
+class test_AMQP(test_AMQP_Base):
 
     def test_kwargs_must_be_mapping(self):
         with pytest.raises(TypeError):
@@ -222,13 +271,51 @@ class test_AMQP:
         with pytest.raises(TypeError):
             self.app.amqp.as_task_v2(uuid(), 'foo', args='abc')
 
+    def test_argsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {...}]}]"
+
+    def test_argsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_argsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', args=[{'a': ['b', {'c': 'd'}]}],
+        )
+        assert msg.headers['argsrepr'] == "[{'a': ['b', {'c': 'd'}]}]"
+
+    def test_kwargsrepr_maxlevels_default(self):
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {...}]}}"
+
+    def test_kwargsrepr_maxlevels_configurable(self):
+        self.app.conf.task_repr_maxlevels = 4
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
+    @pytest.mark.parametrize('maxlevels', [0, None])
+    def test_kwargsrepr_maxlevels_unlimited(self, maxlevels):
+        self.app.conf.task_repr_maxlevels = maxlevels
+        msg = self.app.amqp.as_task_v2(
+            uuid(), 'foo', kwargs={'x': {'a': ['b', {'c': 'd'}]}},
+        )
+        assert msg.headers['kwargsrepr'] == "{'x': {'a': ['b', {'c': 'd'}]}}"
+
     def test_countdown_negative(self):
         with pytest.raises(ValueError):
             self.app.amqp.as_task_v2(uuid(), 'foo', countdown=-1232132323123)
-
-    def test_Queues__with_ha_policy(self):
-        x = self.app.amqp.Queues({}, ha_policy='all')
-        assert x.ha_policy == 'all'
 
     def test_Queues__with_max_priority(self):
         x = self.app.amqp.Queues({}, max_priority=23)
@@ -264,6 +351,55 @@ class test_AMQP:
         assert kwargs['routing_key'] == 'foo'
         assert kwargs['exchange'] == ''
 
+    def test_send_task_message__no_default_queue(self):
+        conf = self.app.conf
+        conf.task_create_missing_queues = False
+        conf.task_queues = {Queue('my_queue')}
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue='my_queue', retry=False,
+        )
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['routing_key'] == 'my_queue'
+        assert kwargs['exchange'] == ''
+
+    def test_send_task_message__broadcast_without_exchange(self):
+        from kombu.common import Broadcast
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, retry=False,
+            routing_key='xyz', queue=Broadcast('abc'),
+            event_dispatcher=evd,
+        )
+        evd.publish.assert_called()
+        event = evd.publish.call_args[0][1]
+        assert event['routing_key'] == 'xyz'
+        assert event['exchange'] == 'abc'
+
+    def test_send_event_exchange_direct_with_exchange(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', exchange='xyz',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
+
+    def test_send_event_exchange_direct_with_routing_key(self):
+        prod = Mock(name='prod')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event, queue='bar',
+            retry=False, exchange_type='direct', routing_key='xyb',
+        )
+        prod.publish.assert_called()
+        pub = prod.publish.call_args[1]
+        assert pub['routing_key'] == 'bar'
+        assert pub['exchange'] == ''
+
     def test_send_event_exchange_string(self):
         evd = Mock(name='evd')
         self.app.amqp.send_task_message(
@@ -284,8 +420,23 @@ class test_AMQP:
         )
         assert prod.publish.call_args[1]['delivery_mode'] == 33
 
+    def test_send_task_message__with_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            timeout=1,
+        )
+        assert prod.publish.call_args[1]['timeout'] == 1
+
+    def test_send_task_message__with_confirm_timeout(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            confirm_timeout=1,
+        )
+        assert prod.publish.call_args[1]['confirm_timeout'] == 1
+
     def test_send_task_message__with_receivers(self):
-        from case import patch
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
@@ -295,8 +446,33 @@ class test_AMQP:
         r2 = self.app.amqp.routes
         assert r1 is r2
 
+    def update_conf_runtime_for_tasks_queues(self):
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
+        self.app.send_task('task.create_pr')
+        router_was = self.app.amqp.router
+        self.app.conf.update(task_routes={'task.create_pr': 'queue.asdfgh'})
+        self.app.send_task('task.create_pr')
+        router = self.app.amqp.router
+        assert router != router_was
 
-class test_as_task_v2:
+    def test_create_missing_queue_type_from_conf(self):
+        self.app.conf.task_create_missing_queue_type = "quorum"
+        self.app.conf.task_create_missing_queue_exchange_type = "topic"
+        self.app.amqp.__dict__.pop("queues", None)
+        q = self.app.amqp.queues["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
+    def test_create_missing_queue_type_explicit_param(self):
+        qmap = self.app.amqp.Queues({}, create_missing=True,
+                                    create_missing_queue_type="quorum",
+                                    create_missing_queue_exchange_type="topic")
+        q = qmap["auto"]
+        assert q.queue_arguments == {"x-queue-type": "quorum"}
+        assert q.exchange.type == "topic"
+
+
+class test_as_task_v2(test_AMQP_Base):
 
     def test_raises_if_args_is_not_tuple(self):
         with pytest.raises(TypeError):
@@ -307,22 +483,48 @@ class test_as_task_v2:
             self.app.amqp.as_task_v2(uuid(), 'foo', kwargs=(1, 2, 3))
 
     def test_countdown_to_eta(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', countdown=10, now=now,
         )
         assert m.headers['eta'] == (now + timedelta(seconds=10)).isoformat()
 
     def test_expires_to_datetime(self):
-        now = to_utc(datetime.utcnow()).astimezone(self.app.timezone)
+        now = to_utc(datetime.now(timezone.utc)).astimezone(self.app.timezone)
         m = self.app.amqp.as_task_v2(
             uuid(), 'foo', expires=30, now=now,
         )
         assert m.headers['expires'] == (
             now + timedelta(seconds=30)).isoformat()
 
-    def test_callbacks_errbacks_chord(self):
+    def test_eta_to_datetime(self):
+        eta = datetime.now(timezone.utc)
+        m = self.app.amqp.as_task_v2(
+            uuid(), 'foo', eta=eta,
+        )
+        assert m.headers['eta'] == eta.isoformat()
 
+    def test_compression(self):
+        self.app.conf.task_compression = 'gzip'
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression=None
+        )
+        assert prod.publish.call_args[1]['compression'] == 'gzip'
+
+    def test_compression_override(self):
+        self.app.conf.task_compression = 'gzip'
+
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            compression='bz2'
+        )
+        assert prod.publish.call_args[1]['compression'] == 'bz2'
+
+    def test_callbacks_errbacks_chord(self):
         @self.app.task
         def t(i):
             pass

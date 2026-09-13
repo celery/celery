@@ -19,6 +19,7 @@ if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
 	echo.  html       to make standalone HTML files
+	echo.  livehtml   to start a local server hosting the docs
 	echo.  dirhtml    to make HTML files named index.html in directories
 	echo.  singlehtml to make a single large HTML file
 	echo.  pickle     to make pickle files
@@ -266,6 +267,11 @@ if "%1" == "pseudoxml" (
 	if errorlevel 1 exit /b 1
 	echo.
 	echo.Build finished. The pseudo-XML files are in %BUILDDIR%/pseudoxml.
+	goto end
+)
+
+if "%1" == "livehtml" (
+	sphinx-autobuild -b html --open-browser -p 7000 --watch %APP% -c . %SOURCEDIR% %BUILDDIR%/html
 	goto end
 )
 

@@ -1,32 +1,46 @@
-from __future__ import absolute_import, unicode_literals
-
 import base64
 import os
-import pytest
+from unittest.mock import patch
 
+import pytest
 from kombu.serialization import registry
 from kombu.utils.encoding import bytes_to_str
 
 from celery.exceptions import SecurityError
-from celery.security.serialization import SecureSerializer, register_auth
 from celery.security.certificate import Certificate, CertStore
 from celery.security.key import PrivateKey
+from celery.security.serialization import DEFAULT_SEPARATOR, SecureSerializer, register_auth
 
 from . import CERT1, CERT2, KEY1, KEY2
 from .case import SecurityCase
 
 
-class test_SecureSerializer(SecurityCase):
+class test_secureserializer(SecurityCase):
 
-    def _get_s(self, key, cert, certs):
+    @pytest.fixture(autouse=True)
+    def _patch_expired(self):
+        with patch.object(Certificate, 'has_expired', return_value=False):
+            yield
+
+    def _get_s(self, key, cert, certs, serializer="json"):
         store = CertStore()
         for c in certs:
-            store.add_cert(Certificate(c))
-        return SecureSerializer(PrivateKey(key), Certificate(cert), store)
+            cert_obj = Certificate(c)
+            store.add_cert(cert_obj)
 
-    def test_serialize(self):
-        s = self._get_s(KEY1, CERT1, [CERT1])
-        assert s.deserialize(s.serialize('foo')) == 'foo'
+        cert_obj = Certificate(cert)
+
+        return SecureSerializer(
+            PrivateKey(key), cert_obj, store, serializer=serializer
+        )
+
+    @pytest.mark.parametrize(
+        "data", [1, "foo", b"foo", {"foo": 1}, {"foo": DEFAULT_SEPARATOR}]
+    )
+    @pytest.mark.parametrize("serializer", ["json", "pickle"])
+    def test_serialize(self, data, serializer):
+        s = self._get_s(KEY1, CERT1, [CERT1], serializer=serializer)
+        assert s.deserialize(s.serialize(data)) == data
 
     def test_deserialize(self):
         s = self._get_s(KEY1, CERT1, [CERT1])
@@ -57,7 +71,7 @@ class test_SecureSerializer(SecurityCase):
         assert s2.deserialize(s1.serialize('foo')) == 'foo'
 
     def test_register_auth(self):
-        register_auth(KEY1, CERT1, '')
+        register_auth(KEY1, None, CERT1, '')
         assert 'application/data' in registry._decoders
 
     def test_lots_of_sign(self):

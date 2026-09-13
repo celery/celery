@@ -1,13 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
+import os
+from base64 import b64encode
+from tempfile import NamedTemporaryFile
+from unittest.mock import patch
+
 import pytest
-from case import skip
+
+import t.skip
 from celery.utils import term
-from celery.utils.term import colored, fg
-from celery.five import text_t
+from celery.utils.term import _read_as_base64, colored, fg, supports_images
 
 
-@skip.if_win32()
+@t.skip.if_win32
 class test_colored:
 
     @pytest.fixture(autouse=True)
@@ -36,7 +39,7 @@ class test_colored:
         assert str(getattr(colored(), name)('f'))
 
     def test_unicode(self):
-        assert text_t(colored().green('∂bar'))
+        assert str(colored().green('∂bar'))
         assert colored().red('éefoo') + colored().green('∂bar')
         assert colored().red('foo').no_color() == 'foo'
 
@@ -57,3 +60,28 @@ class test_colored:
         c2 = colored().blue('ƒƒz')
         c3 = c._add(c, c2)
         assert c3 == '\x1b[1;31m\xe5foo\x1b[0m\x1b[1;34m\u0192\u0192z\x1b[0m'
+
+    def test_read_as_base64(self):
+        test_data = b"The quick brown fox jumps over the lazy dog"
+        with NamedTemporaryFile(mode='wb') as temp_file:
+            temp_file.write(test_data)
+            temp_file.seek(0)
+            temp_file_path = temp_file.name
+
+            result = _read_as_base64(temp_file_path)
+            expected_result = b64encode(test_data).decode('ascii')
+
+            assert result == expected_result
+
+    @pytest.mark.parametrize('is_tty, iterm_profile, expected', [
+        (True, 'test_profile', True),
+        (False, 'test_profile', False),
+        (True, None, False),
+    ])
+    @patch('sys.stdin.isatty')
+    @patch.dict(os.environ, {'ITERM_PROFILE': 'test_profile'}, clear=True)
+    def test_supports_images(self, mock_isatty, is_tty, iterm_profile, expected):
+        mock_isatty.return_value = is_tty
+        if iterm_profile is None:
+            del os.environ['ITERM_PROFILE']
+        assert supports_images() == expected

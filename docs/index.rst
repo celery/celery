@@ -10,10 +10,18 @@ It's a task queue with focus on real-time processing, while also
 supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
-you should come join us :ref:`on IRC <irc-channel>`
-or :ref:`our mailing-list <mailing-list>`.
+don't hesitate to ask questions or :ref:`get involved <getting-help>`.
 
 Celery is Open Source and licensed under the `BSD License`_.
+
+.. image:: https://opencollective.com/static/images/opencollectivelogo-footer-n.svg
+   :target: https://opencollective.com/celery
+   :alt: Open Collective logo
+   :width: 240px
+
+`Open Collective <https://opencollective.com/celery>`_ is our community-powered funding platform that fuels Celery's
+ongoing development. Your sponsorship directly supports improvements, maintenance, and innovative features that keep
+Celery robust and reliable.
 
 Getting Started
 ===============
@@ -48,8 +56,6 @@ Contents
     tutorials/index
     faq
     changelog
-    whatsnew-4.0
-    whatsnew-3.1
     reference/index
     internals/index
     history/index
@@ -62,4 +68,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

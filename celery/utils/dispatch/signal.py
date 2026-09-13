@@ -1,44 +1,76 @@
-# -*- coding: utf-8 -*-
 """Implementation of the Observer pattern."""
-from __future__ import absolute_import, unicode_literals
 import sys
 import threading
-import weakref
 import warnings
+import weakref
+from weakref import WeakMethod
+
+from kombu.utils.functional import retry_over_time
+
 from celery.exceptions import CDeprecationWarning
-from celery.five import python_2_unicode_compatible, range, text_t
 from celery.local import PromiseProxy, Proxy
 from celery.utils.functional import fun_accepts_kwargs
 from celery.utils.log import get_logger
-try:
-    from weakref import WeakMethod
-except ImportError:
-    from .weakref_backports import WeakMethod  # noqa
+from celery.utils.time import humanize_seconds
 
-__all__ = ['Signal']
+__all__ = ('Signal',)
 
-PY3 = sys.version_info[0] >= 3
 logger = get_logger(__name__)
 
 
 def _make_id(target):  # pragma: no cover
     if isinstance(target, Proxy):
         target = target._get_current_object()
-    if isinstance(target, (bytes, text_t)):
+    if isinstance(target, (bytes, str)):
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
-        return (id(target.__self__), id(target.__func__))
+        return id(target.__func__)
     return id(target)
+
+
+def _boundmethod_safe_weakref(obj):
+    """Get weakref constructor appropriate for `obj`.  `obj` may be a bound method.
+
+    Bound method objects must be special-cased because they're usually garbage
+    collected immediately, even if the instance they're bound to persists.
+
+    Returns:
+        a (weakref constructor, main object) tuple. `weakref constructor` is
+        either :class:`weakref.ref` or :class:`weakref.WeakMethod`.  `main
+        object` is the instance that `obj` is bound to if it is a bound method;
+        otherwise `main object` is simply `obj.
+    """
+    try:
+        obj.__func__
+        obj.__self__
+        # Bound method
+        return WeakMethod, obj.__self__
+    except AttributeError:
+        # Not a bound method
+        return weakref.ref, obj
+
+
+def _make_lookup_key(receiver, sender, dispatch_uid):
+    if dispatch_uid:
+        return (dispatch_uid, _make_id(sender))
+    # Issue #9119 - retry-wrapped functions use the underlying function for dispatch_uid
+    elif hasattr(receiver, '_dispatch_uid'):
+        return (receiver._dispatch_uid, _make_id(sender))
+    else:
+        return (_make_id(receiver), _make_id(sender))
 
 
 NONE_ID = _make_id(None)
 
 NO_RECEIVERS = object()
 
+RECEIVER_RETRY_ERROR = """\
+Could not process signal receiver %(receiver)s. Retrying %(when)s...\
+"""
 
-@python_2_unicode_compatible
-class Signal(object):  # pragma: no cover
+
+class Signal:  # pragma: no cover
     """Create new signal.
 
     Keyword Arguments:
@@ -103,12 +135,50 @@ class Signal(object):  # pragma: no cover
             dispatch_uid (Hashable): An identifier used to uniquely identify a
                 particular instance of a receiver.  This will usually be a
                 string, though it may be anything hashable.
+
+            retry (bool): If the signal receiver raises an exception
+                (e.g. ConnectionError), the receiver will be retried until it
+                runs successfully. A strong ref to the receiver will be stored
+                and the `weak` option will be ignored.
         """
-        def _handle_options(sender=None, weak=True, dispatch_uid=None):
+        def _handle_options(sender=None, weak=True, dispatch_uid=None,
+                            retry=False):
 
             def _connect_signal(fun):
-                self._connect_signal(fun, sender, weak, dispatch_uid)
+
+                options = {'dispatch_uid': dispatch_uid,
+                           'weak': weak}
+
+                def _retry_receiver(retry_fun):
+
+                    def _try_receiver_over_time(*args, **kwargs):
+                        def on_error(exc, intervals, retries):
+                            interval = next(intervals)
+                            err_msg = RECEIVER_RETRY_ERROR % \
+                                {'receiver': retry_fun,
+                                 'when': humanize_seconds(interval, 'in', ' ')}
+                            logger.error(err_msg)
+                            return interval
+
+                        return retry_over_time(retry_fun, Exception, args,
+                                               kwargs, on_error)
+
+                    return _try_receiver_over_time
+
+                if retry:
+                    options['weak'] = False
+                    if not dispatch_uid:
+                        # if there's no dispatch_uid then we need to set the
+                        # dispatch uid to the original func id so we can look
+                        # it up later with the original func id
+                        options['dispatch_uid'] = _make_id(fun)
+                    fun = _retry_receiver(fun)
+                    fun._dispatch_uid = options['dispatch_uid']
+
+                self._connect_signal(fun, sender, options['weak'],
+                                     options['dispatch_uid'])
                 return fun
+
             return _connect_signal
 
         if args and callable(args[0]):
@@ -127,28 +197,12 @@ class Signal(object):  # pragma: no cover
             )
             return receiver
 
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         if weak:
-            ref = weakref.ref
-            receiver_object = receiver
-            # Check for bound methods
-            try:
-                receiver.__self__
-                receiver.__func__
-            except AttributeError:
-                pass
-            else:
-                ref = WeakMethod
-                receiver_object = receiver.__self__
-            if PY3:
-                receiver = ref(receiver)
-                weakref.finalize(receiver_object, self._remove_receiver)
-            else:
-                receiver = ref(receiver, self._remove_receiver)
+            ref, receiver_object = _boundmethod_safe_weakref(receiver)
+            receiver = ref(receiver)
+            weakref.finalize(receiver_object, self._remove_receiver)
 
         with self.lock:
             self._clear_dead_receivers()
@@ -158,6 +212,7 @@ class Signal(object):  # pragma: no cover
             else:
                 self.receivers.append((lookup_key, receiver))
             self.sender_receivers_cache.clear()
+
         return receiver
 
     def disconnect(self, receiver=None, sender=None, weak=None,
@@ -182,10 +237,8 @@ class Signal(object):  # pragma: no cover
             warnings.warn(
                 'Passing `weak` to disconnect has no effect.',
                 CDeprecationWarning, stacklevel=2)
-        if dispatch_uid:
-            lookup_key = (dispatch_uid, _make_id(sender))
-        else:
-            lookup_key = (_make_id(receiver), _make_id(sender))
+
+        lookup_key = _make_lookup_key(receiver, sender, dispatch_uid)
 
         disconnected = False
         with self.lock:
@@ -205,9 +258,9 @@ class Signal(object):  # pragma: no cover
     def send(self, sender, **named):
         """Send signal from sender to all connected receivers.
 
-        If any receiver raises an error, the error propagates back through
-        send, terminating the dispatch loop, so it is quite possible to not
-        have all receivers called if a raises an error.
+        If any receiver raises an error, the exception is returned as the
+        corresponding response. (This is different from the "send" in
+        Django signals. In Celery "send" and "send_robust" do the same thing.)
 
         Arguments:
             sender (Any): The sender of the signal.
@@ -298,8 +351,7 @@ class Signal(object):  # pragma: no cover
 
     def __repr__(self):
         """``repr(signal)``."""
-        return '<{0}: {1} providing_args={2!r}>'.format(
-            type(self).__name__, self.name, self.providing_args)
+        return f'<{type(self).__name__}: {self.name} providing_args={self.providing_args!r}>'
 
     def __str__(self):
         """``str(signal)``."""

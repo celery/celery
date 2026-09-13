@@ -30,3 +30,13 @@ cover/
 htmlcov/
 coverage.xml
 test.db
+pip-wheel-metadata/
+.python-version
+.tool-versions
+.vscode/
+integration-tests-config.json
+[0-9]*
+statefilename.*
+dump.rdb
+.env
+junit.xml

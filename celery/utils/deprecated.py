@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 """Deprecation utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
 import warnings
-from vine.utils import wraps
-from celery.exceptions import CPendingDeprecationWarning, CDeprecationWarning
 
-__all__ = ['Callable', 'Property', 'warn']
+from vine.utils import wraps
+
+from celery.exceptions import CDeprecationWarning, CPendingDeprecationWarning
+
+__all__ = ('Callable', 'Property', 'warn')
 
 
 PENDING_DEPRECATION_FMT = """
@@ -72,7 +72,7 @@ def Property(deprecation=None, removal=None,
     return _inner
 
 
-class _deprecated_property(object):
+class _deprecated_property:
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None, **depreinfo):
         self.__get = fget

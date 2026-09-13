@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """The default loader used when no custom app has been initialized."""
-from __future__ import absolute_import, unicode_literals
 import os
 import warnings
+
 from celery.exceptions import NotConfigured
 from celery.utils.collections import DictAttribute
 from celery.utils.serialization import strtobool
+
 from .base import BaseLoader
 
-__all__ = ['Loader', 'DEFAULT_CONFIG_MODULE']
+__all__ = ('Loader', 'DEFAULT_CONFIG_MODULE')
 
 DEFAULT_CONFIG_MODULE = 'celeryconfig'
 
@@ -35,7 +35,9 @@ class Loader(BaseLoader):
             if C_WNOCONF and not os.environ.get('FORKED_BY_MULTIPROCESSING'):
                 warnings.warn(NotConfigured(
                     'No {module} module found! Please make sure it exists and '
-                    'is available to Python.'.format(module=configname)))
+                    'is available to Python.'.format(module=configname)),
+                    stacklevel=2,
+                )
             return self.setup_settings({})
         else:
             self.configured = True

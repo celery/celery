@@ -1,11 +1,13 @@
-from __future__ import absolute_import, unicode_literals
+from unittest.mock import Mock, patch
+
 import pytest
-from case import Mock, patch, skip
+
+import t.skip
 from celery.exceptions import ImproperlyConfigured
 from celery.worker.components import Beat, Hub, Pool, Timer
 
 # some of these are tested in test_worker, so I've only written tests
-# here to complete coverage.  Should move everyting to this module at some
+# here to complete coverage.  Should move everything to this module at some
 # point [-ask]
 
 
@@ -20,7 +22,7 @@ class test_Timer:
 
 class test_Hub:
 
-    def setup(self):
+    def setup_method(self):
         self.w = Mock(name='w')
         self.hub = Hub(self.w)
         self.w.hub = Mock(name='w.hub')
@@ -59,7 +61,7 @@ class test_Pool:
         comp.close(w)
         comp.terminate(w)
 
-    @skip.if_win32()
+    @t.skip.if_win32
     def test_create_when_eventloop(self):
         w = Mock()
         w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
@@ -79,11 +81,61 @@ class test_Pool:
 
         assert comp.instantiate.call_args[1]['max_memory_per_child'] == 32
 
+    @t.skip.if_win32
+    def test_create_forking_enable_fork(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'fork'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is True
+
+    def test_create_forking_enable_spawn(self):
+        w = Mock()
+        w.use_eventloop = False
+        w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'spawn'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is False
+
+    @t.skip.if_win32
+    def test_create_spawn_with_async_pool(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'spawn'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is False
+
 
 class test_Beat:
 
     def test_create__green(self):
         w = Mock(name='w')
         w.pool_cls.__module__ = 'foo_gevent'
+        with pytest.raises(ImproperlyConfigured):
+            Beat(w).create(w)
+
+    def test_create__green_string_pool_cls(self):
+        """Test Beat.create raises ImproperlyConfigured when pool_cls is a string like 'gevent'."""
+        w = Mock(name='w')
+        w.pool_cls = 'gevent'  # pool_cls can be a string instead of a class
+        with pytest.raises(ImproperlyConfigured):
+            Beat(w).create(w)
+
+    def test_create__green_string_pool_cls_eventlet(self):
+        """Test Beat.create raises ImproperlyConfigured when pool_cls is 'eventlet'."""
+        w = Mock(name='w')
+        w.pool_cls = 'eventlet'
         with pytest.raises(ImproperlyConfigured):
             Beat(w).create(w)

@@ -1,7 +1,8 @@
-from __future__ import absolute_import, unicode_literals
-from collections import Mapping, MutableMapping
-from case import Mock
-from celery.app.utils import Settings, filter_hidden_settings, bugreport
+from collections.abc import Mapping, MutableMapping
+from unittest.mock import Mock
+
+from celery.app.defaults import Option
+from celery.app.utils import Settings, bugreport, filter_hidden_settings
 
 
 class test_Settings:
@@ -17,6 +18,11 @@ class test_Settings:
     def test_find(self):
         assert self.app.conf.find_option('always_eager')
 
+    def test_find_option_by_qualified_name(self):
+        result = self.app.conf.find_option('task_always_eager')
+        assert isinstance(result.type, Option)
+        assert result.type.default is False
+
     def test_get_by_parts(self):
         self.app.conf.task_do_this_and_that = 303
         assert self.app.conf.get_by_parts(
@@ -25,6 +31,12 @@ class test_Settings:
     def test_find_value_for_key(self):
         assert self.app.conf.find_value_for_key(
             'always_eager') is False
+
+    def test_clear_removes_preconfigured_override(self):
+        with self.Celery(task_always_eager=True) as app:
+            assert app.conf.task_always_eager is True
+            app.conf.clear()
+            assert app.conf.task_always_eager is False
 
     def test_table(self):
         assert self.app.conf.table(with_defaults=True)
@@ -47,6 +59,17 @@ class test_filter_hidden_settings:
             },
         }
         filter_hidden_settings(conf)
+
+    def test_censors_broker_read_and_write_url(self):
+        conf = {
+            'broker_url': 'amqp://user:pass@broker.example.com:56721',
+            'broker_read_url': 'amqp://user:pass@broker.example.com:56722',
+            'broker_write_url': 'amqp://user:pass@broker.example.com:56723',
+        }
+        censored = filter_hidden_settings(conf)
+        assert 'pass' not in censored['broker_url']
+        assert 'pass' not in censored['broker_read_url']
+        assert 'pass' not in censored['broker_write_url']
 
 
 class test_bugreport:

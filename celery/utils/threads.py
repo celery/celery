@@ -1,58 +1,108 @@
-# -*- coding: utf-8 -*-
 """Threading primitives and utilities."""
-from __future__ import absolute_import, print_function, unicode_literals
-
 import os
 import socket
 import sys
 import threading
 import traceback
-
+import types
 from contextlib import contextmanager
+from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 
 from celery.local import Proxy
-from celery.five import THREAD_TIMEOUT_MAX, items, python_2_unicode_compatible
 
 try:
     from greenlet import getcurrent as get_ident
-except ImportError:  # pragma: no cover
+except ImportError:
     try:
-        from _thread import get_ident                   # noqa
+        from _thread import get_ident
     except ImportError:
         try:
-            from thread import get_ident                # noqa
-        except ImportError:  # pragma: no cover
+            from thread import get_ident
+        except ImportError:
             try:
-                from _dummy_thread import get_ident     # noqa
+                from _dummy_thread import get_ident
             except ImportError:
-                from dummy_thread import get_ident      # noqa
+                from dummy_thread import get_ident
 
 
-__all__ = [
+__all__ = (
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
-    'get_ident', 'default_socket_timeout',
-]
+    'get_ident', 'default_socket_timeout', 'bound_open_broker_sockets',
+)
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')
-PY3 = sys.version_info[0] == 3
 
 
 @contextmanager
 def default_socket_timeout(timeout):
-    """Context temporarily setting the default socket timeout."""
+    """Context temporarily setting the default socket timeout.
+
+    Note:
+        Only affects sockets created afterwards.  To bound a connection
+        that is already open, use :func:`bound_open_broker_sockets`.
+    """
     prev = socket.getdefaulttimeout()
     socket.setdefaulttimeout(timeout)
-    yield
-    socket.setdefaulttimeout(prev)
+    try:
+        yield
+    finally:
+        socket.setdefaulttimeout(prev)
+
+
+def _open_broker_sockets(connection):
+    """Yield the sockets a broker connection already has open."""
+    # Virtual transports (redis, SQS, ...) keep a client per channel.
+    try:
+        channels = list(getattr(connection.transport, 'channels', None) or ())
+    except Exception:  # pylint: disable=broad-except
+        channels = ()
+    for channel in channels:
+        # Cached attributes only: the ``client`` property would dial the
+        # broker we already know is unresponsive.
+        cached = getattr(channel, '__dict__', {})
+        for name in ('client', 'subclient'):
+            sock = getattr(
+                getattr(cached.get(name), 'connection', None), '_sock', None)
+            if sock is not None:
+                yield sock
+    # py-amqp: one socket on the transport.  Read the private attributes,
+    # as the ``connection`` and ``transport`` properties reconnect when unset.
+    sock = getattr(
+        getattr(connection._connection, '_transport', None), 'sock', None)
+    if sock is not None:
+        yield sock
+
+
+def bound_open_broker_sockets(connection, timeout):
+    """Apply ``timeout`` to broker sockets that are already connected.
+
+    :func:`socket.setdefaulttimeout` only affects sockets created
+    afterwards, so neither it nor ``Connection.collect(socket_timeout=...)``
+    can bound a read on a socket that is already open.  Teardown issues
+    exactly such reads (the redis transport drains a pending ``BRPOP`` in
+    ``Channel.close()``, py-amqp waits for a ``basic_cancel`` reply), and
+    against a peer that went silent without RST they never return.
+
+    See Issue #9705 (reconnect) and Issue #975 (shutdown).  Best effort:
+    never raises, as both callers are teardown paths.
+    """
+    try:
+        for sock in _open_broker_sockets(connection):
+            try:
+                sock.settimeout(timeout)
+            except Exception:  # pylint: disable=broad-except
+                pass
+    except Exception:  # pylint: disable=broad-except
+        pass
 
 
 class bgThread(threading.Thread):
     """Background service thread."""
 
     def __init__(self, name=None, **kwargs):
-        super(bgThread, self).__init__()
-        self._is_shutdown = threading.Event()
-        self._is_stopped = threading.Event()
+        super().__init__()
+        self.__is_shutdown = threading.Event()
+        self.__is_stopped = threading.Event()
         self.daemon = True
         self.name = name or self.__class__.__name__
 
@@ -65,7 +115,7 @@ class bgThread(threading.Thread):
 
     def run(self):
         body = self.body
-        shutdown_set = self._is_shutdown.is_set
+        shutdown_set = self.__is_shutdown.is_set
         try:
             while not shutdown_set():
                 try:
@@ -75,13 +125,14 @@ class bgThread(threading.Thread):
                         self.on_crash('{0!r} crashed: {1!r}', self.name, exc)
                         self._set_stopped()
                     finally:
+                        sys.stderr.flush()
                         os._exit(1)  # exiting by normal means won't work
         finally:
             self._set_stopped()
 
     def _set_stopped(self):
         try:
-            self._is_stopped.set()
+            self.__is_stopped.set()
         except TypeError:  # pragma: no cover
             # we lost the race at interpreter shutdown,
             # so gc collected built-in modules.
@@ -89,8 +140,8 @@ class bgThread(threading.Thread):
 
     def stop(self):
         """Graceful shutdown."""
-        self._is_shutdown.set()
-        self._is_stopped.wait()
+        self.__is_shutdown.set()
+        self.__is_stopped.wait()
         if self.is_alive():
             self.join(THREAD_TIMEOUT_MAX)
 
@@ -116,7 +167,7 @@ def release_local(local):
     local.__release_local__()
 
 
-class Local(object):
+class Local:
     """Local object."""
 
     __slots__ = ('__storage__', '__ident_func__')
@@ -126,7 +177,7 @@ class Local(object):
         object.__setattr__(self, '__ident_func__', get_ident)
 
     def __iter__(self):
-        return iter(items(self.__storage__))
+        return iter(self.__storage__.items())
 
     def __call__(self, proxy):
         """Create a proxy for a name."""
@@ -156,7 +207,7 @@ class Local(object):
             raise AttributeError(name)
 
 
-class _LocalStack(object):
+class _LocalStack:
     """Local stack.
 
     This class works similar to a :class:`Local` but keeps a stack
@@ -230,6 +281,8 @@ class _LocalStack(object):
         else:
             return stack.pop()
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __len__(self):
         stack = getattr(self._local, 'stack', None)
         return len(stack) if stack else 0
@@ -256,8 +309,7 @@ class _LocalStack(object):
             return None
 
 
-@python_2_unicode_compatible
-class LocalManager(object):
+class LocalManager:
     """Local objects cannot manage themselves.
 
     For that you need a local manager.
@@ -287,7 +339,7 @@ class LocalManager(object):
     def get_ident(self):
         """Return context identifier.
 
-        This is the indentifer the local objects use internally
+        This is the identifier the local objects use internally
         for this context.  You cannot override this method to change the
         behavior but use it to link other context local objects (such as
         SQLAlchemy's scoped sessions) to the Werkzeug locals.
@@ -303,7 +355,7 @@ class LocalManager(object):
             release_local(local)
 
     def __repr__(self):
-        return '<{0} storages: {1}>'.format(
+        return '<{} storages: {}>'.format(
             self.__class__.__name__, len(self.locals))
 
 
@@ -313,7 +365,7 @@ class _FastLocalStack(threading.local):
         self.stack = []
         self.push = self.stack.append
         self.pop = self.stack.pop
-        super(_FastLocalStack, self).__init__()
+        super().__init__()
 
     @property
     def top(self):
@@ -322,15 +374,17 @@ class _FastLocalStack(threading.local):
         except (AttributeError, IndexError):
             return None
 
+    __class_getitem__ = classmethod(types.GenericAlias)
+
     def __len__(self):
         return len(self.stack)
 
 
 if USE_FAST_LOCALS:  # pragma: no cover
     LocalStack = _FastLocalStack
-else:
+else:  # pragma: no cover
     # - See #706
     # since each thread has its own greenlet we can just use those as
     # identifiers for the context.  If greenlets aren't available we
     # fall back to the  current thread ident.
-    LocalStack = _LocalStack  # noqa
+    LocalStack = _LocalStack
