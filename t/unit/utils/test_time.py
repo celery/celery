@@ -402,19 +402,28 @@ class test_utcoffset:
 
     def test_utcoffset_fractional_hour_offset(self, patching):
         # Regression test: time.timezone/altzone (seconds west of UTC) must
-        # be truncated toward zero, not floor-divided, or a fractional-hour,
-        # east-of-UTC zone (e.g. India/Sri Lanka/Iran at UTC+5:30, so
-        # time.timezone == -19800) picks up an extra hour in the wrong
-        # direction: -19800 // 3600 == -6, but truncating gives the correct
-        # -5 (i.e. UTC+5:30 rounded to whole hours, not UTC+6).
+        # not be rounded at all, or a fractional-hour, east-of-UTC zone
+        # (e.g. India/Sri Lanka/Iran at UTC+5:30, so time.timezone ==
+        # -19800) picks up an error in one direction or the other:
+        # -19800 // 3600 == -6 (floor) and int(-19800 / 3600) == -5
+        # (truncate) are both 30 minutes off. The exact value is -5.5.
         _time = patching('celery.utils.time._time')
         _time.timezone = -19800  # UTC+5:30 standard time (India, Sri Lanka)
         localtime = Mock(return_value=Mock(tm_isdst=0))
-        assert utcoffset(time=_time, localtime=localtime) == -5
+        assert utcoffset(time=_time, localtime=localtime) == -5.5
 
         _time.altzone = -19800  # same offset while a DST rule is in effect
         localtime = Mock(return_value=Mock(tm_isdst=1))
-        assert utcoffset(time=_time, localtime=localtime) == -5
+        assert utcoffset(time=_time, localtime=localtime) == -5.5
+
+    def test_utcoffset_quarter_hour_offset(self, patching):
+        # Quarter-hour zones are where floor and truncation actually
+        # diverge in severity: floor is 15 minutes off, truncation would be
+        # 45 minutes off. Only the exact value is correct for both.
+        _time = patching('celery.utils.time._time')
+        _time.timezone = -20700  # UTC+5:45 (Nepal)
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == -5.75
 
 
 class test_get_exponential_backoff_interval:
