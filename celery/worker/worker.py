@@ -31,7 +31,7 @@ from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
 from celery.utils.text import str_to_list
-from celery.utils.threads import default_socket_timeout
+from celery.utils.threads import bound_open_broker_sockets, default_socket_timeout
 
 from . import state
 
@@ -254,6 +254,13 @@ class WorkController:
     def terminate(self, in_sighandler=False):
         """Not so graceful shutdown of the worker server (Cold shutdown)."""
         if self.blueprint.state != TERMINATE:
+            # Every cold path lands here, with or without on_cold_shutdown
+            # (WorkerTerminate raised by the consumer, embedded callers), so
+            # bound the broker socket before teardown reads from it.
+            consumer = getattr(self, 'consumer', None)
+            connection = getattr(consumer, 'connection', None)
+            if connection is not None:
+                bound_open_broker_sockets(connection, SHUTDOWN_SOCKET_TIMEOUT)
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=False)
@@ -262,6 +269,12 @@ class WorkController:
         # if blueprint does not exist it means that we had an
         # error before the bootsteps could be initialized.
         if self.blueprint is not None:
+            # Not bounding the broker socket here: a warm shutdown still has
+            # acks to flush, and capping those writes on a slow broker would
+            # lose acks and redeliver tasks.  A silent broker can still wedge
+            # a warm shutdown; the escape hatch is a cold shutdown, bounded in
+            # terminate() and on_cold_shutdown, or the redis ``socket_timeout``
+            # transport option.
             with default_socket_timeout(SHUTDOWN_SOCKET_TIMEOUT):  # Issue 975
                 self.blueprint.stop(self, terminate=not warm)
                 self.blueprint.join()
@@ -368,7 +381,8 @@ class WorkController:
                        max_tasks_per_child=None,
                        prefetch_multiplier=None, disable_rate_limits=None,
                        worker_lost_wait=None,
-                       max_memory_per_child=None, **_kw):
+                       max_memory_per_child=None,
+                       pool_start_method=None, **_kw):
         either = self.app.either
         self.loglevel = loglevel
         self.logfile = logfile
@@ -385,6 +399,13 @@ class WorkController:
         self.autoscaler_cls = either('worker_autoscaler', autoscaler_cls)
         self.pool_putlocks = either('worker_pool_putlocks', pool_putlocks)
         self.pool_restarts = either('worker_pool_restarts', pool_restarts)
+        self.pool_start_method = either(
+            'worker_pool_start_method', pool_start_method,
+        )
+        if self.pool_start_method not in ('fork', 'spawn'):
+            raise ImproperlyConfigured(
+                "worker_pool_start_method must be 'fork' or 'spawn', "
+                f"got {self.pool_start_method!r}.")
         self.statedb = either('worker_state_db', statedb, state_db)
         self.schedule_filename = either(
             'beat_schedule_filename', schedule_filename,

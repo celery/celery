@@ -100,7 +100,7 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
-                _merge_dictionaries(d1[key], d2[key])
+                _merge_dictionaries(d1[key], d2[key], aggregate_duplicates)
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value] if aggregate_duplicates else value
@@ -459,6 +459,17 @@ class Signature(dict):
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
+        # ``kwargs`` may still be ``self.kwargs`` by reference here: the
+        # no-override branch above, ``_merge`` returning ``self.kwargs``
+        # unchanged when no kwargs override is given, and its immutable
+        # short-circuit all pass it straight through.  Give the clone its
+        # own mapping so mutating ``clone.kwargs`` cannot corrupt the
+        # original (and sibling clones) -- #10560.  A shallow ``dict`` copy,
+        # not ``deepcopy``: canvas primitives keep live objects in kwargs
+        # (``chunks``/``xmap``/``xstarmap`` hold a task Signature and a lazy
+        # iterator) that must not be copied or consumed.
+        if kwargs is self.kwargs:
+            kwargs = dict(kwargs)
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
@@ -815,8 +826,11 @@ class Signature(dict):
     __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return dict(self)  # TODO: Potential bug of being a shallow copy
+        clone = dict(self)
+        memo[id(self)] = clone
+        # Canvas preparation mutates execution options, but task arguments may be lazy.
+        clone['options'] = deepcopy(self.options, memo)
+        return clone
 
     def __invert__(self):
         return self.apply_async().get()
@@ -1295,8 +1309,9 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+            res = task.clone().apply(
+                (last.get(),) if last else fargs, fkwargs,
+                **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
             if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
                 break

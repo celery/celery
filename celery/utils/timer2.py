@@ -48,8 +48,8 @@ class Timer(threading.Thread):
                  on_tick: Optional[Callable[[float], None]] = None,
                  on_start: Optional[Callable[['Timer'], None]] = None,
                  max_interval: Optional[float] = None, **kwargs: Any) -> None:
-        self.schedule = schedule or self.Schedule(on_error=on_error,
-                                                  max_interval=max_interval)
+        self.schedule = schedule if schedule is not None else self.Schedule(
+            on_error=on_error, max_interval=max_interval)
         self.on_start = on_start
         self.on_tick = on_tick or self.on_tick
         super().__init__()

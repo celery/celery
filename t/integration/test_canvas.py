@@ -20,9 +20,9 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
-                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
-                    tsum, write_to_file_and_return_int, xsum)
+                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
+                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
+                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
@@ -294,6 +294,18 @@ class test_chain:
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
         assert redis_messages == expected_messages
+
+    @flaky
+    def test_replace_with_chain_that_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        s = replace_with_chain_which_contains_a_group.s()
+
+        result = s.delay()
+        assert result.get(timeout=TIMEOUT) == [4, 4]
 
     @flaky
     def test_parent_ids(self, manager, num=10):
@@ -1184,6 +1196,32 @@ class test_result_set:
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
+    def test_join_exhausted_timeout(self, manager):
+        """A spent positive join budget must not become an unlimited wait."""
+        if not manager.app.conf.result_backend.startswith(('redis', 'rpc')):
+            raise pytest.skip('Requires redis or rpc result backend.')
+
+        assert_ping(manager)
+
+        # Simulate taking 0.3s to handle the first result, exhausting
+        # the 0.2s join timeout before waiting for the second task.
+        completed = add.delay(1, 1)
+        completed.get(timeout=TIMEOUT)
+        rs = ResultSet([completed, delayed_sum.delay([2, 2], pause_time=2)])
+        received = []
+
+        def collect(task_id, value):
+            received.append((task_id, value))
+            sleep(0.3)
+
+        try:
+            with pytest.raises(TimeoutError):
+                rs.join(timeout=0.2, callback=collect)
+            assert received == [(completed.id, 2)]
+        finally:
+            rs.get(timeout=TIMEOUT)
+
+    @flaky
     def test_join_native_timeout_zero_gives_up_on_pending_results(self, manager):
         """timeout=0 means poll once, not poll until the results show up."""
         if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
@@ -1387,7 +1425,6 @@ class test_group:
             [42, 42, *((42,) * gchild_count), 1337]
         ]
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="#6734")
     def test_nested_group_chord_body_chain(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -1397,19 +1434,16 @@ class test_group:
         child_chord = chord(identity.si(42), chain((identity.s(),)))
         group_sig = group((child_chord,))
         res = group_sig.delay()
-        # The result can be expected to timeout since it seems like its
-        # underlying promise might not be getting fulfilled (ref #6734). Pick a
-        # short timeout since we don't want to block for ages and this is a
-        # fairly simple signature which should run pretty quickly.
+        # #6734: the GroupResult's promise here used to never be fulfilled even
+        # though the child tasks resolved, so `res.get()` timed out. Root cause
+        # was `Signature.clone()` aliasing `.kwargs`: freezing the outer group
+        # cloned the chord via `_chord.clone()`, which reassigns
+        # `signature.kwargs['body']` -- into a dict shared with the original,
+        # so the group's result wiring tracked a stale body signature. Fixed by
+        # the clone de-aliasing in this PR.
         expected_result = [[42]]
-        with pytest.raises(TimeoutError) as expected_excinfo:
-            res.get(timeout=TIMEOUT / 10)
-        # Get the child `AsyncResult` manually so that we don't have to wait
-        # again for the `GroupResult`
         assert res.children[0].get(timeout=TIMEOUT) == expected_result[0]
         assert res.get(timeout=TIMEOUT) == expected_result
-        # Re-raise the expected exception so this test will XFAIL
-        raise expected_excinfo.value
 
     def test_callback_called_by_group(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
@@ -2179,7 +2213,6 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
 
-    @pytest.mark.xfail(reason="Issue #6176")
     def test_chord_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -2198,7 +2231,6 @@ class test_chord:
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
 
-    @pytest.mark.xfail(reason="Issue #6200")
     def test_chain_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()

@@ -226,3 +226,33 @@ class test_as_uri:
             "AccountKey=**;"
             "EndpointSuffix=suffix"
         )
+
+    def test_as_uri_exclude_shared_access_signature(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=(
+                "azureblockblob://"
+                "BlobEndpoint=https://name.blob.core.windows.net/;"
+                "SharedAccessSignature=sv=2022-11-02&sig=signature"
+            )
+        )
+        assert backend.as_uri(include_password=False) == (
+            "azureblockblob://"
+            "BlobEndpoint=https://name.blob.core.windows.net/;"
+            "SharedAccessSignature=**"
+        )
+
+    def test_as_uri_exclude_password_case_insensitive_key(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=(
+                "azureblockblob://"
+                "AccountName=name;"
+                "accountkey=account_key"
+            )
+        )
+        assert backend.as_uri(include_password=False) == (
+            "azureblockblob://"
+            "AccountName=name;"
+            "accountkey=**"
+        )
