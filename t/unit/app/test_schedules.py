@@ -667,8 +667,12 @@ class test_crontab_remaining_estimate_with_timezone:
             "end": datetime(2026, 4, 4, 15, 00, tzinfo=ZoneInfo("UTC")),
         },
         "Pacific/Chatham": {
-            "start": datetime(2026, 9, 26, 14, 00, tzinfo=ZoneInfo("UTC")),
-            "end": datetime(2026, 4, 4, 14, 00, tzinfo=ZoneInfo("UTC")),
+            "start": datetime(2026, 9, 26, 14, 0, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2026, 4, 4, 14, 0, tzinfo=ZoneInfo("UTC")),
+        },
+        "Antarctica/Troll": {
+            "start": datetime(2026, 3, 15, 1, 0, tzinfo=ZoneInfo("UTC")),
+            "end": datetime(2026, 10, 25, 1, 0, tzinfo=ZoneInfo("UTC")),
         }
     }
 
