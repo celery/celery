@@ -1005,6 +1005,9 @@ Default: ``False``
 Enables extended task result attributes (name, args, kwargs, worker,
 retries, queue, stamps) to be written to backend.
 
+.. versionadded:: 5.7
+    Added storing task stamping metadata (``stamps``) in the database backend.
+
 .. note::
 
     When using the database backend with :setting:`result_extended` set to ``True``,
