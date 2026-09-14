@@ -18,8 +18,8 @@ Output: A table showing operation counts for different group sizes.
 """
 import os
 import sys
-from unittest.mock import Mock, MagicMock, patch
 from collections import defaultdict
+from unittest.mock import MagicMock, Mock, patch
 
 # Add parent directory to path for imports (repo-relative path)
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -177,7 +177,7 @@ redis.StrictRedis = OperationCountingRedisClient
 
 from celery import Celery
 from celery.backends.redis import RedisBackend
-from celery.result import GroupResult, AsyncResult
+from celery.result import AsyncResult, GroupResult
 
 
 class MockPubsub:
