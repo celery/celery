@@ -52,6 +52,14 @@ class test_pool_start_method_spawn:
         sig = long_running_task.si(1, verbose=True).set(queue=queue)
         assert sig.delay().get(RESULT_TIMEOUT) is True
 
+    def test_spawn_worker_executes_task_with_explicit_lazy_option(self, celery_setup: CeleryTestSetup):
+        result = celery_setup.app.send_task(
+            "t.smoke.tasks.add_with_explicit_lazy_option",
+            args=(2, 3),
+            queue=celery_setup.worker.worker_queue,
+        )
+        assert result.get(timeout=RESULT_TIMEOUT) == 5
+
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))
 class test_worker_restart(SuiteOperations):
