@@ -607,7 +607,8 @@ class crontab(BaseSchedule):
                 and any(True for m in self.minute if m > candidate.minute)
             )
             if _may_run_this_hour:
-                # if there are slots later this hour, we can safely add one minute with worrying about hour change.
+                # if there are slots later this hour, we can safely add one minute
+                # without worrying about hour change.
                 # the search for a correct minute will happen right after
                 candidate = _move_forward(candidate, timedelta(minutes=1))
                 try:
