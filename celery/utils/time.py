@@ -453,9 +453,18 @@ def utcoffset(
         time: ModuleType = _time,
         localtime: Callable[..., _time.struct_time] = _time.localtime) -> float:
     """Return the current offset to UTC in hours."""
+    # Truncate toward zero, don't floor-divide: `time.timezone`/`time.altzone`
+    # are seconds *west* of UTC, so for a fractional-hour, east-of-UTC zone
+    # (e.g. India/Sri Lanka/Iran at UTC+5:30, seconds = -19800) a floor
+    # division rounds the magnitude *up* (-19800 // 3600 == -6), while the
+    # same fractional offset on the west-of-UTC side is unaffected (floor and
+    # truncation agree for positive dividends). That asymmetry skews
+    # adjust_timestamp() by up to an hour for those locales' events.
+    # LocalTimezone.__repr__ above already truncates the equivalent
+    # seconds-to-hours conversion; this matches it instead of floor-dividing.
     if localtime().tm_isdst:
-        return time.altzone // 3600
-    return time.timezone // 3600
+        return int(time.altzone / 3600)
+    return int(time.timezone / 3600)
 
 
 def adjust_timestamp(ts: float, offset: int,

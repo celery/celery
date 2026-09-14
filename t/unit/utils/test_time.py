@@ -392,6 +392,30 @@ class test_utcoffset:
         _time.daylight = False
         assert utcoffset(time=_time) is not None
 
+    def test_utcoffset_whole_hour_unaffected(self, patching):
+        # US Eastern standard time: UTC-5, i.e. 5 hours *west* of UTC, so
+        # time.timezone (seconds west of UTC) is positive.
+        _time = patching('celery.utils.time._time')
+        _time.timezone = 5 * 3600
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == 5
+
+    def test_utcoffset_fractional_hour_offset(self, patching):
+        # Regression test: time.timezone/altzone (seconds west of UTC) must
+        # be truncated toward zero, not floor-divided, or a fractional-hour,
+        # east-of-UTC zone (e.g. India/Sri Lanka/Iran at UTC+5:30, so
+        # time.timezone == -19800) picks up an extra hour in the wrong
+        # direction: -19800 // 3600 == -6, but truncating gives the correct
+        # -5 (i.e. UTC+5:30 rounded to whole hours, not UTC+6).
+        _time = patching('celery.utils.time._time')
+        _time.timezone = -19800  # UTC+5:30 standard time (India, Sri Lanka)
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == -5
+
+        _time.altzone = -19800  # same offset while a DST rule is in effect
+        localtime = Mock(return_value=Mock(tm_isdst=1))
+        assert utcoffset(time=_time, localtime=localtime) == -5
+
 
 class test_get_exponential_backoff_interval:
 
