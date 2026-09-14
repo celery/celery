@@ -619,7 +619,13 @@ class LimitedSet:
             # Only delete from _data if this heap entry is still the current entry
             # Stale heap entries (from item refresh) should be skipped
             if current_entry is entry:
-                self._data.pop(item)
+                try:
+                    self._data.pop(item)
+                except KeyError:
+                    # Lost a race with another thread removing this item
+                    # between the identity check and the pop — treat as
+                    # stale and keep looking.
+                    continue
                 return item
             # If entry is stale, continue to next heap entry
         return default

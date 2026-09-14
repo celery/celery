@@ -492,6 +492,44 @@ class test_LimitedSet:
         assert s.pop() is None
         assert s.pop(default="empty") == "empty"
 
+    def test_pop_handles_concurrent_removal_race(self):
+        """pop() should handle race where another thread removes item between identity check and pop.
+
+        Regression test for the check-then-act race in pop(). If another thread
+        removes an item from self._data after the identity check passes but before
+        self._data.pop(item) is called, pop() should treat it as a stale entry and
+        continue to the next heap entry instead of propagating KeyError.
+        """
+        s = LimitedSet()
+
+        # Add two items
+        s.add("task1")
+        s.add("task2")
+
+        # Create a dict subclass that raises KeyError on a specific key
+        class RaceDict(dict):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._race_key = None
+
+            def pop(self, key, *args):
+                if key == self._race_key:
+                    raise KeyError(key)
+                return super().pop(key, *args)
+
+        # Replace _data with our race-simulating dict
+        original_data = s._data.copy()
+        race_dict = RaceDict(original_data)
+        race_dict._race_key = "task1"  # This key will raise KeyError on pop
+        s._data = race_dict
+
+        # pop() should skip task1 (which raises KeyError) and return task2
+        popped = s.pop()
+        assert popped == "task2", f"Expected task2, got {popped}"
+        assert "task2" not in s
+        # task1 should still be in _data since its pop() raised KeyError
+        assert "task1" in s._data
+
 
 class test_AttributeDict:
 
