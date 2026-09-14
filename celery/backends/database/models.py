@@ -2,7 +2,6 @@
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy.types import PickleType
 
 from celery import states
 
@@ -33,21 +32,27 @@ class Task(ResultModelBase):
     id = sa.Column(DialectSpecificInteger, sa.Identity(cache=20), primary_key=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(PickleType, nullable=True)
+    result = sa.Column(sa.LargeBinary, nullable=True)
     date_done = sa.Column(sa.DateTime, default=_get_utc_now,
                           onupdate=_get_utc_now, nullable=True, index=True)
     traceback = sa.Column(sa.Text, nullable=True)
+    children = sa.Column(sa.LargeBinary, nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
 
     def to_dict(self):
+        try:
+            children = self.children
+        except Exception:
+            children = None
         return {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
+            'children': children,
         }
 
     def __repr__(self):
@@ -95,7 +100,7 @@ class TaskSet(ResultModelBase):
 
     id = sa.Column(DialectSpecificInteger, sa.Identity(cache=20), primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
-    result = sa.Column(PickleType, nullable=True)
+    result = sa.Column(sa.LargeBinary, nullable=True)
     date_done = sa.Column(sa.DateTime, default=_get_utc_now,
                           nullable=True, index=True)
 

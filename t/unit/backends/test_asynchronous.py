@@ -9,8 +9,10 @@ from unittest.mock import Mock, patch
 import pytest
 from vine import promise
 
+from celery import chain, group
 from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
 from celery.backends.base import Backend
+from celery.backends.rpc import RPCBackend
 from celery.utils import cached_property
 
 # ---- helpers ---------------------------------------------------------------
@@ -54,6 +56,24 @@ class test_Drainer_without_greenlets:
 
         assert p.ready
         assert calls[0] >= 3
+
+    def test_drain_times_out_immediately_when_timeout_is_zero(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        wait = Mock()
+
+        with pytest.raises(socket.timeout):
+            list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
+
+    def test_drain_returns_immediately_when_result_is_ready(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        p('done')
+        wait = Mock()
+
+        list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
 
     def test_drain_calls_on_interval(self, app):
         """on_interval callback is invoked every iteration."""
@@ -711,3 +731,24 @@ class test_BaseResultConsumer_reconnect:
         consumer = self._make_consumer(app)
 
         assert consumer._reconnect() is None
+
+
+class test_AsyncBackendMixin:
+
+    @pytest.mark.parametrize('timeout', [0, 10])
+    def test_join_native_with_ready_nested_group(self, app, timeout):
+        # An already-ready group skips event draining; native joining must
+        # still return its nested results.
+        app._backend = RPCBackend(app)
+
+        header = group(
+            self.add.si(1, 100),
+            chain(
+                group(self.add.si(1, 1000), self.add.si(1, 2000)),
+                app=app,
+            ),
+        )
+        result = header.apply()
+
+        result.on_ready()
+        assert result.join_native(timeout=timeout) == [101, [1001, 2001]]

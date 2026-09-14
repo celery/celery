@@ -26,6 +26,25 @@ The task attributes:
 
 are deprecated and must be set by :setting:`task_routes` instead.
 
+Task_sent signal
+----------------
+
+The :signal:`task_sent` signal is deprecated.
+Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
+signals instead.
+
+Result
+------
+
+Apply to: :class:`~celery.result.AsyncResult`,
+:class:`~celery.result.EagerResult`:
+
+- ``Result.wait()`` -> ``Result.get()``
+
+- ``Result.task_id`` -> ``Result.id``
+
+- ``Result.status`` -> ``Result.state``.
+
 .. _deprecations-v5.0:
 
 Removals for version 5.0
@@ -181,25 +200,6 @@ Settings
 ``REDIS_PASSWORD``                     :setting:`result_backend`
 =====================================  =====================================
 
-
-Task_sent signal
-----------------
-
-The :signal:`task_sent` signal will be removed in version 4.0.
-Please use the :signal:`before_task_publish` and :signal:`after_task_publish`
-signals instead.
-
-Result
-------
-
-Apply to: :class:`~celery.result.AsyncResult`,
-:class:`~celery.result.EagerResult`:
-
-- ``Result.wait()`` -> ``Result.get()``
-
-- ``Result.task_id()`` -> ``Result.id``
-
-- ``Result.status`` -> ``Result.state``.
 
 .. _deprecations-v3.1:
 

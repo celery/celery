@@ -262,6 +262,49 @@ class test_Signature(CanvasCase):
         assert kwargs == {'foo': 1}
         assert options == {'task_id': 3}
 
+    def test_clone_does_not_alias_kwargs(self):
+        # gh #10560: clone() used to hand back a signature that shared the
+        # original's kwargs dict, so mutating a clone corrupted the source
+        # (and every sibling clone). Mirrors the defensive copy already made
+        # for options.
+        original = self.add.s(1, 2)
+        original.kwargs['shared'] = {'nested': True}
+
+        clone_a = original.clone()
+        clone_b = original.clone()
+        assert clone_a.kwargs is not original.kwargs
+        assert clone_b.kwargs is not original.kwargs
+        assert clone_a.kwargs is not clone_b.kwargs
+
+        clone_a.kwargs['added_on_clone'] = 1
+        assert 'added_on_clone' not in original.kwargs
+        assert 'added_on_clone' not in clone_b.kwargs
+
+    def test_clone_does_not_alias_kwargs_with_non_kwargs_overrides(self):
+        # _merge() returns self.kwargs unchanged when no kwargs override is
+        # given, so clone(<option>) / clone(args=...) hit the same aliasing.
+        original = self.add.s(1, 2)
+        assert original.clone(priority=5).kwargs is not original.kwargs
+        assert original.clone(countdown=10).kwargs is not original.kwargs
+        assert original.clone(args=(3,)).kwargs is not original.kwargs
+
+    def test_clone_does_not_alias_kwargs_when_immutable(self):
+        # the immutable short-circuit in _merge() also returned self.kwargs.
+        original = self.add.si(1, 2)
+        clone = original.clone()
+        assert clone.kwargs is not original.kwargs
+        clone.kwargs['x'] = 1
+        assert 'x' not in original.kwargs
+
+    def test_clone_kwargs_copy_is_shallow(self):
+        # deliberately a shallow dict copy, not a deepcopy: canvas primitives
+        # keep live objects in kwargs (a task Signature, a lazy iterator for
+        # chunks/xmap/xstarmap) that must not be duplicated or consumed.
+        nested = {'keep_identity': True}
+        original = self.add.s(1, 2)
+        original.kwargs['nested'] = nested
+        assert original.clone().kwargs['nested'] is nested
+
     def test_merge_options__none(self):
         sig = self.add.si()
         _, _, new_options = sig._merge()
@@ -442,6 +485,37 @@ class test_chain(CanvasCase):
         assert x.clone().kwargs == x.kwargs
         assert x.clone().args == x.args
         assert isinstance(x.clone(), chain_type)
+
+    @pytest.mark.parametrize('depth', (1, 3))
+    @pytest.mark.parametrize('args,kwargs,expected', (
+        ((3,), {}, 50),
+        ((), {'x': 3}, 50),
+        ((3,), {'y': 4}, 70),
+    ))
+    def test_apply_nested_chain_with_arguments(
+        self, depth, args, kwargs, expected,
+    ):
+        workflow = chain(self.add.s(y=2), self.mul.s(10))
+        for _ in range(depth):
+            workflow = chain(workflow)
+        original = json.dumps(workflow)
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == expected
+        assert json.dumps(workflow) == original
+
+    def test_apply_nested_chain_with_immutable_first_task(self):
+        workflow = chain(chain(self.add.si(2, 3), self.mul.s(10)))
+
+        assert workflow.apply(args=(99,), kwargs={'y': 99}).get() == 50
+
+    def test_apply_nested_chain_with_tasks_keyword(self):
+        @self.app.task
+        def count_tasks(tasks):
+            return len(tasks)
+
+        workflow = chain(chain(count_tasks.s(), self.mul.s(10)))
+
+        assert workflow.apply(kwargs={'tasks': [1, 2, 3]}).get() == 30
 
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
@@ -787,6 +861,15 @@ class test_chain(CanvasCase):
         assert res.parent.get() == 16
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
+
+    @pytest.mark.parametrize('args,kwargs', (((4,), {}), ((), {'x': 4})))
+    def test_apply_chord_in_chain_with_arguments(self, args, kwargs):
+        workflow = chain(
+            chord([self.add.s(y=2), self.add.s(y=3)], self.xsum.s()),
+            self.mul.s(10),
+        )
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == 130
 
     def test_apply_stops_chain_when_task_raises_ignore(self):
         executed = []
@@ -1834,21 +1917,32 @@ class test_chord(CanvasCase):
         # We also expect the body to have no initial options - since all of the
         # embedded body elements are confirmed to be `body_elem` this is valid
         assert body_elem.options == {}
-        # When we freeze the chord, its body will be cloned and options set
+        # Freezing the group clones every task it holds and freezes the clone;
+        # the frozen chord (now living in ``top_group.tasks``) is where the
+        # body is cloned and per-element ``group_index`` options are set.
         top_group.freeze()
+        frozen_chord = list(top_group.tasks)[0]
         with subtests.test(
             msg="Validate body group indices count from 0 after freezing"
         ):
-            assert isinstance(chord_obj.body, group_type)
+            assert isinstance(frozen_chord.body, group_type)
 
             assert all(
                 embedded_body_elem is not body_elem
-                for embedded_body_elem in chord_obj.body.tasks
+                for embedded_body_elem in frozen_chord.body.tasks
             )
             assert all(
                 embedded_body_elem.options["group_index"] == i
-                for i, embedded_body_elem in enumerate(chord_obj.body.tasks)
+                for i, embedded_body_elem in enumerate(frozen_chord.body.tasks)
             )
+        # Freezing a group must not mutate a signature the caller still holds
+        # a reference to: the original chord and its body are left untouched.
+        with subtests.test(msg="Original chord signature is not mutated by freeze"):
+            assert all(
+                embedded_body_elem is body_elem
+                for embedded_body_elem in chord_obj.body.tasks
+            )
+            assert body_elem.options == {}
 
     def test_freeze_tasks_is_not_group(self):
         x = chord([self.add.s(2, 2)], body=self.add.s(), app=self.app)
@@ -2266,3 +2360,31 @@ class test_merge_dictionaries(CanvasCase):
     def test_none_values(self, d1, d2, expected_result):
         _merge_dictionaries(d1, d2)
         assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_result', [
+        (
+            True,
+            {'nested': {'shared': [1, 2], 'only_d1': 1, 'only_d2': 2}}
+        ),
+        (
+            False,
+            {'nested': {'shared': 1, 'only_d1': 1, 'only_d2': 2}}
+        ),
+    ])
+    def test_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_result):
+        """aggregate_duplicates must be propagated into nested dictionaries."""
+        d1 = {'nested': {'shared': 1, 'only_d1': 1}}
+        d2 = {'nested': {'shared': 2, 'only_d2': 2}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_value', [
+        (True, [1, 2]),
+        (False, 1),
+    ])
+    def test_deeply_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_value):
+        """aggregate_duplicates must survive more than one level of recursion."""
+        d1 = {'level1': {'level2': {'level3': {'shared': 1}}}}
+        d2 = {'level1': {'level2': {'level3': {'shared': 2}}}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == {'level1': {'level2': {'level3': {'shared': expected_value}}}}

@@ -360,9 +360,9 @@ class AMQP:
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
-            argsrepr = saferepr(args, self.argsrepr_maxsize)
+            argsrepr = saferepr(args, self.argsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
         if kwargsrepr is None:
-            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
+            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
 
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
@@ -493,8 +493,8 @@ class AMQP:
         send_after_publish = signals.after_task_publish.send
         after_receivers = signals.after_task_publish.receivers
 
-        send_task_sent = signals.task_sent.send   # XXX compat
-        sent_receivers = signals.task_sent.receivers
+        send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
+        sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
 
         default_evd = self._event_dispatcher
         default_exchange = self.default_exchange

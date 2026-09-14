@@ -2,6 +2,7 @@ import errno
 import logging
 import socket
 from collections import deque
+from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -18,11 +19,45 @@ from celery.utils.time import utcoffset
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
+from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests, successful_requests
+
+
+class FakeOnCloseRequest:
+    """Minimal stand-in for a Request in the ``on_close()`` tests."""
+
+    def __init__(self, id, entry=None):
+        self.id = id
+        self.name = 'test.task'
+        self._eta_timer_entry = entry
+
+
+@pytest.fixture
+def on_close_ctx():
+    """``(state, Consumer, consumer)`` with clean global worker state.
+
+    ``Consumer.on_close`` is called unbound on a mocked consumer so the
+    global-state bookkeeping can be asserted without standing up a real
+    connection, pool or timer.
+    """
+    from celery.worker import state
+
+    consumer = Mock()
+    consumer.controller = Mock()
+    consumer.controller.semaphore = Mock()
+    consumer.task_buckets = {}
+    consumer.pool = Mock()
+    consumer.pool.flush = Mock()
+
+    state.reset_state()
+    try:
+        yield state, Consumer, consumer
+    finally:
+        state.reset_state()
 
 
 class ConsumerTestCase:
@@ -494,6 +529,35 @@ class test_Consumer(ConsumerTestCase):
         old_conn.close.assert_called_once()
         assert c.connection is None
 
+    def test_bounds_already_open_sockets_before_collect(self):
+        # ``collect(socket_timeout=...)`` only sets the *default* timeout,
+        # which applies to sockets created afterwards.  It cannot bound a
+        # socket that is already open, so cleanup reads on a half-open
+        # connection (e.g. draining a pending BRPOP in the redis transport's
+        # ``Channel.close()``) block forever.  See GH-9705.
+        sock, peer = socket.socketpair()
+        try:
+            # Do not assume the process default; an earlier test may have
+            # changed it.
+            sock.settimeout(None)
+            c = self.get_consumer()
+            c.connection.transport.channels = [
+                SimpleNamespace(client=SimpleNamespace(
+                    connection=SimpleNamespace(_sock=sock))),
+            ]
+            # Record the timeout as seen by collect(), so this also proves the
+            # bound is applied *before* the cleanup reads from the socket.
+            seen = {}
+            c.connection.collect.side_effect = (
+                lambda **kw: seen.update(timeout=sock.gettimeout()))
+
+            c.on_connection_error_after_connected(Mock())
+
+            assert seen['timeout'] == COLLECT_SOCKET_TIMEOUT
+        finally:
+            sock.close()
+            peer.close()
+
     def test_register_with_event_loop(self):
         c = self.get_consumer()
         c.register_with_event_loop(Mock(name='loop'))
@@ -511,48 +575,84 @@ class test_Consumer(ConsumerTestCase):
             c.pool = None
             c.on_close()
 
-    def test_on_close_purges_orphan_reservations_from_requests_dict(self):
-        """Regression: ``on_close()`` must remove ``state.requests[id]``
-        entries for Requests that were reserved but never accepted (e.g.
-        ETA tasks queued in ``reserved_requests`` at the moment of a
-        connection loss). PR #7771 attempted this but iterated
-        ``reserved_requests`` (Request objects) and tested membership in
-        ``requests`` (a ``dict[str, Request]``), so ``Request in requests``
-        was always False and nothing was ever deleted.
+    def test_on_close_purges_orphan_reservations_from_requests_dict(self, on_close_ctx):
+        """A Request reserved but never accepted must be dropped from
+        ``state.requests`` (regression for the broken loop in PR #7771,
+        which compared Request objects against a dict keyed by id).
         """
-        from celery.worker import state
-        from celery.worker.consumer.consumer import Consumer
+        state, Consumer, consumer = on_close_ctx
+        orphan = FakeOnCloseRequest('orphan-1')
+        state.requests[orphan.id] = orphan
+        state.reserved_requests.add(orphan)
 
-        class FakeRequest:
-            def __init__(self, id):
-                self.id = id
+        Consumer.on_close(consumer)
 
-        consumer = Mock()
-        consumer.controller = Mock()
-        consumer.controller.semaphore = Mock()
-        consumer.task_buckets = {}
-        consumer.pool = Mock()
-        consumer.pool.flush = Mock()
+        assert orphan.id not in state.requests
 
-        state.reset_state()
-        try:
-            # Orphan reservation: present in ``requests`` and
-            # ``reserved_requests`` but never moved to ``active_requests``.
-            orphan = FakeRequest('orphan-1')
-            state.requests[orphan.id] = orphan
-            state.reserved_requests.add(orphan)
+    def test_on_close_purges_scheduled_requests_from_requests_dict(self, on_close_ctx):
+        """Scheduled (ETA/countdown) Requests never reach
+        ``reserved_requests``, so they need their own cleanup or they leak
+        in ``state.requests`` after a connection loss.
+        """
+        state, Consumer, consumer = on_close_ctx
+        scheduled = FakeOnCloseRequest('scheduled-1')
+        state.task_scheduled(scheduled)
 
-            Consumer.on_close(consumer)
+        Consumer.on_close(consumer)
 
-            assert orphan.id not in state.requests, (
-                "on_close() did not purge an orphan reserved-but-not-"
-                "accepted Request from state.requests; this is the leak "
-                "PR #7771 tried to fix but its loop variable ('request_id') "
-                "actually held Request objects, so the membership check "
-                "never matched."
-            )
-        finally:
-            state.reset_state()
+        assert scheduled.id not in state.requests
+        assert scheduled not in state.scheduled_requests
+
+    def test_on_close_cancels_pending_timer_entry_for_scheduled_requests(self, on_close_ctx):
+        """The ETA timer entry must be cancelled too, otherwise the stale
+        callback can still fire on transports whose loop doesn't clear the
+        timer on error (synloop) and re-add the request via
+        ``task_reserved()``.
+
+        Cancellation goes through ``self.timer.cancel(entry)`` rather than
+        ``entry.cancel()``: the Eventlet timer's entries are greenlets and
+        ``Timer.cancel()`` is what swallows the ``GreenletExit`` that
+        cancelling one can raise.
+        """
+        state, Consumer, consumer = on_close_ctx
+        scheduled = FakeOnCloseRequest('scheduled-1', entry=Mock())
+        state.task_scheduled(scheduled)
+
+        Consumer.on_close(consumer)
+
+        consumer.timer.cancel.assert_called_once_with(
+            scheduled._eta_timer_entry)
+        scheduled._eta_timer_entry.cancel.assert_not_called()
+
+    def test_on_close_logs_and_continues_if_timer_cancel_raises(self, on_close_ctx):
+        """A failing cancellation must not abort the rest of the cleanup."""
+        state, Consumer, consumer = on_close_ctx
+        consumer.timer.cancel.side_effect = RuntimeError('boom')
+        scheduled = FakeOnCloseRequest('scheduled-1', entry=Mock())
+        state.task_scheduled(scheduled)
+
+        Consumer.on_close(consumer)
+
+        assert scheduled.id not in state.requests
+        assert scheduled not in state.scheduled_requests
+
+    def test_on_close_keeps_running_task_that_is_also_scheduled(self, on_close_ctx):
+        """A request can be in both sets: with a threaded timer an ETA
+        already in the past fires straight away, so the request can be
+        reserved/active before the strategy registers it as scheduled.
+        Popping it unconditionally would hide a running task from
+        ``inspect``/``revoke``.
+        """
+        state, Consumer, consumer = on_close_ctx
+        running = FakeOnCloseRequest('running-1', entry=Mock())
+        state.task_accepted(running)
+        state.scheduled_requests.add(running)
+
+        Consumer.on_close(consumer)
+
+        assert state.requests.get(running.id) is running
+        assert running in state.active_requests
+        assert running not in state.scheduled_requests
 
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
@@ -686,27 +786,111 @@ class test_Consumer(ConsumerTestCase):
             active_requests.clear()
             successful_requests.clear()
 
-    @pytest.mark.parametrize("broker_connection_retry", [True, False])
-    @pytest.mark.parametrize("broker_connection_retry_on_startup", [None, False])
-    @pytest.mark.parametrize("first_connection_attempt", [True, False])
-    def test_ensure_connected(self, subtests, broker_connection_retry, broker_connection_retry_on_startup,
-                              first_connection_attempt):
+    def test_ensure_connected_uses_legacy_retry_when_startup_retry_is_undefined(self):
         c = self.get_consumer()
-        c.first_connection_attempt = first_connection_attempt
-        c.app.conf.broker_connection_retry_on_startup = broker_connection_retry_on_startup
-        c.app.conf.broker_connection_retry = broker_connection_retry
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
 
-        if broker_connection_retry is False:
-            if broker_connection_retry_on_startup is None:
-                with subtests.test("Deprecation warning when startup is None"):
-                    with pytest.deprecated_call():
-                        c.ensure_connected(Mock())
+        c.ensure_connected(conn)
 
-            with subtests.test("Does not retry when connect throws an error and retry is set to false"):
-                conn = Mock()
-                conn.connect.side_effect = ConnectionError()
-                with pytest.raises(ConnectionError):
-                    c.ensure_connected(conn)
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_warns_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_raises_when_legacy_retry_disables_startup_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = None
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.deprecated_call(
+            match="broker_connection_retry configuration setting will no longer determine",
+        ):
+            with pytest.raises(ConnectionError):
+                c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_startup_retry_overrides_legacy_retry(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.ensure_connection.assert_called_once()
+        conn.connect.assert_not_called()
+        assert c.first_connection_attempt is False
+
+    def test_ensure_connected_startup_retry_disabled_only_affects_first_attempt(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+
+        c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+        assert c.first_connection_attempt is False
+
+        reconnect_conn = Mock()
+        c.ensure_connected(reconnect_conn)
+
+        reconnect_conn.ensure_connection.assert_called_once()
+        reconnect_conn.connect.assert_not_called()
+
+    def test_ensure_connected_raises_when_startup_retry_is_disabled(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = True
+        c.app.conf.broker_connection_retry_on_startup = False
+        c.app.conf.broker_connection_retry = True
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
+
+    def test_ensure_connected_uses_legacy_retry_after_startup(self):
+        c = self.get_consumer()
+        c.first_connection_attempt = False
+        c.app.conf.broker_connection_retry_on_startup = True
+        c.app.conf.broker_connection_retry = False
+        conn = Mock()
+        conn.connect.side_effect = ConnectionError()
+
+        with pytest.raises(ConnectionError):
+            c.ensure_connected(conn)
+
+        conn.connect.assert_called_once_with()
+        conn.ensure_connection.assert_not_called()
 
     def test_recreated_task_consumer_does_not_consume_late_added_queue(self):
         default_queue = self.app.conf.task_default_queue
@@ -1218,6 +1402,30 @@ class test_Heart:
             c.heart.start.assert_called_with()
 
 
+class test_Events:
+
+    def test_start_dispatcher_connection_heartbeat_and_hub(self):
+        c = Mock()
+        Events(c).start(c)
+        c.connection_for_write.assert_called_once_with(heartbeat=c.amqheartbeat)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_called_once_with(conn.connection, c.hub)
+
+    def test_start_without_hub_does_not_register(self):
+        c = Mock()
+        c.hub = None
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+    def test_start_without_heartbeat_does_not_register(self):
+        c = Mock()
+        c.amqheartbeat = 0
+        Events(c).start(c)
+        conn = c.connection_for_write.return_value
+        conn.transport.register_with_event_loop.assert_not_called()
+
+
 class test_Tasks:
 
     def setup_method(self):
@@ -1296,7 +1504,7 @@ class test_Tasks:
 
         record = caplog.records[0]
         assert record.levelname == "INFO"
-        assert record.msg == "Global QoS is disabled. Prefetch count in now static."
+        assert record.msg == "Global QoS is disabled. Prefetch count is now static."
 
     def test_start_records_qos_global_on_consumer_quorum(self):
         """Tasks.start() must store the effective qos_global on the consumer.
@@ -1526,6 +1734,39 @@ class test_ConnectionStep:
         c.connection = None
 
         step.close_connection(c)  # must not raise
+
+    def test_info_censors_password_and_alternates(self):
+        """info() removes top-level password and censors failover URLs."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'transport': 'amqp',
+            'password': 'supersecret',
+            'alternates': [
+                'amqp://user:' + 'secret1' + '@host-1:5672//',
+                'amqp://user:' + 'secret2' + '@host-2:5672//',
+            ],
+        }
+
+        stats = step.info(c)
+        broker = stats['broker']
+        assert 'password' not in broker
+        assert 'secret1' not in broker['alternates'][0]
+        assert 'secret2' not in broker['alternates'][1]
+        assert '**' in broker['alternates'][0]
+        assert '**' in broker['alternates'][1]
+
+    def test_info_censors_alternates_string(self):
+        """info() censors alternates when represented as a single URL."""
+        step, c = self._get_step_and_consumer()
+        c.connection = Mock(name='conn')
+        c.connection.info.return_value = {
+            'alternates': 'amqp://user:secret@host:5672//',
+        }
+
+        stats = step.info(c)
+        assert 'secret' not in stats['broker']['alternates']
+        assert '**' in stats['broker']['alternates']
 
     # ------------------------------------------------------------------
     # start() - sanity check that the connection is stored on c

@@ -45,6 +45,22 @@ class test_LocalTimezone:
 
         assert y.tzname(datetime.now())
 
+    def test_fromutc_with_negative_offset(self, patching):
+        # Regression test for #10517: negative UTC offsets (western
+        # hemisphere) must not lose their sign when converting from UTC.
+        # `timedelta.seconds` is normalized to [0, 86399] with the sign in
+        # `timedelta.days`, so the old code turned a -04:00 offset into +20:00.
+        time = patching('celery.utils.time._time')
+        time.timezone = 5 * 3600        # UTC-5 standard time (US Eastern)
+        time.daylight = True
+        time.altzone = 4 * 3600         # UTC-4 daylight saving time
+        time.tzname = ('EST', 'EDT')
+        x = LocalTimezone()
+        x._isdst = Mock(return_value=True)   # force DST: -04:00
+        result = x.fromutc(datetime(2026, 6, 15, 12, 0))
+        assert result.utcoffset() == timedelta(hours=-4)
+        assert result == datetime(2026, 6, 15, 8, 0, tzinfo=result.tzinfo)
+
 
 class test_iso8601:
 

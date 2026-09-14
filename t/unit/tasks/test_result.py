@@ -873,6 +873,18 @@ class test_GroupResult:
             backend.ids = [result.id for result in results]
             assert len(list(ts.iter_native())) == 10
 
+    def test_join_timeout_zero(self):
+        """A timeout of 0 must behave as a non-blocking join."""
+        ar = MockAsyncResultSuccess(uuid(), app=self.app, result='r1')
+        ar2 = MockAsyncResultSuccess(uuid(), app=self.app, result='r2')
+        ts_ready = self.app.GroupResult(uuid(), [ar, ar2])
+        assert ts_ready.join(timeout=0) == ['r1', 'r2']
+
+        ar_pending = self.app.AsyncResult(uuid())
+        ts_pending = self.app.GroupResult(uuid(), [ar, ar_pending])
+        with pytest.raises(TimeoutError):
+            ts_pending.join(timeout=0)
+
     def test_join_timeout(self):
         ar = MockAsyncResultSuccess(uuid(), app=self.app)
         ar2 = MockAsyncResultSuccess(uuid(), app=self.app)
