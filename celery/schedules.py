@@ -4,7 +4,7 @@ from __future__ import annotations
 import re
 from collections import namedtuple
 from datetime import datetime, timedelta, tzinfo
-from typing import Any, Callable, Generator, Iterable, Mapping, Sequence, Union
+from typing import Any, Callable, Iterable, Iterator, Mapping, Sequence, Union
 
 from dateutil.tz import resolve_imaginary
 from kombu.utils.objects import cached_property
@@ -510,7 +510,7 @@ class crontab(BaseSchedule):
         candidate = current.replace(second=0, microsecond=0)
         _crontab_has_day_of_week = len(self.day_of_week) < 7
 
-        def _generate_run_days_after(start: datetime) -> Generator[datetime]:
+        def _generate_run_days_after(start: datetime) -> Iterator[datetime]:
             """yields candidate days for task execution after the current date.
 
             We iterate on each possible days after the current one according to crontab resolution.
@@ -551,7 +551,7 @@ class crontab(BaseSchedule):
                 d = _move_forward(d, timedelta(minutes=-1))
             return _move_forward(d, timedelta(minutes=1))
 
-        def _generate_run_hours_after(d: datetime) -> Generator[datetime]:
+        def _generate_run_hours_after(d: datetime) -> Iterator[datetime]:
             """yields candidate hours for task execution.
 
             We use a simple loop over the hours here to correctly handle DST changes.
@@ -580,7 +580,7 @@ class crontab(BaseSchedule):
                 if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
                     yield d
 
-        def _get_run_minute(d: datetime) -> Generator[datetime]:
+        def _get_run_minute(d: datetime) -> Iterator[datetime]:
             """returns the date with minute set to next execution."""
             while any(True for m in self.minute if m >= d.minute):
                 next_minute = min(m for m in self.minute if m >= d.minute)
