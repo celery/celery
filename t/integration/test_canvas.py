@@ -20,9 +20,10 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, long_running, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
-                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
-                    short_running, short_running_full_return, tsum, write_to_file_and_return_int, xsum)
+                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises, 
+                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception, return_priority, 
+                    second_order_replace1, short_running, short_running_full_return, tsum, write_to_file_and_return_int, 
+                    xsum)
 
 TIMEOUT = 60
 
@@ -294,6 +295,18 @@ class test_chain:
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
         assert redis_messages == expected_messages
+
+    @flaky
+    def test_replace_with_chain_that_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        s = replace_with_chain_which_contains_a_group.s()
+
+        result = s.delay()
+        assert result.get(timeout=TIMEOUT) == [4, 4]
 
     @flaky
     def test_parent_ids(self, manager, num=10):
@@ -2265,7 +2278,6 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
 
-    @pytest.mark.xfail(reason="Issue #6176")
     def test_chord_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -2284,7 +2296,6 @@ class test_chord:
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
 
-    @pytest.mark.xfail(reason="Issue #6200")
     def test_chain_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()

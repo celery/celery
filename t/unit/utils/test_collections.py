@@ -1,5 +1,6 @@
 import pickle
 from collections.abc import Mapping
+from copy import copy
 from itertools import count
 from time import monotonic
 from unittest.mock import Mock
@@ -53,6 +54,73 @@ class test_DictAttribute:
 
 
 class test_ConfigurationView:
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    @pytest.mark.parametrize('default_count', [0, 1, 2, 4])
+    def test_copy(self, copy_fun, default_count):
+        nested = []
+        defaults = [{'default': index} for index in range(default_count)]
+        view = ConfigurationView({'changed': 1, 'nested': nested}, defaults)
+
+        copied = copy_fun(view)
+
+        assert dict(copied) == dict(view)
+        assert copied is not view
+        assert copied.changes is not view.changes
+        assert copied.nested is nested
+        assert copied.defaults is not view.defaults
+        for original, duplicate in zip(view.defaults, copied.defaults):
+            assert duplicate is original
+        copied.changed = 2
+        assert view.changed == 1
+        copied.add_defaults({'additional': 3})
+        assert 'additional' not in view
+        if defaults:
+            defaults[0]['default'] = 10
+            assert copied.default == view.default == 10
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_conversions(self, copy_fun):
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': True},
+            [{'CELERY_TASK_DEFAULT_QUEUE': 'custom'}],
+            keys=(_old_key_to_new, _new_key_to_old), prefix='CELERY',
+        )
+
+        copied = copy_fun(view)
+
+        assert copied.task_always_eager is True
+        assert copied.task_default_queue == 'custom'
+        copied.task_always_eager = False
+        assert copied.task_always_eager is False
+        assert view.task_always_eager is True
+        assert 'task_default_queue' in copied
+        assert copied.prefix == view.prefix
+        assert copied._keys == view._keys
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_t(self, copy_fun):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        copied = copy_fun(view)
+
+        assert copied['foo'] == 1
+        copied['bar'] = 2
+        assert copied.changes['BAR'] == 2
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_does_not_share_observers(self, copy_fun):
+        view = ConfigurationView({'foo': 1})
+        callback = Mock()
+        view.bind_to(callback)
+
+        copied = copy_fun(view)
+        copied.update(foo=2)
+
+        callback.assert_not_called()
+        view.update(foo=3)
+        callback.assert_called_once_with(foo=3)
 
     def setup_method(self):
         self.view = ConfigurationView(
