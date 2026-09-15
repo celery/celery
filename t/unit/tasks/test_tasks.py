@@ -1961,6 +1961,16 @@ class test_apply_async(TasksCase):
                 **expected_kwargs
             )
 
+    def test_apply_async_does_not_mutate_cached_execution_options(self):
+        """apply_async() must not mutate cached execution options."""
+        task = self.task_with_ignored_result
+        original_options = task._get_exec_options().copy()
+
+        with patch.object(self.app, 'send_task'):
+            task.apply_async()
+
+        assert task._get_exec_options() == original_options
+
     def test_task_with_result(self):
         with patch.object(self.app, 'send_task') as send_task:
             self.mytask.apply_async()
