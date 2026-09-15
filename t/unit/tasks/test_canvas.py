@@ -191,7 +191,12 @@ class test_Signature(CanvasCase):
     def test_reduce(self):
         x = Signature('TASK', (2, 4), app=self.app)
         fun, args = x.__reduce__()
-        assert fun(*args) == x
+        y = fun(*args)
+
+        assert y['from_serialized']
+        del y['from_serialized']
+        del x['from_serialized']
+        assert y == x
 
     def test_replace(self):
         x = Signature('TASK', ('A',), {})
