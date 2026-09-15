@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -8,6 +9,62 @@ from celery.schedules import crontab
 from t.integration.tasks import add
 
 from .conftest import flaky
+
+
+class test_beat_cron_with_timezone:
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    def test_cron_with_dst_end(self, app):
+        # minute level crontab should be executed at DST end
+        app.timezone = "Pacific/Chatham"
+
+        now = datetime(2026, 4, 4, 14, 0, tzinfo=ZoneInfo("UTC"))
+        last_run = datetime(2026, 4, 4, 13, 59, tzinfo=ZoneInfo("UTC"))
+        task_id = uuid4().hex
+
+        cron = crontab(minute='*', nowfun=lambda: now, app=app)
+        scheduler = beat.Scheduler(app=app, lazy=True)
+
+        scheduler.add(
+            name='test_beat_with_timezone_and_dst_end',
+            task=add.name,
+            args=(1, 2),
+            schedule=cron,
+            last_run_at=last_run,
+            options={'task_id': task_id},
+        )
+
+        # tick() returns 0 only when it dispatches a due task, which is not the case.
+        assert scheduler.tick() == 0
+        # The worker received and executed the dispatched task.
+        assert app.AsyncResult(task_id).get(timeout=30) == 3
+
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    def test_cron_with_dst_start(self, app):
+        # minute level crontab should be executed at DST start
+        app.timezone = "Pacific/Chatham"
+
+        now = datetime(2026, 9, 26, 14, 0, tzinfo=ZoneInfo("UTC"))
+        last_run = datetime(2026, 9, 26, 13, 59, tzinfo=ZoneInfo("UTC"))
+        task_id = uuid4().hex
+
+        cron = crontab(minute='*', nowfun=lambda: now, app=app)
+        scheduler = beat.Scheduler(app=app, lazy=True)
+
+        scheduler.add(
+            name='test_beat_with_timezone_and_dst_start',
+            task=add.name,
+            args=(1, 2),
+            schedule=cron,
+            last_run_at=last_run,
+            options={'task_id': task_id},
+        )
+
+        # tick() returns 0 only when it dispatches a due task, which is not the case.
+        assert scheduler.tick() == 0
+        # The worker received and executed the dispatched task.
+        assert app.AsyncResult(task_id).get(timeout=30) == 3
 
 
 class test_beat_cron_starting_deadline:
@@ -35,6 +92,70 @@ class test_beat_cron_starting_deadline:
         )
 
         # tick() returns 0 only when it dispatches a due task.
+        assert scheduler.tick() == 0
+        # The worker received and executed the dispatched task.
+        assert app.AsyncResult(task_id).get(timeout=30) == 3
+
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    @pytest.mark.celery(beat_cron_starting_deadline=1800)
+    def test_dispatches_missed_cron_without_deadline_non_uniform_with_dst_start(self, app):
+        app.timezone = "Pacific/Chatham"
+
+        # "Pacific/Chatham" has a +12:45 UTC offset before DST,
+        # +13:45 after
+        now = datetime(2026, 9, 26, 14, 00, tzinfo=ZoneInfo("UTC"))
+        last_run = datetime(2026, 9, 26, 13, 15, tzinfo=ZoneInfo("UTC"))
+        task_id = uuid4().hex
+
+        # Non-uniform crontab (:00, :30): feasible runs were 02:00, 02:30.
+        # The most recent (2:30 local time) is 15 min before now=03:45 (DST crossed), within the
+        # 30-min deadline, so the missed task should dispatch.
+        cron = crontab(minute='00,30', nowfun=lambda: now, app=app)
+        scheduler = beat.Scheduler(app=app, lazy=True)
+
+        scheduler.add(
+            name='test_beat_without_deadline',
+            task=add.name,
+            args=(1, 2),
+            schedule=cron,
+            last_run_at=last_run,
+            options={'task_id': task_id},
+        )
+
+        # tick() returns 0 only when it dispatches a due task.
+        assert scheduler.tick() == 0
+        # The worker received and executed the dispatched task.
+        assert app.AsyncResult(task_id).get(timeout=30) == 3
+
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    @pytest.mark.celery(beat_cron_starting_deadline=1800)
+    def test_dispatches_missed_cron_without_deadline_with_dst_end(self, app):
+        app.timezone = "Pacific/Chatham"
+
+        # "Pacific/Chatham" has a +12:45 UTC offset before DST,
+        # +13:45 after
+        now = datetime(2026, 4, 4, 14, 00, tzinfo=ZoneInfo("UTC"))
+        last_run = datetime(2026, 4, 4, 13, 15, tzinfo=ZoneInfo("UTC"))
+        task_id = uuid4().hex
+
+        # Non-uniform crontab (:00, :30): feasible runs were 02:00, 02:50.
+        # The most recent (2:30 local time) is 15 min before now=03:45 (DST crossed), within the
+        # 30-min deadline, so the missed task should dispatch.
+        cron = crontab(minute='00,30', nowfun=lambda: now, app=app)
+        scheduler = beat.Scheduler(app=app, lazy=True)
+
+        scheduler.add(
+            name='test_beat_deadline_non_uniform',
+            task=add.name,
+            args=(1, 2),
+            schedule=cron,
+            last_run_at=last_run,
+            options={'task_id': task_id},
+        )
+
+        # tick() returns 0 only when it dispatches a due task, which is not the case.
         assert scheduler.tick() == 0
         # The worker received and executed the dispatched task.
         assert app.AsyncResult(task_id).get(timeout=30) == 3
