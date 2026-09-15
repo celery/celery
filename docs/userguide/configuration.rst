@@ -3456,6 +3456,30 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`imports`.
 
+.. setting:: worker_resolve_coroutines
+
+``worker_resolve_coroutines``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+Whether a pool that has no event loop of its own may run a task whose body
+is a coroutine (an ``async def`` task), on a private loop created for that
+one task and thrown away afterwards.
+
+Disabled by default: such a task raises
+:exc:`~celery.exceptions.ImproperlyConfigured`, pointing at
+:option:`--pool=asyncio <celery worker --pool>`, which runs coroutine tasks
+on one event loop shared by the whole worker process.  That shared loop is
+what lets a connection pool or a client session be created once and reused,
+so the fallback is a compatibility shim rather than a way to run coroutine
+tasks in production.
+
+The :ref:`asyncio pool <concurrency-asyncio>` ignores this setting: it always
+has a loop to run them on.
+
 .. setting:: worker_deduplicate_successful_tasks
 
 ``worker_deduplicate_successful_tasks``
