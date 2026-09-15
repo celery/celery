@@ -22,10 +22,11 @@ connection pool, an HTTP client session) cannot be reused between tasks.
 from __future__ import annotations
 
 import asyncio
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Coroutine
 
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 
 __all__ = (
     'CoroutineRunner',
@@ -48,6 +49,17 @@ Start the worker with --pool=asyncio, which runs coroutine tasks on one
 event loop shared by the whole process.  To run them anywhere -- on a
 private, short-lived loop per task, with none of the benefits of a shared
 one -- set worker_resolve_coroutines = True.\
+"""
+
+W_RESOLVE_COROUTINES_UNSET = """\
+Task body is a coroutine, and this worker has no event loop to run it on.
+It is being run anyway, on a private, short-lived loop, for backward
+compatibility -- but in Celery 6.0 this will raise ImproperlyConfigured
+instead, naming --pool=asyncio, the same as it already does when
+worker_resolve_coroutines is explicitly set to False.
+
+To keep it running as it does today, set worker_resolve_coroutines = True.
+To opt into the future behaviour now, set it to False.\
 """
 
 #: Runners installed by execution pools that own an event loop, most recent
@@ -124,16 +136,26 @@ def get_coroutine_runner() -> CoroutineRunner | None:
     return _coroutine_runner_stack[-1] if _coroutine_runner_stack else None
 
 
-def resolve_coroutine(coro: Coroutine, fallback: bool = False) -> Any:
+def resolve_coroutine(coro: Coroutine, fallback: bool | None = False) -> Any:
     """Run a coroutine returned by a task body and return its result.
 
-    With no pool-provided runner, ``fallback`` decides between running the
-    coroutine on a private loop and refusing: see
-    :setting:`worker_resolve_coroutines`.
+    With no pool-provided runner, ``fallback`` decides what happens: see
+    :setting:`worker_resolve_coroutines`.  :const:`True` and :const:`False`
+    are today's and tomorrow's default respectively; :const:`None` -- the
+    setting left unset -- keeps today's behaviour for one deprecation cycle,
+    with a warning pointing at both.
     """
     runner = get_coroutine_runner()
     if runner is None:
-        if not fallback:
+        if fallback is None:
+            # warnings.warn() only prints once per (message, module, line)
+            # by default, so this does not spam the log of a worker that
+            # runs many such tasks.
+            warnings.warn(
+                CPendingDeprecationWarning(W_RESOLVE_COROUTINES_UNSET),
+                stacklevel=2,
+            )
+        elif not fallback:
             coro.close()
             raise ImproperlyConfigured(E_NO_COROUTINE_RUNNER)
         runner = default_coroutine_runner

@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CPendingDeprecationWarning, ImproperlyConfigured
 from celery.utils.coroutines import (default_coroutine_runner, get_coroutine_runner, pop_coroutine_runner,
                                      push_coroutine_runner, resolve_coroutine, set_coroutine_runner)
 
@@ -43,6 +43,19 @@ class test_default_runner:
         set_coroutine_runner(None)
         with pytest.raises(ImproperlyConfigured, match='--pool=asyncio'):
             resolve_coroutine(answer())
+
+    def test_unset_resolves_with_a_deprecation_warning(self):
+        """fallback=None: the setting's own default -- runs, for now, but
+        warns that Celery 6.0 will make this the same as fallback=False."""
+        set_coroutine_runner(None)
+        with pytest.warns(CPendingDeprecationWarning, match='Celery 6.0'):
+            assert resolve_coroutine(answer(), fallback=None) == 42
+
+    def test_unset_warning_names_both_settings(self):
+        set_coroutine_runner(None)
+        with pytest.warns(CPendingDeprecationWarning,
+                          match='worker_resolve_coroutines'):
+            resolve_coroutine(answer(), fallback=None)
 
     def test_already_inside_a_running_loop(self):
         set_coroutine_runner(None)

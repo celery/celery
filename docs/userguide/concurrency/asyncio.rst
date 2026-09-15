@@ -210,15 +210,17 @@ Coroutine tasks on the other pools
 ==================================
 
 A coroutine task submitted to a worker pool that has no event loop --
-``prefork``, ``threads``, or ``solo`` -- fails with
-:exc:`~celery.exceptions.ImproperlyConfigured`, naming this pool.  That is
-deliberate: before this existed such a task reported ``SUCCESS`` without its
-body ever having run.
-
-Setting :setting:`worker_resolve_coroutines` to ``True`` runs them anyway, on
-a private event loop created for that one task and thrown away afterwards.
-It is a compatibility shim: with a loop per task, nothing loop-bound survives
-between tasks, which is the whole point of this pool.
+``prefork``, ``threads``, or ``solo`` -- runs anyway today, on a private
+event loop created for that one task and thrown away afterwards, with a
+:exc:`~celery.exceptions.CPendingDeprecationWarning` pointing at this
+section.  A loop per task means nothing loop-bound survives between tasks,
+which is the whole point of this pool, so this is a compatibility shim, not
+a way to run coroutine tasks in production: set
+:setting:`worker_resolve_coroutines` to ``False`` to instead fail with
+:exc:`~celery.exceptions.ImproperlyConfigured`, naming this pool -- which
+before it existed, this task reported ``SUCCESS`` without its body ever
+having run, and this is what Celery 6.0 will do by default.  Set it to
+``True`` to keep today's behaviour without the warning.
 
 Tasks running eagerly
 =====================

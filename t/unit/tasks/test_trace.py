@@ -1302,10 +1302,26 @@ class test_coroutine_tasks(TraceCase):
         # eager=False: this is the worker path, where a pool could have
         # provided a loop and did not.  A request with an id, because at
         # this point the failure really is stored in the backend.
-        _, info = trace(self.app, add_async, (2, 2), eager=False,
-                        request={'id': 'id-1'})
+        _, info, _ = trace(self.app, add_async, (2, 2), eager=False,
+                           request={'id': 'id-1'})
         assert info.state == states.FAILURE
         assert isinstance(info.retval, ImproperlyConfigured)
+
+    def test_unset_resolves_with_a_deprecation_warning(self):
+        """The setting's own default: still runs, for one deprecation cycle."""
+        from celery.exceptions import CPendingDeprecationWarning
+
+        self.app.conf.worker_resolve_coroutines = None
+
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            return x + y
+
+        with pytest.warns(CPendingDeprecationWarning, match='Celery 6.0'):
+            retval, info, _ = trace(self.app, add_async, (2, 2), eager=False,
+                                    request={'id': 'id-2'})
+        assert info is None
+        assert retval == 4
 
     def test_eager_always_resolves(self):
         """There is no worker, so no pool can ever own a loop for it."""
@@ -1315,7 +1331,7 @@ class test_coroutine_tasks(TraceCase):
         async def add_async(x, y):
             return x + y
 
-        retval, info = trace(self.app, add_async, (2, 2), eager=True)
+        retval, info, _ = trace(self.app, add_async, (2, 2), eager=True)
         assert info is None
         assert retval == 4
 
@@ -1325,7 +1341,7 @@ class test_coroutine_tasks(TraceCase):
             await asyncio.sleep(0)
             return x + y
 
-        retval, _ = trace(self.app, add_async, (2, 2))
+        retval, _, _ = trace(self.app, add_async, (2, 2))
         assert retval == 4
 
     def test_failure_inside_the_coroutine(self):
@@ -1333,7 +1349,7 @@ class test_coroutine_tasks(TraceCase):
         async def fails():
             raise KeyError('boom')
 
-        _, info = trace(self.app, fails, ())
+        _, info, _ = trace(self.app, fails, ())
         assert info.state == states.FAILURE
 
     def test_retry_raised_inside_the_coroutine(self):
@@ -1341,7 +1357,7 @@ class test_coroutine_tasks(TraceCase):
         async def retries():
             raise Retry('need to retry')
 
-        _, info = trace(self.app, retries, ())
+        _, info, _ = trace(self.app, retries, ())
         assert info.state == states.RETRY
 
     def test_ignore_raised_inside_the_coroutine(self):
@@ -1349,7 +1365,7 @@ class test_coroutine_tasks(TraceCase):
         async def ignores():
             raise Ignore()
 
-        _, info = trace(self.app, ignores, ())
+        _, info, _ = trace(self.app, ignores, ())
         assert info.state == states.IGNORED
 
     def test_uses_the_runner_installed_by_the_pool(self):
@@ -1365,7 +1381,7 @@ class test_coroutine_tasks(TraceCase):
         async def add_async(x, y):
             return x + y
 
-        retval, _ = trace(self.app, add_async, (1, 1))
+        retval, _, _ = trace(self.app, add_async, (1, 1))
         assert retval == 2
         assert len(seen) == 1
 
@@ -1377,9 +1393,9 @@ class test_coroutine_tasks(TraceCase):
         def returns_coroutine():
             return inner()
 
-        retval, _ = trace(self.app, returns_coroutine, ())
+        retval, _, _ = trace(self.app, returns_coroutine, ())
         assert retval == 'inner'
 
     def test_synchronous_tasks_are_untouched(self):
-        retval, _ = trace(self.app, self.add, (2, 2))
+        retval, _, _ = trace(self.app, self.add, (2, 2))
         assert retval == 4
