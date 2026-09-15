@@ -3456,6 +3456,38 @@ to have different import categories.
 The modules in this setting are imported after the modules in
 :setting:`imports`.
 
+.. setting:: worker_resolve_coroutines
+
+``worker_resolve_coroutines``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Enabled (with a deprecation warning -- see below).
+
+Whether a pool that has no event loop of its own may run a task whose body
+is a coroutine (an ``async def`` task), on a private loop created for that
+one task and thrown away afterwards.
+
+- ``True``: run it on a private loop, silently.
+- ``False``: refuse, raising :exc:`~celery.exceptions.ImproperlyConfigured`
+  and pointing at :option:`--pool=asyncio <celery worker --pool>`, which
+  runs coroutine tasks on one event loop shared by the whole worker
+  process.  That shared loop is what lets a connection pool or a client
+  session be created once and reused, so the private-loop fallback is a
+  compatibility shim rather than a way to run coroutine tasks in
+  production -- refusing is what a worker not using that pool should
+  eventually do by default.
+- unset (the default): behaves like ``True``, but emits a
+  :exc:`~celery.exceptions.CPendingDeprecationWarning`.  **This will
+  change to** ``False`` **in Celery 6.0.**  Set it explicitly, to either
+  value, to silence the warning and pick your own transition.
+
+The :ref:`asyncio pool <concurrency-asyncio>` ignores this setting: it always
+has a loop to run them on, and so does eager execution
+(:setting:`task_always_eager`, or :meth:`~celery.app.task.Task.apply`),
+which has no worker and so no pool that could ever have owned one.
+
 .. setting:: worker_deduplicate_successful_tasks
 
 ``worker_deduplicate_successful_tasks``
