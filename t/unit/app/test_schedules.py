@@ -2153,3 +2153,32 @@ class test_crontab_is_due:
 
         # 25h minus 1 minute
         assert crontab.remaining_estimate(last_run_at).total_seconds() == 25 * 60 * 60 - 60
+
+
+class test_crontab_next_occurence_validity:
+    def test_antartica_troll_dst_end(self):
+        tzname = "Antarctica/Troll"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = crontab(hour=23, minute=0, app=self.app)
+
+        last_run_at = datetime(2026, 10, 24, 23, 0, tzinfo=tz)
+        assert ct._next_occurrence(last_run_at) == datetime(2026, 10, 25, 23, 0, tzinfo=tz)
+
+    def test_pacific_chatham_dst_start(self):
+        tzname = "Pacific/Chatham"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = crontab(hour=3, minute=50, app=self.app)
+
+        last_run_at = datetime(2026, 9, 26, 3, 50, tzinfo=tz)
+        assert ct._next_occurrence(last_run_at) == datetime(2026, 9, 27, 3, 50, tzinfo=tz)
+
+    def test_pacific_chatham_dst_end(self):
+        tzname = "Pacific/Chatham"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        ct = crontab(hour=3, minute=50, app=self.app)
+
+        last_run_at = datetime(2026, 4, 4, 3, 50, tzinfo=tz)
+        assert ct._next_occurrence(last_run_at) == datetime(2026, 4, 5, 3, 50, tzinfo=tz)
