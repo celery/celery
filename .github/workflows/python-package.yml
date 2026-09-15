@@ -46,6 +46,8 @@ jobs:
               os: "windows-latest"
             - python-version: '3.13'
               os: "windows-latest"
+            - python-version: '3.15'
+              os: "windows-latest"
             - python-version: 'pypy3.11'
               os: "windows-latest"
 
