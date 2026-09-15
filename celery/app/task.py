@@ -1066,6 +1066,7 @@ class Task:
             # Groups get uplifted to a chord so that we can link onto the body
             sig |= self.app.tasks['celery.accumulate'].s(index=0)
         if isinstance(sig, _chain) and isinstance(sig.tasks[-1], group):
+            sig.tasks = list(sig.tasks)
             sig.tasks[-1] |= self.app.tasks['celery.accumulate'].s(index=0)
         for callback in maybe_list(self.request.callbacks) or []:
             sig.link(callback)
