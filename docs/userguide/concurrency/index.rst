@@ -24,6 +24,9 @@ Overview of Concurrency Options
   greenlets for high concurrency. Note that certain features, like `soft_timeout`,
   are not available in these modes.  These have detailed documentation pages
   linked below.
+- `asyncio`: Runs ``async def`` task bodies on one event loop shared by the
+  whole worker process, for IO-bound workloads written as coroutines.  See the
+  page linked below.
 - `solo`: Executes tasks sequentially in the main thread.
 - `threads`: Utilizes threading for concurrency, available if the
   `concurrent.futures` module is present.
@@ -41,6 +44,7 @@ Overview of Concurrency Options
 .. toctree::
     :maxdepth: 2
 
+    asyncio
     eventlet
     gevent
 
