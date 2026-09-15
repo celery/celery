@@ -842,8 +842,8 @@ class Signature(dict):
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
-        
-        # Issue #8182: 
+
+        # Issue #8182:
         # Mark this signature as originating from a serialization
         dic = dict(self)
         dic["from_serialized"] = True
@@ -1836,7 +1836,8 @@ class group(Signature):
                 # Issue 8182:
                 # Set chord size not in ForkedWorker via "from_serialized"
                 # marker check
-                if (isinstance(chord_obj, Signature)
+                if (
+                    isinstance(chord_obj, Signature)
                     and not chord_obj["from_serialized"]
                     and next_task is None
                 ):
