@@ -1,3 +1,4 @@
+import pickle
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -6,6 +7,7 @@ from celery import states
 from celery.backends import azureblockblob
 from celery.backends.azureblockblob import AzureBlockBlobBackend
 from celery.exceptions import ImproperlyConfigured
+from celery.result import AsyncResult
 
 MODULE_TO_MOCK = "celery.backends.azureblockblob"
 
@@ -199,6 +201,32 @@ class test_AzureBlockBlobBackend:
             url=self.url
         )
         assert backend.base_path == ''
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_pickleable(self):
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url,
+            container_name='my-container',
+        )
+        unpickled = pickle.loads(pickle.dumps(backend))
+        assert unpickled._connection_string == backend._connection_string
+        assert unpickled._container_name == 'my-container'
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_pickled_async_result_round_trips(self):
+        # AsyncResult pickles its backend, so a task returning one with the
+        # pickle serializer can only be read back if the backend survives.
+        self.app.conf.accept_content = ['pickle']
+        backend = AzureBlockBlobBackend(
+            app=self.app,
+            url=self.url,
+            serializer='pickle',
+        )
+        result = AsyncResult('task-id', backend=backend, app=self.app)
+        restored = backend.decode(backend.encode(result))
+        assert restored.id == 'task-id'
+        assert restored.backend._connection_string == backend._connection_string
 
 
 class test_as_uri:
