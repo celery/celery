@@ -278,12 +278,17 @@ class test_GCSBackend:
         _ = backend.firestore_client
         assert backend._firestore_pid == 456
 
+    @pytest.mark.parametrize('order', [
+        ('firestore_client', 'client'),
+        ('client', 'firestore_client'),
+    ])
     @patch('celery.backends.gcs.firestore.Client')
     @patch('celery.backends.gcs.Client')
     @patch('celery.backends.gcs.getpid')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
-    def test_new_clients_after_fork_when_firestore_client_is_used_first(
-        self, mock_firestore_ttl, mock_pid, mock_client, mock_firestore_client
+    def test_new_clients_after_fork_whichever_client_is_used_first(
+        self, mock_firestore_ttl, mock_pid, mock_client, mock_firestore_client,
+        order,
     ):
         mock_firestore_ttl.return_value = True
         mock_pid.return_value = 123
@@ -297,8 +302,12 @@ class test_GCSBackend:
         mock_client.return_value = Mock()
         mock_firestore_client.return_value = Mock()
 
-        assert backend.firestore_client is not firestore_client
-        assert backend.client is not storage_client
+        old_clients = {
+            'firestore_client': firestore_client,
+            'client': storage_client,
+        }
+        for name in order:
+            assert getattr(backend, name) is not old_clients[name]
 
     @patch('celery.backends.gcs.firestore_admin_v1.FirestoreAdminClient')
     @patch('celery.backends.gcs.firestore_admin_v1.GetFieldRequest')
