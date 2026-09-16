@@ -103,6 +103,12 @@ class test_Queues:
         assert queues['foo'].queue_arguments['x-max-priority'] == 10
         assert queues['bar'].queue_arguments['x-max-priority'] == 10
 
+    def test_add_preserves_queue_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues.add(Queue('foo', queue_arguments={'x-max-priority': 3}))
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 3
+
     def test_setitem_preserves_queue_max_priority(self):
         queues = Queues(max_priority=10)
         queues['foo'] = Queue('foo', queue_arguments={'x-max-priority': 3})
