@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock
@@ -322,6 +323,46 @@ class test_CassandraBackend:
         s = x._session
         x._get_connection()
         assert s is x._session
+
+    def test_session_not_published_before_table_is_created(self):
+        # A second thread must not see the session, and write through it,
+        # while the first one is still preparing statements and issuing
+        # CREATE TABLE.
+        from celery.backends import cassandra as mod
+
+        executed = []
+        other_thread = []
+
+        class Session:
+            def execute(self, statement, parameters=None):
+                if statement is None:
+                    raise AssertionError('executed a statement that is None')
+                if statement.query.lstrip().startswith('CREATE TABLE'):
+                    t = threading.Thread(
+                        target=x._store_result,
+                        args=('task_id', 'result', states.SUCCESS),
+                    )
+                    t.start()
+                    t.join(0.5)
+                    other_thread.append(t)
+                executed.append(statement.query.split()[0])
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Session()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection(write=True)
+        other_thread[0].join(5)
+        assert not other_thread[0].is_alive()
+        assert executed == ['CREATE', 'INSERT']
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises

@@ -173,20 +173,20 @@ class CassandraBackend(BaseBackend):
                     },
                     auth_provider=self.auth_provider,
                     **self.cassandra_options)
-            self._session = self._cluster.connect(self.keyspace)
+            session = self._cluster.connect(self.keyspace)
 
             # We're forced to do concatenation below, as formatting would
             # blow up on superficial %s that'll be processed by Cassandra
-            self._write_stmt = cassandra.query.SimpleStatement(
+            write_stmt = cassandra.query.SimpleStatement(
                 Q_INSERT_RESULT.format(
                     table=self.table, expires=self.cqlexpires),
             )
-            self._write_stmt.consistency_level = self.write_consistency
+            write_stmt.consistency_level = self.write_consistency
 
-            self._read_stmt = cassandra.query.SimpleStatement(
+            read_stmt = cassandra.query.SimpleStatement(
                 Q_SELECT_RESULT.format(table=self.table),
             )
-            self._read_stmt.consistency_level = self.read_consistency
+            read_stmt.consistency_level = self.read_consistency
 
             if write:
                 # Only possible writers "workers" are allowed to issue
@@ -203,9 +203,16 @@ class CassandraBackend(BaseBackend):
                 make_stmt.consistency_level = self.write_consistency
 
                 try:
-                    self._session.execute(make_stmt)
+                    session.execute(make_stmt)
                 except cassandra.AlreadyExists:
                     pass
+
+            # Other threads check _session without holding the lock, so it
+            # must only be published once the statements are prepared and
+            # the table exists.
+            self._write_stmt = write_stmt
+            self._read_stmt = read_stmt
+            self._session = session
 
         except cassandra.OperationTimedOut:
             # a heavily loaded or gone Cassandra cluster failed to respond.
