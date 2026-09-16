@@ -1177,14 +1177,26 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [4, 8]
 
-        # The same chain built explicitly, as a deserialised ``celery.chain``
-        # signature would be, so the empty groups reach ``prepare_steps``.
+    @flaky
+    def test_chain_skips_empty_groups_before_chord_body(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        Built explicitly, as a deserialised ``celery.chain`` signature would
+        be, so the empty groups reach ``prepare_steps``: they must be
+        skipped there and the group still upgraded into a chord whose body
+        is ``xsum``.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         c = _chain(
-            group(add.s(2, 2), add.s(4, 4)), group(), group(),
+            group(add.s(2, 2), add.s(4, 4)), group(), group(), xsum.s(),
             app=manager.app,
         )
         res = c.apply_async()
-        assert res.get(timeout=TIMEOUT) == [4, 8]
+        assert res.get(timeout=TIMEOUT) == 12
 
     @flaky
     def test_chain_forwards_args_past_leading_empty_steps(self, manager):
