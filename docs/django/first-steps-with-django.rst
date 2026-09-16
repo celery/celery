@@ -90,6 +90,10 @@ setting becomes ``CELERY_BROKER_URL``. This also applies to the
 workers settings, for instance, the :setting:`worker_concurrency`
 setting becomes ``CELERY_WORKER_CONCURRENCY``.
 
+The general mapping between lowercase configuration names and Django's
+``CELERY_``-prefixed settings is documented in
+:ref:`Django settings with a namespace <conf-django-namespace>`.
+
 For example, a Django project's configuration file might include:
 
 .. code-block:: python

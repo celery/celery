@@ -10,11 +10,13 @@ from billiard.pool import ApplyResult
 from kombu.asynchronous import Hub
 
 import t.skip
+from celery.app import base as app_base
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+from t.unit.conftest import restore_execv_state
 
 try:
     from celery.concurrency import asynpool
@@ -66,7 +68,8 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer(self, _get_start_method, _signals, set_mp_process_title, restore_logging):
         from celery import signals
         from celery._state import _tls
         from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
@@ -85,13 +88,11 @@ class test_process_initializer:
                 'celeryd', hostname='awesome.worker.com',
             )
 
-            with patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    S.assert_called_with(app, 'luke.worker.com')
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                process_initializer(app, 'luke.worker.com')
+                S.assert_called_with(app, 'luke.worker.com')
 
             os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
             app.log.setup = Mock(name='log_setup')
@@ -100,8 +101,46 @@ class test_process_initializer:
             finally:
                 os.environ.pop('CELERY_LOG_FILE', None)
 
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='spawn')
+    def test_process_initializer_spawned_child(self, _get_start_method, _signals, set_mp_process_title,
+                                               restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'spawned.worker.com')
+                assert os.environ['FORKED_BY_MULTIPROCESSING'] == '1'
+                # base was imported before the child knew it was spawned, so
+                # the flag has to be set too, not just the variable.
+                assert app_base.USING_EXECV
+                S.assert_called_with(app, 'spawned.worker.com')
+            assert app.loader.init_worker.call_count
+
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer_forked_child(self, _get_start_method, _signals, set_mp_process_title,
+                                              restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'forked.worker.com')
+                assert 'FORKED_BY_MULTIPROCESSING' not in os.environ
+                assert not app_base.USING_EXECV
+                S.assert_not_called()
+
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_pdeath_sig(self, _get_start_method, _set_pdeathsig, set_mp_process_title, restore_logging):
         from celery import signals
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
@@ -735,6 +774,178 @@ class test_AsynPool:
         job.discard.assert_called_once()
         assert gen not in pool._active_writers
 
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_for_accepted_job(self, _create_worker_process):
+        """flush() must keep a worker marked busy while it runs an accepted job.
+
+        On a broker reconnect Consumer.on_close calls pool.flush(). A worker
+        still executing an accepted (running) task is genuinely busy, so its
+        inqueue write-fd must remain in _busy_workers. Clearing it would
+        desynchronize the fair scheduler from reality and let a new task be
+        written onto the busy worker, blocking it behind the long-running task
+        even while another worker is idle.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Worker still running an accepted job, dispatched to fd 7. Once the
+        # body is written job._write_to points at the executing process, so it
+        # is the preferred source of truth for the busy fd.
+        proc = Mock(name='proc')
+        proc.inqW_fd = 7
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {7}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # The busy worker must still be marked busy after the flush.
+        assert 7 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self, _create_worker_process):
+        """flush() falls back to _scheduled_for when _write_to is unset.
+
+        A job can be accepted before its body finished writing, leaving
+        _write_to unset while _scheduled_for already identifies the worker the
+        task was dispatched to. The busy fd must still be preserved.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 5
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = None
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {5}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 5 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_unaccepted_job(self, _create_worker_process):
+        """flush() must free a worker whose job was not accepted yet.
+
+        Unaccepted jobs are discarded/redelivered by the broker, so the worker
+        they were tentatively scheduled to is no longer busy and its fd must be
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 9
+        job = Mock(name='job')
+        job._accepted = False
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_accepted_and_releases_unaccepted_together(self, _create_worker_process):
+        """flush() must resolve a mixed _busy_workers set in a single call.
+
+        When one worker runs an accepted job and another only had an
+        unaccepted job tentatively scheduled to it, the same flush() must keep
+        the accepted worker busy while releasing the unaccepted one, rather
+        than treating the set all-or-nothing.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        accepted_proc = Mock(name='accepted_proc')
+        accepted_proc.inqW_fd = 7
+        accepted_proc._is_alive.return_value = True
+        accepted_job = Mock(name='accepted_job')
+        accepted_job._accepted = True
+        accepted_job._write_to = accepted_proc
+        accepted_job._scheduled_for = accepted_proc
+        accepted_job._writer.return_value = None
+
+        unaccepted_proc = Mock(name='unaccepted_proc')
+        unaccepted_proc.inqW_fd = 9
+        unaccepted_job = Mock(name='unaccepted_job')
+        unaccepted_job._accepted = False
+        unaccepted_job._write_to = unaccepted_proc
+        unaccepted_job._scheduled_for = unaccepted_proc
+        unaccepted_job._writer.return_value = None
+
+        pool._cache = {1: accepted_job, 2: unaccepted_job}
+        pool._busy_workers = {7, 9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 7 in pool._busy_workers
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_dead_process(self, _create_worker_process):
+        """flush() must not keep an accepted job's fd if its worker died.
+
+        If the worker executing an accepted job has exited, its inqueue
+        write-fd may be reused by a replacement process. Keeping the fd marked
+        busy would sideline that healthy replacement, so a dead worker's fd is
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 3
+        proc._is_alive.return_value = False
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {3}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 3 not in pool._busy_workers
+
     def test_process_result(self):
         x = asynpool.ResultHandler(
             Mock(), Mock(), {}, Mock(),
@@ -942,3 +1153,28 @@ class test_TaskPool:
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 8.0
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_fork(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=True)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _forking_enable.assert_called_once_with(True)
+        _set_start_method.assert_not_called()
+
+    @patch.dict(os.environ, clear=False)
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_spawn(self, _forking_enable, _set_start_method):
+        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=False)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _set_start_method.assert_called_once_with('spawn', force=True)
+        _forking_enable.assert_not_called()
+        # spawned children must be flagged as fresh interpreters so they
+        # re-run setup_worker_optimizations in process_initializer.
+        assert os.environ.get('FORKED_BY_MULTIPROCESSING') == '1'

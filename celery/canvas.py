@@ -25,7 +25,8 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result
+from celery.result import EagerResult, GroupResult, allow_join_result
+from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
@@ -99,7 +100,7 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
-                _merge_dictionaries(d1[key], d2[key])
+                _merge_dictionaries(d1[key], d2[key], aggregate_duplicates)
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value] if aggregate_duplicates else value
@@ -458,6 +459,17 @@ class Signature(dict):
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
+        # ``kwargs`` may still be ``self.kwargs`` by reference here: the
+        # no-override branch above, ``_merge`` returning ``self.kwargs``
+        # unchanged when no kwargs override is given, and its immutable
+        # short-circuit all pass it straight through.  Give the clone its
+        # own mapping so mutating ``clone.kwargs`` cannot corrupt the
+        # original (and sibling clones) -- #10560.  A shallow ``dict`` copy,
+        # not ``deepcopy``: canvas primitives keep live objects in kwargs
+        # (``chunks``/``xmap``/``xstarmap`` hold a task Signature and a lazy
+        # iterator) that must not be copied or consumed.
+        if kwargs is self.kwargs:
+            kwargs = dict(kwargs)
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
@@ -814,8 +826,11 @@ class Signature(dict):
     __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return dict(self)  # TODO: Potential bug of being a shallow copy
+        clone = dict(self)
+        memo[id(self)] = clone
+        # Canvas preparation mutates execution options, but task arguments may be lazy.
+        clone['options'] = deepcopy(self.options, memo)
+        return clone
 
     def __invert__(self):
         return self.apply_async().get()
@@ -1228,6 +1243,13 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
+                if (
+                    isinstance(task, group) and
+                    isinstance(task.tasks, (list, tuple)) and
+                    not task.tasks and
+                    (steps or prev_task)
+                ):
+                    continue
 
             if isinstance(task, group) and not task.tasks:
                 # skip empty groups as they are no-ops
@@ -1273,12 +1295,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                if tasks:
-                    prev_task = tasks[-1]
-                    prev_res = results[-1]
-                else:
-                    prev_task = None
-                    prev_res = None
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1307,6 +1327,9 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
+                    # Propagate to chord body for chord_error_from_stack.
+                    if isinstance(task, chord) and task.body:
+                        task.body.link_error(errback)
 
             tasks.append(task)
             results.append(res)
@@ -1320,6 +1343,7 @@ class _chain(Signature):
 
                 # We need to change that so that it points to the
                 # group result object.
+<<<<<<< HEAD
                 if res is not None:
                     node = res
                     while node.parent:
@@ -1339,6 +1363,14 @@ class _chain(Signature):
                 first_task.kwargs = dict(kwargs, **first_task.kwargs)
 
         self.id = last_task_id
+=======
+                node = res
+                while node.parent:
+                    node = node.parent
+                prev_res = node
+        # Use the last task's actual ID, not the input parameter.
+        self.id = results[0].id if results else last_task_id
+>>>>>>> refs/remotes/upstream-main
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1346,9 +1378,12 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+            res = task.clone().apply(
+                (last.get(),) if last else fargs, fkwargs,
+                **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
+            if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
+                break
         return last
 
     @property
@@ -1666,6 +1701,13 @@ class group(Signature):
         return self.apply_async(partial_args, **options)
 
     def __or__(self, other):
+        if (
+            isinstance(other, group) and
+            not isinstance(other.tasks, _regen) and
+            isinstance(other.tasks, (list, tuple)) and
+            not other.tasks
+        ):
+            return self
         # group() | task -> chord
         return chord(self, body=other, app=self._app)
 
@@ -1772,7 +1814,7 @@ class group(Signature):
         # each child task signature, of which there might be none!
         sig = maybe_signature(sig)
 
-        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
+        return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -2174,7 +2216,7 @@ class _chord(Signature):
         # secondly freeze all tasks in the body: those that should be called after the header
 
         body_result = None
-        if self.body:
+        if self.body is not None:
             body_result = self.body.freeze(
                 _id, root_id=root_id, chord=chord, group_id=group_id,
                 group_index=group_index)
@@ -2396,7 +2438,8 @@ class _chord(Signature):
                 "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
                 "and report any concerns you might have in our issue tracker before we make a final decision "
                 "regarding how errbacks should behave when used with chords.",
-                CPendingDeprecationWarning
+                CPendingDeprecationWarning,
+                stacklevel=2,
             )
 
         # Edge case for nested chords in the header
