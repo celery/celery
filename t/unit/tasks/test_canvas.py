@@ -629,12 +629,14 @@ class test_chain(CanvasCase):
         assert c.apply().get() == 4
 
     def test_middle_empty_group_is_skipped_in_eager_chain_apply(self):
-        # NOTE: _chain() is constructed directly: chain() would rewrite
-        # `a | group() | b` into `a | chord(group(), b)` in __or__.
-        c = _chain(
+        # chain() reduces its arguments with __or__, which drops the
+        # empty group at construction time, so no chord upgrade happens
+        # and both execution paths agree.
+        c = chain(
             self.add.s(2, 2), group(app=self.app), self.add.s(2),
-            app=self.app,
         )
+
+        assert isinstance(c, _chain)
         prepared, _ = c.prepare_steps((), {}, c.tasks)
 
         assert [t.task for t in prepared] == [self.add.name, self.add.name]

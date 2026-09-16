@@ -62,8 +62,9 @@ def maybe_unroll_group(group):
 def _is_empty_group(task):
     """Return True if the task is a group with no members.
 
-    Shared by the worker path (_chain.prepare_steps) and the eager path
-    (_chain.apply) so both agree on which groups are skipped.
+    Shared by canvas construction (_chain.__or__) and both execution
+    paths -- the worker path (_chain.prepare_steps) and the eager path
+    (_chain.apply) -- so all three agree on which groups are skipped.
     """
     return (
         isinstance(task, group) and
@@ -986,6 +987,9 @@ class _chain(Signature):
             return self.apply_async(args, kwargs)
 
     def __or__(self, other):
+        if _is_empty_group(other):
+            # chain | group() -> chain (empty group is a no-op)
+            return self
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
