@@ -59,6 +59,19 @@ def maybe_unroll_group(group):
         return group.tasks[0] if size == 1 else group
 
 
+def _is_empty_group(task):
+    """Return True if the task is a group with no members.
+
+    Shared by the worker path (_chain.prepare_steps) and the eager path
+    (_chain.apply) so both agree on which groups are skipped.
+    """
+    return (
+        isinstance(task, group) and
+        isinstance(task.tasks, (list, tuple)) and
+        not task.tasks
+    )
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1205,12 +1218,7 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
-                if (
-                    isinstance(task, group) and
-                    isinstance(task.tasks, (list, tuple)) and
-                    not task.tasks and
-                    (steps or prev_task)
-                ):
+                if _is_empty_group(task) and (steps or prev_task):
                     continue
 
             # first task gets partial args from chain
@@ -1308,7 +1316,13 @@ class _chain(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
-        for task in self.tasks:
+        tasks = list(self.tasks)
+        for index, task in enumerate(tasks):
+            if _is_empty_group(task) and (
+                    index < len(tasks) - 1 or last is not None):
+                # Skip empty groups, mirroring _chain.prepare_steps:
+                # an empty group is a no-op, unless it is the only task.
+                continue
             res = task.clone().apply(
                 (last.get(),) if last else fargs, fkwargs,
                 **dict(self.options, **options))

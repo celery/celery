@@ -620,6 +620,26 @@ class test_chain(CanvasCase):
         assert prepared_tasks[0].task == self.add.name
         assert isinstance(results[0], AsyncResult)
 
+    def test_trailing_empty_group_is_skipped_in_eager_chain_apply(self):
+        # The eager path (_chain.apply) must agree with the worker path
+        # (_chain.prepare_steps, fixed in #10321): empty groups are skipped.
+        c = chain(self.add.s(2, 2), group(app=self.app))
+
+        assert isinstance(c, _chain)
+        assert c.apply().get() == 4
+
+    def test_middle_empty_group_is_skipped_in_eager_chain_apply(self):
+        # NOTE: _chain() is constructed directly: chain() would rewrite
+        # `a | group() | b` into `a | chord(group(), b)` in __or__.
+        c = _chain(
+            self.add.s(2, 2), group(app=self.app), self.add.s(2),
+            app=self.app,
+        )
+        prepared, _ = c.prepare_steps((), {}, c.tasks)
+
+        assert [t.task for t in prepared] == [self.add.name, self.add.name]
+        assert c.apply().get() == 6
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task
