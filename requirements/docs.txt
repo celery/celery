@@ -1,4 +1,4 @@
-sphinx_celery>=2.1.1
+sphinx_celery>=2.1.3
 Sphinx>=8.1.3
 sphinx-testing~=1.0.1
 sphinx-click==6.2.0
