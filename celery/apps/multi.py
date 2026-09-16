@@ -313,7 +313,9 @@ class MultiParser:
             try:
                 names, prefix = self._get_ranges(names), range_prefix
             except ValueError:
-                pass
+                # The single argument isn't a node count, so it's a plain
+                # node name and dashes in it are not range separators.
+                ranges = False
         self._update_ns_opts(p, names)
         self._update_ns_ranges(p, ranges)
 
