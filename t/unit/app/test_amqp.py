@@ -89,6 +89,32 @@ class test_Queues:
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
 
+    def test_setitem_adds_max_priority(self):
+        queues = Queues(max_priority=10)
+        queue = Queue('foo')
+        queues[queue.name] = queue
+        assert queues['foo'].queue_arguments['x-max-priority'] == 10
+
+    def test_add_and_setitem_apply_same_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues.add(Queue('foo'))
+        queues['bar'] = Queue('bar')
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 10
+        assert queues['bar'].queue_arguments['x-max-priority'] == 10
+
+    def test_add_preserves_queue_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues.add(Queue('foo', queue_arguments={'x-max-priority': 3}))
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 3
+
+    def test_setitem_preserves_queue_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues['foo'] = Queue('foo', queue_arguments={'x-max-priority': 3})
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 3
+
     def test_select_add(self):
         q = Queues()
         q.select(['foo', 'bar'])
