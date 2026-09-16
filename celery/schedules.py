@@ -688,13 +688,18 @@ class crontab(BaseSchedule):
         last_run_at = self.maybe_make_aware(last_run_at).astimezone(schedule_tz)
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
 
-        _next = self._next_occurrence(last_run_at)
+        next_run_at = self._next_occurrence(last_run_at)
+        if next_run_at.fold and self._orig_hour != "*":
+            # do not run the second hours of a daylight saving end (folded)
+            # except if we were asked for an every hour run ()"*")
+            next_run_at = self._next_occurrence(next_run_at)
+
         delta = ffwd(
-            year=_next.year if last_run_at.year != _next.year else None,
-            month=_next.month if last_run_at.month != _next.month else None,
-            day=_next.day if last_run_at.day != _next.day else None,
-            hour=_next.hour,
-            minute=_next.minute,
+            year=next_run_at.year if last_run_at.year != next_run_at.year else None,
+            month=next_run_at.month if last_run_at.month != next_run_at.month else None,
+            day=next_run_at.day if last_run_at.day != next_run_at.day else None,
+            hour=next_run_at.hour,
+            minute=next_run_at.minute,
             second=0,
             microsecond=0
         )
@@ -717,6 +722,10 @@ class crontab(BaseSchedule):
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
 
         next_run_at = self._next_occurrence(last_run_at)
+        if next_run_at.fold and self._orig_hour != "*":
+            # do not run the second hours of a daylight saving end (folded)
+            # except if we were asked for an every hour run ()"*")
+            next_run_at = self._next_occurrence(next_run_at)
 
         if C_REMDEBUG:  # pragma: no cover
             print(

@@ -1113,7 +1113,7 @@ class test_crontab_remaining_estimate_with_timezone:
         assert ct.remaining_estimate(last_run).total_seconds() == timedelta(days=1, hours=-1).total_seconds()
 
     def test_duplicated_hour(self):
-        """verify crontab is due twice when the hour is duplicated due to DST end."""
+        """verify crontab is due only at the first hour when the hour is duplicated due to DST end."""
         paris_dst_end = self.DST_CHANGE["Europe/Paris"]["end"]
         tz = ZoneInfo("Europe/Paris")
         self.app.timezone = tz
@@ -1130,12 +1130,60 @@ class test_crontab_remaining_estimate_with_timezone:
         assert ct.remaining_estimate(last_run).total_seconds() == 0
 
         last_run = now
+        # now at dst change, it is still 2 o'clock, due time should be next day
+        now = paris_dst_end.astimezone(tz)
+
+        ct.nowfun = lambda: now
+
+        assert ct.remaining_estimate(last_run).total_seconds() == 24 * 60 * 60
+
+    def test_duplicated_hour_every_hour(self):
+        """verify every hour crontab is due twice when the hour is duplicated due to DST end."""
+        paris_dst_end = self.DST_CHANGE["Europe/Paris"]["end"]
+        tz = ZoneInfo("Europe/Paris")
+        self.app.timezone = tz
+
+        # last_run 1 hour before dst change
+        last_run = (paris_dst_end + timedelta(hours=-2)).astimezone(tz)
+        # now at dst change
+        now = (paris_dst_end + timedelta(hours=-1)).astimezone(tz)
+        ct = crontab(minute=0, hour="*", app=self.app)
+        ct.nowfun = lambda: now
+
+        # one hour before the dst end, it is 2 o'clock, due time is 0
+        assert ct.remaining_estimate(last_run).total_seconds() == 0
+
+        last_run = now
         # now at dst change, it is still 2 o'clock, due time should be 0
         now = paris_dst_end.astimezone(tz)
 
         ct.nowfun = lambda: now
 
         assert ct.remaining_estimate(last_run).total_seconds() == 0
+
+    def test_duplicated_hour_every_two_hours(self):
+        """verify every two hours crontab is not due twice when the hour is duplicated due to DST end."""
+        paris_dst_end = self.DST_CHANGE["Europe/Paris"]["end"]
+        tz = ZoneInfo("Europe/Paris")
+        self.app.timezone = tz
+
+        # last_run 1 hour before dst change
+        last_run = (paris_dst_end + timedelta(hours=-2)).astimezone(tz)
+        # now at dst change
+        now = (paris_dst_end + timedelta(hours=-1)).astimezone(tz)
+        ct = crontab(minute=0, hour="*/2", app=self.app)
+        ct.nowfun = lambda: now
+
+        # one hour before the dst end, it is 2 o'clock, due time is 0
+        assert ct.remaining_estimate(last_run).total_seconds() == 0
+
+        last_run = now
+        # now at dst change, it is still 2 o'clock, due time should be in two more hours
+        now = paris_dst_end.astimezone(tz)
+
+        ct.nowfun = lambda: now
+
+        assert ct.remaining_estimate(last_run).total_seconds() == 7200
 
 
 class test_crontab_is_due:
@@ -2017,7 +2065,7 @@ class test_crontab_is_due:
         remaining = ct.remaining_estimate(last_run_at)
         # Task ran once at 1:00 AM PDT; it should next run the following day,
         # so it must not be considered due again at 1:00 AM PST.
-        assert remaining.total_seconds() == 0
+        assert remaining.total_seconds() == 24 * 60 * 60
 
     def test_hourly_crontab_during_dst_spring_forward_is_due(self):
         # Hourly schedule across the spring-forward gap should still be due.
