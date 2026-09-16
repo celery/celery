@@ -587,20 +587,22 @@ class test_worker_queue_alias_reconnect:
 
         return AliasQueueWorkerContainer
 
-    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_by_real_name_and_reconnect(
+    @pytest.mark.parametrize("cancel_queue", ["real_name", "alias"])
+    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_and_reconnect(
         self,
         celery_setup: CeleryTestSetup,
+        cancel_queue: str,
     ):
         worker = celery_setup.worker
         assert identity.si("consumed").apply_async(queue="real_name").get(timeout=RESULT_TIMEOUT) == "consumed"
 
         replies = celery_setup.app.control.cancel_consumer(
-            "real_name",
+            cancel_queue,
             destination=[worker.hostname()],
             reply=True,
             timeout=RESULT_TIMEOUT,
         )
-        assert replies == [{worker.hostname(): {"ok": "no longer consuming from real_name"}}]
+        assert replies == [{worker.hostname(): {"ok": f"no longer consuming from {cancel_queue}"}}]
 
         # Sever all broker connections so the worker reconnects and rebuilds
         # its consumers from _consume_from
