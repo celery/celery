@@ -691,7 +691,7 @@ class crontab(BaseSchedule):
         next_run_at = self._next_occurrence(last_run_at)
         if next_run_at.fold and self._orig_hour != "*":
             # do not run the second hours of a daylight saving end (folded)
-            # except if we were asked for an every hour run ()"*")
+            # except if we were asked for an every hour run ("*")
             next_run_at = self._next_occurrence(next_run_at)
 
         delta = ffwd(
@@ -724,7 +724,7 @@ class crontab(BaseSchedule):
         next_run_at = self._next_occurrence(last_run_at)
         if next_run_at.fold and self._orig_hour != "*":
             # do not run the second hours of a daylight saving end (folded)
-            # except if we were asked for an every hour run ()"*")
+            # except if we were asked for an every hour run ("*")
             next_run_at = self._next_occurrence(next_run_at)
 
         if C_REMDEBUG:  # pragma: no cover
