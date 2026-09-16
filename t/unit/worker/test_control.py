@@ -10,6 +10,7 @@ import pytest
 from kombu import pidbox
 from kombu.utils.uuid import uuid
 
+from celery import states
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import maybe_list
 from celery.utils.timer2 import Timer
@@ -66,6 +67,62 @@ class test_Pidbox:
             pbox.shutdown(parent)
             eig.assert_called_with(parent, cancel)
             pbox._close_channel.assert_called_with(parent)
+
+    def test_reset_cancels_old_consumer(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [Mock(), Mock()]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        pbox = Pidbox(parent)
+        old_consumer = Mock()
+        new_consumer = Mock()
+        node.listen.side_effect = [old_consumer, new_consumer]
+
+        pbox.start(parent)
+        pbox.reset()
+
+        old_consumer.cancel.assert_called_once()
+        new_consumer.cancel.assert_not_called()
+        assert pbox.consumer is new_consumer
+
+    def test_pidbox_repeated_reset_cancels_previous_consumers(self):
+        parent = Mock()
+        parent.hostname = 'worker@example.com'
+        parent.controller = Mock(use_eventloop=False)
+        parent.app = Mock()
+        parent.app.control.mailbox.Node = Mock()
+        node = Mock()
+        node.handle_message.side_effect = RuntimeError('simulated handler error')
+        parent.app.control.mailbox.Node.return_value = node
+        parent.connection = Mock()
+        parent.connection.channel.side_effect = [
+            Mock(name=f'channel-{i}') for i in range(11)
+        ]
+        parent.connection_errors = ()
+        parent.channel_errors = ()
+        parent.on_decode_error = Mock()
+
+        consumers = [Mock(name=f'consumer-{i}') for i in range(11)]
+        node.listen.side_effect = consumers
+        pbox = Pidbox(parent)
+
+        pbox.start(parent)
+        for _ in range(10):
+            pbox.on_message({}, object())
+
+        for previous_consumer in consumers[:-1]:
+            previous_consumer.cancel.assert_called_once()
+        consumers[-1].cancel.assert_not_called()
+        assert pbox.consumer is consumers[-1]
 
 
 class test_Pidbox_green:
@@ -163,6 +220,20 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_enable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('enable_events')['error']
+
+    def test_disable_events_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        assert 'unavailable' in panel.handle('disable_events')['error']
+
     def test_clock(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -246,6 +317,13 @@ class test_ControlPanel:
         panel.handle('heartbeat')
         assert ('worker-heartbeat',) in event_dispatcher.send.call_args
 
+    def test_heartbeat_no_dispatcher(self):
+        consumer = Consumer(self.app)
+        consumer.event_dispatcher = None
+        panel = self.create_panel(consumer=consumer)
+        # Should not raise AttributeError when dispatcher is None (#9489).
+        panel.handle('heartbeat')
+
     def test_time_limit(self):
         panel = self.create_panel(consumer=Mock())
         r = panel.handle('time_limit', arguments={
@@ -296,6 +374,46 @@ class test_ControlPanel:
             assert 'rate_limit=200' not in info
         finally:
             control.DEFAULT_TASK_INFO_ITEMS = prev
+
+    def test_dump_tasks_allows_public_attributes(self):
+        # public Task attributes (incl. non-defaults) remain available --
+        # this is the documented `registered('serializer', 'max_retries')`
+        # contract.
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks',
+            arguments={'taskinfoitems': ['rate_limit', 'max_retries']}))
+        assert 'rate_limit=200' in info
+        assert 'max_retries=3' in info
+
+    def test_dump_tasks_rejects_dunder_attributes(self):
+        # a dunder such as __dict__ would otherwise bulk-dump every instance
+        # attribute; private/dunder names must be refused.
+        self.mytask.injected_secret = 'TOPSECRET'
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks', arguments={'taskinfoitems': ['__dict__']}))
+        assert '__dict__' not in info
+        assert 'TOPSECRET' not in info
+
+    def test_dump_tasks_does_not_read_private_attributes(self):
+        # a private (underscore-prefixed) name must not reach getattr, so a
+        # side-effecting private property getter is never invoked.
+        from celery import Task
+        fired = []
+
+        class LeakyTask(Task):
+            @property
+            def _evil(self):
+                fired.append(True)
+                return 'leaked'
+
+        @self.app.task(base=LeakyTask, name='c.unittest.leaky', shared=False)
+        def leaky():
+            pass
+
+        info = '\n'.join(self.panel.handle(
+            'dump_tasks', arguments={'taskinfoitems': ['_evil']}))
+        assert fired == []
+        assert 'leaked' not in info
 
     def test_stats(self):
         prev_count, worker_state.total_count = worker_state.total_count, 100
@@ -546,6 +664,103 @@ class test_ControlPanel:
             assert 'tasks unknown' in r['ok']
         finally:
             worker_state.task_ready(request)
+
+    def test_repeated_revoke_uses_task_backend_for_known_request(self):
+        # Tasks may override their backend.
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+                control.revoke(state, tid)
+            assert task_backend.mark_as_revoked.call_count == 2
+            task_backend.mark_as_revoked.assert_called_with(tid, reason='revoked', store_result=True)
+            mar.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(tid)
+
+    @pytest.mark.parametrize('revoke_count', [1, 2])
+    def test_revoke_chord_member_is_counted_once_on_discard(self, revoke_count):
+        backend = self.app.backend
+        task_id, group_id = uuid(), uuid()
+        body = self.mytask.s()
+        message = self.TaskMessage(self.mytask.name, task_id, group=group_id)
+        message.payload[2]['chord'] = body
+        request = Request(message, app=self.app)
+
+        # Keep other members pending so duplicate counts remain observable
+        # without completing the chord and deleting its counter.
+        results = [self.app.AsyncResult(task_id),
+                   self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())]
+        backend.apply_chord((group_id, results), body)
+        counter_key = backend.get_key_for_chord(group_id)
+        state = self.create_state()
+        worker_state.task_reserved(request)
+        try:
+            for _ in range(revoke_count):
+                control.revoke(state, task_id)
+                assert backend.get_task_meta(task_id)['status'] == states.REVOKED
+                # Control revokes store the state but leave chord bookkeeping
+                # to the request's discard/announce path, even when repeated.
+                assert int(backend.get(counter_key)) == 0
+
+            assert request.revoked()
+            assert request.acknowledged
+            assert int(backend.get(counter_key)) == 1
+
+            # Neither another control revoke nor another discard check may
+            # count the same chord member again.
+            control.revoke(state, task_id)
+            assert request.revoked()
+            assert int(backend.get(counter_key)) == 1
+        finally:
+            worker_state.task_ready(request)
+            revoked.discard(task_id)
+
+    def test_revoke_skips_active_request_without_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        task_backend = Mock()
+        request.task.backend = task_backend
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control.revoke(state, tid)
+            task_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            request.terminate.assert_not_called()
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
+
+    def test_revoke_skips_active_request_with_terminate(self):
+        request = Mock()
+        request.id = tid = uuid()
+        request.task.backend = state_backend = Mock()
+        state = self.create_state()
+        state.consumer = Mock()
+        worker_state.task_reserved(request)
+        worker_state.active_requests.add(request)
+        try:
+            with patch.object(state.app.backend, 'mark_as_revoked') as mar:
+                control._revoke(state, [tid], terminate=True)
+            state_backend.mark_as_revoked.assert_not_called()
+            mar.assert_not_called()
+            assert request.terminate.call_count == 1
+        finally:
+            worker_state.task_ready(request)
+            worker_state.active_requests.discard(request)
+            revoked.discard(tid)
 
     @pytest.mark.parametrize(
         "terminate", [True, False],
@@ -815,6 +1030,28 @@ class test_ControlPanel:
             assert ret[req1.id][0] == 'reserved'
         finally:
             worker_state.reserved_requests.clear()
+
+    def test_query_task_scheduled(self):
+        # Regression test for #5321: a task with an ETA/countdown that
+        # hasn't fired yet must still be found by `query_task`.
+        consumer = Consumer(self.app)
+        consumer.controller = _WC(app=self.app)
+        consumer.controller.consumer = consumer
+        panel = self.create_panel(consumer=consumer)
+        panel.app = self.app
+        req1 = Request(
+            self.TaskMessage(self.mytask.name, args=(2, 2)),
+            app=self.app,
+        )
+        worker_state.task_scheduled(req1)
+        try:
+            ret = panel.handle('query_task', {'ids': {req1.id}})
+            assert req1.id in ret
+            assert ret[req1.id][0] == 'scheduled'
+            assert req1 not in worker_state.reserved_requests
+        finally:
+            worker_state.requests.pop(req1.id, None)
+            worker_state.scheduled_requests.discard(req1)
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):

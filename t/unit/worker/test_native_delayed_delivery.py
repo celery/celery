@@ -469,3 +469,25 @@ class test_DelayedDelivery:
         assert "attempt 1/" in retry_warnings[0].message
         assert "Connection refused" in retry_warnings[1].message
         assert "attempt 2/" in retry_warnings[1].message
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    def test_bind_queues_skips_broadcast_queues(self, mock_bind):
+        """Broadcast queues are auto-delete/ephemeral and should not be
+        bound to the delayed delivery exchange."""
+        from kombu.common import Broadcast
+
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'classic'
+        consumer_mock.app.conf.broker_url = 'amqp://'
+        consumer_mock.app.amqp.queues = {
+            'celery':        Queue('celery', exchange=Exchange('celery', type='topic')),
+            'celery.pidbox': Broadcast('celery.pidbox'),   # <-- the problematic one
+        }
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+        delayed_delivery.start(consumer_mock)
+
+        # bind should only be called for the regular queue, not the Broadcast one
+        assert mock_bind.call_count == 1
+        bound_queue = mock_bind.call_args[0][1]
+        assert bound_queue.name == 'celery'

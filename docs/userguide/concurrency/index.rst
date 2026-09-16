@@ -30,6 +30,14 @@ Overview of Concurrency Options
 - `custom`: Enables specifying a custom worker pool implementation through
   environment variables.
 
+.. note::
+
+    On Windows, the default ``prefork`` pool uses ``spawn`` instead of
+    ``fork`` to create worker processes. This means per-process worker
+    optimizations set up in the main process are not inherited by
+    workers. If you see ``RuntimeError: fast_trace_task: worker task
+    registry is empty``, switch to ``--pool=solo`` or ``--pool=threads``.
+
 .. toctree::
     :maxdepth: 2
 

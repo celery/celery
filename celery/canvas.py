@@ -25,7 +25,8 @@ from vine import barrier
 
 from celery._state import current_app
 from celery.exceptions import CPendingDeprecationWarning
-from celery.result import GroupResult, allow_join_result
+from celery.result import EagerResult, GroupResult, allow_join_result
+from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
 from celery.utils.functional import _regen
@@ -99,7 +100,7 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
     for key, value in d1.items():
         if key in d2:
             if isinstance(value, dict):
-                _merge_dictionaries(d1[key], d2[key])
+                _merge_dictionaries(d1[key], d2[key], aggregate_duplicates)
             else:
                 if isinstance(value, (int, float, str)):
                     d1[key] = [value] if aggregate_duplicates else value
@@ -458,6 +459,17 @@ class Signature(dict):
             args, kwargs, opts = self._merge(args, kwargs, opts)
         else:
             args, kwargs, opts = self.args, self.kwargs, self.options
+        # ``kwargs`` may still be ``self.kwargs`` by reference here: the
+        # no-override branch above, ``_merge`` returning ``self.kwargs``
+        # unchanged when no kwargs override is given, and its immutable
+        # short-circuit all pass it straight through.  Give the clone its
+        # own mapping so mutating ``clone.kwargs`` cannot corrupt the
+        # original (and sibling clones) -- #10560.  A shallow ``dict`` copy,
+        # not ``deepcopy``: canvas primitives keep live objects in kwargs
+        # (``chunks``/``xmap``/``xstarmap`` hold a task Signature and a lazy
+        # iterator) that must not be copied or consumed.
+        if kwargs is self.kwargs:
+            kwargs = dict(kwargs)
         signature = Signature.from_dict({'task': self.task,
                                          'args': tuple(args),
                                          'kwargs': kwargs,
@@ -814,8 +826,11 @@ class Signature(dict):
     __class_getitem__ = classmethod(types.GenericAlias)
 
     def __deepcopy__(self, memo):
-        memo[id(self)] = self
-        return dict(self)  # TODO: Potential bug of being a shallow copy
+        clone = dict(self)
+        memo[id(self)] = clone
+        # Canvas preparation mutates execution options, but task arguments may be lazy.
+        clone['options'] = deepcopy(self.options, memo)
+        return clone
 
     def __invert__(self):
         return self.apply_async().get()
@@ -1095,14 +1110,6 @@ class _chain(Signature):
     # TODO figure out why we are always cloning before freeze
     def freeze(self, _id=None, group_id=None, chord=None,
                root_id=None, parent_id=None, group_index=None):
-        """Freeze the chain, returning an AsyncResult for the chain's final result.
-
-        If the chain contains only empty groups (no-ops), all steps are
-        discarded and a minimal AsyncResult is returned so that callers
-        can safely access .id and .parent without a NoneType error.
-        This placeholder result is not backed by any task execution and
-        will never complete.  (Issue #9772)
-        """
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
@@ -1110,12 +1117,7 @@ class _chain(Signature):
             self.app, _id, group_id, chord, clone=False,
             group_index=group_index,
         )
-        if results:
-            return results[0]
-        # All steps were empty groups (no-ops); return a minimal
-        # AsyncResult so callers can safely access .id / .parent.
-        # (Issue #9772)
-        return self.app.AsyncResult(_id or uuid())
+        return results[0]
 
     def stamp(self, visitor=None, append_stamps=False, **headers):
         visitor_headers = None
@@ -1178,24 +1180,36 @@ class _chain(Signature):
             use_link = True
         steps = deque(tasks)
 
-        # Strip leading empty groups from the chain so that
-        # is_first_task (not steps) is correct after popping all items.
-        # Empty groups anywhere in the chain are no-ops and should be
-        # skipped (Issue #9772), but leading ones must be removed up
-        # front because the reverse-iteration loop relies on `not steps`
-        # to detect the original chain's first task for applying partial
-        # args/kwargs.
+        # The reverse walk below identifies the chain's first task -- the one
+        # that receives the partial ``args``/``kwargs`` -- by ``not steps``.
+        # A leading step that contributes no task of its own (an empty group
+        # or a nested chain) would be the one popped last and silently
+        # swallow those partial args (Issue #9772).  Normalise the head of
+        # the chain up front so the first *real* task is the last one
+        # popped: nested chains are spliced in place, and empty groups are
+        # stripped as long as another step follows them.  A chain made up of
+        # empty groups only keeps a single one, matching the in-loop skip
+        # below, so that it still yields an (empty) group result.
         while steps:
             head = steps[0]
             if not isinstance(head, abstract.CallableSignature):
-                head = from_dict(head, app=app)
-                steps[0] = head
-            if isinstance(head, group):
-                head = maybe_unroll_group(head)
-                steps[0] = head
-            if isinstance(head, group) and not head.tasks:
+                head = steps[0] = from_dict(head, app=app)
+            if isinstance(head, _chain):
                 steps.popleft()
+                if clone:
+                    head = head.clone()
+                steps.extendleft(reversed(head.tasks))
                 continue
+            if isinstance(head, group):
+                head = steps[0] = maybe_unroll_group(head)
+                if (
+                    len(steps) > 1 and
+                    isinstance(head, group) and
+                    isinstance(head.tasks, (list, tuple)) and
+                    not head.tasks
+                ):
+                    steps.popleft()
+                    continue
             break
 
         # optimization: now the pop func is a local variable
@@ -1211,16 +1225,11 @@ class _chain(Signature):
         # passed as the ``chain`` message field.
         # As it's reversed the worker can just do ``chain.pop()`` to
         # get the next task in the chain.
-        # Whether partial args have been applied to the logically first
-        # task.  With empty-group skipping and chain-splicing the simple
-        # ``not steps`` heuristic can misfire, so we defer args
-        # application when needed and track it with this flag.
-        # (Issue #9772)
-        applied_first_args = False
-
         while steps:
             task = steps_pop()
-            is_last_task = not i
+            # if steps is not empty, this is the first task - reverse order
+            # if i = 0, this is the last task - again, because we're reversed
+            is_first_task, is_last_task = not steps, not i
 
             if not isinstance(task, abstract.CallableSignature):
                 task = from_dict(task, app=app)
@@ -1228,29 +1237,27 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
-
-            if isinstance(task, group) and not task.tasks:
-                # skip empty groups as they are no-ops
-                # Issue #9772
-                continue
-
-            if isinstance(task, _chain):
-                # splice (unroll) the chain
-                steps_extend(task.tasks)
-                continue
-
-            is_first_task = not steps
+                if (
+                    isinstance(task, group) and
+                    isinstance(task.tasks, (list, tuple)) and
+                    not task.tasks and
+                    (steps or prev_task)
+                ):
+                    continue
 
             # first task gets partial args from chain
             if clone:
                 if is_first_task:
                     task = task.clone(args, kwargs)
-                    applied_first_args = True
                 else:
                     task = task.clone()
             elif is_first_task:
                 task.args = tuple(args) + tuple(task.args)
-                applied_first_args = True
+
+            if isinstance(task, _chain):
+                # splice (unroll) the chain
+                steps_extend(task.tasks)
+                continue
 
             # TODO why isn't this asserting is_last_task == False?
             if isinstance(task, group) and prev_task:
@@ -1273,12 +1280,10 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                if tasks:
-                    prev_task = tasks[-1]
-                    prev_res = results[-1]
-                else:
-                    prev_task = None
-                    prev_res = None
+                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
+                # But we must reset prev_task after the pop so we don't link a chord to its own body
+                # when use_link/task_protocol==1.
+                prev_task = tasks[-1] if tasks else None
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1307,6 +1312,9 @@ class _chain(Signature):
             if link_error:
                 for errback in maybe_list(link_error):
                     task.link_error(errback)
+                    # Propagate to chord body for chord_error_from_stack.
+                    if isinstance(task, chord) and task.body:
+                        task.body.link_error(errback)
 
             tasks.append(task)
             results.append(res)
@@ -1320,25 +1328,12 @@ class _chain(Signature):
 
                 # We need to change that so that it points to the
                 # group result object.
-                if res is not None:
-                    node = res
-                    while node.parent:
-                        node = node.parent
-                    prev_res = node
-        # If partial args were not applied during the loop (e.g. because
-        # chain-splicing or empty-group skipping meant ``not steps``
-        # was never True for the first real task), apply them now to
-        # the logically first task -- the last element of ``tasks``
-        # (which is in reverse order).
-        if not applied_first_args and tasks and (args or kwargs):
-            first_task = tasks[-1]
-            if clone:
-                tasks[-1] = first_task.clone(args, kwargs)
-            else:
-                first_task.args = tuple(args) + tuple(first_task.args)
-                first_task.kwargs = dict(kwargs, **first_task.kwargs)
-
-        self.id = last_task_id
+                node = res
+                while node.parent:
+                    node = node.parent
+                prev_res = node
+        # Use the last task's actual ID, not the input parameter.
+        self.id = results[0].id if results else last_task_id
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1346,9 +1341,12 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         for task in self.tasks:
-            res = task.clone(fargs, fkwargs).apply(
-                last and (last.get(),), **dict(self.options, **options))
+            res = task.clone().apply(
+                (last.get(),) if last else fargs, fkwargs,
+                **dict(self.options, **options))
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
+            if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
+                break
         return last
 
     @property
@@ -1522,26 +1520,6 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
-def _chain_effectively_empty(task):
-    """Return True if *task* is a chain whose members are all empty groups.
-
-    A chain with no tasks is trivially empty.  A chain whose tasks are
-    all empty groups (after unrolling single-member groups) is
-    *effectively* empty because every step is a no-op.  (Issue #9772)
-    """
-    if not isinstance(task, _chain):
-        return False
-    if not task.tasks:
-        return True
-    for t in task.tasks:
-        if isinstance(t, group):
-            t = maybe_unroll_group(t)
-        if not isinstance(t, group) or t.tasks:
-            return False
-    return True
-
-
-
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
@@ -1666,6 +1644,13 @@ class group(Signature):
         return self.apply_async(partial_args, **options)
 
     def __or__(self, other):
+        if (
+            isinstance(other, group) and
+            not isinstance(other.tasks, _regen) and
+            isinstance(other.tasks, (list, tuple)) and
+            not other.tasks
+        ):
+            return self
         # group() | task -> chord
         return chord(self, body=other, app=self._app)
 
@@ -1772,7 +1757,7 @@ class group(Signature):
         # each child task signature, of which there might be none!
         sig = maybe_signature(sig)
 
-        return tuple(child_task.link_error(sig.clone(immutable=True)) for child_task in self.tasks)
+        return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
@@ -1818,8 +1803,10 @@ class group(Signature):
                     task.tasks, partial_args, group_id, root_id, app,
                 )
                 yield from unroll
-            elif _chain_effectively_empty(task):
-                # Skip empty/effectively-empty chains -- they are no-ops.  (Issue #9772)
+            elif isinstance(task, _chain) and not task.tasks:
+                # An empty chain contributes no task and has no result to
+                # freeze, so drop it rather than fail on ``freeze()``.
+                # (Issue #9772)
                 continue
             else:
                 if partial_args and not task.immutable:
@@ -1964,12 +1951,14 @@ class group(Signature):
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
         """Creates a generator for the AsyncResult of each task in the tasks argument."""
+        # Empty chains are dropped here as in ``_prepared``.  (Issue #9772)
         yield from (task.freeze(group_id=group_id,
                                 chord=chord,
                                 root_id=root_id,
                                 parent_id=parent_id,
                                 group_index=group_index)
-                    for group_index, task in enumerate(tasks))
+                    for group_index, task in enumerate(tasks)
+                    if not (isinstance(task, _chain) and not task.tasks))
 
     def _unroll_tasks(self, tasks):
         """Creates a generator for the cloned tasks of the tasks argument."""
@@ -2004,9 +1993,9 @@ class group(Signature):
             # if this is a group, flatten it by adding all of the group's tasks to the stack
             if isinstance(task, group):
                 stack.extendleft(task.tasks)
-            elif _chain_effectively_empty(task):
-                # Skip empty chains -- they are no-ops and would produce
-                # fabricated results that never complete.  (Issue #9772)
+            elif isinstance(task, _chain) and not task.tasks:
+                # An empty chain contributes no task and has no result to
+                # freeze; drop it here as ``_prepared`` does.  (Issue #9772)
                 continue
             else:
                 new_tasks.append(task)
@@ -2174,7 +2163,7 @@ class _chord(Signature):
         # secondly freeze all tasks in the body: those that should be called after the header
 
         body_result = None
-        if self.body:
+        if self.body is not None:
             body_result = self.body.freeze(
                 _id, root_id=root_id, chord=chord, group_id=group_id,
                 group_index=group_index)
@@ -2396,7 +2385,8 @@ class _chord(Signature):
                 "Please test the new behavior by setting task_allow_error_cb_on_chord_header to True "
                 "and report any concerns you might have in our issue tracker before we make a final decision "
                 "regarding how errbacks should behave when used with chords.",
-                CPendingDeprecationWarning
+                CPendingDeprecationWarning,
+                stacklevel=2,
             )
 
         # Edge case for nested chords in the header

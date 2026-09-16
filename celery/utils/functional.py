@@ -1,5 +1,6 @@
 """Functional-style utilities."""
 import inspect
+import operator
 import sys
 from collections import UserList
 from functools import partial
@@ -243,6 +244,14 @@ class _regen(UserList, list):
         yield from self.__lookahead_consume()
 
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            # A slice that is not bounded from the front needs the end of the
+            # iterator, so concretise rather than special casing the few that
+            # could stay lazy.
+            return self.data[index]
+        # Accept anything list accepts, and reject the rest with the same error
+        # rather than whatever the comparison below would raise.
+        index = operator.index(index)
         if index < 0:
             return self.data[index]
         # Consume elements up to the desired index prior to attempting to
@@ -321,8 +330,18 @@ if sys.version_info >= (3, 14):
         # annotations here, so use Format.STRING to avoid evaluation.
         # For bound methods, use __func__ so that 'self' is included in args,
         # matching the behaviour of getfullargspec on older Python versions.
+        # Pass follow_wrapped=False to match inspect.getfullargspec's behaviour
+        # of introspecting the callable itself rather than following __wrapped__;
+        # this matters for tasks defined via functools.wraps over a variadic
+        # wrapper (e.g. dependency-injection decorators) where the wrapper's
+        # signature -- not the inner function's -- is what should be validated
+        # against caller-supplied args.
         target = getattr(fun, '__func__', fun)
-        sig = inspect.signature(target, annotation_format=_annotationlib.Format.STRING)
+        sig = inspect.signature(
+            target,
+            follow_wrapped=False,
+            annotation_format=_annotationlib.Format.STRING,
+        )
         args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults = [], None, None, [], [], {}
         for name, param in sig.parameters.items():
             kind = param.kind

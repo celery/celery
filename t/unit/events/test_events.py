@@ -119,7 +119,7 @@ class test_EventDispatcher:
         eventer.send('task-received', uuid=1)
         assert not eventer._group_buffer['task']
         eventer._publish.assert_has_calls([
-            call([], eventer.producer, 'task.multi'),
+            call(buf_received[0], eventer.producer, 'task.multi'),
         ])
         # clear in place
         assert eventer._group_buffer['task'] is prev_buffer
@@ -130,6 +130,173 @@ class test_EventDispatcher:
     def test_flush_no_groups_no_errors(self):
         eventer = self.app.events.Dispatcher(Mock())
         eventer.flush(errors=False, groups=False)
+
+    def test_send_skipped_after_close_when_producer_is_none(self):
+        # Regression for #10273. After close() during a broker reconnect
+        # the dispatcher's producer is cleared but ``enabled`` stays True,
+        # so stale heartbeat timers still call send(). That must be a
+        # no-op, not an AttributeError buffered into _outbound_buffer.
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.enabled = True
+        eventer.producer = None
+        eventer.send('worker-heartbeat')
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_buffered_entries_do_not_retain_exception(self):
+        # Follow-up for #10273. The buffer used to hold
+        # (event, routing_key, exc); the retained exception kept its
+        # traceback and ~6 frames alive per failed publish, leaking
+        # hundreds of MiB in long-lived workers. flush() already
+        # discards the exception, so the entry is now 2-tuple only.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._outbound_buffer) == 1
+        entry = eventer._outbound_buffer[0]
+        assert len(entry) == 2
+        event, routing_key = entry
+        assert routing_key == 'task.received'
+        assert event['type'] == 'task-received'
+
+    def test_flush_replays_buffered_entries_after_tuple_shape_change(self):
+        # flush() must still successfully replay events buffered during
+        # an outage once the producer is restored. Guards the unpack
+        # change in flush() against regressions.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            eventer.send(name)
+        assert len(eventer._outbound_buffer) == 3
+        producer.raise_on_publish = False
+        eventer.flush()
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            assert producer.has_event(name)
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_events_when_republish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('Event 1')
+        assert len(eventer._outbound_buffer) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert producer.has_event('Event 1')
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_group_events_when_publish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._group_buffer['task']) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+        batch, routing_key = eventer._outbound_buffer[0]
+        assert routing_key == 'task.multi'
+        assert len(batch) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 0
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1]
+
+    def test_flush_keeps_group_events_when_publish_raises(self):
+        # With buffer_while_offline off, _publish re-raises instead of
+        # re-buffering. The live group buffer must only be cleared after a
+        # successful publish, otherwise the events are lost when it raises.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=False,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        eventer.send('task-received', uuid=2)
+        assert len(eventer._group_buffer['task']) == 2
+
+        with pytest.raises(KeyError):
+            eventer.flush()
+        # events stay buffered for the next flush instead of being dropped
+        assert len(eventer._group_buffer['task']) == 2
+        assert len(eventer._outbound_buffer) == 0
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1, 2]
+        assert not eventer._group_buffer['task']
+
+    def test_flush_keeps_group_events_appended_during_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+        published = []
+
+        def publish_then_append(batch, producer, routing_key):
+            published.extend(batch)
+            buffer.append('during-publish')
+
+        eventer._publish = publish_then_append
+        eventer.flush()
+
+        assert published == ['first', 'second']
+        assert buffer == ['during-publish']
+
+    def test_flush_keeps_events_appended_during_failed_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+
+        def append_then_raise(batch, producer, routing_key):
+            buffer.append('during-publish')
+            raise KeyError()
+
+        eventer._publish = append_then_raise
+        with pytest.raises(KeyError):
+            eventer.flush()
+
+        assert buffer == ['first', 'second', 'during-publish']
 
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
