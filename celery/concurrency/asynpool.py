@@ -1024,8 +1024,6 @@ class AsynPool(_pool.Pool):
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
 
-                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
-                #       This dict comprehension requires the walrus operator which is only available in 3.8.
                 owned_by = {}
                 for job in self._cache.values():
                     writer = _get_job_writer(job)
