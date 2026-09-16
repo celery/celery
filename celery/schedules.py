@@ -506,9 +506,6 @@ class crontab(BaseSchedule):
         The returned date is timezone aware and uses the same timezone as the given
         `current` parameter.
         """
-        # copy the date and stick seconds/microseconds to 0 to match crontab precision
-        candidate = current.replace(second=0, microsecond=0)
-        _crontab_has_day_of_week = len(self.day_of_week) < 7
 
         def _generate_run_days_after(start: datetime) -> Iterator[datetime]:
             """yields candidate days for task execution after the current date.
@@ -544,55 +541,99 @@ class crontab(BaseSchedule):
                             # we could be generating a non existent date
                             yield resolve_imaginary(new_date)
 
-        def _rollback_to_dst_switch(d: datetime) -> datetime:
+        def _rollback_to_dst_switch(d: datetime, max_seconds: int) -> datetime:
             """rollback the time to the moment the dst was switch."""
             dst = d.dst()
+            cpt = 0
+            max_minutes = max_seconds / 60
             while d.dst() == dst:
                 d = _move_forward(d, timedelta(minutes=-1))
+                cpt += 1
+                if cpt >= max_minutes:
+                    return d
             return _move_forward(d, timedelta(minutes=1))
 
         def _generate_run_hours_after(d: datetime) -> Iterator[datetime]:
             """yields candidate hours for task execution.
 
-            We use a simple loop over the hours here to correctly handle DST changes.
+            We loop over hours as resolved by the crontab but handle special cases where
+            the DST changes during the loop.
             """
             original_day = d.day
-            # we should never try more than 25 hours for a complete day
-            # (23h til last hour + 2 potential duplicated hour during dst time end)
-            for _ in range(25 - d.hour):
+            hours = sorted(h for h in self.hour if h > d.hour)
+            if d.minute != 0:
+                # ensure we try to move to next hour and deal with consequences
+                hours = [d.hour, *hours]
+
+            original_dst = d.dst()
+            index = 0
+            while index < len(hours):
+                previous_dst = d.dst()
                 previous_hour = d.hour
-                d = _move_forward(d, timedelta(minutes=60 - d.minute))
-                hour_diff = d.hour - previous_hour
-                dst = d.dst() or timedelta()
-                if (
-                    (hour_diff > 1 and hour_diff * 60 * 60 >= dst.total_seconds())
-                    or hour_diff == 0
-                ):
-                    # we crossed a DST switch that may not be aligned with hours
-                    # go back to first minute so we do not miss possible slots.
-                    d = _rollback_to_dst_switch(d)
+                previous_day = d.day
+                hour = hours[index]
+                hour_diff = max(hour - previous_hour, 1)
+                d = _move_forward(d, timedelta(minutes=(hour_diff - 1) * 60 + 60 - d.minute))
+                if previous_dst is not None and previous_dst != d.dst():
+                    dst = max(previous_dst, d.dst() or timedelta())
+                    if hour < d.hour or previous_day < d.day:
+                        # we moved forward
+                        d = _rollback_to_dst_switch(d, int(dst.total_seconds()))
+
+                        if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
+                            yield d
+                        continue
+                    elif hour >= d.hour or previous_day > d.day:
+                        # we moved backward
+                        d = _rollback_to_dst_switch(d, int(dst.total_seconds()))
+                        if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
+                            yield d
+                        # reset the hours because we may be earlier than we started (in local time)
+                        hours = sorted(h for h in self.hour if h > d.hour)
+                        index = 0
+                        continue
+                else:
+                    if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
+                        yield d
+                    index += 1
 
                 # check if this can make us change the day and get out if it does
                 if original_day != d.day:
-                    return
-                # if previous_hour == d.hour and not d.fold:
-                #     continue
-                if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
-                    yield d
+                    break
 
-        def _get_run_minute(d: datetime) -> Iterator[datetime]:
+            if original_dst and original_dst == d.dst():
+                # we potentially missed some hours that were never selected by the hours
+                # filter at the start of the function
+                potentially_reached_hour = d.hour - int((original_dst or timedelta()).total_seconds() / 3600)
+                if any(potentially_reached_hour <= h <= d.hour for h in self.hour):
+                    while original_dst == d.dst():
+                        d = _move_forward(d, timedelta(minutes=1))
+                        if d.hour in self.hour and any(True for m in self.minute if m >= d.minute):
+                            yield d
+                        else:
+                            yield from _generate_run_hours_after(d)
+
+        def _get_run_minute(d: datetime) -> datetime:
             """returns the date with minute set to next execution."""
-            while any(True for m in self.minute if m >= d.minute):
-                next_minute = min(m for m in self.minute if m >= d.minute)
-                d = _move_forward(d, timedelta(minutes=next_minute - d.minute))
-                if d.hour not in self.hour:
-                    return
-                if d.minute in self.minute:
-                    yield d
+            next_minute = min(m for m in self.minute if m >= d.minute)
+            _d = _move_forward(d, timedelta(minutes=next_minute - d.minute))
+            if d.hour < _d.hour and _d.hour in self.hour:
+                # we moved forward and the hour is valid, do another pass
+                next_minute = min(m for m in self.minute if m >= _d.minute)
+                return _move_forward(_d, timedelta(minutes=next_minute - _d.minute))
+            return _d
+
+        def _valid(d: datetime) -> bool:
+            """is the hour and minute a valid combination for crontab ?"""
+            return d.hour in self.hour and d.minute in self.minute
 
         def _move_forward(d: datetime, delta: timedelta) -> datetime:
             """apply delta to d using constant (UTC) time."""
             return (d.astimezone(timezone.utc) + delta).astimezone(d.tzinfo)
+
+        # copy the date and stick seconds/microseconds to 0 to match crontab precision
+        candidate = current.replace(second=0, microsecond=0)
+        _crontab_has_day_of_week = len(self.day_of_week) < 7
 
         _may_run_today = (
             candidate.month in self.month_of_year
@@ -609,36 +650,29 @@ class crontab(BaseSchedule):
             if _may_run_this_hour:
                 # if there are slots later this hour, we can safely add one minute
                 # without worrying about hour change.
-                # the search for a correct minute will happen right after
                 candidate = _move_forward(candidate, timedelta(minutes=1))
-                try:
-                    return next(_get_run_minute(candidate))
-                except StopIteration:
-                    pass
+                candidate = _get_run_minute(candidate)
+                if _valid(candidate):
+                    return candidate
 
-            # candidate = candidate.replace(minute=0)
-            for _candidate in _generate_run_hours_after(candidate):
-                try:
-                    return next(_get_run_minute(_candidate))
-                except StopIteration:
-                    continue
+            for candidate in _generate_run_hours_after(candidate):
+                candidate = _get_run_minute(candidate)
+                if _valid(candidate):
+                    return candidate
             # in the end we did not find a slot that day (DST start day where an hour disappears, or just end of day)
 
         # no possible run on current day, we look for another one
-        for _candidate in _generate_run_days_after(candidate):
-            _can_run_this_hour = _candidate.hour in self.hour
+        for candidate in _generate_run_days_after(candidate):
+            _can_run_this_hour = candidate.hour in self.hour
             if _can_run_this_hour:
-                try:
-                    return next(_get_run_minute(_candidate))
-                except StopIteration:
-                    pass
+                candidate = _get_run_minute(candidate)
+                if _valid(candidate):
+                    return candidate
 
-            _candidate = _candidate.replace(minute=0)
-            for _candidate in _generate_run_hours_after(_candidate):
-                try:
-                    return next(_get_run_minute(_candidate))
-                except StopIteration:
-                    continue
+            for candidate in _generate_run_hours_after(candidate):
+                candidate = _get_run_minute(candidate)
+                if _valid(candidate):
+                    return candidate
 
         raise RuntimeError(f"unable to find a next occurrence for crontab {self}, start from {current}")
 
