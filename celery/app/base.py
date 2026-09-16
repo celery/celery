@@ -307,8 +307,15 @@ class Celery:
         autofinalize (bool): If set to False a :exc:`RuntimeError`
             will be raised if the task registry or tasks are used before
             the app is finalized.
-        strict_typing (bool): Default argument checking for tasks.
+        strict_typing (bool or None): Default argument checking for tasks.
             Defaults to the :setting:`strict_typing` setting.
+
+            .. versionchanged:: 5.7
+
+                The default is now ``None``, which uses the application
+                configuration (default: :const:`True`). Pass :const:`False`
+                explicitly to disable argument checking. Reading
+                ``app.strict_typing`` now loads pending configuration.
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 
@@ -1686,7 +1693,10 @@ class Celery:
         """Default argument checking for tasks bound to this app."""
         # Resolve pending configuration before looking up namespaced keys
         # so explicit constructor values take precedence on the first read.
-        return self.conf.finalize().strict_typing
+        conf = self.conf
+        if isinstance(conf, Settings):
+            conf.finalize()
+        return conf.strict_typing
 
     @strict_typing.setter
     def strict_typing(self, value):

@@ -35,7 +35,7 @@ from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
-from celery.utils.collections import DictAttribute
+from celery.utils.collections import AttributeDict, DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import LocalTimezone, localize, timezone, to_utc
@@ -547,6 +547,21 @@ class test_App:
         with self.Celery() as app:
             assert app.strict_typing is True
             assert app.conf.strict_typing is True
+
+    @pytest.mark.parametrize('config', [{}, {'strict_typing': True},
+                                      {'strict_typing': False}])
+    def test_strict_typing_none_uses_configuration(self, config):
+        with self.Celery(strict_typing=None, config_source=config) as app:
+            assert not app.configured
+            assert app.strict_typing is config.get('strict_typing', True)
+
+    @pytest.mark.parametrize('strict_typing', [True, False])
+    def test_strict_typing_with_replaced_configuration(self, strict_typing):
+        with self.Celery() as app:
+            app.conf = AttributeDict(strict_typing=strict_typing)
+            assert app.strict_typing is strict_typing
+            app.strict_typing = not strict_typing
+            assert app.conf.strict_typing is (not strict_typing)
 
     def test_strict_typing_from_lazy_configuration(self):
         with self.Celery() as app:
