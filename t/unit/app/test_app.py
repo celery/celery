@@ -548,8 +548,9 @@ class test_App:
             assert app.strict_typing is True
             assert app.conf.strict_typing is True
 
-    @pytest.mark.parametrize('config', [{}, {'strict_typing': True},
-                                      {'strict_typing': False}])
+    @pytest.mark.parametrize(
+        'config', [{}, {'strict_typing': True}, {'strict_typing': False}],
+    )
     def test_strict_typing_none_uses_configuration(self, config):
         with self.Celery(strict_typing=None, config_source=config) as app:
             assert not app.configured
