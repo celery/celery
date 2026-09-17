@@ -642,6 +642,24 @@ class test_chain(CanvasCase):
         assert [t.task for t in prepared] == [self.add.name, self.add.name]
         assert c.apply().get() == 6
 
+    def test_empty_group_is_skipped_in_directly_constructed_chain_apply(self):
+        # _chain.__or__ drops empty groups, so only a directly constructed or
+        # deserialized chain still carries one into the eager path.
+        c = _chain(self.add.s(2, 2), group(app=self.app),
+                   self.add.s(2), app=self.app)
+        assert c.apply().get() == 6
+
+    def test_trailing_empty_group_is_skipped_in_directly_constructed_chain(
+            self):
+        c = _chain(self.add.s(2, 2), group(app=self.app), app=self.app)
+        assert c.apply().get() == 4
+
+    def test_lone_empty_group_is_not_skipped_in_eager_chain_apply(self):
+        # Mirrors prepare_steps: an empty group survives when it is the
+        # only task.
+        c = _chain(group(app=self.app), app=self.app)
+        assert c.apply().get() == []
+
     def test_empty_groups_are_dropped_at_chain_construction(self):
         # _chain.__or__ treats an empty group as a no-op in any
         # position: it is dropped instead of upgrading the chain
