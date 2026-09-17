@@ -208,10 +208,12 @@ class test_AzureBlockBlobBackend:
             app=self.app,
             url=self.url,
             container_name='my-container',
+            expires=1234,
         )
         unpickled = pickle.loads(pickle.dumps(backend))
         assert unpickled._connection_string == backend._connection_string
         assert unpickled._container_name == 'my-container'
+        assert unpickled.expires == 1234
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickled_async_result_round_trips(self):

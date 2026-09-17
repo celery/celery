@@ -61,6 +61,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
         kwargs = {} if not kwargs else kwargs
         return super().__reduce__(args, dict(
             kwargs,
+            expires=self.expires,
             url=AZURE_BLOCK_BLOB_CONNECTION_PREFIX + self._connection_string,
             container_name=self._container_name,
         ))
