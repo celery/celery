@@ -642,6 +642,23 @@ class test_chain(CanvasCase):
         assert [t.task for t in prepared] == [self.add.name, self.add.name]
         assert c.apply().get() == 6
 
+    def test_empty_groups_are_dropped_at_chain_construction(self):
+        # _chain.__or__ treats an empty group as a no-op in any
+        # position: it is dropped instead of upgrading the chain
+        # into a chord with an empty header.
+        trailing = chain(self.add.s(2, 2), group(app=self.app))
+        assert isinstance(trailing, _chain)
+        assert [t.task for t in trailing.tasks] == [self.add.name]
+
+        middle = chain(self.add.s(2, 2), group(app=self.app), self.add.s(2))
+        assert isinstance(middle, _chain)
+        assert [t.task for t in middle.tasks] == [self.add.name, self.add.name]
+        assert not any(isinstance(task, chord) for task in middle.tasks)
+
+        leading = chain(group(app=self.app), self.add.s(2, 2))
+        assert isinstance(leading, _chain)
+        assert [t.task for t in leading.tasks] == [self.add.name]
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task
