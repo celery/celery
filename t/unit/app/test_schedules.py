@@ -2206,8 +2206,8 @@ class test_crontab_is_due:
 class test_crontab_next_occurence_validity:
     def test_antartica_troll_dst_end(self):
         tzname = "Antarctica/Troll"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=23, minute=0, app=self.app)
 
         last_run_at = datetime(2026, 10, 24, 23, 0, tzinfo=tz)
@@ -2215,8 +2215,8 @@ class test_crontab_next_occurence_validity:
 
     def test_antartica_troll_dst_end_every_minute(self):
         tzname = "Antarctica/Troll"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=1, app=self.app)
 
         last_run_at = datetime(2026, 10, 25, 1, 59, tzinfo=tz)
@@ -2224,17 +2224,23 @@ class test_crontab_next_occurence_validity:
 
     def test_antartica_troll_dst_end_45_minute(self):
         tzname = "Antarctica/Troll"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=2, minute=45, app=self.app)
-
         last_run_at = datetime(2026, 10, 25, 2, 45, tzinfo=tz)
+        ct.nowfun = lambda: last_run_at
+
         assert ct._next_occurrence(last_run_at) == datetime(2026, 10, 25, 2, 45, fold=1, tzinfo=tz)
+
+        # remaining_estimate returns a different response here because an explicit hour has been asked
+        # and the next occurrence is in folded hours, which are ignored by remaining_estimate in
+        # this case
+        assert ct.remaining_estimate(last_run_at) == timedelta(days=1, hours=2)
 
     def test_pacific_chatham_dst_start(self):
         tzname = "Pacific/Chatham"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=3, minute=50, app=self.app)
 
         last_run_at = datetime(2026, 9, 26, 3, 50, tzinfo=tz)
@@ -2242,8 +2248,8 @@ class test_crontab_next_occurence_validity:
 
     def test_pacific_chatham_dst_end(self):
         tzname = "Pacific/Chatham"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=3, minute=50, app=self.app)
 
         last_run_at = datetime(2026, 4, 4, 3, 50, tzinfo=tz)
@@ -2251,8 +2257,8 @@ class test_crontab_next_occurence_validity:
 
     def test_pacific_chatham_dst_end_in_fold(self):
         tzname = "Pacific/Chatham"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=2, minute=50, app=self.app)
 
         last_run_at = datetime(2026, 4, 5, 2, 50, tzinfo=tz)
@@ -2260,8 +2266,8 @@ class test_crontab_next_occurence_validity:
 
     def test_pacific_chatham_dst_end_in_fold_at_hour(self):
         tzname = "Pacific/Chatham"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(minute=0, app=self.app)
 
         last_run_at = datetime(2026, 4, 5, 3, 0, tzinfo=tz)
@@ -2269,8 +2275,8 @@ class test_crontab_next_occurence_validity:
 
     def test_pacific_chatham_dst_end_potential_infinite_recursion(self):
         tzname = "Pacific/Chatham"
-        self.app.timezone = tzname
         tz = ZoneInfo(tzname)
+        self.app.timezone = tz
         ct = crontab(hour=2, app=self.app)
 
         last_run_at = datetime(2026, 4, 5, 3, 44, tzinfo=tz)
