@@ -195,8 +195,9 @@ class Queues(dict):
             else:
                 consume_from = self._consume_from
 
-            for queue in exclude:
-                consume_from.pop(queue, None)
+            for name in exclude:
+                queue = self.aliases.get(name)
+                consume_from.pop(queue.name if queue is not None else name, None)
 
     def new_missing(self, name):
         queue_arguments = None
