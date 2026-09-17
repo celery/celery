@@ -145,7 +145,17 @@ class CassandraBackend(BaseBackend):
         self._session = None
         self._write_stmt = None
         self._read_stmt = None
+        self._table_created = False
         self._lock = threading.RLock()
+
+    def _is_ready(self, write):
+        """Tell whether the published connection suits this caller.
+
+        A reader only needs the session, but a writer also needs the result
+        table, which a reader does not create.
+        """
+        return self._session is not None and (
+            self._table_created or not write)
 
     def _get_connection(self, write=False):
         """Prepare the connection for action.
@@ -153,41 +163,48 @@ class CassandraBackend(BaseBackend):
         Arguments:
             write (bool): are we a writer?
         """
-        if self._session is not None:
+        if self._is_ready(write):
             return
         self._lock.acquire()
         try:
-            if self._session is not None:
+            if self._is_ready(write):
                 return
-            # using either 'servers' or 'bundle_path' here:
-            if self.servers:
-                self._cluster = cassandra.cluster.Cluster(
-                    self.servers, port=self.port,
-                    auth_provider=self.auth_provider,
-                    **self.cassandra_options)
-            else:
-                # 'bundle_path' is guaranteed to be set
-                self._cluster = cassandra.cluster.Cluster(
-                    cloud={
-                        'secure_connect_bundle': self.bundle_path,
-                    },
-                    auth_provider=self.auth_provider,
-                    **self.cassandra_options)
-            session = self._cluster.connect(self.keyspace)
 
-            # We're forced to do concatenation below, as formatting would
-            # blow up on superficial %s that'll be processed by Cassandra
-            write_stmt = cassandra.query.SimpleStatement(
-                Q_INSERT_RESULT.format(
-                    table=self.table, expires=self.cqlexpires),
-            )
-            write_stmt.consistency_level = self.write_consistency
+            session = self._session
+            write_stmt = self._write_stmt
+            read_stmt = self._read_stmt
 
-            read_stmt = cassandra.query.SimpleStatement(
-                Q_SELECT_RESULT.format(table=self.table),
-            )
-            read_stmt.consistency_level = self.read_consistency
+            if session is None:
+                # using either 'servers' or 'bundle_path' here:
+                if self.servers:
+                    self._cluster = cassandra.cluster.Cluster(
+                        self.servers, port=self.port,
+                        auth_provider=self.auth_provider,
+                        **self.cassandra_options)
+                else:
+                    # 'bundle_path' is guaranteed to be set
+                    self._cluster = cassandra.cluster.Cluster(
+                        cloud={
+                            'secure_connect_bundle': self.bundle_path,
+                        },
+                        auth_provider=self.auth_provider,
+                        **self.cassandra_options)
+                session = self._cluster.connect(self.keyspace)
 
+                # We're forced to do concatenation below, as formatting would
+                # blow up on superficial %s that'll be processed by Cassandra
+                write_stmt = cassandra.query.SimpleStatement(
+                    Q_INSERT_RESULT.format(
+                        table=self.table, expires=self.cqlexpires),
+                )
+                write_stmt.consistency_level = self.write_consistency
+
+                read_stmt = cassandra.query.SimpleStatement(
+                    Q_SELECT_RESULT.format(table=self.table),
+                )
+                read_stmt.consistency_level = self.read_consistency
+
+            table_created = self._table_created
             if write:
                 # Only possible writers "workers" are allowed to issue
                 # CREATE TABLE.  This is to prevent conflicting situations
@@ -206,13 +223,15 @@ class CassandraBackend(BaseBackend):
                     session.execute(make_stmt)
                 except cassandra.AlreadyExists:
                     pass
+                table_created = True
 
-            # Other threads check _session without holding the lock, so it
-            # must only be published once the statements are prepared and
-            # the table exists.
+            # Other threads check _session and _table_created without
+            # holding the lock, so they must only be published once the
+            # statements are prepared and, for a writer, the table exists.
             self._write_stmt = write_stmt
             self._read_stmt = read_stmt
             self._session = session
+            self._table_created = table_created
 
         except cassandra.OperationTimedOut:
             # a heavily loaded or gone Cassandra cluster failed to respond.
@@ -222,6 +241,7 @@ class CassandraBackend(BaseBackend):
 
             self._cluster = None
             self._session = None
+            self._table_created = False
             raise   # we did fail after all - reraise
         finally:
             self._lock.release()

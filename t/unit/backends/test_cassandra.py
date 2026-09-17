@@ -30,7 +30,10 @@ class FakeCassandraTable:
         self.rows = {}
 
     def __call__(self, statement, parameters=None):
-        if parameters is not None and len(parameters) > 1:
+        if parameters is None:
+            # DDL, CREATE TABLE for instance, carries no parameters
+            return Mock(name='ddl-result')
+        if len(parameters) > 1:
             task_id, status, result, date_done, traceback, children = \
                 parameters
             self.rows[task_id] = (
@@ -363,6 +366,40 @@ class test_CassandraBackend:
         other_thread[0].join(5)
         assert not other_thread[0].is_alive()
         assert executed == ['CREATE', 'INSERT']
+
+    def test_table_is_created_for_a_write_through_a_read_session(self):
+        # A read opens the session without creating the table, so the first
+        # write through that session still has to issue CREATE TABLE.
+        from celery.backends import cassandra as mod
+
+        executed = []
+
+        class Session:
+            def execute(self, statement, parameters=None):
+                executed.append(statement.query.split()[0])
+                return Mock(one=Mock(return_value=None))
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Session()
+
+        mod.cassandra = Mock()
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_task_meta_for('task_id')
+        assert executed == ['SELECT']
+
+        x._store_result('task_id', 'result', states.SUCCESS)
+        assert executed == ['SELECT', 'CREATE', 'INSERT']
+
+        # ...and only the first write pays for it.
+        x._store_result('task_id', 'result', states.SUCCESS)
+        assert executed == ['SELECT', 'CREATE', 'INSERT', 'INSERT']
 
     def test_auth_provider(self):
         # Ensure valid auth_provider works properly, and invalid one raises
