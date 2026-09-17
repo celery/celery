@@ -133,6 +133,37 @@ class test_Queues:
         q.deselect('bar')
         assert sorted(q._consume_from.keys()) == ['foo']
 
+    def test_deselect_by_alias_removes_selected_queue(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.select(['barfoo', 'bar'])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    def test_deselect_by_alias_removes_queue_selected_by_real_name(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.select(['foo', 'bar'])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    def test_deselect_by_alias_removes_default_queue(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    @pytest.mark.parametrize('create_missing', [True, False])
+    def test_deselect_unknown_queue_does_not_create_queue(self, create_missing):
+        q = Queues([Queue('foo')], create_missing=create_missing)
+        q.deselect('missing')
+
+        assert list(q.consume_from) == ['foo']
+        assert list(q) == ['foo']
+
     def test_deselect_without_explicit_consume_selection_removes_excluded_queue(self):
         q = Queues([Queue('foo'), Queue('bar')])
         q.deselect('bar')
