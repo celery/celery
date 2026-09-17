@@ -1,6 +1,6 @@
 setuptools>=40.8.0
 wheel>=0.48.0
-flake8>=3.8.3
+flake8>=7.3.0
 flake8-docstrings>=1.7.0
 pydocstyle==6.3.0
 tox>=4.61.4
