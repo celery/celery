@@ -123,11 +123,14 @@ def _find_requests_by_id(ids,
 
 def _state_of_task(request,
                    is_active=worker_state.active_requests.__contains__,
-                   is_reserved=worker_state.reserved_requests.__contains__):
+                   is_reserved=worker_state.reserved_requests.__contains__,
+                   is_scheduled=worker_state.scheduled_requests.__contains__):
     if is_active(request):
         return 'active'
     elif is_reserved(request):
         return 'reserved'
+    elif is_scheduled(request):
+        return 'scheduled'
     return 'ready'
 
 
@@ -475,6 +478,8 @@ def registered(state, taskinfoitems=None, builtins=False, **kwargs):
     """
     reg = state.app.tasks
     taskinfoitems = taskinfoitems or DEFAULT_TASK_INFO_ITEMS
+    taskinfoitems = [item for item in taskinfoitems
+                     if isinstance(item, str) and not item.startswith('_')]
 
     tasks = reg if builtins else (
         task for task in reg if not task.startswith('celery.'))

@@ -184,6 +184,7 @@ class GCSBackend(GCSBackendBase):
 
         self._firestore_lock = RLock()
         self._firestore_client = None
+        self._firestore_pid = getpid()
 
         self.firestore_project = self.app.conf.get(
             'firestore_project', self.project
@@ -201,13 +202,13 @@ class GCSBackend(GCSBackendBase):
 
         # make sure it's thread-safe, as creating a new client is expensive
         with self._firestore_lock:
-            if self._firestore_client and self._pid == getpid():
+            if self._firestore_client and self._firestore_pid == getpid():
                 return self._firestore_client
             # make sure each process gets its own connection after a fork
             self._firestore_client = firestore.Client(
                 project=self.firestore_project
             )
-            self._pid = getpid()
+            self._firestore_pid = getpid()
         return self._firestore_client
 
     def _is_firestore_ttl_policy_enabled(self):

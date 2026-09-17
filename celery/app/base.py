@@ -28,14 +28,14 @@ from vine import starpromise
 from celery import platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
-from celery.exceptions import AlreadyRegistered, AlwaysEagerIgnored, ImproperlyConfigured, OperationalError
+from celery.exceptions import AlwaysEagerIgnored, DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
 from celery.loaders import get_loader_cls
 from celery.local import PromiseProxy, maybe_evaluate
 from celery.utils import abstract
 from celery.utils.collections import AttributeDictMixin
 from celery.utils.dispatch import Signal
 from celery.utils.functional import first, head_from_fun, maybe_list
-from celery.utils.imports import gen_task_name, instantiate, symbol_by_name
+from celery.utils.imports import gen_task_name, instantiate, qualname, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
 from celery.utils.time import maybe_make_aware, timezone, to_utc
@@ -81,52 +81,17 @@ else:
 
 
 def _same_task_callable(first, second):
+    """Return whether two task callables represent the same callable."""
     if first is second:
         return True
 
     first_self = getattr(first, '__self__', None)
     second_self = getattr(second, '__self__', None)
-    if first_self is not None or second_self is not None:
-        return (
-            first_self is not None
-            and first_self is second_self
-            and getattr(first, '__func__', None) is getattr(second, '__func__', None)
-        )
-
-    if not inspect.isfunction(first) or not inspect.isfunction(second):
-        return False
-
-    first_code = first.__code__
-    second_code = second.__code__
-    if (
-        first.__module__, first.__qualname__, first_code.co_filename,
-        first_code.co_firstlineno,
-    ) != (
-        second.__module__, second.__qualname__, second_code.co_filename,
-        second_code.co_firstlineno,
-    ):
-        return False
-
-    if first.__defaults__ != second.__defaults__:
-        return False
-    if first.__kwdefaults__ != second.__kwdefaults__:
-        return False
-    if first.__closure__ is None or second.__closure__ is None:
-        return first.__closure__ is second.__closure__
-    if len(first.__closure__) != len(second.__closure__):
-        return False
-
-    for first_cell, second_cell in zip(first.__closure__, second.__closure__):
-        first_value = first_cell.cell_contents
-        second_value = second_cell.cell_contents
-        if first_value is second_value:
-            continue
-        try:
-            if not bool(first_value == second_value):
-                return False
-        except Exception:
-            return False
-    return True
+    return (
+        first_self is not None
+        and first_self is second_self
+        and getattr(first, '__func__', None) is getattr(second, '__func__', None)
+    )
 
 
 BUILTIN_FIXUPS = {
@@ -147,6 +112,44 @@ a valid configuration module.
 Example:
     {0}="proj.celeryconfig"
 """
+
+
+W_DUPTASK = """\
+Task name {0!r} is already registered to a different callable.
+
+Existing: {1}
+New:      {2}
+
+{3}
+
+Every task must have a unique name. Pass an explicit name= to the task \
+decorator, or rename one of the callables.\
+"""
+
+
+def frame_is_celery(frame):
+    """Return true if *frame* is executing Celery's own code."""
+    module = frame.f_globals.get('__name__', '')
+    return module == 'celery' or module.startswith('celery.')
+
+
+def caller_stacklevel():
+    """Depth of the first frame outside Celery, for :func:`warnings.warn`.
+
+    A task can be registered straight from the decorator or later, when a
+    :class:`~celery.local.PromiseProxy` is first evaluated, and those two
+    paths sit at different depths -- so the level is found rather than
+    assumed. Only reached when a warning is actually emitted.
+    """
+    frame, level = sys._getframe(1), 1
+    while frame is not None and frame_is_celery(frame):
+        frame, level = frame.f_back, level + 1
+    return level
+
+
+def task_callable_qualname(task):
+    """Name the callable behind *task*, decorated or class-based."""
+    return qualname(getattr(task, '_decorated_fun', None) or type(task))
 
 
 def app_has_custom(app, attr):
@@ -438,6 +441,7 @@ class Celery:
         self.finalized = False
         self._finalize_mutex = threading.RLock()
         self._pending = deque()
+        self._duplicate_task_names_warned = set()
         self._tasks = tasks
         if not isinstance(self._tasks, TaskRegistry):
             self._tasks = self.registry_cls(self._tasks or {})
@@ -607,7 +611,8 @@ class Celery:
             # the task instance from the current app.
             # Really need a better solution for this :(
             from . import shared_task
-            return shared_task(*args, lazy=False, _shared=True, **opts)
+            opts['lazy'] = False
+            return shared_task(*args, **opts)
 
         def inner_create_task_cls(shared=True, filter=None, lazy=True, **opts):
             _filt = filter
@@ -615,7 +620,7 @@ class Celery:
             def _create_task_cls(fun):
                 if shared:
                     def cons(app):
-                        return app._task_from_fun(fun, _shared=True, **opts)
+                        return app._task_from_fun(fun, **opts)
 
                     cons.__name__ = fun.__name__
                     connect_on_app_finalize(cons)
@@ -655,48 +660,18 @@ class Celery:
         pydantic_strict: bool = False,
         pydantic_context: typing.Optional[typing.Dict[str, typing.Any]] = None,
         pydantic_dump_kwargs: typing.Optional[typing.Dict[str, typing.Any]] = None,
-        _shared: bool = False,
         **options,
     ):
         if not self.finalized and not self.autofinalize:
             raise RuntimeError('Contract breach: app not finalized')
-        original_fun = fun
-        name_provided = name is not None
-        task_name = getattr(fun, '__qualname__', fun.__name__)
-        # Keep the historical name unless it collides with another callable.
-        # In that case, use the qualified name when it can disambiguate the
-        # callables; identical qualified names still fail loudly instead of
-        # silently reusing the first task.
-        default_task_name = fun.__name__
-        name = name or self.gen_task_name(default_task_name, fun.__module__)
+        # the callable as the caller passed it, kept before the pydantic
+        # rebind below and before ``run`` turns it into a descriptor, so
+        # that a re-registration can be recognised by identity.
+        decorated_fun = fun
+        name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
 
-        task = self._tasks.get(name)
-        if task is not None:
-            existing_fun = getattr(task, '_task_fun', None)
-            if (not _shared and getattr(task, '_app', None) is self
-                    and not _same_task_callable(existing_fun, original_fun)):
-                if not name_provided:
-                    existing_task_name = getattr(
-                        existing_fun, '__qualname__',
-                        getattr(existing_fun, '__name__', None),
-                    )
-                    qualified_name = self.gen_task_name(task_name, fun.__module__)
-                    qualified_task = self._tasks.get(qualified_name)
-                    if qualified_task is not None and _same_task_callable(
-                            getattr(qualified_task, '_task_fun', None), original_fun,
-                    ):
-                        return qualified_task
-                    if (task_name != existing_task_name
-                            and qualified_task is None):
-                        name = qualified_name
-                        task = None
-                if task is not None:
-                    raise AlreadyRegistered(
-                        f'Task {name!r} is already registered with a different callable. '
-                        'Use a unique task name.')
-
-        if task is None:
+        if name not in self._tasks:
             if pydantic is True:
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
 
@@ -711,7 +686,7 @@ class Celery:
                 '__annotations__': _get_annotations(fun),
                 '__header__': self.type_checker(fun, bound=bind),
                 '__wrapped__': run,
-                '_task_fun': staticmethod(original_fun)}, **options))()
+                '_decorated_fun': staticmethod(decorated_fun)}, **options))()
             # for some reason __qualname__ cannot be set in type()
             # so we have to set it here.
             try:
@@ -721,6 +696,9 @@ class Celery:
             self._tasks[task.name] = task
             task.bind(self)  # connects task to this app
             add_autoretry_behaviour(task, **options)
+        else:
+            task = self._tasks[name]
+            self._warn_if_duplicate_task_name(task, decorated_fun, name)
         return task
 
     def register_task(self, task, **options):
@@ -737,16 +715,55 @@ class Celery:
             task_cls = type(task)
             task.name = self.gen_task_name(
                 task_cls.__name__, task_cls.__module__)
-        existing_task = self._tasks.get(task.name)
-        if (existing_task is not None and existing_task is not task
-                and type(existing_task) is not type(task)):
-            raise AlreadyRegistered(
-                f'Task {task.name!r} is already registered with a different task.')
+        existing = self.tasks.get(task.name)
+        if existing is not None and existing is not task:
+            self._warn_duplicate_task_name(
+                task.name, task_callable_qualname(existing),
+                task_callable_qualname(task),
+                'The new callable replaced the existing one; calls under this '
+                'name now reach the new callable.',
+            )
         add_autoretry_behaviour(task, **options)
         self.tasks[task.name] = task
         task._app = self
         task.bind(self)
         return task
+
+    def _warn_if_duplicate_task_name(self, task, fun, name):
+        """Warn when *name* is taken by a callable other than *fun*.
+
+        A module imported twice hands the same function object back, so
+        identity -- not the name -- is what tells a re-registration apart
+        from two distinct callables colliding under one generated name.
+        The comparison uses the callable as the caller passed it, since
+        ``__wrapped__`` holds ``run``, which is a bound method under
+        ``bind=True`` and the wrapper under ``pydantic=True``.
+        """
+        existing_fun = getattr(task, '_decorated_fun', None)
+        if existing_fun is None or _same_task_callable(existing_fun, fun):
+            return
+        self._warn_duplicate_task_name(
+            name, qualname(existing_fun), qualname(fun),
+            'The new callable was not registered; calls under this name '
+            'reach the callable registered first.',
+        )
+
+    def _warn_duplicate_task_name(self, name, existing, new, consequence):
+        # One warning per name. A colliding name is a single mistake, and
+        # a module or test suite that trips it repeatedly should not bury
+        # everything else in output. The set only grows, and a concurrent
+        # registration could race on this check and warn twice; both are
+        # accepted, as registration is an import-time, single-threaded
+        # activity and the cost of either is one extra line of output.
+        if name in self._duplicate_task_names_warned:
+            return
+        self._duplicate_task_names_warned.add(name)
+        warnings.warn(
+            DuplicateTaskNameWarning(
+                W_DUPTASK.format(name, existing, new, consequence),
+            ),
+            stacklevel=caller_stacklevel(),
+        )
 
     def gen_task_name(self, name, module):
         return gen_task_name(self, name, module)
@@ -819,8 +836,8 @@ class Celery:
         self._config_source_silent = silent
         self.namespace = namespace or self.namespace
         if force or self.configured:
-            self._conf = None
             if self.loader.config_from_object(obj, silent=silent):
+                self._conf = None
                 return self.conf
 
     def config_from_envvar(self, variable_name, silent=False, force=False):

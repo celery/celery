@@ -5,9 +5,9 @@ import itertools
 import os
 import ssl
 import sys
-import types
 import typing
 import uuid
+import warnings
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
@@ -19,7 +19,9 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 import pytest
 from kombu import Exchange, Queue
 from kombu.exceptions import LimitExceeded
-from pydantic import BaseModel, ValidationInfo, model_validator
+from pydantic import BaseModel
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -30,7 +32,7 @@ from celery.app import defaults
 from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import AlreadyRegistered, ImproperlyConfigured, OperationalError
+from celery.exceptions import DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -62,18 +64,6 @@ class ObjectConfig2:
     CALL_ME_BACK = 123456789
     WANT_ME_TO = False
     UNDERSTAND_ME = True
-
-
-class FirstTask:
-    @staticmethod
-    def handle():
-        return 'first'
-
-
-class SecondTask:
-    @staticmethod
-    def handle():
-        return 'second'
 
 
 class CustomReduceApp(Celery):
@@ -160,6 +150,220 @@ class test_App:
             {'json'}, 'key', None, 'cert', 'store', 'digest', 'serializer',
             app=self.app)
 
+    def test_duplicate_task_name_warns__closure(self):
+        """Two closures share __name__, __qualname__ and __code__."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+        assert double.name in str(w[0].message)
+
+    def test_duplicate_task_name_warns__same_method_name(self):
+        with pytest.warns(DuplicateTaskNameWarning):
+            class Alpha:
+                @staticmethod
+                @self.app.task(shared=False)
+                def handler(x):
+                    return 'alpha'
+
+            class Beta:
+                @staticmethod
+                @self.app.task(shared=False)
+                def handler(x):
+                    return 'beta'
+
+            assert Alpha.handler.name == Beta.handler.name
+
+    def test_duplicate_task_name_warns__register_task(self):
+        from celery.app.task import Task
+
+        class T1(Task):
+            name = 'dup'
+
+            def run(self, x):
+                return 'first'
+
+        class T2(Task):
+            name = 'dup'
+
+            def run(self, x):
+                return 'second'
+
+        self.app.register_task(T1())
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            self.app.register_task(T2())
+        assert 'replaced' in str(w[0].message)
+
+    def test_duplicate_task_name_warns_once_per_name(self):
+        """A third callable under the same name must not warn again."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            first, second = make_scaler(2), make_scaler(3)
+            assert first.name == second.name
+
+        with warnings.catch_warnings(record=True) as again:
+            warnings.simplefilter('always')
+            third = make_scaler(4)
+            assert third.name == first.name
+        assert len(w) == 1
+        assert not [x for x in again
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__no_recorded_callable(self):
+        """A task registered by class carries no callable to compare."""
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'shared.name'
+
+            def run(self, x):
+                return x
+
+        self.app.register_task(T())
+
+        def other(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            task = self.app._task_from_fun(other, name='shared.name')
+            assert task.name == 'shared.name'
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_register_task_names_the_function(self):
+        """register_task reports a decorated task by its function."""
+        @self.app.task(name='taken.name', shared=False)
+        def decorated(x):
+            return x
+
+        assert decorated.name == 'taken.name'
+
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'taken.name'
+
+            def run(self, x):
+                return x
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            self.app.register_task(T())
+        assert 'decorated' in str(w[0].message)
+
+    def test_duplicate_task_name_silent__explicit_names(self):
+        """Negative control: distinct explicit names must not warn."""
+        def make_scaler(factor):
+            @self.app.task(name=f'scale{factor}', shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name != triple.name
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__distinct_names(self):
+        """Negative control (near miss): only __name__ differs."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+
+            @self.app.task(shared=False)
+            def scale_a(x):
+                return x * 2
+
+            @self.app.task(shared=False)
+            def scale_b(x):
+                return x * 3
+
+            assert scale_a.name != scale_b.name
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_bound(self):
+        """Negative control: ``run`` is a bound method under bind=True."""
+        def plain(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(plain, bind=True)
+            second = self.app._task_from_fun(plain, bind=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_pydantic(self):
+        """Negative control: ``fun`` is rebound by the pydantic wrapper."""
+        class Args(PydanticBaseModel):
+            x: int
+
+        def pydantic_fun(args: Args):
+            return args.x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            second = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_warns__bound_closures(self):
+        """bind=True must still detect two distinct callables."""
+        def make_scaler(factor):
+            @self.app.task(shared=False, bind=True)
+            def scale(self, x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning):
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+    def test_duplicate_task_name_warning_points_at_the_caller(self):
+        """The warning must name the caller's frame, not celery's."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+        assert not w[0].filename.endswith(
+            os.path.join('celery', 'app', 'base.py'))
+        assert w[0].filename == __file__
+
+    def test_duplicate_task_name_silent__same_function_twice(self):
+        """Negative control: a re-imported module yields the same object."""
+        def plain(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(plain)
+            second = self.app._task_from_fun(plain)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
     def test_task_autofinalize_disabled(self):
         with self.Celery('xyzibari', autofinalize=False) as app:
             @app.task
@@ -194,16 +398,6 @@ class test_App:
             task = app.task(fun)
             assert task.name == app.main + '.fun'
 
-    def test_task_names_include_qualified_owner(self):
-        with self.Celery('foozibari') as app:
-            first = app.task(FirstTask.handle)
-            second = app.task(SecondTask.handle)
-
-            assert first.name.endswith('.handle')
-            assert not first.name.endswith('.FirstTask.handle')
-            assert second.name.endswith('.SecondTask.handle')
-            assert first.name != second.name
-
     def test_task_names_preserve_legacy_name_without_collision(self):
         with self.Celery('foozibari') as app:
             class Reports:
@@ -212,32 +406,6 @@ class test_App:
                     return 'ok'
 
             assert Reports.nightly.name == app.gen_task_name('nightly', __name__)
-
-    def test_task_names_reuse_disambiguated_callable(self):
-        with self.Celery('foozibari') as app:
-            app.finalize()
-
-            def make_a():
-                def duplicate():
-                    return 1
-
-                return duplicate
-
-            def make_b():
-                def duplicate():
-                    return 2
-
-                return duplicate
-
-            first_fun = make_a()
-            second_fun = make_b()
-            first = app.task(first_fun)
-            second = app.task(second_fun)
-            repeated = app.task(second_fun)
-
-            assert first.name.endswith('.duplicate')
-            assert second.name.endswith('.make_b.<locals>.duplicate')
-            assert repeated is second
 
     def test_task_registration_allows_repeated_bound_method(self):
         with self.Celery('foozibari') as app:
@@ -248,128 +416,14 @@ class test_App:
                     return 1
 
             service = Service()
-            first = app.task(service.handle)
-            second = app.task(service.handle)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                first = app.task(service.handle)
+                second = app.task(service.handle)
 
             assert first is second
-
-    def test_task_registration_allows_reloaded_callable(self):
-        with self.Celery('foozibari') as app:
-            app.finalize()
-
-            def task_body():
-                return 1
-
-            first = app.task(task_body)
-            reloaded = types.FunctionType(
-                task_body.__code__, task_body.__globals__, task_body.__name__,
-                task_body.__defaults__, task_body.__closure__,
-            )
-            reloaded.__qualname__ = task_body.__qualname__
-            second = app.task(reloaded)
-
-            assert first is second
-
-    def test_same_task_callable_handles_callable_shapes(self):
-        from celery.app.base import _same_task_callable
-
-        class Service:
-            def handle(self):
-                return 1
-
-            def other(self):
-                return 2
-
-        service = Service()
-        other_service = Service()
-        assert _same_task_callable(service.handle, service.handle)
-        assert not _same_task_callable(service.handle, other_service.handle)
-        assert not _same_task_callable(service.handle, service.other)
-        assert not _same_task_callable(object(), object())
-
-        def make_with_defaults(value):
-            def task(argument=value):
-                return argument
-
-            return task
-
-        assert _same_task_callable(make_with_defaults(1), make_with_defaults(1))
-        assert not _same_task_callable(make_with_defaults(1), make_with_defaults(2))
-
-        def make_with_kwdefaults(value):
-            def task(*, argument=value):
-                return argument
-
-            return task
-
-        assert not _same_task_callable(
-            make_with_kwdefaults(1), make_with_kwdefaults(2)
-        )
-
-        def make_with_closure(value):
-            def task():
-                return value
-
-            return task
-
-        shared_value = ['same']
-        assert _same_task_callable(
-            make_with_closure(shared_value), make_with_closure(shared_value)
-        )
-        assert _same_task_callable(
-            make_with_closure(['same']), make_with_closure(['same'])
-        )
-        assert not _same_task_callable(
-            make_with_closure(['first']), make_with_closure(['second'])
-        )
-
-        class BrokenEquality:
-            def __eq__(self, other):
-                raise RuntimeError('comparison failed')
-
-        assert not _same_task_callable(
-            make_with_closure(BrokenEquality()), make_with_closure(BrokenEquality())
-        )
-
-    def test_task_registration_rejects_different_callable_with_same_name(self):
-        with self.Celery('foozibari') as app:
-            def make_task(value):
-                @app.task
-                def duplicate():
-                    return value
-                return duplicate
-
-            first = make_task(1)
-            assert first.name
-            second = make_task(2)
-
-            with pytest.raises(AlreadyRegistered, match='different callable'):
-                second.name
-
-    def test_task_registration_allows_same_callable(self):
-        with self.Celery('foozibari') as app:
-            def task_body():
-                return 1
-
-            first = app.task(task_body)
-            second = app.task(task_body)
-
-            assert first.name == second.name
-            assert first._get_current_object() is second._get_current_object()
-
-    def test_register_task_allows_same_task_class(self):
-        with self.Celery('foozibari') as app:
-            class TaskClass(app.Task):
-                name = 'same_task_class'
-
-                def run(self):
-                    return 1
-
-            first = app.register_task(TaskClass())
-            second = app.register_task(TaskClass())
-
-            assert first is not second
-            assert app.tasks[TaskClass.name] is second
+            assert not [warning for warning in caught
+                        if isinstance(warning.message, DuplicateTaskNameWarning)]
 
     def test_register_task_generates_name_for_task_class(self):
         with self.Celery('foozibari') as app:
@@ -382,24 +436,6 @@ class test_App:
             assert task.name == app.gen_task_name(
                 'TaskClass', TaskClass.__module__
             )
-
-    def test_register_task_rejects_different_task_type_with_same_name(self):
-        with self.Celery('foozibari') as app:
-            class FirstTask(app.Task):
-                name = 'same_task'
-
-                def run(self):
-                    return 1
-
-            class SecondTask(app.Task):
-                name = 'same_task'
-
-                def run(self):
-                    return 2
-
-            app.register_task(FirstTask())
-            with pytest.raises(AlreadyRegistered, match='different task'):
-                app.register_task(SecondTask())
 
     def test_register_task_accepts_shared_task_proxy(self):
         with self.Celery('foozibari') as app:
@@ -466,6 +502,17 @@ class test_App:
                         assert duplicate.apply().get() == 1
         finally:
             _state._on_app_finalizers = finalizers
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_task_decorator_accepts_explicit_lazy_in_execv_mode(self):
+        """The execv decorator path must accept an explicit lazy=True option."""
+        with patch.object(_appbase, 'USING_EXECV', True):
+            @self.app.task(lazy=True)
+            def add(x, y):
+                return x + y
+
+            assert add._get_current_object() is self.app.tasks[add.name]
+            assert add(2, 3) == 5
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_execv_env_set_after_import(self):
@@ -1256,6 +1303,16 @@ class test_App:
         self.app.config_from_object('nonexistent.module', silent=True, force=True)
         assert self.app.conf.get('SOME_CONFIG') is None
 
+    def test_config_from_object__can_add_defaults_after_silent_reload_failure(self):
+        self.app.config_from_object({'worker_prefetch_multiplier': 10})
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        assert self.app.configured
+
+        self.app.config_from_object('nonexistent.module', silent=True)
+        self.app.add_defaults({'worker_prefetch_multiplier': 20})
+
+        assert self.app.conf.worker_prefetch_multiplier == 20
+
     def test_config_from_object__silent_survives_v1_pickle(self):
         """The flag must survive the deprecated v1 reduction too.
 
@@ -1676,7 +1733,7 @@ class test_App:
 
         assert len(self.app.conf.beat_schedule) == 1
         assert caplog.records[0].message == (
-            f"Periodic task key='{add.name}(2, 2)' shadowed a"
+            "Periodic task key='t.unit.app.test_app.add(2, 2)' shadowed a"
             " previous unnamed periodic task. Pass a name kwarg to"
             " add_periodic_task to silence this warning."
         )
@@ -2072,6 +2129,12 @@ class test_App:
         assert isinstance(backend1, Backend)
         assert isinstance(backend2, Backend)
         assert backend1 is backend2
+
+    def test_backend_as_class(self):
+        with self.Celery(backend=Backend) as app:
+            backend = app.backend
+            assert type(backend) is Backend
+            assert backend.app is app
 
     def test_thread_backend(self):
         # Test that app.backend returns the new backend for each thread
@@ -2539,70 +2602,6 @@ class test_pyimplementation:
 
 
 class test_shared_task:
-
-    def test_rejects_different_callable_with_same_name(self):
-        finalizers = set(_state._on_app_finalizers)
-        try:
-            with self.Celery('foozibari', set_as_current=True) as app:
-                app.finalize()
-
-                def make_task(value):
-                    @shared_task
-                    def duplicate():
-                        return value
-
-                    return duplicate
-
-                first = make_task(1)
-                with pytest.raises(AlreadyRegistered, match='different callable'):
-                    make_task(2)
-
-                assert first.apply().get() == 1
-        finally:
-            _state._on_app_finalizers = finalizers
-
-    def test_resolves_shared_task_after_name_disambiguation(self):
-        finalizers = set(_state._on_app_finalizers)
-        try:
-            with self.Celery('foozibari', set_as_current=True) as app:
-                app.finalize()
-
-                def make_first():
-                    @shared_task
-                    def duplicate():
-                        return 1
-
-                    return duplicate
-
-                def make_second():
-                    @shared_task
-                    def duplicate():
-                        return 2
-
-                    return duplicate
-
-                first = make_first()
-                second = make_second()
-
-                assert first.name != second.name
-                assert first.apply().get() == 1
-                assert second.apply().get() == 2
-        finally:
-            _state._on_app_finalizers = finalizers
-
-    def test_reports_unregistered_shared_task_for_current_app(self, monkeypatch):
-        finalizers = set(_state._on_app_finalizers)
-        try:
-            with self.Celery('foozibari', set_as_current=True) as app:
-                @shared_task
-                def unregistered():
-                    return 1
-
-                monkeypatch.setattr(app, 'finalize', lambda: None)
-                with pytest.raises(RuntimeError, match='not registered'):
-                    unregistered.name
-        finally:
-            _state._on_app_finalizers = finalizers
 
     def test_registers_to_all_apps(self):
         with self.Celery('xproj', set_as_current=True) as xproj:

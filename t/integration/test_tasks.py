@@ -10,7 +10,7 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
-from celery.exceptions import AlreadyRegistered
+from celery.exceptions import DuplicateTaskNameWarning
 from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
@@ -64,7 +64,7 @@ def test_task_registration_rejects_colliding_callables(celery_session_app):
         return duplicate
 
     first = make_task(1)
-    with pytest.raises(AlreadyRegistered, match='different callable'):
+    with pytest.warns(DuplicateTaskNameWarning):
         make_task(2)
 
     assert first.run() == 1

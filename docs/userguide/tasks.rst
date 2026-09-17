@@ -191,13 +191,7 @@ Every task must have a unique name.
 
 If no explicit name is provided the task decorator will generate one for you,
 and this name will be based on 1) the module the task is defined in, and 2)
-the name of the task function. If a second callable would otherwise use the
-same generated name, Celery uses its qualified name to disambiguate the task.
-
-If two different callables still produce the same generated name, Celery raises
-:exc:`~celery.exceptions.AlreadyRegistered` instead of silently selecting one
-of them. Use an explicit name to distinguish tasks created by a factory or
-other callables that intentionally share a name.
+the name of the task function.
 
 Example setting explicit name:
 
@@ -814,7 +808,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.dont_autoretry_for
 
     A list/tuple of exception classes.  These exceptions won't be autoretried.
-	This allows to exclude some exceptions that match `autoretry_for
+	This allows excluding some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
 .. _task-pydantic:
@@ -2025,16 +2019,17 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
+    @app.task
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @app.task()
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @app.task()
+    @app.task
     def parse_page(page):
         return myparser.parse_document(page)
 
