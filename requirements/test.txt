@@ -5,7 +5,7 @@ pytest-subtests>=0.15.0; python_version >= "3.9"
 pytest-timeout==2.4.0
 pytest-click==1.1.0
 pytest-order==1.5.0
-boto3>=1.43.6
+boto3>=1.43.93
 moto>=4.1.11,<5.2.1
 # type checking
 mypy==2.3.1; platform_python_implementation=="CPython"

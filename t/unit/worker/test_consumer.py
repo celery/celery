@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 import pytest
 from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
+from kombu import Queue
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -908,6 +909,36 @@ class test_Consumer(ConsumerTestCase):
                 self.app.amqp.queues.add('next')
                 task_consumer = self.app.amqp.TaskConsumer(con)
                 assert {q.name for q in task_consumer.queues} == {default_queue}
+
+    @pytest.mark.parametrize('queue', ['foo', 'barfoo'])
+    def test_cancel_task_queue_stops_consuming_by_name_or_alias(self, queue):
+        self.app.conf.task_queues = (Queue('foo', alias='barfoo'),)
+        consumer = self.get_consumer()
+
+        with self.app.connection_for_read() as connection:
+            with self.app.amqp.TaskConsumer(connection) as task_consumer:
+                consumer.task_consumer = task_consumer
+                assert task_consumer.consuming_from('foo')
+
+                consumer.cancel_task_queue(queue)
+                assert not task_consumer.consuming_from('foo')
+                assert not task_consumer.queues
+                assert not self.app.amqp.queues.consume_from
+
+    @pytest.mark.parametrize('create_missing', [True, False])
+    def test_cancel_unknown_task_queue_does_not_create_queue(self, create_missing):
+        self.app.conf.task_queues = (Queue('foo'),)
+        self.app.conf.task_create_missing_queues = create_missing
+        consumer = self.get_consumer()
+
+        with self.app.connection_for_read() as connection:
+            with self.app.amqp.TaskConsumer(connection) as task_consumer:
+                consumer.task_consumer = task_consumer
+
+                consumer.cancel_task_queue('missing')
+                assert list(self.app.amqp.queues) == ['foo']
+                assert list(self.app.amqp.queues.consume_from) == ['foo']
+                assert task_consumer.consuming_from('foo')
 
     def test_readd_cancelled_queue_restores_consume_from(self):
         queues = self.app.amqp.queues
