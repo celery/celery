@@ -1,3 +1,4 @@
+import gc
 import os
 
 from celery.contrib.testing.app import TestApp, setup_default_app
@@ -35,6 +36,7 @@ def test_fixture_teardown_releases_backend_connections():
     for _ in range(iterations):
         apps.append(run_one_fixture_cycle())
 
-    # Repeated cycles give GC a chance to collect orphaned backends along the way.
+    # Simulate automatic garbage collection.
+    gc.collect()
     growth = open_fd_count() - baseline
-    assert growth < iterations
+    assert growth <= 0
