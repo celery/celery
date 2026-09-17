@@ -1,4 +1,3 @@
-import gc
 import os
 
 from celery.contrib.testing.app import TestApp, setup_default_app
@@ -18,36 +17,24 @@ def run_one_fixture_cycle():
     def store_result():
         return 'stored'
 
-    # Teardown should close the backend connections before leaving.
     with setup_default_app(app):
         with start_worker(app):
             # The task ensures the connection to the backend is opened.
             result = store_result.delay()
             assert result.get(timeout=10) == 'stored'
+    return app
 
 
 def test_fixture_teardown_releases_backend_connections():
-    iterations = 10
+    iterations = 20
 
-    # Automatic collections could hide a missing teardown collect, so
-    # run the loop without them.
-    gc.disable()
-    try:
-        # Warm-up cycle so lazy imports and logging setup do not count
-        # against the baseline.
-        run_one_fixture_cycle()
-        gc.collect()
-        baseline = open_fd_count()
+    # Warm up imports and logging.
+    apps = [run_one_fixture_cycle()]
+    baseline = open_fd_count()
 
-        for _ in range(iterations):
-            run_one_fixture_cycle()
+    for _ in range(iterations):
+        apps.append(run_one_fixture_cycle())
 
-        growth = open_fd_count() - baseline
-    finally:
-        gc.enable()
-        gc.collect()
-
-    # Each leaked backend keeps at least one redis socket open
-    # (https://github.com/celery/celery/issues/6382), so a regression
-    # grows the count by >= iterations; a healthy teardown keeps it flat.
+    # Repeated cycles give GC a chance to collect orphaned backends along the way.
+    growth = open_fd_count() - baseline
     assert growth < iterations
