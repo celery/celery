@@ -707,6 +707,17 @@ class test_Request(RequestCase):
             job.cancel(pool, signal='TERM')
             job._apply_result().terminate.assert_called_with(signum)
 
+    def test_cancel__cancelled_before_terminate_job(self):
+        pool = Mock()
+        seen = []
+        job = self.get_request(self.mytask.s(1, f='x'))
+        pool.terminate_job.side_effect = lambda *args: seen.append(
+            job._already_cancelled)
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        assert seen == [True]
+
     def test_cancel__task_reserved(self):
         pool = Mock()
         job = self.get_request(self.mytask.s(1, f='x'))
