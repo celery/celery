@@ -29,8 +29,7 @@ class Task(ResultModelBase):
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
-                   primary_key=True, autoincrement=True)
+    id = sa.Column(DialectSpecificInteger, sa.Identity(cache=20), primary_key=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
     result = sa.Column(sa.LargeBinary, nullable=True)
@@ -62,7 +61,8 @@ class Task(ResultModelBase):
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if isinstance(cls.id.default, sa.Sequence):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
 
 
@@ -98,8 +98,7 @@ class TaskSet(ResultModelBase):
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
-                   autoincrement=True, primary_key=True)
+    id = sa.Column(DialectSpecificInteger, sa.Identity(cache=20), primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
     result = sa.Column(sa.LargeBinary, nullable=True)
     date_done = sa.Column(sa.DateTime, default=_get_utc_now,
@@ -122,5 +121,6 @@ class TaskSet(ResultModelBase):
     @classmethod
     def configure(cls, schema=None, name=None):
         cls.__table__.schema = schema
-        cls.id.default.schema = schema
+        if isinstance(cls.id.default, sa.Sequence):
+            cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
