@@ -2,8 +2,8 @@ import pickle
 from collections.abc import Mapping
 from copy import copy
 from itertools import count
-from time import monotonic
-from unittest.mock import Mock
+from time import time
+from unittest.mock import Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
@@ -322,24 +322,62 @@ class test_LimitedSet:
         s = LimitedSet(maxlen=10, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=monotonic() + 100)
+        s.purge(now=time() + 100)
         assert len(s) == 0
 
         # not expired
         s = LimitedSet(maxlen=None, expires=1)
         [s.add(i) for i in range(10)]
         s.maxlen = 2
-        s.purge(now=lambda: monotonic() - 100)
+        s.purge(now=lambda: time() - 100)
         assert len(s) == 2
 
         # expired -> minsize
         s = LimitedSet(maxlen=10, minlen=10, expires=1)
         [s.add(i) for i in range(20)]
         s.minlen = 3
-        s.purge(now=monotonic() + 3)
+        s.purge(now=time() + 3)
         assert s.minlen == len(s)
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
+
+    def test_add_clamps_a_time_ahead_of_the_clock(self):
+        s = LimitedSet(maxlen=10, expires=1)
+        s.add('ahead', now=time() + 10 ** 6)
+        s.add('behind', now=time() - 10 ** 6)
+        assert s.as_dict()['ahead'] <= time()
+        assert s.as_dict()['behind'] < time() - 10 ** 6 + 1
+        s.purge(now=time() + 2)
+        assert 'ahead' not in s
+
+    def test_update_from_a_clock_ahead_does_not_evict_new_items(self):
+        # The revoked set of a worker is merged into the set of every
+        # other worker on mingle.  Stamps ahead of the local clock must
+        # not stay in the set for good, evicting every item added later
+        # as the oldest one once the set is full.
+        s = LimitedSet(maxlen=3, expires=3600)
+        s.update({f'other{i}': time() + 10 ** 6 for i in range(3)})
+        s.add('local')
+        assert 'local' in s
+        assert len(s) == 3
+
+        s = LimitedSet(maxlen=3, expires=3600)
+        other = LimitedSet(maxlen=3, expires=3600)
+        for i in range(3):
+            other._data[i] = (time() + 10 ** 6, i, i)
+        other._refresh_heap()
+        s.update(other)
+        s.add('local')
+        assert 'local' in s
+
+    def test_add_orders_items_within_the_clock_resolution(self):
+        s = LimitedSet(maxlen=10)
+        with patch('celery.utils.collections.time.time', return_value=1.0):
+            s.add('b')
+            s.add(1)  # no comparison between the items themselves
+            s.add('a')
+        assert list(s) == ['b', 1, 'a']
+        assert s.pop() == 'b'
 
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
