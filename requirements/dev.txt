@@ -1,5 +1,5 @@
 git+https://github.com/celery/py-amqp.git
 git+https://github.com/celery/kombu.git
-git+https://github.com/celery/billiard.git
+git+https://github.com/celery/billiard.git@v4.3.0rc1
 vine>=5.0.0
 isort==9.0.1
