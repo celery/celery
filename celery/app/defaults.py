@@ -341,6 +341,7 @@ NAMESPACES = Namespace(
         deduplicate_successful_tasks=Option(
             False, type='bool'
         ),
+        resolve_coroutines=Option(None, type='bool'),
         enable_remote_control=Option(
             True, type='bool', old={'celery_enable_remote_control'},
         ),
