@@ -249,6 +249,17 @@ class test_Queues:
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
 
+    def test_missing_queue_invalid_type_raises_error(self):
+        queues = Queues(create_missing_queue_type="invalid")
+
+        with pytest.raises(ValueError) as exc_info:
+            queues['foo']
+
+        assert str(exc_info.value) == (
+            "Invalid queue type 'invalid'. "
+            "Valid types are 'classic' and 'quorum'."
+        )
+
 
 class test_default_queues:
 
