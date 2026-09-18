@@ -1002,18 +1002,42 @@ class test_Request(RequestCase):
         assert not job.acknowledged
         mark.assert_not_called()
 
-    def test_on_failure_SystemExit_from_task_itself_is_a_failure(self):
+    @pytest.mark.parametrize('exc,status', [
+        (SystemExit(1), 'exitcode 1'),
+        (SystemExit(None), 'exitcode 0'),
+        (SystemExit('boom'), 'exitcode 1'),
+        (KeyboardInterrupt(), 'KeyboardInterrupt'),
+    ])
+    def test_on_failure_exit_from_task_itself_is_worker_lost(self, exc, status):
         job = self.xRequest()
         job.time_start = 1
         self.mytask.acks_late = True
         try:
-            raise SystemExit(1)
-        except SystemExit:
+            raise exc
+        except BaseException:
             exc_info = ExceptionInfo()
         with patch.object(job.task.backend, 'mark_as_failure') as mark:
             job.on_failure(exc_info)
         assert job.acknowledged
-        mark.assert_called_once()
+        stored = mark.call_args[0][1]
+        assert isinstance(stored, WorkerLostError)
+        assert str(stored) == f'Worker exited prematurely: {status}.'
+
+    def test_on_failure_SystemExit_from_task_itself_reject_on_worker_lost(self):
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.reject_on_worker_lost = True
+        try:
+            raise SystemExit(None)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          True)
+        mark.assert_not_called()
 
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()

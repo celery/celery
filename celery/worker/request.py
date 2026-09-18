@@ -9,7 +9,7 @@ from datetime import datetime
 from time import monotonic, time
 from weakref import ref
 
-from billiard.common import TERM_SIGNAME
+from billiard.common import TERM_SIGNAME, human_status
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
@@ -660,11 +660,18 @@ class Request:
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
             return
-        if isinstance(exc, (SystemExit, KeyboardInterrupt)) and (
-                self._already_cancelled or self._already_revoked):
-            # The child was killed by the signal we sent, so this is not a
-            # task failure; leave the message unacked so it gets redelivered.
-            return
+        if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+            if self._already_cancelled or self._already_revoked:
+                # The child was killed by the signal we sent, so this is not
+                # a task failure; leave the message unacked so it gets
+                # redelivered.
+                return
+            # Billiard >= 4.3.0 reports the exit before the child terminates;
+            # the process is still gone, so keep treating it as a lost worker.
+            exc_info = self._worker_lost_info(exc)
+            exc = exc_info.exception
+            if isinstance(exc, ExceptionWithTraceback):
+                exc = exc.exc
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
@@ -747,6 +754,21 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _worker_lost_info(self, exc):
+        if isinstance(exc, SystemExit):
+            code = exc.code
+            if code is None:
+                code = 0
+            elif not isinstance(code, int):
+                code = 1
+            status = human_status(code)
+        else:
+            status = type(exc).__name__
+        try:
+            raise WorkerLostError(f'Worker exited prematurely: {status}.')
+        except WorkerLostError:
+            return ExceptionInfo()
 
     def acknowledge(self):
         """Acknowledge task."""
