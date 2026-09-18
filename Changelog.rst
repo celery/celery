@@ -8,6 +8,22 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-main:
+
+Main Branch Changes
+==================
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- **New Feature**: Add native group progress tracking for Redis backend (#10530)
+  - Groups can now track progress efficiently with O(1) queries using ``track_progress=True``
+  - ``GroupResult.progress()`` returns ``(completed_count, total_count)`` tuple
+  - Uses Redis hash with Lua script for atomic, idempotent increments
+  - Falls back to O(N) calculation for non-Redis backends
+  - Progress tracking is opt-in to avoid performance impact on non-tracking groups
+  - Known limitation: Nested groups (group within group) are not fully supported
+
 .. _version-5.6.2:
 
 5.6.2

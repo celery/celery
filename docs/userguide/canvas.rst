@@ -836,6 +836,39 @@ It supports the following operations:
     this context. In other words, the return value of this method is the number of
     ``successful`` tasks.
 
+* :meth:`~celery.result.GroupResult.progress`
+
+    Return a tuple of ``(completed_count, total_count)`` representing the progress
+    of the group. This method provides efficient O(1) progress queries for backends
+    that support native group progress tracking (currently Redis).
+
+    To enable native progress tracking, pass ``track_progress=True`` when creating
+    the group:
+
+    .. code-block:: pycon
+
+        >>> from celery import group
+        >>> job = group([add.s(i, i) for i in range(100)], track_progress=True)
+        >>> result = job.apply_async()
+        >>> completed, total = result.progress()
+        >>> print(f"{completed}/{total} tasks completed")
+        42/100 tasks completed
+
+    For backends without native support, or when ``track_progress`` was not enabled,
+    this method falls back to an O(N) calculation by checking the status of each
+    task individually.
+
+    **Note**: This method counts tasks in READY_STATES (SUCCESS, FAILURE, REVOKED),
+    which includes both successful and failed tasks. This represents overall completion
+    regardless of outcome. In contrast, :meth:`completed_count` only counts successful
+    tasks.
+
+    **Nested groups**: When groups are nested (e.g., ``group(group(sig1, sig2), sig3)``),
+    the inner groups are automatically flattened/unrolled before execution. All tasks
+    receive the outer group's ID, so progress tracking works correctly for the flattened
+    structure. The ``total_count`` will reflect the total number of actual tasks after
+    unrolling, not the number of group objects in the canvas.
+
 * :meth:`~celery.result.GroupResult.revoke`
 
     Revoke all of the subtasks.
