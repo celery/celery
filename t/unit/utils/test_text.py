@@ -1,3 +1,5 @@
+import builtins
+
 import pytest
 
 from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, truncate
@@ -63,9 +65,27 @@ def test_truncate_text(s, maxsize, expected):
     (('ABCDEFGHI', 6), 'ABC...'),
     (('ABCDEFGHI', 20), 'ABCDEFGHI'),
     (('ABCDEFGHI', 6, None), 'ABCDEF'),
+    # max smaller than the ellipsis: there is no room for it, so drop it
+    # rather than slicing with a negative index.
+    (('ABCDEFGHI', 2), 'AB'),
+    (('ABCDEFGHI', 1), 'A'),
+    (('ABCDEFGHI', 0), ''),
+    (('ABCDEFGHI', -1), ''),
 ])
 def test_abbr(args, expected):
     assert abbr(*args) == expected
+
+
+@pytest.mark.parametrize('max', [-5, -1, 0, 1, 2, 3, 4, 8, 20])
+def test_abbr_never_exceeds_max(max):
+    s = 'ABCDEFGHI'
+    assert len(abbr(s, max)) <= builtins.max(max, 0) or len(s) <= max
+
+
+@pytest.mark.parametrize('max', [-5, -1, 0, 1, 2, 3])
+def test_abbr_never_longer_than_input(max):
+    s = 'hello world'
+    assert len(abbr(s, max)) <= len(s)
 
 
 @pytest.mark.parametrize('s,maxsize,expected', [
