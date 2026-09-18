@@ -1,11 +1,13 @@
 import gc
 import importlib
+import inspect
 import itertools
 import os
 import ssl
 import sys
 import typing
 import uuid
+import warnings
 from copy import deepcopy
 from datetime import datetime, timedelta
 from datetime import timezone as datetime_timezone
@@ -17,7 +19,9 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 import pytest
 from kombu import Exchange, Queue
 from kombu.exceptions import LimitExceeded
-from pydantic import BaseModel, ValidationInfo, model_validator
+from pydantic import BaseModel
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -25,9 +29,10 @@ from celery import app as _app
 from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
+from celery.app.amqp import AMQP
 from celery.backends.base import Backend
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import ImproperlyConfigured, OperationalError
+from celery.exceptions import DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import DictAttribute
@@ -59,6 +64,19 @@ class ObjectConfig2:
     CALL_ME_BACK = 123456789
     WANT_ME_TO = False
     UNDERSTAND_ME = True
+
+
+class CustomReduceApp(Celery):
+    """App that defines its own ``__reduce_args__()``.
+
+    Defining it is what makes ``Celery.__reduce__()`` route through the
+    deprecated ``__reduce_v1__()`` path, so this is how that path is reached.
+    Declared at module level because a class defined inside a test cannot be
+    pickled.
+    """
+
+    def __reduce_args__(self):
+        return super().__reduce_args__()
 
 
 class test_module:
@@ -132,6 +150,220 @@ class test_App:
             {'json'}, 'key', None, 'cert', 'store', 'digest', 'serializer',
             app=self.app)
 
+    def test_duplicate_task_name_warns__closure(self):
+        """Two closures share __name__, __qualname__ and __code__."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+        assert double.name in str(w[0].message)
+
+    def test_duplicate_task_name_warns__same_method_name(self):
+        with pytest.warns(DuplicateTaskNameWarning):
+            class Alpha:
+                @staticmethod
+                @self.app.task(shared=False)
+                def handler(x):
+                    return 'alpha'
+
+            class Beta:
+                @staticmethod
+                @self.app.task(shared=False)
+                def handler(x):
+                    return 'beta'
+
+            assert Alpha.handler.name == Beta.handler.name
+
+    def test_duplicate_task_name_warns__register_task(self):
+        from celery.app.task import Task
+
+        class T1(Task):
+            name = 'dup'
+
+            def run(self, x):
+                return 'first'
+
+        class T2(Task):
+            name = 'dup'
+
+            def run(self, x):
+                return 'second'
+
+        self.app.register_task(T1())
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            self.app.register_task(T2())
+        assert 'replaced' in str(w[0].message)
+
+    def test_duplicate_task_name_warns_once_per_name(self):
+        """A third callable under the same name must not warn again."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            first, second = make_scaler(2), make_scaler(3)
+            assert first.name == second.name
+
+        with warnings.catch_warnings(record=True) as again:
+            warnings.simplefilter('always')
+            third = make_scaler(4)
+            assert third.name == first.name
+        assert len(w) == 1
+        assert not [x for x in again
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__no_recorded_callable(self):
+        """A task registered by class carries no callable to compare."""
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'shared.name'
+
+            def run(self, x):
+                return x
+
+        self.app.register_task(T())
+
+        def other(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            task = self.app._task_from_fun(other, name='shared.name')
+            assert task.name == 'shared.name'
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_register_task_names_the_function(self):
+        """register_task reports a decorated task by its function."""
+        @self.app.task(name='taken.name', shared=False)
+        def decorated(x):
+            return x
+
+        assert decorated.name == 'taken.name'
+
+        from celery.app.task import Task
+
+        class T(Task):
+            name = 'taken.name'
+
+            def run(self, x):
+                return x
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            self.app.register_task(T())
+        assert 'decorated' in str(w[0].message)
+
+    def test_duplicate_task_name_silent__explicit_names(self):
+        """Negative control: distinct explicit names must not warn."""
+        def make_scaler(factor):
+            @self.app.task(name=f'scale{factor}', shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name != triple.name
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__distinct_names(self):
+        """Negative control (near miss): only __name__ differs."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+
+            @self.app.task(shared=False)
+            def scale_a(x):
+                return x * 2
+
+            @self.app.task(shared=False)
+            def scale_b(x):
+                return x * 3
+
+            assert scale_a.name != scale_b.name
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_bound(self):
+        """Negative control: ``run`` is a bound method under bind=True."""
+        def plain(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(plain, bind=True)
+            second = self.app._task_from_fun(plain, bind=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_silent__same_function_twice_pydantic(self):
+        """Negative control: ``fun`` is rebound by the pydantic wrapper."""
+        class Args(PydanticBaseModel):
+            x: int
+
+        def pydantic_fun(args: Args):
+            return args.x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            second = self.app._task_from_fun(pydantic_fun, pydantic=True)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
+    def test_duplicate_task_name_warns__bound_closures(self):
+        """bind=True must still detect two distinct callables."""
+        def make_scaler(factor):
+            @self.app.task(shared=False, bind=True)
+            def scale(self, x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning):
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+    def test_duplicate_task_name_warning_points_at_the_caller(self):
+        """The warning must name the caller's frame, not celery's."""
+        def make_scaler(factor):
+            @self.app.task(shared=False)
+            def scale(x):
+                return x * factor
+            return scale
+
+        with pytest.warns(DuplicateTaskNameWarning) as w:
+            double, triple = make_scaler(2), make_scaler(3)
+            assert double.name == triple.name
+
+        assert not w[0].filename.endswith(
+            os.path.join('celery', 'app', 'base.py'))
+        assert w[0].filename == __file__
+
+    def test_duplicate_task_name_silent__same_function_twice(self):
+        """Negative control: a re-imported module yields the same object."""
+        def plain(x):
+            return x
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            first = self.app._task_from_fun(plain)
+            second = self.app._task_from_fun(plain)
+            assert first is second
+        assert not [x for x in w
+                    if isinstance(x.message, DuplicateTaskNameWarning)]
+
     def test_task_autofinalize_disabled(self):
         with self.Celery('xyzibari', autofinalize=False) as app:
             @app.task
@@ -189,6 +421,28 @@ class test_App:
 
         finally:
             _appbase.USING_EXECV = prev
+        assert not _appbase.USING_EXECV
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_task_decorator_accepts_explicit_lazy_in_execv_mode(self):
+        """The execv decorator path must accept an explicit lazy=True option."""
+        with patch.object(_appbase, 'USING_EXECV', True):
+            @self.app.task(lazy=True)
+            def add(x, y):
+                return x + y
+
+            assert add._get_current_object() is self.app.tasks[add.name]
+            assert add(2, 3) == 5
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_task_execv_env_set_after_import(self):
+        # a spawned pool child sets the variable from process_initializer()
+        with patch.dict(os.environ, {'FORKED_BY_MULTIPROCESSING': '1'}):
+            @self.app.task(shared=False)
+            def foo():
+                pass
+
+            assert foo._get_current_object()  # is proxy
         assert not _appbase.USING_EXECV
 
     def test_task_takes_no_args(self):
@@ -947,6 +1201,90 @@ class test_App:
 
         self.assert_config2()
 
+    def test_config_from_object__silent_lazy(self):
+        """`silent` must survive until the configuration is actually read.
+
+        Without `force`, `config_from_object()` only records the source; the
+        import happens later in `_load_config()`. The flag has to be carried
+        across that gap or the documented behaviour only holds for the eager
+        path.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__not_silent_lazy(self):
+        """Without `silent`, the import error must still surface."""
+        self.app.config_from_object('nonexistent.module', silent=False)
+        with pytest.raises(ImportError):
+            self.app.conf.get('SOME_CONFIG')
+
+    def test_config_from_object__silent_force(self):
+        """The eager path keeps working, and is not made silent by accident."""
+        self.app.config_from_object('nonexistent.module', silent=True, force=True)
+        assert self.app.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__can_add_defaults_after_silent_reload_failure(self):
+        self.app.config_from_object({'worker_prefetch_multiplier': 10})
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        assert self.app.configured
+
+        self.app.config_from_object('nonexistent.module', silent=True)
+        self.app.add_defaults({'worker_prefetch_multiplier': 20})
+
+        assert self.app.conf.worker_prefetch_multiplier == 20
+
+    def test_config_from_object__silent_survives_v1_pickle(self):
+        """The flag must survive the deprecated v1 reduction too.
+
+        `Celery.__reduce__()` still routes through `__reduce_v1__()` for any
+        subclass that defines its own `__reduce_args__()`, so carrying the flag
+        only in `__reduce_keys__()` would leave that path broken.
+        """
+        app = CustomReduceApp('silent-v1', set_as_current=False)
+        assert app._using_v1_reduce
+        app.config_from_object('nonexistent.module', silent=True)
+
+        unpickled = pickle.loads(pickle.dumps(app))
+        assert unpickled.conf.get('SOME_CONFIG') is None
+
+    def test_config_from_object__not_silent_survives_v1_pickle(self):
+        """Control: the v1 path must not silence anything by itself."""
+        app = CustomReduceApp('loud-v1', set_as_current=False)
+        app.config_from_object('nonexistent.module', silent=False)
+
+        unpickled = pickle.loads(pickle.dumps(app))
+        with pytest.raises(ImportError):
+            unpickled.conf.get('SOME_CONFIG')
+
+    def test_app_pickler_accepts_legacy_arg_count(self):
+        """An older v1 payload, without the trailing flag, must still load.
+
+        `config_source_silent` is appended after `config_source`, which is
+        itself optional, so a ten argument payload written by an older Celery
+        keeps working and simply defaults the flag off.
+        """
+        from celery.app.utils import AppPickler
+
+        kwargs = AppPickler().build_standard_kwargs(
+            'main', {}, None, None, None, None, None, None, False, 'src',
+        )
+        assert kwargs['config_source'] == 'src'
+        assert kwargs['config_source_silent'] is False
+
+    def test_config_from_object__silent_survives_pickle(self):
+        """`silent` must survive pickling of a not-yet-configured app.
+
+        An app pickled after `config_from_object(silent=True)` but before its
+        configuration is first read reaches the child process unconfigured, so
+        the child performs the import itself. If the flag were not carried in
+        `__reduce_keys__()` the child would import without it and raise.
+        """
+        self.app.config_from_object('nonexistent.module', silent=True)
+        assert not self.app.configured
+
+        unpickled = pickle.loads(pickle.dumps(self.app))
+        assert unpickled.conf.get('SOME_CONFIG') is None
+
     def test_config_from_object__compat(self):
 
         class Config:
@@ -990,6 +1328,15 @@ class test_App:
 
         self.app.config_from_object(Config(), namespace='celery')
         assert self.app.conf.task_always_eager == 44
+
+    def test_config_from_object__runtime_changes_take_precedence(self):
+        self.app.config_from_object(
+            {'CELERY_WORKER_PREFETCH_MULTIPLIER': 10},
+            namespace='CELERY',
+        )
+        assert self.app.conf.worker_prefetch_multiplier == 10
+        self.app.conf.worker_prefetch_multiplier = 20
+        assert self.app.conf.worker_prefetch_multiplier == 20
 
     def test_config_from_object__mixing_new_and_old(self):
 
@@ -1333,6 +1680,283 @@ class test_App:
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())
 
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_honours_task_serializer(self, detect_quorum_queues):
+        """send_task should use the registered task's serializer when called by name."""
+
+        @self.app.task(name='test_task_with_serializer', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+        self.app.conf.task_serializer = 'msgpack'
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer', (1,),
+                           connection=connection, router=router)
+
+        # Verify the serializer from the task definition ('json') was passed
+        # through to send_task_message, not the app default ('msgpack').
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "send_task should use the task's serializer, not the app default"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_serializer_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed serializer should override the task's serializer."""
+
+        @self.app.task(name='test_task_with_serializer2', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_with_serializer2', (1,),
+                           connection=connection, router=router,
+                           serializer='pickle')
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'pickle', \
+            "Explicitly passed serializer should override task's serializer"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_unregistered_task_uses_defaults(self, detect_quorum_queues):
+        """send_task for unregistered task names should still use app defaults."""
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('unregistered_task', (1,),
+                           connection=connection, router=router)
+
+        # Should not raise and should proceed normally without task exec options
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_with_task_time_limit_no_duplicate_kwargs(self, detect_quorum_queues):
+        """send_task should not raise TypeError when the registered task has time_limit set."""
+
+        @self.app.task(name='test_task_with_time_limit', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # This should not raise "got multiple values for argument 'time_limit'"
+        self.app.send_task('test_task_with_time_limit', (1,),
+                           connection=connection, router=router)
+
+        self.app.amqp.create_task_message.assert_called_once()
+        call_args = self.app.amqp.create_task_message.call_args
+        # time_limit and soft_time_limit should be passed as positional args,
+        # not duplicated in **options
+        assert 'time_limit' not in call_args[1], \
+            "time_limit should not appear in kwargs (passed positionally)"
+        assert 'soft_time_limit' not in call_args[1], \
+            "soft_time_limit should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_time_limit_overrides_task(self, detect_quorum_queues):
+        """Explicitly passed time_limit should override the task's time_limit."""
+
+        @self.app.task(name='test_task_tl_override', time_limit=300, soft_time_limit=120)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        # Explicit time_limit=60 should win over task's time_limit=300
+        self.app.send_task('test_task_tl_override', (1,),
+                           connection=connection, router=router,
+                           time_limit=60, soft_time_limit=30)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] == 60, \
+            "Explicit time_limit should override task-level time_limit"
+        assert bound.arguments['soft_time_limit'] == 30, \
+            "Explicit soft_time_limit should override task-level soft_time_limit"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_none_clears_task_defaults(self, detect_quorum_queues):
+        """Explicit None for time_limit/soft_time_limit/expires should clear task-level defaults."""
+
+        @self.app.task(name='test_task_none_clear', time_limit=300, soft_time_limit=120, expires=600)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_none_clear', (1,),
+                           connection=connection, router=router,
+                           time_limit=None, soft_time_limit=None, expires=None)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['time_limit'] is None, \
+            "Explicit None should clear task-level time_limit"
+        assert bound.arguments['soft_time_limit'] is None, \
+            "Explicit None should clear task-level soft_time_limit"
+        assert bound.arguments['expires'] is None, \
+            "Explicit None should clear task-level expires"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_explicit_expires_pops_from_options(self, detect_quorum_queues):
+        """When expires is passed explicitly, it should be popped from merged options."""
+
+        @self.app.task(name='test_task_expires', expires=600)
+        def test_task():
+            pass
+
+        self.app.finalize()
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_expires', (1,),
+                           connection=connection, router=router,
+                           expires=120)
+
+        call_args = self.app.amqp.create_task_message.call_args
+        args, kwargs = call_args
+        bound = inspect.signature(AMQP.as_task_v2).bind(
+            None, *args, **kwargs
+        )
+        assert bound.arguments['expires'] == 120, \
+            "Explicit expires should override task-level expires"
+        assert 'expires' not in call_args[1], \
+            "expires should not appear in kwargs (passed positionally)"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_method(self, detect_quorum_queues):
+        """send_task should handle registries that lack a .get() method."""
+
+        @self.app.task(name='test_task_no_get', serializer='json')
+        def test_task():
+            pass
+
+        self.app.finalize()
+        real_registry = self.app._tasks
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                return real_registry[key]
+
+            def __contains__(self, key):
+                return key in real_registry
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
+            self.app.send_task('test_task_no_get', (1,),
+                               connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
+
+        call_kwargs = self.app.amqp.send_task_message.call_args
+        assert call_kwargs[1].get('serializer') == 'json', \
+            "Task serializer should be applied even with registry lacking .get()"
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_registry_without_get_keyerror(self, detect_quorum_queues):
+        """send_task should handle KeyError from registries lacking .get()."""
+
+        class DictLikeRegistry:
+            def __getitem__(self, key):
+                raise KeyError(key)
+
+            def __contains__(self, key):
+                return False
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        original_tasks = self.app._tasks
+        self.app._tasks = DictLikeRegistry()
+        try:
+            # Should not raise — gracefully handles missing task
+            self.app.send_task('nonexistent_task', (1,),
+                               connection=connection, router=router)
+        finally:
+            self.app._tasks = original_tasks
+
+        self.app.amqp.send_task_message.assert_called_once()
+
+    @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
+    def test_send_task_skips_unbound_get_exec_options(self, detect_quorum_queues):
+        """send_task should skip _get_exec_options when it is not a bound method."""
+
+        @self.app.task(name='test_task_unbound_exec')
+        def test_task():
+            pass
+
+        # Replace _get_exec_options with a plain function (not a bound method)
+        # to simulate accessing it on a class rather than an instance.
+        task_instance = self.app.tasks['test_task_unbound_exec']
+        plain_func = Mock()
+        task_instance._get_exec_options = plain_func
+
+        connection = Mock(name='connection')
+        router = Mock(name='router')
+        router.route.side_effect = lambda opts, *a, **kw: opts
+        self.app.amqp = Mock(name='amqp')
+        self.app.amqp.Producer.attach_mock(ContextMock(), 'return_value')
+
+        self.app.send_task('test_task_unbound_exec', (1,),
+                           connection=connection, router=router)
+
+        plain_func.assert_not_called()
+        self.app.amqp.send_task_message.assert_called_once()
+
     def test_send_task_sent_event(self):
 
         class Dispatcher:
@@ -1425,6 +2049,12 @@ class test_App:
         assert isinstance(backend1, Backend)
         assert isinstance(backend2, Backend)
         assert backend1 is backend2
+
+    def test_backend_as_class(self):
+        with self.Celery(backend=Backend) as app:
+            backend = app.backend
+            assert type(backend) is Backend
+            assert backend.app is app
 
     def test_thread_backend(self):
         # Test that app.backend returns the new backend for each thread

@@ -201,7 +201,7 @@ class BaseLoader:
                     value = NAMESPACES[ns.lower()][key].to_python(value)
                 except ValueError as exc:
                     # display key name in error message.
-                    raise ValueError(f'{ns_key!r}: {exc}')
+                    raise ValueError(f'{ns_key!r}: {exc}') from exc
             return ns_key, value
         return dict(getarg(arg) for arg in args)
 

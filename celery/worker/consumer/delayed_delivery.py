@@ -11,6 +11,7 @@ if sys.version_info < (3, 11):  # pragma: no cover
     from exceptiongroup import ExceptionGroup
 
 from kombu import Connection, Queue
+from kombu.common import Broadcast
 from kombu.transport.native_delayed_delivery import (bind_queue_to_native_delayed_delivery_exchange,
                                                      declare_native_delayed_delivery_exchanges_and_queues)
 from kombu.utils.functional import retry_over_time
@@ -165,6 +166,8 @@ class DelayedDelivery(bootsteps.StartStopStep):
 
         exceptions: list[Exception] = []
         for queue in queues:
+            if isinstance(queue, Broadcast):
+                continue
             try:
                 logger.debug("Binding queue %r to delayed delivery exchange", queue.name)
                 bind_queue_to_native_delayed_delivery_exchange(connection, queue)

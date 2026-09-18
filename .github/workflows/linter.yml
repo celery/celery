@@ -11,7 +11,7 @@ jobs:
     steps:
 
       - name: Checkout branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1

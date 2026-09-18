@@ -13,7 +13,7 @@ from celery.canvas import _chain, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
-from celery.utils import abstract
+from celery.utils import abstract, deprecated
 from celery.utils.functional import mattrgetter, maybe_list
 from celery.utils.imports import instantiate
 from celery.utils.nodenames import gethostname
@@ -422,6 +422,17 @@ class Task:
         conf = app.conf
         cls._exec_options = None  # clear option cache
 
+        if not was_bound:
+            for attr in ('queue', 'exchange', 'exchange_type',
+                         'routing_key', 'delivery_mode', 'priority'):
+                if attr in cls.__dict__:
+                    # In Celery 6.0, make these task attributes have no effect
+                    deprecated.warn(
+                        description=f'The {attr!r} task attribute',
+                        removal='6.0',
+                        alternative='Use the task_routes setting instead.',
+                    )
+
         if cls.typing is None:
             cls.typing = app.strict_typing
 
@@ -673,7 +684,7 @@ class Task:
             shadow = shadow or self.shadow_name(args, kwargs, options)
 
         preopts = self._get_exec_options()
-        options = dict(preopts, **options) if options else preopts
+        options = dict(preopts, **options)
 
         options.setdefault('ignore_result', self.ignore_result)
         if self.priority:
@@ -1036,7 +1047,6 @@ class Task:
 
         Arguments:
             sig (Signature): signature to replace with.
-            visitor (StampingVisitor): Visitor API object.
 
         Raises:
             ~@Ignore: This is always raised when called in asynchronous context.
@@ -1055,6 +1065,9 @@ class Task:
         if isinstance(sig, group):
             # Groups get uplifted to a chord so that we can link onto the body
             sig |= self.app.tasks['celery.accumulate'].s(index=0)
+        if isinstance(sig, _chain) and isinstance(sig.tasks[-1], group):
+            sig.tasks = list(sig.tasks)
+            sig.tasks[-1] |= self.app.tasks['celery.accumulate'].s(index=0)
         for callback in maybe_list(self.request.callbacks) or []:
             sig.link(callback)
         for errback in maybe_list(self.request.errbacks) or []:
