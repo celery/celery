@@ -971,6 +971,50 @@ class test_Request(RequestCase):
             job.on_failure(exc_info)
         assert job.acknowledged
 
+    def test_on_failure_SystemExit_cancelled_request_stays_unacked(self):
+        # Billiard 4.3.0 marshals the SystemExit raised by the child's
+        # SIGTERM handler back as a task failure; a request the worker
+        # cancelled itself must not be acked, so the message is redelivered.
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_cancelled = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    def test_on_failure_SystemExit_revoked_request_stays_unacked(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_revoked = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    def test_on_failure_SystemExit_from_task_itself_is_a_failure(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        try:
+            raise SystemExit(1)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert job.acknowledged
+        mark.assert_called_once()
+
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()
         job.time_start = 1

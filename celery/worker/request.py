@@ -660,6 +660,11 @@ class Request:
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
             return
+        if isinstance(exc, (SystemExit, KeyboardInterrupt)) and (
+                self._already_cancelled or self._already_revoked):
+            # The child was killed by the signal we sent, so this is not a
+            # task failure; leave the message unacked so it gets redelivered.
+            return
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
