@@ -64,8 +64,8 @@ def setup_security(allowed_serializers=None, key=None, key_password=None, cert=N
     if not (key and cert and store):
         raise ImproperlyConfigured(SECURITY_SETTING_MISSING)
 
-    with open(key) as kf:
-        with open(cert) as cf:
+    with open(key, encoding="utf-8") as kf:
+        with open(cert, encoding="utf-8") as cf:
             register_auth(kf.read(), key_password, cf.read(), store, digest, serializer)
     registry._set_default_serializer('auth')
 
