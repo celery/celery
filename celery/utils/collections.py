@@ -601,6 +601,20 @@ class LimitedSet:
         # time based expiring:
         if self.expires:
             while len(self._data) > self.minlen >= 0:
+                # Skip stale heap entries to find the actual oldest current entry
+                while self._heap:
+                    entry = self._heap[0]
+                    _, item = entry
+                    current_entry = self._data.get(item)
+                    if current_entry is entry:
+                        # This is the current entry for this item
+                        break
+                    # Stale entry, remove it and continue
+                    heappop(self._heap)
+                else:
+                    # Heap is empty
+                    break
+
                 inserted_time, _ = self._heap[0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
@@ -609,13 +623,21 @@ class LimitedSet:
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, item = heappop(self._heap)
-            try:
-                self._data.pop(item)
-            except KeyError:
-                pass
-            else:
+            entry = heappop(self._heap)
+            _, item = entry
+            current_entry = self._data.get(item)
+            # Only delete from _data if this heap entry is still the current entry
+            # Stale heap entries (from item refresh) should be skipped
+            if current_entry is entry:
+                try:
+                    self._data.pop(item)
+                except KeyError:
+                    # Lost a race with another thread removing this item
+                    # between the identity check and the pop — treat as
+                    # stale and keep looking.
+                    continue
                 return item
+            # If entry is stale, continue to next heap entry
         return default
 
     def as_dict(self):
