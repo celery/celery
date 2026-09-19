@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import re
 from contextlib import contextmanager
@@ -413,6 +414,19 @@ class test_prepare_exception:
         assert isinstance(x, KeyError)
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
+
+    @pytest.mark.parametrize('exc', [BaseException('boom'), asyncio.CancelledError()])
+    def test_encode_result_json_base_exception(self, exc):
+        self.b.serializer = 'json'
+        x = self.b.encode_result(exc, states.FAILURE)
+        assert x == {
+            'exc_message': exc.args,
+            'exc_type': type(exc).__name__,
+            'exc_module': type(exc).__module__}
+        self.b.encode({'result': x})
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, type(exc))
+        assert y.args == exc.args
 
     def test_unicode_message(self):
         message = '\u03ac'
