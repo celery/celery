@@ -1012,10 +1012,9 @@ retries, queue, stamps) to be written to backend.
 
     When using the database backend with :setting:`result_extended` set to ``True``,
     task stamping metadata is stored in a ``stamps`` column. For existing database deployments
-    upgrading with an already-created ``celery_taskmeta`` table, operators should run the
-    appropriate DDL migration to add the column (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
-    or ``BYTEA`` on PostgreSQL). The database backend gracefully degrades to querying without the column
-    if it is not yet present.
+    upgrading with an already-created ``celery_taskmeta`` table, operators must execute the
+    appropriate DDL migration to add the column before upgrading (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
+    or ``BYTEA`` on PostgreSQL); this migration is required as result writes will otherwise fail.
 
 .. setting:: result_expires
 
