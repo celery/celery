@@ -662,6 +662,46 @@ class test_RedisResultConsumer:
             consumer.drain_events(timeout=1)
         sleep.assert_called_once_with(1)
 
+    def test_stop_closes_pubsub(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        consumer.stop()
+        pubsub.close.assert_called_once()
+
+    def test_stop_without_pubsub_is_noop(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.stop()
+
+    def test_consume_from_starts_when_pubsub_missing(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.consume_from('some-task')
+        assert consumer._pubsub is not None
+        assert b'celery-task-meta-some-task' in consumer._pubsub._subscribed_to
+
+    def test_drain_events_processes_message(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        message = {'type': 'message', 'data': b'encoded-meta'}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub.get_message.side_effect = None
+        consumer._pubsub.get_message.return_value = message
+        with patch.object(consumer, '_decode_result', return_value=meta), \
+                patch.object(
+                    consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_called_once_with(meta, message)
+
+        # non-message types (e.g. subscribe confirmations) are ignored
+        consumer._pubsub.get_message.return_value = {
+            'type': 'subscribe', 'data': 1}
+        with patch.object(
+                consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_not_called()
+
 
 class basetest_RedisBackend:
     def get_backend(self):
