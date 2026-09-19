@@ -985,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
@@ -1073,7 +1076,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -1294,6 +1297,19 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. note::
+
+    Starting in Celery 5.7, the database result backend supports storing task
+    children in the ``children`` column of ``celery_taskmeta``.
+    Celery automatically attempts to add this missing column to existing tables
+    at startup. If your database user does not have DDL / ``ALTER TABLE`` permissions,
+    you can execute the migration manually:
+
+    .. code-block:: sql
+
+        ALTER TABLE celery_taskmeta ADD COLUMN children BLOB;  -- SQLite / MySQL
+        ALTER TABLE celery_taskmeta ADD COLUMN children BYTEA; -- PostgreSQL
 
 .. setting:: database_engine_callback
 
@@ -2192,7 +2208,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
@@ -4277,6 +4293,31 @@ Default: Disabled by default.
 
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
+
+.. setting:: worker_pool_start_method
+
+``worker_pool_start_method``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: ``"fork"``.
+
+Start method used to create the child processes of the prefork pool. Only
+meaningful for the prefork pool; ignored by the eventlet/gevent/solo pools.
+
+- ``"fork"`` (default): children are created with ``fork()``. This is fast,
+  and shares the parent's already-imported modules and memory copy-on-write,
+  but is **unsafe** when the parent process has started threads or uses
+  C-extensions that are not fork-safe (for example gRPC, ``psycopg`` or
+  CUDA), and can deadlock or corrupt state in the children.
+- ``"spawn"``: each child is started in a fresh Python interpreter. This is
+  safe in the presence of threads and fork-unsafe C-extensions, at the cost
+  of slower start-up, higher memory usage, and the requirement that the app
+  and task arguments are picklable and that your entry point is guarded by
+  ``if __name__ == '__main__':``. A replacement child has to finish importing
+  your application within :setting:`worker_proc_alive_timeout`, so raise that
+  setting for applications that take longer to import.
 
 .. setting:: worker_autoscaler
 

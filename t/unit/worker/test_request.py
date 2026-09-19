@@ -792,22 +792,6 @@ class test_Request(RequestCase):
             assert job._already_revoked
             assert job.acknowledged
 
-    def test_announce_revoked_skips_backend_when_revoked_via_control(self):
-        # The control revoke path stores the REVOKED result and runs the
-        # chord bookkeeping through mark_as_revoked(request=...). The later
-        # announce must not report the chord member to the backend a second
-        # time, while it still acknowledges the message and fires signals.
-        job = self.xRequest()
-        job._revoked_in_backend = True
-        with patch.object(job.task.backend, 'mark_as_revoked') as mar:
-            with self.assert_signal_called(
-                    task_revoked, sender=job.task, request=job._context,
-                    terminated=False, expired=False, signum=None):
-                job._announce_revoked('revoked', False, None, False)
-        mar.assert_not_called()
-        assert job.acknowledged
-        assert job._already_revoked
-
     @pytest.mark.parametrize(
         "header_to_revoke",
         [
@@ -986,6 +970,74 @@ class test_Request(RequestCase):
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
         assert job.acknowledged
+
+    def test_on_failure_SystemExit_cancelled_request_stays_unacked(self):
+        # Billiard 4.3.0 marshals the SystemExit raised by the child's
+        # SIGTERM handler back as a task failure; a request the worker
+        # cancelled itself must not be acked, so the message is redelivered.
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_cancelled = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    def test_on_failure_SystemExit_revoked_request_stays_unacked(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_revoked = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    @pytest.mark.parametrize('exc,status', [
+        (SystemExit(1), 'exitcode 1'),
+        (SystemExit(None), 'exitcode 0'),
+        (SystemExit('boom'), 'exitcode 1'),
+        (KeyboardInterrupt(), 'KeyboardInterrupt'),
+    ])
+    def test_on_failure_exit_from_task_itself_is_worker_lost(self, exc, status):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        try:
+            raise exc
+        except BaseException:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert job.acknowledged
+        stored = mark.call_args[0][1]
+        assert isinstance(stored, WorkerLostError)
+        assert str(stored) == f'Worker exited prematurely: {status}.'
+
+    def test_on_failure_SystemExit_from_task_itself_reject_on_worker_lost(self):
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.reject_on_worker_lost = True
+        try:
+            raise SystemExit(None)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          True)
+        mark.assert_not_called()
 
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()

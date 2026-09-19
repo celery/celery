@@ -585,7 +585,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):

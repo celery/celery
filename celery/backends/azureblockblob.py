@@ -174,13 +174,15 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
                 f'{self._connection_string}'
             )
 
-        connection_string_parts = self._connection_string.split(';')
-        account_key_prefix = 'AccountKey='
-        redacted_connection_string_parts = [
-            f'{account_key_prefix}**' if part.startswith(account_key_prefix)
-            else part
-            for part in connection_string_parts
-        ]
+        # Azure matches connection string keys case-insensitively, and a
+        # SharedAccessSignature is as much a secret as an AccountKey.
+        secret_keys = {'accountkey', 'sharedaccesssignature'}
+        redacted_connection_string_parts = []
+        for part in self._connection_string.split(';'):
+            key, sep, _ = part.partition('=')
+            if sep and key.strip().lower() in secret_keys:
+                part = f'{key}=**'
+            redacted_connection_string_parts.append(part)
 
         return (
             f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
