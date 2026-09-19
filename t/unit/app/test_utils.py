@@ -197,6 +197,70 @@ class test_sanitize_url:
         expected = 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
         assert sanitize_url(url) == expected
 
+    def test_sentinel_multiserver_passwords(self):
+        url = 'sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0'
+        expected = 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0'
+        sanitized = sanitize_url(url)
+        assert sanitized == expected
+        assert 'secret1' not in sanitized
+        assert 'secret2' not in sanitized
+
+    def test_sentinel_single_scheme_multi_host_password(self):
+        url = 'sentinel://:secret@h1:26379;h2:26379;h3:26379/0'
+        expected = 'sentinel://:********@h1:26379;h2:26379;h3:26379/0'
+        assert sanitize_url(url) == expected
+
+    def test_password_containing_separator(self):
+        url = 'redis://:pa;ss@localhost:6379/0'
+        assert sanitize_url(url) == 'redis://:********@localhost:6379/0'
+
+        url_comma = 'redis://user:p,a;ss@localhost:6379/0'
+        assert sanitize_url(url_comma) == 'redis://user:********@localhost:6379/0'
+
+    def test_query_string_containing_separator(self):
+        url = 'redis://user:secret@localhost:6379?a=1;b=2'
+        assert sanitize_url(url) == 'redis://user:********@localhost:6379?a=1;b=2'
+
     def test_malformed_url_fallback(self):
         url = 'invalid://bad:url:extra:colons'
         assert sanitize_url(url) == url
+
+    def test_malformed_url_fails_closed_never_leaks_password(self):
+        url = 'redis://:secret@host:notaport/0'
+        sanitized = sanitize_url(url)
+        assert 'secret' not in sanitized
+        assert sanitized == 'redis://:********@host:notaport/0'
+
+    def test_bugreport_with_sentinel_passwords(self):
+        self.app.conf.result_backend = (
+            'sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0'
+        )
+        report = bugreport(self.app)
+        assert 'secret1' not in report
+        assert 'secret2' not in report
+        assert 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0' in report
+
+    def test_sanitize_url_exception_fails_closed_regex_fallback(self):
+        class BrokenUrl(str):
+            def partition(self, sep):
+                raise RuntimeError("unexpected error")
+
+        res = sanitize_url(BrokenUrl('redis://:secret@host/0'))
+        assert 'secret' not in res
+        assert '********' in res
+
+    def test_sanitize_url_exception_fails_closed_unparseable_placeholder(self):
+        class BrokenUrlNoCreds(str):
+            def partition(self, sep):
+                raise RuntimeError("unexpected error")
+
+        res = sanitize_url(BrokenUrlNoCreds('redis://host/0'))
+        assert res == '<unparseable url>'
+
+    def test_username_without_password(self):
+        assert sanitize_url('redis://myuser@localhost:6379/0') == 'redis://myuser@localhost:6379/0'
+
+    def test_sentinel_mixed_auth_with_empty_chunk(self):
+        url = 'sentinel://u1:p1@h1:26379;;h2:26379;u3:p3@h3:26379/0'
+        expected = 'sentinel://u1:********@h1:26379;h2:26379;u3:********@h3:26379/0'
+        assert sanitize_url(url) == expected

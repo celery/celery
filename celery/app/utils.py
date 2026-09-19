@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
-from kombu.utils.url import maybe_sanitize_url
 
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import pyimplementation
@@ -340,31 +339,91 @@ def _unpickle_app_v2(cls, kwargs):
 def sanitize_url(url, mask='*' * 8):
     """Sanitize URL, masking passwords.
 
-    Handles single and multi-server URLs (e.g. semicolon or comma separated).
+    Supports:
+    - Standard single-server URLs (e.g. ``redis://:secret@localhost:6379/0``)
+    - Passwords containing separators such as semicolons or commas
+    - Multi-server URLs with shared scheme (e.g. ``cache+memcached://user:secret@s1:11211;s2:11211/``)
+    - Redis Sentinel multi-node URLs (e.g. ``sentinel://:secret@h1:26379;sentinel://:secret@h2:26379/0``
+      or ``sentinel://:secret@h1:26379;h2:26379/0``)
+    - URLs with query strings containing semicolons (e.g. ``redis://user:secret@localhost:6379?a=1;b=2``)
+
+    Fails closed on malformed URLs to prevent credential leakage.
     """
     if not url or not isinstance(url, str):
         return url
-    if '://' in url:
+
+    def _mask_uinfo(uinfo):
+        if not uinfo:
+            return uinfo
+        if ':' in uinfo:
+            user, _, _ = uinfo.partition(':')
+            return f'{user}:{mask}'
+        return uinfo
+
+    try:
+        if '://' not in url:
+            return url
+
+        # If it is a semicolon-separated list of full URLs (e.g. sentinel://...;sentinel://...)
+        parts = url.split(';')
+        if len(parts) > 1 and any('://' in p for p in parts[1:]):
+            return ';'.join(sanitize_url(p.strip(), mask=mask) for p in parts)
+
         scheme, _, rest = url.partition('://')
-        path = ''
-        if '/' in rest:
-            rest, _, path = rest.partition('/')
-            path = '/' + path
-        sep = ';' if ';' in rest else (',' if ',' in rest else None)
-        if sep:
-            servers = rest.split(sep)
+
+        # Separate authority from path/query/fragment
+        idx = len(rest)
+        for sep in ('/', '?', '#'):
+            pos = rest.find(sep)
+            if pos != -1 and pos < idx:
+                idx = pos
+        authority = rest[:idx]
+        tail = rest[idx:]
+
+        # Handle multiple '@' in authority (e.g. u1:p1@h1;u2:p2@h2 or u1:p1@h1,u2:p2@h2)
+        if authority.count('@') > 1 and (';' in authority or ',' in authority):
+            server_sep = ';' if ';' in authority else ','
+            servers = authority.split(server_sep)
             sanitized_servers = []
             for s in servers:
+                s = s.strip()
                 if not s:
                     continue
-                san = maybe_sanitize_url(f'{scheme}://{s}', mask=mask)
-                _, _, netloc = san.partition('://')
-                sanitized_servers.append(netloc.rstrip('/'))
-            return f"{scheme}://{sep.join(sanitized_servers)}{path}"
-    try:
-        return maybe_sanitize_url(url, mask=mask)
+                if '@' in s:
+                    u, _, h = s.rpartition('@')
+                    sanitized_servers.append(f'{_mask_uinfo(u)}@{h}')
+                else:
+                    sanitized_servers.append(s)
+            sanitized_authority = server_sep.join(sanitized_servers)
+
+        # Handle single '@' in authority
+        elif '@' in authority:
+            uinfo, _, hosts = authority.rpartition('@')
+            uinfo_sanitized = _mask_uinfo(uinfo)
+            # hosts might have multiple servers, e.g. s1:11211;s2:11211
+            host_sep = ';' if ';' in hosts else (',' if ',' in hosts else None)
+            if host_sep:
+                h_list = [h.strip() for h in hosts.split(host_sep) if h.strip()]
+                sanitized_authority = f'{uinfo_sanitized}@{host_sep.join(h_list)}'
+            else:
+                sanitized_authority = f'{uinfo_sanitized}@{hosts}'
+
+        # No '@' in authority, but may have multiple hosts
+        else:
+            host_sep = ';' if ';' in authority else (',' if ',' in authority else None)
+            if host_sep:
+                h_list = [h.strip() for h in authority.split(host_sep) if h.strip()]
+                sanitized_authority = host_sep.join(h_list)
+            else:
+                sanitized_authority = authority
+
+        return f'{scheme}://{sanitized_authority}{tail}'
+
     except Exception:
-        return url
+        if isinstance(url, str) and '@' in url and '://' in url:
+            import re
+            return re.sub(r'(://[^:@/]*:)([^@/]*)(@)', r'\g<1>' + mask + r'\3', url)
+        return '<unparseable url>'
 
 
 def filter_hidden_settings(conf):
