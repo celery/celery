@@ -4508,6 +4508,48 @@ that are past due will always run immediately.
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
 
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends. The
+control node runs in its own thread, so a reply shows that the beat
+process is alive and reaching the broker -- it doesn't on its own prove
+that the scheduler loop is still advancing.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
 .. setting:: beat_logfile
 
 ``beat_logfile``
