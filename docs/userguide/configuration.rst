@@ -1034,7 +1034,18 @@ and client first and turn the setting on afterwards.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue) to be written to backend.
+retries, queue, stamps) to be written to backend.
+
+.. versionadded:: 5.7
+    Added storing task stamping metadata (``stamps``) in the database backend.
+
+.. note::
+
+    When using the database backend with :setting:`result_extended` set to ``True``,
+    task stamping metadata is stored in a ``stamps`` column. For existing database deployments
+    upgrading with an already-created ``celery_taskmeta`` table, operators must execute the
+    appropriate DDL migration to add the column before upgrading (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
+    or ``BYTEA`` on PostgreSQL); this migration is required as result writes will otherwise fail.
 
 .. setting:: result_expires
 
