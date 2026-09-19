@@ -3,7 +3,6 @@ import threading
 import pytest
 
 from celery import states, uuid
-
 from t.integration.conftest import get_active_redis_channels
 from t.integration.tasks import identity
 
