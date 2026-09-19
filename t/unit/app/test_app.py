@@ -398,6 +398,69 @@ class test_App:
             task = app.task(fun)
             assert task.name == app.main + '.fun'
 
+    def test_task_names_preserve_legacy_name_without_collision(self):
+        with self.Celery('foozibari') as app:
+            class Reports:
+                @app.task
+                def nightly():
+                    return 'ok'
+
+            assert Reports.nightly.name == app.gen_task_name('nightly', __name__)
+
+    def test_task_registration_allows_repeated_bound_method(self):
+        with self.Celery('foozibari') as app:
+            app.finalize()
+
+            class Service:
+                def handle(self):
+                    return 1
+
+            service = Service()
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                first = app.task(service.handle)
+                second = app.task(service.handle)
+
+            assert first is second
+            assert not [warning for warning in caught
+                        if isinstance(warning.message, DuplicateTaskNameWarning)]
+
+    def test_register_task_generates_name_for_task_class(self):
+        with self.Celery('foozibari') as app:
+            class TaskClass(app.Task):
+                def run(self):
+                    return 1
+
+            task = app.register_task(TaskClass())
+
+            assert task.name == app.gen_task_name(
+                'TaskClass', TaskClass.__module__
+            )
+
+    def test_register_task_accepts_shared_task_proxy(self):
+        with self.Celery('foozibari') as app:
+            @app.task
+            def shared_registration():
+                return 1
+
+            app.finalize()
+            task = app.register_task(shared_registration)
+
+            assert task is app.tasks[task.name]
+
+    def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with self.Celery('foozibari') as app:
+                @app.task
+                def repeated_task():
+                    return 1
+
+                app.finalize()
+                assert repeated_task.name in app.tasks
+        finally:
+            _state._on_app_finalizers = finalizers
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)
@@ -422,6 +485,23 @@ class test_App:
         finally:
             _appbase.USING_EXECV = prev
         assert not _appbase.USING_EXECV
+
+    def test_task_execv_shared_finalizer_does_not_collide(self):
+        finalizers = set(_state._on_app_finalizers)
+        try:
+            with patch.object(_appbase, 'USING_EXECV', True):
+                with self.Celery('foozibari', set_as_current=True) as finalized_app:
+                    finalized_app.finalize()
+
+                    with self.Celery('baribaz', set_as_current=True) as app:
+                        @app.task
+                        def duplicate():
+                            return 1
+
+                        app.finalize()
+                        assert duplicate.apply().get() == 1
+        finally:
+            _state._on_app_finalizers = finalizers
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_task_decorator_accepts_explicit_lazy_in_execv_mode(self):

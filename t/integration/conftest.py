@@ -6,7 +6,8 @@ import time
 
 import pytest
 
-from celery.contrib.pytest import celery_app, celery_session_app, celery_session_worker
+from celery.contrib.pytest import (celery_app, celery_parameters, celery_session_app, celery_session_worker,
+                                   celery_worker_parameters, use_celery_app_trap)
 from celery.contrib.testing.manager import Manager
 from celery.exceptions import TimeoutError
 from t.integration.tasks import get_redis_connection
@@ -38,10 +39,13 @@ def flaky(fn):
 
 __all__ = (
     'celery_app',
+    'celery_parameters',
     'celery_session_app',
     'celery_session_worker',
+    'celery_worker_parameters',
     'flaky',
     'get_active_redis_channels',
+    'use_celery_app_trap',
 )
 
 

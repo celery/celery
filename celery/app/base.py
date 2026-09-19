@@ -79,6 +79,21 @@ else:
     def _get_annotations(fun):
         return fun.__annotations__
 
+
+def _same_task_callable(first, second):
+    """Return whether two task callables represent the same callable."""
+    if first is second:
+        return True
+
+    first_self = getattr(first, '__self__', None)
+    second_self = getattr(second, '__self__', None)
+    return (
+        first_self is not None
+        and first_self is second_self
+        and getattr(first, '__func__', None) is getattr(second, '__func__', None)
+    )
+
+
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
@@ -694,6 +709,7 @@ class Celery:
             style task classes, you should not need to use this for
             new projects.
         """
+        task = maybe_evaluate(task)
         task = inspect.isclass(task) and task() or task
         if not task.name:
             task_cls = type(task)
@@ -724,7 +740,7 @@ class Celery:
         ``bind=True`` and the wrapper under ``pydantic=True``.
         """
         existing_fun = getattr(task, '_decorated_fun', None)
-        if existing_fun is None or existing_fun is fun:
+        if existing_fun is None or _same_task_callable(existing_fun, fun):
             return
         self._warn_duplicate_task_name(
             name, qualname(existing_fun), qualname(fun),
@@ -763,11 +779,12 @@ class Celery:
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                _announce_app_finalized(self)
 
                 pending = self._pending
                 while pending:
                     maybe_evaluate(pending.popleft())
+
+                _announce_app_finalized(self)
 
                 for task in self._tasks.values():
                     task.bind(self)
