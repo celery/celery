@@ -2050,6 +2050,12 @@ class test_App:
         assert isinstance(backend2, Backend)
         assert backend1 is backend2
 
+    def test_backend_as_class(self):
+        with self.Celery(backend=Backend) as app:
+            backend = app.backend
+            assert type(backend) is Backend
+            assert backend.app is app
+
     def test_thread_backend(self):
         # Test that app.backend returns the new backend for each thread
         main_backend = self.app.backend
