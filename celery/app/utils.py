@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
-
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
@@ -423,7 +422,7 @@ def sanitize_url(url, mask='*' * 8):
         if isinstance(url, str) and '@' in url and '://' in url:
             import re
             return re.sub(r'(://[^:@/]*:)([^@/]*)(@)', r'\g<1>' + mask + r'\3', url)
-        return '<unparseable url>'
+        return '<unparsable url>'
 
 
 def filter_hidden_settings(conf):

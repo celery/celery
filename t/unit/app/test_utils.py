@@ -255,7 +255,7 @@ class test_sanitize_url:
                 raise RuntimeError("unexpected error")
 
         res = sanitize_url(BrokenUrlNoCreds('redis://host/0'))
-        assert res == '<unparseable url>'
+        assert res == '<unparsable url>'
 
     def test_username_without_password(self):
         assert sanitize_url('redis://myuser@localhost:6379/0') == 'redis://myuser@localhost:6379/0'
