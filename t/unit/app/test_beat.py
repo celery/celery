@@ -1051,13 +1051,6 @@ class test_Service:
         s2, _ = self.get_service()
         assert s2.remote_control is True
 
-    def test_start_updates_last_tick(self):
-        s, sh = self.get_service()
-        assert s._last_tick is None
-        s.scheduler.shutdown_service = s
-        s.start()
-        assert s._last_tick is not None
-
 
 def _idle_then_timeout(*args, **kwargs):
     """Stand in for ``drain_events``, blocking instead of spinning.
@@ -1084,18 +1077,11 @@ class test_BeatPidbox:
         assert pb.node.hostname == f'celerybeat@{gethostname()}'
 
     def test_ping_handler_replies_pong(self):
-        pb, service = self.get_pidbox()
-        service._last_tick = None
-        reply = pb.node.handlers['ping'](pb.state)
-        assert reply['ok'] == 'pong'
-        assert reply['last_tick_ago'] is None
-
-        with patch('celery.beat.monotonic') as monotonic:
-            monotonic.return_value = 105.0
-            service._last_tick = 100.0
-            reply = pb.node.handlers['ping'](pb.state)
-        assert reply['ok'] == 'pong'
-        assert reply['last_tick_ago'] == 5.0
+        # Must match the worker's reply exactly: Inspect.ping and
+        # Control.ping both document {HOSTNAME: {'ok': 'pong'}} as
+        # their return contract.
+        pb, _ = self.get_pidbox()
+        assert pb.node.handlers['ping'](pb.state) == {'ok': 'pong'}
 
     def test_on_message_ignores_unknown_method(self):
         pb, _ = self.get_pidbox()

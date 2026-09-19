@@ -4467,21 +4467,10 @@ within the timeout. Note that :option:`--timeout <celery inspect
 --timeout>` defaults to one second, which a probe that also has to
 establish a broker connection can easily exceed.
 
-The ping reply also carries a ``last_tick_ago`` field: the number of
-seconds since beat last woke up to check the schedule. The default
-human-readable output prints only ``pong``, so read the field either
-with :option:`--json <celery inspect --json>` or programmatically:
-
-.. code-block:: pycon
-
-    >>> app.control.ping(destination=['celerybeat@example.com'])
-    [{'celerybeat@example.com': {'ok': 'pong', 'last_tick_ago': 3.73}}]
-
-Beat stamps the tick time *after* each scheduler pass returns, so on an
-idle schedule ``last_tick_ago`` grows as high as the scheduler's maximum
-loop interval -- see :setting:`beat_max_loop_interval`, which is five
-minutes for the default scheduler -- before resetting. Any alerting
-threshold has to allow for that.
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends. The
+control node runs in its own thread, so a reply shows that the beat
+process is alive and reaching the broker -- it doesn't on its own prove
+that the scheduler loop is still advancing.
 
 Note that when this is enabled, beat will also show up as a node in
 the output of destination-less :program:`celery inspect ping` and

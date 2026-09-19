@@ -15,7 +15,6 @@ from collections import namedtuple
 from functools import total_ordering
 from pickle import UnpicklingError
 from threading import Event, Thread
-from time import monotonic
 
 from billiard import ensure_multiprocessing
 from billiard.common import reset_signals
@@ -670,12 +669,7 @@ class BeatPidbox:
         self._shutdown = Event()
 
     def _ping(self, state, **_kwargs):
-        last_tick = self.service._last_tick
-        last_tick_ago = (
-            round(monotonic() - last_tick, 2)
-            if last_tick is not None else None
-        )
-        return {'ok': 'pong', 'last_tick_ago': last_tick_ago}
+        return {'ok': 'pong'}
 
     def on_message(self, body, message):
         try:
@@ -779,7 +773,6 @@ class Service:
             if remote_control is None else remote_control)
 
         self._pidbox = None
-        self._last_tick = None
         self._is_shutdown = Event()
         self._is_stopped = Event()
 
@@ -805,7 +798,6 @@ class Service:
         try:
             while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
-                self._last_tick = monotonic()
                 if interval and interval > 0.0:
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
