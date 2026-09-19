@@ -50,8 +50,10 @@ class Mingle(bootsteps.StartStopStep):
 
     def send_hello(self, c):
         inspect = c.app.control.inspect(timeout=1.0, connection=c.connection)
-        our_revoked = c.controller.state.revoked
-        replies = inspect.hello(c.hostname, our_revoked._data) or {}
+        # The ids only: the other workers stamp them with their own clocks
+        # (see merge_revoked()), so the stamps would be dead weight.
+        our_revoked = list(c.controller.state.revoked)
+        replies = inspect.hello(c.hostname, our_revoked) or {}
         replies.pop(c.hostname, None)  # delete my own response
         return replies
 
@@ -73,4 +75,4 @@ class Mingle(bootsteps.StartStopStep):
 
     def on_revoked_received(self, c, revoked):
         if revoked:
-            c.controller.state.revoked.update(revoked)
+            c.controller.state.merge_revoked(revoked)

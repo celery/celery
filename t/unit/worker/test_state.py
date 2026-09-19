@@ -2,7 +2,7 @@ import os
 import pickle
 import sys
 from importlib import import_module
-from time import time
+from time import monotonic, time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -118,6 +118,17 @@ class test_Persistent:
         p.merge()
         for item in data:
             assert item in state.revoked
+
+    def test_merge_stamps_saved_items_locally(self, p):
+        # The stamps in the state db count from the boot of the host the
+        # worker ran on; after a reboot they are ahead of the clock.
+        saved = LimitedSet()
+        saved.add('rebooted', now=monotonic() + 10 ** 6)
+        p.db['zrevoked'] = p.compress(p._dumps(saved))
+        p.merge()
+        assert 'rebooted' in state.revoked
+        assert state.revoked.as_dict()['rebooted'] <= monotonic()
+        state.revoked.discard('rebooted')
 
     def test_merge_dict(self, p):
         p.clock = Mock()

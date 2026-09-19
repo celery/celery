@@ -636,7 +636,9 @@ Persistent revokes
 
 Revoking tasks works by sending a broadcast message to all the workers,
 the workers then keep a list of revoked tasks in memory. When a worker starts
-up it will synchronize revoked tasks with other workers in the cluster.
+up it will synchronize revoked tasks with other workers in the cluster: the
+ids received this way count as revoked from that moment on, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later.
 
 The list of revoked tasks is in-memory so if all workers restart the list
 of revoked ids will also vanish. If you want to preserve this list between

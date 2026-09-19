@@ -22,7 +22,7 @@ __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
     'scheduled_requests', 'total_count', 'revoked', 'task_reserved',
     'task_scheduled', 'maybe_shutdown', 'task_accepted', 'task_ready',
-    'Persistent',
+    'merge_revoked', 'Persistent',
 )
 
 
@@ -111,6 +111,28 @@ revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 
 #: Mapping of stamped headers flagged for revoking.
 revoked_stamps = {}
+
+
+def merge_revoked(task_ids):
+    """Add task ids revoked elsewhere: on another worker, or before a restart.
+
+    Only the ids are taken, stamped with the local clock; the stamps they
+    may come with are dropped.  :data:`revoked` stamps its items with
+    :func:`time.monotonic`, which counts from the boot of the host, so a
+    stamp taken on another host (received on mingle) or before a reboot
+    (read from the state db) is not comparable with the local ones: a
+    stamp ahead of the local clock never expires here, and once such
+    stamps fill the set up to its limit, every id revoked here is purged
+    as the oldest one the moment it is added.  The ids received live
+    ``REVOKE_EXPIRES`` seconds from now on rather than from the time they
+    were revoked.
+
+    Arguments:
+        task_ids (Iterable): the ids, or a mapping/:class:`LimitedSet`
+            of them, in which case its stamps are ignored.
+    """
+    revoked.update(list(task_ids))
+
 
 should_stop = None
 should_terminate = None
@@ -335,18 +357,16 @@ class Persistent:
 
     def _merge_revoked_v3(self, zrevoked):
         if zrevoked:
-            self._revoked_tasks.update(pickle.loads(self.decompress(zrevoked)))
+            self._merge_revoked_v1(pickle.loads(self.decompress(zrevoked)))
 
     def _merge_revoked_v2(self, saved):
-        if not isinstance(saved, LimitedSet):
-            # (pre 3.0.18) used to be stored as a dict
-            return self._merge_revoked_v1(saved)
-        self._revoked_tasks.update(saved)
+        # a LimitedSet, or a dict before 3.0.18
+        self._merge_revoked_v1(saved)
 
     def _merge_revoked_v1(self, saved):
-        add = self._revoked_tasks.add
-        for item in saved:
-            add(item)
+        # The saved stamps are dropped whatever the format: they may come
+        # from before a reboot, see merge_revoked().
+        self.state.merge_revoked(saved)
 
     def _dumps(self, obj):
         return pickle.dumps(obj, protocol=self.protocol)
