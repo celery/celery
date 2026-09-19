@@ -119,6 +119,6 @@ class Tasks(bootsteps.StartStopStep):
 
             if using_quorum_queues:
                 qos_global = False
-                logger.info("Global QoS is disabled. Prefetch count in now static.")
+                logger.info("Global QoS is disabled. Prefetch count is now static.")
 
         return qos_global

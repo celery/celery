@@ -81,6 +81,18 @@ class Settings(ConfigurationView):
 
         self.deprecated_settings = deprecated_settings
 
+    def copy(self):
+        self.finalize()
+        copied = super().copy()
+        if 'deprecated_settings' in self.changes:
+            copied.changes['deprecated_settings'] = (
+                self.changes['deprecated_settings']
+            )
+        else:
+            copied.changes.pop('deprecated_settings', None)
+        return copied
+    __copy__ = copy
+
     @property
     def broker_read_url(self):
         return (
@@ -277,7 +289,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
         )))
 
     preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
-    defaults = dict(deepcopy(info.defaults), **preconf)
+    defaults = deepcopy(info.defaults)
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
@@ -303,11 +315,12 @@ class AppPickler:
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
-                              config_source=None):
+                              config_source=None, config_source_silent=False):
         return {'main': main, 'loader': loader, 'backend': backend,
                 'amqp': amqp, 'changes': changes, 'events': events,
                 'log': log, 'control': control, 'set_as_current': False,
-                'config_source': config_source}
+                'config_source': config_source,
+                'config_source_silent': config_source_silent}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
