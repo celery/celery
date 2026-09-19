@@ -275,7 +275,7 @@ class test_ControlPanel:
         # Add an expired revoked item to the revoked set.
         worker_state.revoked.add(
             'expired_in_past',
-            now=time.monotonic() - REVOKE_EXPIRES - 1
+            now=time.time() - REVOKE_EXPIRES - 1
         )
         x = panel.handle('hello', {
             'from_node': 'george@vandelay.com',

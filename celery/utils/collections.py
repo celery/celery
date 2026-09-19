@@ -458,6 +458,13 @@ class LimitedSet:
     ``maxlen`` is enforced at all times, so if the limit is reached
     we'll also remove non-expired items.
 
+    Items are stamped with the wall clock (:func:`time.time`), so a set
+    can be merged into one on another host: the stamps of the two are
+    comparable, unlike :func:`time.monotonic` ones, which count from the
+    boot of each host.  A stamp ahead of the local clock is clamped to it
+    when the item is added, so an item can never outlive ``expires``
+    because it came from a host whose clock is ahead.
+
     You can also configure ``minlen``: this is the minimal residual size
     of the set.
 
@@ -496,7 +503,7 @@ class LimitedSet:
         False
         >>> len(s)  # maxlen is reached
         50000
-        >>> s.purge(now=time.monotonic() + 7200)  # clock + 2 hours
+        >>> s.purge(now=time.time() + 7200)  # clock + 2 hours
         >>> len(s)  # now only minlen items are cached
         4000
         >>>> 57000 in s  # even this item is gone now
@@ -510,8 +517,11 @@ class LimitedSet:
         self.maxlen = 0 if maxlen is None else maxlen
         self.minlen = 0 if minlen is None else minlen
         self.expires = 0 if expires is None else expires
-        self._data = {}
+        self._data = {}  # item -> (inserted, sequence number, item)
         self._heap = []
+        # Orders the items inserted within the clock resolution and keeps
+        # the heap from ever comparing the items themselves.
+        self._seq = count()
 
         if data:
             # import items from data
@@ -542,11 +552,18 @@ class LimitedSet:
 
     def add(self, item, now=None):
         # type: (Any, float) -> None
-        """Add a new item, or reset the expiry time of an existing item."""
-        now = now or time.monotonic()
+        """Add a new item, or reset the expiry time of an existing item.
+
+        Arguments:
+            now (float): Insertion time of the item as a :func:`time.time`
+                timestamp -- by default right now.  A time ahead of the
+                local clock, e.g. a stamp received from a host whose
+                clock is ahead, is clamped to the local clock.
+        """
+        now = min(now, time.time()) if now else time.time()
         if item in self._data:
             self.discard(item)
-        entry = (now, item)
+        entry = (now, next(self._seq), item)
         self._data[item] = entry
         heappush(self._heap, entry)
         if self.maxlen and len(self._data) >= self.maxlen:
@@ -558,14 +575,14 @@ class LimitedSet:
         if not other:
             return
         if isinstance(other, LimitedSet):
-            self._data.update(other._data)
-            self._refresh_heap()
-            self.purge()
+            for inserted, _, key in other._data.values():
+                self.add(key, inserted)
         elif isinstance(other, dict):
             # revokes are sent as a dict
             for key, inserted in other.items():
                 if isinstance(inserted, (tuple, list)):
                     # in case someone uses ._data directly for sending update
+                    # (the revoked set of another worker on mingle)
                     inserted = inserted[0]
                 if not isinstance(inserted, float):
                     raise ValueError(
@@ -593,7 +610,7 @@ class LimitedSet:
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.monotonic()
+        now = now or time.time()
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -601,7 +618,7 @@ class LimitedSet:
         # time based expiring:
         if self.expires:
             while len(self._data) > self.minlen >= 0:
-                inserted_time, _ = self._heap[0]
+                inserted_time = self._heap[0][0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
                 self.pop()
@@ -609,7 +626,7 @@ class LimitedSet:
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, item = heappop(self._heap)
+            _, _, item = heappop(self._heap)
             try:
                 self._data.pop(item)
             except KeyError:
@@ -632,11 +649,11 @@ class LimitedSet:
             >>> r == s
             True
         """
-        return {key: inserted for inserted, key in self._data.values()}
+        return {key: inserted for inserted, _, key in self._data.values()}
 
     def __eq__(self, other):
         # type: (Any) -> bool
-        return self._data == other._data
+        return self.as_dict() == other.as_dict()
 
     def __repr__(self):
         # type: () -> str
@@ -646,7 +663,7 @@ class LimitedSet:
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, i in sorted(self._data.values()))
+        return (i for _, _, i in sorted(self._data.values()))
 
     def __len__(self):
         # type: () -> int
