@@ -67,6 +67,17 @@ class test_chain:
         assert actual.count(b"b") == 1
         redis_connection.delete(redis_key)
 
+    def test_chain_skips_empty_group_on_worker(self, celery_setup: CeleryTestSetup):
+        """Empty groups are no-ops: the worker runs the surrounding tasks."""
+        queue = celery_setup.worker.worker_queue
+        sig = chain(
+            add.s(2, 2).set(queue=queue),
+            group().set(queue=queue),
+            add.s(2).set(queue=queue),
+        )
+        res = sig.apply_async()
+        assert res.get(timeout=RESULT_TIMEOUT) == 6
+
 
 class test_chord:
     def test_sanity(self, celery_setup: CeleryTestSetup):
