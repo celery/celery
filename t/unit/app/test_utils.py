@@ -158,6 +158,17 @@ class test_bugreport:
         assert 'user:********@172.19.26.240:11211' in report
         assert 'user:********@172.19.26.242:11211' in report
 
+    def test_bugreport_with_redis_password_containing_both_comma_and_at(self):
+        self.app.conf.result_backend = 'redis://:p,ass@word@localhost:6379/0'
+        report = bugreport(self.app)
+        assert 'p,ass@word' not in report
+        assert 'redis://:********@localhost:6379/0' in report
+
+        self.app.conf.result_backend = 'redis://user:p,a@ss@localhost:6379/0'
+        report_user = bugreport(self.app)
+        assert 'p,a@ss' not in report_user
+        assert 'redis://user:********@localhost:6379/0' in report_user
+
 
 class test_sanitize_url:
 
@@ -234,6 +245,9 @@ class test_sanitize_url:
         assert 'p1' not in sanitized
         assert 'ambiguous' not in sanitized
         assert '********' in sanitized
+
+        url_no_colon = 'redis://ambiguous@extra@localhost:6379/0'
+        assert sanitize_url(url_no_colon) == 'redis://********@localhost:6379/0'
 
     def test_query_string_containing_separator(self):
         url = 'redis://user:secret@localhost:6379?a=1;b=2'

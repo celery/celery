@@ -352,8 +352,6 @@ def sanitize_url(url, mask='*' * 8):
         return url
 
     def _mask_uinfo(uinfo):
-        if not uinfo:
-            return uinfo
         if ':' in uinfo:
             user, _, _ = uinfo.partition(':')
             return f'{user}:{mask}'
@@ -389,57 +387,31 @@ def sanitize_url(url, mask='*' * 8):
 
         uinfo, _, host_part = authority.rpartition('@')
 
-        server_sep = None
-        if ';' in authority:
-            server_sep = ';'
-        elif ',' in authority:
-            server_sep = ','
+        server_sep = ';' if ';' in authority else (',' if ',' in authority else None)
 
         is_multiserver = False
         if server_sep:
             raw_chunks = [c.strip() for c in authority.split(server_sep) if c.strip()]
             if len(raw_chunks) > 1:
-                valid_multiserver = True
-                for i, c in enumerate(raw_chunks):
-                    if '@' in c:
-                        u, _, _ = c.rpartition('@')
-                        if i > 0 and '@' not in raw_chunks[i - 1] and ':' not in u:
-                            valid_multiserver = False
-                            break
-                    else:
-                        if c.startswith(':'):
-                            valid_multiserver = False
-                            break
-                if valid_multiserver:
-                    if '@' in raw_chunks[0] and all('@' not in c for c in raw_chunks[1:]):
-                        is_multiserver = True
-                    elif sum(1 for c in raw_chunks if '@' in c) > 1:
-                        if all(':' in c.rpartition('@')[0] for c in raw_chunks if '@' in c):
-                            is_multiserver = True
+                has_corrupt_chunk = any(c.startswith(':') for c in raw_chunks if '@' not in c)
+                has_at_without_colon = any(':' not in c.rpartition('@')[0] for c in raw_chunks if '@' in c)
+                if not has_corrupt_chunk and not has_at_without_colon:
+                    is_multiserver = True
 
         if not is_multiserver:
-            # Preserve single-URL parsing: everything before the last '@' is userinfo.
-            # Handles passwords containing commas, semicolons, and '@' safely.
+            if authority.count('@') > 1 and ':' not in uinfo:
+                return f'{scheme}://{mask}@{host_part}{tail}'
             sanitized_uinfo = _mask_uinfo(uinfo)
             return f'{scheme}://{sanitized_uinfo}@{host_part}{tail}'
 
-        # Multi-server handling:
         servers = [c.strip() for c in authority.split(server_sep) if c.strip()]
         sanitized_servers = []
-        ambiguous = False
         for s in servers:
             if '@' in s:
                 u, _, h = s.rpartition('@')
                 sanitized_servers.append(f'{_mask_uinfo(u)}@{h}')
             else:
-                if s.startswith(':'):
-                    ambiguous = True
-                    break
                 sanitized_servers.append(s)
-
-        if ambiguous:
-            # Redact the whole authority value when host boundaries are ambiguous
-            return f'{scheme}://{mask}@{host_part}{tail}'
 
         sanitized_authority = server_sep.join(sanitized_servers)
         return f'{scheme}://{sanitized_authority}{tail}'

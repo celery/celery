@@ -47,6 +47,16 @@ class test_control:
             assert "secret1" not in report
             assert "secret2" not in report
             assert "sentinel://:********@h1:26379;sentinel://:********@h2:26379/0" in report
+
+            app.conf.result_backend = "redis://:p,ass@word@localhost:6379/0"
+            report = app.bugreport()
+            assert "p,ass@word" not in report
+            assert "redis://:********@localhost:6379/0" in report
+
+            app.conf.result_backend = "redis://user:p,a@ss@localhost:6379/0"
+            report = app.bugreport()
+            assert "p,a@ss" not in report
+            assert "redis://user:********@localhost:6379/0" in report
         finally:
             app.conf.result_backend = orig_backend
 

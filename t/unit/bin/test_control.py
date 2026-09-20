@@ -285,5 +285,25 @@ def test_cli_report_with_multiserver_result_backend(isolated_cli_runner: CliRunn
         assert 'secret1' not in res.output
         assert 'secret2' not in res.output
         assert 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0' in res.output
+
+        app.conf.result_backend = 'redis://:p,ass@word@localhost:6379/0'
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'p,ass@word' not in res.output
+        assert 'redis://:********@localhost:6379/0' in res.output
+
+        app.conf.result_backend = 'redis://user:p,a@ss@localhost:6379/0'
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'p,a@ss' not in res.output
+        assert 'redis://user:********@localhost:6379/0' in res.output
     finally:
         app.conf.result_backend = orig_backend
