@@ -789,10 +789,16 @@ class Celery:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
 
+                # In-tree finalizers only register shared and built-in tasks;
+                # they do not prepare state needed to construct app-local
+                # tasks. Evaluate local decorators first so they keep stable
+                # precedence over same-named tasks from global callbacks.
                 pending = self._pending
                 while pending:
                     maybe_evaluate(pending.popleft())
 
+                # finalized is already True, so callback task registrations
+                # are eager and cannot append new work to _pending.
                 _announce_app_finalized(self)
 
                 for task in self._tasks.values():

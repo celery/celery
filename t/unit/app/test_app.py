@@ -494,18 +494,28 @@ class test_App:
             assert task is app.tasks[task.name]
             assert shared_registration.__evaluated__()
 
-    def test_shared_task_finalizer_does_not_collide_with_pending_task(self):
-        finalizers = set(_state._on_app_finalizers)
-        try:
-            with self.Celery('foozibari') as app:
-                @app.task
-                def repeated_task():
-                    return 1
+    @pytest.mark.parametrize('shared_first', [True, False])
+    @pytest.mark.usefixtures('restore_app_finalizers')
+    def test_app_task_precedes_shared_task_on_finalize(self, shared_first):
+        with self.Celery('foozibari', autofinalize=False) as app:
+            name = f'{app.main}.shared_precedence_{uuid.uuid4().hex}'
 
+            def shared():
+                return 'shared'
+
+            def local():
+                return 'local'
+
+            if shared_first:
+                shared_task(name=name)(shared)
+            app.task(name=name, shared=False)(local)
+            if not shared_first:
+                shared_task(name=name)(shared)
+
+            with pytest.warns(DuplicateTaskNameWarning):
                 app.finalize()
-                assert repeated_task.name in app.tasks
-        finally:
-            _state._on_app_finalizers = finalizers
+
+            assert app.tasks[name].run() == 'local'
 
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
