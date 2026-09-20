@@ -81,16 +81,23 @@ else:
 
 
 def _same_task_callable(first, second):
-    """Return whether two task callables represent the same callable."""
+    """Compare callable identity, including freshly-created bound methods.
+
+    Accessing a method on an instance creates a new bound-method object each
+    time, so object identity alone misses a repeated registration. This does
+    not unwrap partials or arbitrary ``__wrapped__`` chains.
+    """
     if first is second:
         return True
 
     first_self = getattr(first, '__self__', None)
     second_self = getattr(second, '__self__', None)
+    first_func = getattr(first, '__func__', None)
     return (
         first_self is not None
         and first_self is second_self
-        and getattr(first, '__func__', None) is getattr(second, '__func__', None)
+        and first_func is not None
+        and first_func is getattr(second, '__func__', None)
     )
 
 
@@ -709,8 +716,10 @@ class Celery:
             style task classes, you should not need to use this for
             new projects.
         """
+        # register_task() is an explicit request, so resolve task proxies
+        # before inspecting their metadata.
         task = maybe_evaluate(task)
-        task = inspect.isclass(task) and task() or task
+        task = task() if inspect.isclass(task) else task
         if not task.name:
             task_cls = type(task)
             task.name = self.gen_task_name(

@@ -53,21 +53,26 @@ class test_class_based_tasks:
         assert res.get(timeout=TIMEOUT) == 1
 
 
-def test_task_registration_rejects_colliding_callables(celery_session_app):
-    celery_session_app.finalize()
+@pytest.mark.usefixtures('celery_session_worker')
+def test_task_registration_collision_dispatches_registered_callable(celery_session_app):
+    name = f'celery.integration.task_registration_collision_{uuid4().hex}'
 
-    def make_task(value):
-        @celery_session_app.task
-        def duplicate():
-            return value
+    def original():
+        return 'original'
 
-        return duplicate
+    def replacement():
+        return 'replacement'
 
-    first = make_task(1)
-    with pytest.warns(DuplicateTaskNameWarning):
-        make_task(2)
+    registered = celery_session_app.task(name=name, shared=False)(original)
+    try:
+        with pytest.warns(DuplicateTaskNameWarning):
+            celery_session_app.task(name=name, shared=False)(replacement)
 
-    assert first.run() == 1
+        assert celery_session_app.tasks[name] is registered
+        assert registered.delay().get(timeout=TIMEOUT) == 'original'
+    finally:
+        celery_session_app._tasks.pop(name, None)
+        celery_session_app._duplicate_task_names_warned.discard(name)
 
 
 def _producer(j):
