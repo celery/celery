@@ -16,11 +16,12 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
-                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
-                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+from .tasks import (TASK_REGISTRATION_COLLISION_NAME, ClassBasedAutoRetryTask, ExpectedException, add,
+                    add_ignore_result, add_not_typed, add_pydantic, add_pydantic_string_annotations, fail,
+                    fail_unpickleable, print_unicode, reject_then_succeed, reject_without_requeue, retry, retry_once,
+                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    return_request_time_limits, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -55,15 +56,12 @@ class test_class_based_tasks:
 
 @pytest.mark.usefixtures('celery_session_worker')
 def test_task_registration_collision_dispatches_registered_callable(celery_session_app):
-    name = f'celery.integration.task_registration_collision_{uuid4().hex}'
-
-    def original():
-        return 'original'
+    name = TASK_REGISTRATION_COLLISION_NAME
 
     def replacement():
         return 'replacement'
 
-    registered = celery_session_app.task(name=name, shared=False)(original)
+    registered = celery_session_app.tasks[name]
     try:
         with pytest.warns(DuplicateTaskNameWarning):
             celery_session_app.task(name=name, shared=False)(replacement)
@@ -71,7 +69,6 @@ def test_task_registration_collision_dispatches_registered_callable(celery_sessi
         assert celery_session_app.tasks[name] is registered
         assert registered.delay().get(timeout=TIMEOUT) == 'original'
     finally:
-        celery_session_app._tasks.pop(name, None)
         celery_session_app._duplicate_task_names_warned.discard(name)
 
 
