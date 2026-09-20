@@ -503,6 +503,37 @@ class test_AMQP(test_AMQP_Base):
         r2 = self.app.amqp.routes
         assert r1 is r2
 
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'task_routes': {}}, id='mapping'),
+        pytest.param([('task_routes', {})], id='list-of-pairs'),
+        pytest.param((('task_routes', {}),), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('task_routes', {})]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_task_routes_from_positional_argument_rebuilds_router(self, updates):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(updates)
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_from_keyword_argument_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(task_routes={})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
     def update_conf_runtime_for_tasks_queues(self):
         self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
         self.app.send_task('task.create_pr')

@@ -596,6 +596,23 @@ class test_ChainMap:
         a.update(x=1)
         callback.assert_called_once_with(x=1)
 
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'foo': 1, 'bar': 2}, id='mapping'),
+        pytest.param([('foo', 1), ('bar', 2)], id='list-of-pairs'),
+        pytest.param((('foo', 1), ('bar', 2)), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('foo', 1), ('bar', 2)]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_with_positional_argument_notifies_observer(self, updates):
+        a = ChainMap()
+        observed = {}
+        a.bind_to(observed.update)
+
+        a.update(updates)
+        assert a.changes == observed == {'foo': 1, 'bar': 2}
+
     def test_pop_applies_key_t(self):
         cm = ChainMap(key_t=lambda key: key + '!')
         cm['foo'] = 1
