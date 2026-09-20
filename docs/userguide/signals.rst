@@ -260,6 +260,14 @@ Provides arguments
 * ``result``
     Return value of the task.
 
+* ``runtime``
+    Time in seconds the task took, measured from the start of tracing until
+    the return value has been stored in the result backend and 
+    callbacks/chains have been dispatched. 
+    This is the same value shown as succeeded in Xs in the worker log.
+    
+    .. versionadded:: 5.7
+
 .. signal:: task_failure
 
 ``task_failure``
