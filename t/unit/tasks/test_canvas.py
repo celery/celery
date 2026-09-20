@@ -620,6 +620,63 @@ class test_chain(CanvasCase):
         assert prepared_tasks[0].task == self.add.name
         assert isinstance(results[0], AsyncResult)
 
+    def test_trailing_empty_group_is_skipped_in_eager_chain_apply(self):
+        # The eager path (_chain.apply) must agree with the worker path
+        # (_chain.prepare_steps, fixed in #10321): empty groups are skipped.
+        c = chain(self.add.s(2, 2), group(app=self.app))
+
+        assert isinstance(c, _chain)
+        assert c.apply().get() == 4
+
+    def test_middle_empty_group_is_skipped_in_eager_chain_apply(self):
+        # chain() reduces its arguments with __or__, which drops the
+        # empty group at construction time, so no chord upgrade happens
+        # and both execution paths agree.
+        c = chain(
+            self.add.s(2, 2), group(app=self.app), self.add.s(2),
+        )
+
+        assert isinstance(c, _chain)
+        prepared, _ = c.prepare_steps((), {}, c.tasks)
+
+        assert [t.task for t in prepared] == [self.add.name, self.add.name]
+        assert c.apply().get() == 6
+
+    def test_empty_group_is_skipped_in_directly_constructed_chain_apply(self):
+        # _chain.__or__ drops empty groups, so only a directly constructed or
+        # deserialized chain still carries one into the eager path.
+        c = _chain(self.add.s(2, 2), group(app=self.app),
+                   self.add.s(2), app=self.app)
+        assert c.apply().get() == 6
+
+    def test_trailing_empty_group_is_skipped_in_directly_constructed_chain(
+            self):
+        c = _chain(self.add.s(2, 2), group(app=self.app), app=self.app)
+        assert c.apply().get() == 4
+
+    def test_lone_empty_group_is_not_skipped_in_eager_chain_apply(self):
+        # Mirrors prepare_steps: an empty group survives when it is the
+        # only task.
+        c = _chain(group(app=self.app), app=self.app)
+        assert c.apply().get() == []
+
+    def test_empty_groups_are_dropped_at_chain_construction(self):
+        # _chain.__or__ treats an empty group as a no-op in any
+        # position: it is dropped instead of upgrading the chain
+        # into a chord with an empty header.
+        trailing = chain(self.add.s(2, 2), group(app=self.app))
+        assert isinstance(trailing, _chain)
+        assert [t.task for t in trailing.tasks] == [self.add.name]
+
+        middle = chain(self.add.s(2, 2), group(app=self.app), self.add.s(2))
+        assert isinstance(middle, _chain)
+        assert [t.task for t in middle.tasks] == [self.add.name, self.add.name]
+        assert not any(isinstance(task, chord) for task in middle.tasks)
+
+        leading = chain(group(app=self.app), self.add.s(2, 2))
+        assert isinstance(leading, _chain)
+        assert [t.task for t in leading.tasks] == [self.add.name]
+
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
         c = self.add.s(4) | last_task
@@ -1191,6 +1248,247 @@ class test_chain(CanvasCase):
         assert c.id == 'my-explicit-id'
         assert result.id == 'my-explicit-id'
 
+    def test_chain_with_empty_group_does_not_crash(self):
+        """Empty groups chained after a group must not raise.
+
+        Regression test for https://github.com/celery/celery/issues/9772
+        """
+        # ``chain(group(...), group(), group())`` folds the empty groups
+        # away in ``group.__or__``; build the chain directly so that the
+        # empty groups reach ``prepare_steps``.
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app)
+        c = _chain(g1, group(app=self.app), group(app=self.app), app=self.app)
+        res = c.apply_async()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 2
+
+    def test_chain_empty_group_between_tasks(self):
+        """An empty group between tasks in a chain should be skipped."""
+        c = chain(self.add.s(2, 2), group(), self.add.s(4, 4))
+        res = c.freeze()  # should not raise
+        assert isinstance(res, AsyncResult)
+
+    def test_chain_empty_group_first_passes_args(self):
+        """When an empty group precedes a real task, partial args must
+        be forwarded to the first non-empty step.
+
+        Regression test for issue #9772.
+        """
+        # Use _chain directly to avoid the chain() constructor converting
+        # group() | task into a chord.
+        c = _chain(group(), self.add.s(), app=self.app)
+        tasks, _ = c.prepare_steps((2, 2), {}, c.tasks)
+        # tasks are returned in reverse order; the first logical task
+        # (add) is last in the list.
+        first_task = tasks[-1]
+        assert first_task.args == (2, 2)
+
+    def test_chain_empty_group_first_args_go_to_first_real_task(self):
+        """chain(group(), add.s(y))(x) -- args pass through to first real task.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((1, 2), {}, c.tasks)
+        # tasks are in reverse order; last element is the first logical task
+        first_task = tasks[-1]
+        assert first_task.args == (1, 2, 10), (
+            f"Expected args (1, 2, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_multiple_leading_empty_groups_args(self):
+        """chain(group(), group(), add.s(y))(x) -- multiple leading empty groups.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((3,), {}, c.tasks)
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected args (3, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_empty_group_in_middle(self):
+        """chain(add.s(x), group(), add.s(y)) -- empty group in middle.
+
+        The empty group should be silently skipped without affecting the chain.
+        Regression test for issue #9772.
+        """
+        c = _chain(self.add.s(1, 2), group(), self.add.s(10), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        # Should produce 2 real tasks, not crash
+        assert len(tasks) == 2
+        assert len(results) == 2
+
+    def test_chain_trailing_empty_group(self):
+        """chain(add.s(x), group()) -- trailing empty group.
+
+        The trailing empty group should be silently dropped.
+        Regression test for issue #9772.
+        """
+        c = _chain(self.add.s(1, 2), group(), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+
+    def test_chain_empty_group_args_reach_correct_task(self):
+        """chain(group(), add.s(x), add.s(y))(z) -- z goes to add.s(x), not add.s(y).
+
+        Verifies that partial args are prepended to the chain's *first* real
+        task (add.s(x)), not the *last* task (add.s(y)).
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), self.add.s(100), self.add.s(200), app=self.app)
+        tasks, _ = c.prepare_steps((5,), {}, c.tasks)
+        # tasks is in reverse order: [add.s(200), add.s(100)]
+        first_logical_task = tasks[-1]   # add.s(100) with args prepended
+        last_logical_task = tasks[0]     # add.s(200) with NO extra args
+        assert first_logical_task.args == (5, 100), (
+            f"Expected (5, 100) on first task, got {first_logical_task.args}"
+        )
+        assert last_logical_task.args == (200,), (
+            f"Expected (200,) on last task (no extra args), got {last_logical_task.args}"
+        )
+
+    def test_chain_only_empty_groups(self):
+        """chain(group(), group()) -- chain of only empty groups.
+
+        Every step is a no-op, but the chain must still produce a result,
+        so a single empty group is kept rather than dropping every step
+        (consistent with how a sole empty group is handled since #10321).
+        Regression test for issue #9772.
+        """
+        c = _chain(group(app=self.app), group(app=self.app), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], group)
+        assert not tasks[0].tasks
+        assert len(results) == 1
+        assert isinstance(results[0], GroupResult)
+
+    def test_chain_only_empty_groups_freeze_returns_result(self):
+        """chain(group(), group()).freeze() must return a result, not raise.
+
+        Callers rely on freeze() returning an object with .id and .parent.
+        Regression test for issue #9772.
+        """
+        c = _chain(group(app=self.app), group(app=self.app), app=self.app)
+        res = c.freeze()
+        assert isinstance(res, GroupResult)
+        assert res.id is not None
+
+    def test_nested_chain_with_leading_empty_group(self):
+        """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
+
+        A nested chain at the head of the chain is spliced before the
+        first task is determined, so the empty group leading it is
+        stripped and the partial args still reach ``add.s(x)``.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((5,), {}, outer.tasks)
+        # Should produce 2 real tasks: add.s(10) and add.s(20)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        # First logical task (last in reversed list) should get args
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_multiple_leading_empty_groups_after_splice(self):
+        """_chain(_chain(group(), group(), add.s(x)), add.s(y)) -- spliced empty groups.
+
+        After the inner chain is spliced, both leading empty groups must
+        be stripped and partial args must still reach the first real task.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((7,), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        first_task = tasks[-1]
+        assert first_task.args == (7, 10), (
+            f"Expected (7, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_only_empty_groups_spliced(self):
+        """_chain(_chain(group(), group()), add.s(x)) -- inner chain is all empty groups.
+
+        After splicing, the inner chain contributes no real tasks.
+        The outer add.s(x) should still receive partial args correctly.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), app=self.app)
+        outer = _chain(inner, self.add.s(10), app=self.app)
+        tasks, results = outer.prepare_steps((3,), {}, outer.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected (3, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_trailing_empty_group_after_splice(self):
+        """_chain(add.s(x), _chain(add.s(y), group())) -- trailing empty in spliced chain.
+
+        The trailing empty group from the inner chain should be silently
+        dropped after splicing.
+        Regression test for issue #9772.
+        """
+        inner = _chain(self.add.s(10), group(), app=self.app)
+        outer = _chain(self.add.s(1, 2), inner, app=self.app)
+        tasks, results = outer.prepare_steps((), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+
+    def test_chain_leading_empty_chain_passes_args(self):
+        """_chain(_chain(), add.s(x))(y) -- a leading empty chain must not swallow args.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(_chain(app=self.app), self.add.s(10), app=self.app)
+        tasks, results = c.prepare_steps((5,), {}, c.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+        assert tasks[-1].args == (5, 10), (
+            f"Expected (5, 10) on first real task, got {tasks[-1].args}"
+        )
+
+    def test_chain_leading_empty_group_as_dict_strip(self):
+        """Leading empty group passed as a serialized dict should be stripped.
+
+        Exercises the from_dict conversion path in the head normalisation
+        of prepare_steps().  (Issue #9772)
+        """
+        # Serialize an empty group to a dict so it enters the
+        # ``not isinstance(head, CallableSignature)`` branch.
+        empty_dict = dict(group())
+        c = _chain(app=self.app)
+        c.tasks = [empty_dict, self.add.s(10)]
+        tasks, results = c.prepare_steps((5,), {}, c.tasks)
+        assert len(tasks) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10), got {first_task.args}"
+        )
+
+    def test_chain_freeze_nested_chain_leading_empty_group_no_clone(self):
+        """freeze() uses clone=False; a nested chain with a leading empty
+        group must still forward the chain's partial args in place.
+        (Issue #9772)
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        outer.args = (5,)
+        res = outer.freeze()
+        assert isinstance(res, AsyncResult)
+        # freeze() prepares the original signatures in place, so the first
+        # real task of the spliced inner chain carries the partial args.
+        assert inner.tasks[1].args == (5, 10)
+
 
 class test_group(CanvasCase):
     def test_repr(self):
@@ -1479,16 +1777,31 @@ class test_group(CanvasCase):
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
-    @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
+        """A chord whose header contains only empty chains should not hang.
+
+        Empty chains are no-ops; when every header member is an empty chain
+        the header group is effectively empty and the chord body should be
+        executed immediately.  Regression test for issue #9772.
+        """
         gchild_sig = chain(tuple())
         child_count = 24
         child_chord = chord((gchild_sig,), self.add.si(0, 0))
         group_sig = group((child_chord,) * child_count)
-        # This is an invalid setup because we can't complete a chord header if
-        # there are no actual tasks which will run in it. However, the current
-        # behaviour of an `IndexError` isn't particularly helpful to a user.
-        group_sig.apply_async()
+        with patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            # Previously this raised IndexError.  After fixing #9772 the
+            # empty chains are stripped from the chord header, so apply_async
+            # should not be called for any header tasks (they are all no-ops).
+            group_sig.apply_async()
+        # No header tasks should be applied -- every chain is empty.
+        # The child_count calls we see are the chord bodies being applied
+        # (each chord's body is self.add.si(0, 0)).
+        assert mock_apply_async.call_count == child_count, (
+            f"Expected {child_count} apply_async calls (one per chord body), "
+            f"got {mock_apply_async.call_count}"
+        )
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42
@@ -1622,6 +1935,46 @@ class test_group(CanvasCase):
         sig = self.replace_with_group.s(1, 2)
         res = self.helper_test_get_delay(sig.delay())
         assert res == [3, 2]
+
+    def test_group_prepared_skips_empty_chain(self):
+        """_prepared() must skip empty chains that appear as group members.
+
+        An empty chain (``chain()``) in a group is a no-op and cannot be
+        frozen, so it must be silently dropped.  (Issue #9772)
+        """
+        empty_chain = _chain(app=self.app)  # chain with no tasks
+        real_task = self.add.s(1, 2)
+        g = group(empty_chain, real_task)
+        _, group_id, root_id = g._freeze_gid({})
+        prepared = list(g._prepared(g.tasks, [], group_id, root_id, self.app))
+        # Only the real task should appear; the empty chain is skipped.
+        assert len(prepared) == 1
+        task, result, gid = prepared[0]
+        assert task.args == (1, 2)
+
+    def test_group_freeze_skips_empty_chain(self):
+        """freeze() must skip empty chains so the frozen results match the
+        tasks that will actually be applied.  (Issue #9772)
+        """
+        g = group(_chain(app=self.app), self.add.s(1, 2), app=self.app)
+        res = g.freeze()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 1
+        assert len(g.tasks) == 1
+        assert g.tasks[0].args == (1, 2)
+
+    def test_group_freeze_skips_empty_chain_in_generator(self):
+        """Generator-backed groups freeze through ``_freeze_tasks``; empty
+        chains must be skipped there too.  (Issue #9772)
+        """
+        def tasks():
+            yield _chain(app=self.app)
+            yield self.add.s(1, 2)
+
+        g = group(tasks(), app=self.app)
+        res = g.freeze()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 1
 
 
 class test_chord(CanvasCase):
