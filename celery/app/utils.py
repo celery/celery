@@ -379,43 +379,69 @@ def sanitize_url(url, mask='*' * 8):
         authority = rest[:idx]
         tail = rest[idx:]
 
-        # Handle multiple '@' in authority (e.g. u1:p1@h1;u2:p2@h2 or u1:p1@h1,u2:p2@h2)
-        if authority.count('@') > 1 and (';' in authority or ',' in authority):
-            server_sep = ';' if ';' in authority else ','
-            servers = authority.split(server_sep)
-            sanitized_servers = []
-            for s in servers:
-                s = s.strip()
-                if not s:
-                    continue
-                if '@' in s:
-                    u, _, h = s.rpartition('@')
-                    sanitized_servers.append(f'{_mask_uinfo(u)}@{h}')
-                else:
-                    sanitized_servers.append(s)
-            sanitized_authority = server_sep.join(sanitized_servers)
-
-        # Handle single '@' in authority
-        elif '@' in authority:
-            uinfo, _, hosts = authority.rpartition('@')
-            uinfo_sanitized = _mask_uinfo(uinfo)
-            # hosts might have multiple servers, e.g. s1:11211;s2:11211
-            host_sep = ';' if ';' in hosts else (',' if ',' in hosts else None)
-            if host_sep:
-                h_list = [h.strip() for h in hosts.split(host_sep) if h.strip()]
-                sanitized_authority = f'{uinfo_sanitized}@{host_sep.join(h_list)}'
-            else:
-                sanitized_authority = f'{uinfo_sanitized}@{hosts}'
-
-        # No '@' in authority, but may have multiple hosts
-        else:
+        if '@' not in authority:
+            # No credentials in authority: clean empty chunks if multi-host
             host_sep = ';' if ';' in authority else (',' if ',' in authority else None)
             if host_sep:
                 h_list = [h.strip() for h in authority.split(host_sep) if h.strip()]
-                sanitized_authority = host_sep.join(h_list)
-            else:
-                sanitized_authority = authority
+                return f'{scheme}://{host_sep.join(h_list)}{tail}'
+            return f'{scheme}://{authority}{tail}'
 
+        uinfo, _, host_part = authority.rpartition('@')
+
+        server_sep = None
+        if ';' in authority:
+            server_sep = ';'
+        elif ',' in authority:
+            server_sep = ','
+
+        is_multiserver = False
+        if server_sep:
+            raw_chunks = [c.strip() for c in authority.split(server_sep) if c.strip()]
+            if len(raw_chunks) > 1:
+                valid_multiserver = True
+                for i, c in enumerate(raw_chunks):
+                    if '@' in c:
+                        u, _, _ = c.rpartition('@')
+                        if i > 0 and '@' not in raw_chunks[i - 1] and ':' not in u:
+                            valid_multiserver = False
+                            break
+                    else:
+                        if c.startswith(':'):
+                            valid_multiserver = False
+                            break
+                if valid_multiserver:
+                    if '@' in raw_chunks[0] and all('@' not in c for c in raw_chunks[1:]):
+                        is_multiserver = True
+                    elif sum(1 for c in raw_chunks if '@' in c) > 1:
+                        if all(':' in c.rpartition('@')[0] for c in raw_chunks if '@' in c):
+                            is_multiserver = True
+
+        if not is_multiserver:
+            # Preserve single-URL parsing: everything before the last '@' is userinfo.
+            # Handles passwords containing commas, semicolons, and '@' safely.
+            sanitized_uinfo = _mask_uinfo(uinfo)
+            return f'{scheme}://{sanitized_uinfo}@{host_part}{tail}'
+
+        # Multi-server handling:
+        servers = [c.strip() for c in authority.split(server_sep) if c.strip()]
+        sanitized_servers = []
+        ambiguous = False
+        for s in servers:
+            if '@' in s:
+                u, _, h = s.rpartition('@')
+                sanitized_servers.append(f'{_mask_uinfo(u)}@{h}')
+            else:
+                if s.startswith(':'):
+                    ambiguous = True
+                    break
+                sanitized_servers.append(s)
+
+        if ambiguous:
+            # Redact the whole authority value when host boundaries are ambiguous
+            return f'{scheme}://{mask}@{host_part}{tail}'
+
+        sanitized_authority = server_sep.join(sanitized_servers)
         return f'{scheme}://{sanitized_authority}{tail}'
 
     except Exception:

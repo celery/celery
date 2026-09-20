@@ -217,6 +217,24 @@ class test_sanitize_url:
         url_comma = 'redis://user:p,a;ss@localhost:6379/0'
         assert sanitize_url(url_comma) == 'redis://user:********@localhost:6379/0'
 
+    def test_password_containing_both_comma_and_at(self):
+        url = 'redis://:p,ass@word@localhost:6379/0'
+        sanitized = sanitize_url(url)
+        assert sanitized == 'redis://:********@localhost:6379/0'
+        assert 'p,ass@word' not in sanitized
+
+        url_user = 'redis://user:p,a@ss@localhost:6379/0'
+        sanitized_user = sanitize_url(url_user)
+        assert sanitized_user == 'redis://user:********@localhost:6379/0'
+        assert 'p,a@ss' not in sanitized_user
+
+    def test_ambiguous_host_boundaries_redacts_whole_value(self):
+        url = 'sentinel://u1:p1@h1:26379;:ambiguous@h2:26379/0'
+        sanitized = sanitize_url(url)
+        assert 'p1' not in sanitized
+        assert 'ambiguous' not in sanitized
+        assert '********' in sanitized
+
     def test_query_string_containing_separator(self):
         url = 'redis://user:secret@localhost:6379?a=1;b=2'
         assert sanitize_url(url) == 'redis://user:********@localhost:6379?a=1;b=2'
