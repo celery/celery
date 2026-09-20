@@ -1,12 +1,14 @@
 import os
 import re
 from datetime import datetime, timedelta, timezone
-from time import sleep
+from time import monotonic, sleep
 from unittest.mock import ANY
 
 import pytest
 
+from celery import uuid
 from celery.utils.nodenames import anon_nodename
+from celery.worker import state as worker_state
 
 from .tasks import add, sleeping
 
@@ -219,6 +221,31 @@ class test_Inspect:
         ret = inspect.revoked()
         assert len(ret) == 1
         assert result.task_id in ret[NODENAME]
+
+    @flaky
+    def test_hello_stamps_received_revoked_ids_locally(self, inspect):
+        """The revoked ids of another worker are taken as ids, stamped here."""
+        # Stamps ahead of the local clock, as from a host with a longer
+        # uptime: taken as they are, they would never expire (#4300).
+        ahead = monotonic() + 10 ** 6
+        received = [uuid() for _ in range(2)]
+        try:
+            ret = inspect.hello(
+                'other@host',
+                revoked={task_id: [ahead, seq, task_id] for seq, task_id in enumerate(received)},
+            )
+            assert len(ret) == 1
+            # The session worker runs in this process: its set is right here.
+            stamps = worker_state.revoked.as_dict()
+            for task_id in received:
+                assert stamps[task_id] <= monotonic()
+            # The reply carries the ids alone.
+            reply = ret[NODENAME]['revoked']
+            assert isinstance(reply, list)
+            assert set(received) <= set(reply)
+        finally:
+            for task_id in received:
+                worker_state.revoked.discard(task_id)
 
     @flaky
     def test_conf(self, inspect):
