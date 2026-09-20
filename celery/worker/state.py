@@ -129,8 +129,12 @@ def merge_revoked(task_ids):
 
     Arguments:
         task_ids (Iterable): the ids, or a mapping/:class:`LimitedSet`
-            of them, in which case its stamps are ignored.
+            of them, in which case its stamps are ignored.  The order
+            matters when the local set is full: the ids are added in it,
+            and the first ones are then the first to be purged.
     """
+    if not task_ids:
+        return
     revoked.update(list(task_ids))
 
 

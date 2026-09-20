@@ -560,7 +560,9 @@ class LimitedSet:
             now (float): Insertion time of the item, as read from
                 :func:`time.monotonic` -- by default right now.
         """
-        now = time.monotonic() if now is None else now
+        # A float, whatever is given: update(dict), which pickling goes
+        # through, takes nothing else.
+        now = time.monotonic() if now is None else float(now)
         if item in self._data:
             self.discard(item)
         entry = (now, next(self._seq), item)

@@ -89,6 +89,28 @@ class test_maybe_shutdown:
 
 
 @pytest.mark.usefixtures('reset_state')
+class test_merge_revoked:
+
+    def test_nothing(self):
+        size = len(state.revoked)
+        state.merge_revoked(None)
+        state.merge_revoked([])
+        state.merge_revoked({})
+        assert len(state.revoked) == size
+
+    def test_ids_only(self):
+        ahead = monotonic() + 10 ** 6
+        try:
+            state.merge_revoked({'from-dict': [ahead, 0, 'from-dict']})
+            state.merge_revoked(['from-list'])
+            stamps = state.revoked.as_dict()
+            assert stamps['from-dict'] <= monotonic()
+            assert stamps['from-list'] <= monotonic()
+        finally:
+            state.revoked.discard('from-dict')
+            state.revoked.discard('from-list')
+
+
 class test_Persistent:
 
     @pytest.fixture

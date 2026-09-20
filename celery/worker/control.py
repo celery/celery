@@ -400,7 +400,8 @@ def hello(state, from_node, revoked=None, **kwargs):
         # Do not send expired items to the other worker.
         worker_state.revoked.purge()
         return {
-            # The ids only, see merge_revoked()
+            # The ids only, see merge_revoked(): oldest first, so that
+            # a receiver whose set is full evicts our oldest ids first.
             'revoked': list(worker_state.revoked),
             'clock': state.app.clock.forward(),
         }

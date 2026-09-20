@@ -353,6 +353,7 @@ class test_LimitedSet:
         s = LimitedSet(maxlen=10, expires=1)
         s.add('foo', now=0)
         assert s.as_dict()['foo'] == 0
+        assert pickle.loads(pickle.dumps(s)) == s
         s.purge(now=2)
         assert 'foo' not in s
 

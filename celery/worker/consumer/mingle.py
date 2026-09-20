@@ -51,7 +51,9 @@ class Mingle(bootsteps.StartStopStep):
     def send_hello(self, c):
         inspect = c.app.control.inspect(timeout=1.0, connection=c.connection)
         # The ids only: the other workers stamp them with their own clocks
-        # (see merge_revoked()), so the stamps would be dead weight.
+        # (see merge_revoked()), so the stamps would be dead weight.  Oldest
+        # first, so that a receiver whose set is full evicts our oldest ids
+        # first.
         our_revoked = list(c.controller.state.revoked)
         replies = inspect.hello(c.hostname, our_revoked) or {}
         replies.pop(c.hostname, None)  # delete my own response

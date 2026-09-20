@@ -643,7 +643,9 @@ ids received this way count as revoked from that moment on, and expire
 The list of revoked tasks is in-memory so if all workers restart the list
 of revoked ids will also vanish. If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
-argument to :program:`celery worker`:
+argument to :program:`celery worker` (the ids read from the file count as
+revoked from the start of the worker, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later):
 
 .. code-block:: console
 
