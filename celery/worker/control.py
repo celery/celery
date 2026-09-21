@@ -396,11 +396,13 @@ def hello(state, from_node, revoked=None, **kwargs):
     if from_node != state.hostname:
         logger.info('sync with %s', from_node)
         if revoked:
-            worker_state.revoked.update(revoked)
+            worker_state.merge_revoked(revoked)
         # Do not send expired items to the other worker.
         worker_state.revoked.purge()
         return {
-            'revoked': worker_state.revoked._data,
+            # The ids only, see merge_revoked(): oldest first, so that
+            # a receiver whose set is full evicts our oldest ids first.
+            'revoked': list(worker_state.revoked),
             'clock': state.app.clock.forward(),
         }
 
