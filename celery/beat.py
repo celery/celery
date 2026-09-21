@@ -31,7 +31,7 @@ from .utils.collections import AttributeDict
 from .utils.functional import is_numeric_value
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
-from .utils.nodenames import nodename
+from .utils.nodenames import gethostname, host_format, nodename, nodesplit
 from .utils.time import humanize_seconds, maybe_make_aware
 
 __all__ = (
@@ -634,6 +634,17 @@ class PersistentScheduler(Scheduler):
         return f'    . db -> {self.schedule_filename}'
 
 
+def beat_nodename(hostname=None):
+    """Return the node name beat answers remote control commands on.
+
+    Mirrors the worker's resolution: a bare name gains the local host, a
+    bare host gains the ``celerybeat`` name, and ``%h``/``%n``/``%d`` are
+    expanded either way.
+    """
+    name, host = nodesplit(hostname or '')
+    return host_format(nodename(name or 'celerybeat', host or gethostname()))
+
+
 class BeatPidbox:
     """Remote-control mailbox node for beat.
 
@@ -644,6 +655,12 @@ class BeatPidbox:
     Only the ``ping`` command is implemented; any other broadcast
     command is ignored silently, since replying with an error would
     pollute the output of worker-only commands like ``inspect active``.
+
+    The node stops answering once the scheduler has not ticked for
+    :attr:`max_tick_age` seconds.  Staying silent is the only signal a
+    probe can act on: :program:`celery inspect` exits non-zero when no
+    node replies, but an error *reply* still counts as a reply and
+    leaves the exit status at zero.
     """
 
     #: seconds to pause before reconnecting after an established
@@ -658,7 +675,7 @@ class BeatPidbox:
     def __init__(self, service):
         self.service = service
         self.app = service.app
-        self.hostname = nodename('celerybeat', socket.gethostname())
+        self.hostname = beat_nodename(service.hostname)
         self.state = AttributeDict(app=self.app, service=service)
         self.node = self.app.control.mailbox.Node(
             safe_str(self.hostname),
@@ -668,6 +685,39 @@ class BeatPidbox:
         self.thread = None
         self._shutdown = Event()
 
+    @property
+    def max_tick_age(self):
+        """Seconds a tick may be overdue before beat stops replying.
+
+        Falls back to twice the maximum loop interval, which tolerates
+        exactly one missed pass.  ``0`` disables the check.
+
+        Resolved from the service rather than from ``service.scheduler``
+        on purpose: the scheduler is a lazy attribute, and this runs on
+        the consumer thread, which must not be the one to build it.
+        """
+        configured = self.app.conf.beat_remote_control_max_tick_age
+        if configured is not None:
+            return configured
+        return (self.service.max_interval or DEFAULT_MAX_INTERVAL) * 2
+
+    def _tick_age(self):
+        # Read of a single float attribute written by the scheduler
+        # thread.  That is atomic under CPython, so no lock is needed --
+        # but keep it a plain attribute for that reason: splitting it
+        # into two fields would need one.
+        last_tick = self.service._last_tick
+        if last_tick is None:
+            return None
+        return time.monotonic() - last_tick
+
+    def _is_stale(self):
+        max_tick_age = self.max_tick_age
+        if not max_tick_age:
+            return False
+        tick_age = self._tick_age()
+        return tick_age is not None and tick_age > max_tick_age
+
     def _ping(self, state, **_kwargs):
         return {'ok': 'pong'}
 
@@ -676,6 +726,12 @@ class BeatPidbox:
             if not isinstance(body, dict):
                 return
             if body.get('method') not in self.node.handlers:
+                return
+            if self._is_stale():
+                warning('beat pidbox: not answering %s, the scheduler '
+                        'has not ticked for %.1fs (over the %ss limit).',
+                        body.get('method'), self._tick_age(),
+                        self.max_tick_age)
                 return
             self.node.handle_message(body, message)
         except Exception as exc:  # pylint: disable=broad-except
@@ -690,6 +746,14 @@ class BeatPidbox:
         self.thread.start()
 
     def stop(self):
+        # If the join times out the thread is left running while beat
+        # finishes shutting down.  That is survivable: the thread is a
+        # daemon, so it never holds up interpreter exit, and it owns the
+        # connection it is draining -- the scheduler's own connection is
+        # separate, so closing that cannot pull the socket out from
+        # under it.  Worst case it wakes from drain_events into a
+        # half-torn-down interpreter, where the broad except in _loop
+        # catches whatever comes back.
         self._shutdown.set()
         if self.thread is not None:
             self.thread.join(timeout=self.join_timeout)
@@ -739,15 +803,28 @@ class BeatPidbox:
         try:
             while not shutdown.is_set():
                 try:
-                    with self._connect() as connection:
+                    established = self._connect()
+                except Exception as exc:  # pylint: disable=broad-except
+                    if shutdown.is_set():
+                        break
+                    # ensure_connection() has already applied the
+                    # configured retry policy.  Looping back here would
+                    # hand it a fresh budget and make
+                    # broker_connection_max_retries meaningless, so stop.
+                    error('beat pidbox: giving up after exhausting the '
+                          'broker connection retry policy: %r', exc,
+                          exc_info=True)
+                    break
+                try:
+                    with established as connection:
                         self._consume_from(connection)
                 except Exception as exc:  # pylint: disable=broad-except
                     if shutdown.is_set():
                         break
+                    # A connection that was up and dropped is worth
+                    # re-establishing, with a fresh budget of its own.
                     error('beat pidbox connection error: %r', exc,
                           exc_info=True)
-                    if not self.app.conf.broker_connection_retry:
-                        break
                     shutdown.wait(self.retry_interval)
         finally:
             if not shutdown.is_set():
@@ -761,7 +838,7 @@ class Service:
     scheduler_cls = PersistentScheduler
 
     def __init__(self, app, max_interval=None, schedule_filename=None,
-                 scheduler_cls=None, remote_control=None):
+                 scheduler_cls=None, remote_control=None, hostname=None):
         self.app = app
         self.max_interval = (max_interval or
                              app.conf.beat_max_loop_interval)
@@ -771,15 +848,19 @@ class Service:
         self.remote_control = (
             app.conf.beat_enable_remote_control
             if remote_control is None else remote_control)
+        self.hostname = hostname
 
         self._pidbox = None
+        #: monotonic timestamp of the last scheduler pass, read by the
+        #: pidbox thread to decide whether beat is still ticking.
+        self._last_tick = None
         self._is_shutdown = Event()
         self._is_stopped = Event()
 
     def __reduce__(self):
         return self.__class__, (self.app, self.max_interval,
                                 self.schedule_filename, self.scheduler_cls,
-                                self.remote_control)
+                                self.remote_control, self.hostname)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')
@@ -795,9 +876,14 @@ class Service:
             self._pidbox = BeatPidbox(self)
             self._pidbox.start()
 
+        # Stamp before the first pass, so a beat that wedges before it
+        # ever ticks goes stale rather than looking perpetually healthy.
+        self._last_tick = time.monotonic()
+
         try:
             while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
+                self._last_tick = time.monotonic()
                 if interval and interval > 0.0:
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
