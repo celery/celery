@@ -1098,6 +1098,21 @@ class test_ControlPanel:
         assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_keeps_finished_result(self):
+        # A chord header failure marks the body tasks FAILURE and revokes
+        # them; the REVOKED write must not replace that result.
+        self.app.backend.get_state.side_effect = lambda tid: (
+            states.FAILURE if tid == 'task-1' else states.PENDING)
+        state = self.create_state()
+
+        control._revoke(state, ['task-1', 'task-2'])
+
+        assert 'task-1' in worker_state.revoked
+        assert 'task-2' in worker_state.revoked
+        self.app.backend.mark_as_revoked.assert_called_once_with(
+            'task-2', reason='revoked', store_result=True)
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_failure_defensive(self):
         self.app.backend.mark_as_revoked.side_effect = Exception("Backend error")
         state = self.create_state()
