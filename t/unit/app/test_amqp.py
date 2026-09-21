@@ -503,6 +503,71 @@ class test_AMQP(test_AMQP_Base):
         r2 = self.app.amqp.routes
         assert r1 is r2
 
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'task_routes': {}}, id='mapping'),
+        pytest.param([('task_routes', {})], id='list-of-pairs'),
+        pytest.param((('task_routes', {}),), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('task_routes', {})]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_task_routes_from_positional_argument_rebuilds_router(self, updates):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(updates)
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_from_keyword_argument_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(task_routes={})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_legacy_key_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update({'CELERY_ROUTES': {}})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_namespace_rebuilds_router(self):
+        with self.Celery(namespace='CELERY', set_as_current=False) as app:
+            previous_router = app.amqp.router
+
+            with patch.object(
+                    app.amqp, 'flush_routes',
+                    wraps=app.amqp.flush_routes) as flush_routes:
+                app.conf.update({'CELERY_TASK_ROUTES': {}})
+
+            flush_routes.assert_called_once_with()
+            assert app.amqp.router is not previous_router
+
+    def test_update_unrelated_setting_does_not_rebuild_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(worker_prefetch_multiplier=1)
+
+        flush_routes.assert_not_called()
+        assert self.app.amqp.router is previous_router
+
     def update_conf_runtime_for_tasks_queues(self):
         self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})
         self.app.send_task('task.create_pr')
