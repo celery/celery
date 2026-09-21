@@ -96,7 +96,10 @@ class FilesystemBackend(KeyValueStoreBackend):
             yield self.get(key)
 
     def delete(self, key):
-        self.unlink(self._filename(key))
+        try:
+            self.unlink(self._filename(key))
+        except FileNotFoundError:
+            pass
 
     def cleanup(self):
         """Delete expired meta-data."""
