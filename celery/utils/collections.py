@@ -464,6 +464,15 @@ class LimitedSet:
     ``maxlen`` is enforced at all times, so if the limit is reached
     we'll also remove non-expired items.
 
+    Items are stamped with :func:`time.monotonic`, which counts from the
+    boot of the host, so the stamps of a set built on another host (or
+    before a reboot) are not comparable with the local ones: a stamp
+    ahead of the local clock never expires here, and once such stamps
+    fill the set up to ``maxlen``, every item added later is the oldest
+    one and is purged the moment it is added.  Merge such a set by
+    passing its items (an iterable, not the set or its dict), which
+    stamps them with the local clock.
+
     You can also configure ``minlen``: this is the minimal residual size
     of the set.
 
@@ -516,8 +525,11 @@ class LimitedSet:
         self.maxlen = 0 if maxlen is None else maxlen
         self.minlen = 0 if minlen is None else minlen
         self.expires = 0 if expires is None else expires
-        self._data = {}
+        self._data = {}  # item -> (inserted, sequence number, item)
         self._heap = []
+        # Orders the items inserted within the clock resolution and keeps
+        # the heap from ever comparing the items themselves.
+        self._seq = count()
 
         if data:
             # import items from data
@@ -548,11 +560,18 @@ class LimitedSet:
 
     def add(self, item, now=None):
         # type: (Any, float) -> None
-        """Add a new item, or reset the expiry time of an existing item."""
-        now = now or time.monotonic()
+        """Add a new item, or reset the expiry time of an existing item.
+
+        Arguments:
+            now (float): Insertion time of the item, as read from
+                :func:`time.monotonic` -- by default right now.
+        """
+        # A float, whatever is given: update(dict), which pickling goes
+        # through, takes nothing else.
+        now = time.monotonic() if now is None else float(now)
         if item in self._data:
             self.discard(item)
-        entry = (now, item)
+        entry = (now, next(self._seq), item)
         self._data[item] = entry
         heappush(self._heap, entry)
         if self.maxlen and len(self._data) >= self.maxlen:
@@ -568,10 +587,10 @@ class LimitedSet:
             self._refresh_heap()
             self.purge()
         elif isinstance(other, dict):
-            # revokes are sent as a dict
+            # {item: insertion time}, or {item: (insertion time, ...)}
+            # in case someone uses ._data directly for sending update
             for key, inserted in other.items():
                 if isinstance(inserted, (tuple, list)):
-                    # in case someone uses ._data directly for sending update
                     inserted = inserted[0]
                 if not isinstance(inserted, float):
                     raise ValueError(
@@ -579,8 +598,12 @@ class LimitedSet:
                         f'{type(inserted)!r} with value: {inserted}')
                 self.add(key, inserted)
         else:
-            # XXX AVOID THIS, it could keep old data if more parties
-            # exchange them all over and over again
+            # The items are stamped with the local clock: the way to merge
+            # a set built on another host, whose stamps are not comparable
+            # with ours (see the class docstring).  Note that an item lives
+            # ``expires`` from now on rather than from its insertion there,
+            # so it could be kept alive if more parties exchange their sets
+            # all over and over again.
             for obj in other:
                 self.add(obj)
 
@@ -599,7 +622,7 @@ class LimitedSet:
             now (float): Time of purging -- by default right now.
                 This can be useful for unit testing.
         """
-        now = now or time.monotonic()
+        now = time.monotonic() if now is None else now
         now = now() if isinstance(now, Callable) else now
         if self.maxlen:
             while len(self._data) > self.maxlen:
@@ -607,7 +630,7 @@ class LimitedSet:
         # time based expiring:
         if self.expires:
             while len(self._data) > self.minlen >= 0:
-                inserted_time, _ = self._heap[0]
+                inserted_time = self._heap[0][0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
                 self.pop()
@@ -615,7 +638,7 @@ class LimitedSet:
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, item = heappop(self._heap)
+            _, _, item = heappop(self._heap)
             try:
                 self._data.pop(item)
             except KeyError:
@@ -638,11 +661,13 @@ class LimitedSet:
             >>> r == s
             True
         """
-        return {key: inserted for inserted, key in self._data.values()}
+        return {key: inserted for inserted, _, key in self._data.values()}
 
     def __eq__(self, other):
         # type: (Any) -> bool
-        return self._data == other._data
+        if not isinstance(other, LimitedSet):
+            return NotImplemented
+        return self.as_dict() == other.as_dict()
 
     def __repr__(self):
         # type: () -> str
@@ -652,7 +677,7 @@ class LimitedSet:
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, i in sorted(self._data.values()))
+        return (i for _, _, i in sorted(self._data.values()))
 
     def __len__(self):
         # type: () -> int
@@ -664,6 +689,8 @@ class LimitedSet:
 
     def __reduce__(self):
         # type: () -> Any
+        # The sequence numbers are not kept: the items are added again in
+        # their order, from the insertion times.
         return self.__class__, (
             self.maxlen, self.expires, self.as_dict(), self.minlen)
 
