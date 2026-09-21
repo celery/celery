@@ -18,7 +18,7 @@
 -r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
 -r extras/azureblockblob.txt
-git+https://github.com/celery/kombu.git
+kombu>=5.6.2
 
 # SQS dependencies other than boto
 pycurl>=7.43.0.5,<7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version < "3.9"

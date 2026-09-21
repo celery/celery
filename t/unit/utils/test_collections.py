@@ -1,5 +1,6 @@
 import pickle
 from collections.abc import Mapping
+from copy import copy
 from itertools import count
 from time import monotonic
 from unittest.mock import Mock
@@ -8,6 +9,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
 from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
@@ -53,6 +55,73 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    @pytest.mark.parametrize('default_count', [0, 1, 2, 4])
+    def test_copy(self, copy_fun, default_count):
+        nested = []
+        defaults = [{'default': index} for index in range(default_count)]
+        view = ConfigurationView({'changed': 1, 'nested': nested}, defaults)
+
+        copied = copy_fun(view)
+
+        assert dict(copied) == dict(view)
+        assert copied is not view
+        assert copied.changes is not view.changes
+        assert copied.nested is nested
+        assert copied.defaults is not view.defaults
+        for original, duplicate in zip(view.defaults, copied.defaults):
+            assert duplicate is original
+        copied.changed = 2
+        assert view.changed == 1
+        copied.add_defaults({'additional': 3})
+        assert 'additional' not in view
+        if defaults:
+            defaults[0]['default'] = 10
+            assert copied.default == view.default == 10
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_conversions(self, copy_fun):
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': True},
+            [{'CELERY_TASK_DEFAULT_QUEUE': 'custom'}],
+            keys=(_old_key_to_new, _new_key_to_old), prefix='CELERY',
+        )
+
+        copied = copy_fun(view)
+
+        assert copied.task_always_eager is True
+        assert copied.task_default_queue == 'custom'
+        copied.task_always_eager = False
+        assert copied.task_always_eager is False
+        assert view.task_always_eager is True
+        assert 'task_default_queue' in copied
+        assert copied.prefix == view.prefix
+        assert copied._keys == view._keys
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_t(self, copy_fun):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        copied = copy_fun(view)
+
+        assert copied['foo'] == 1
+        copied['bar'] = 2
+        assert copied.changes['BAR'] == 2
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_does_not_share_observers(self, copy_fun):
+        view = ConfigurationView({'foo': 1})
+        callback = Mock()
+        view.bind_to(callback)
+
+        copied = copy_fun(view)
+        copied.update(foo=2)
+
+        callback.assert_not_called()
+        view.update(foo=3)
+        callback.assert_called_once_with(foo=3)
+
     def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
@@ -72,15 +141,83 @@ class test_ConfigurationView:
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
 
+    def test_getitem_respects_map_order(self):
+        # Changes are searched before defaults.
+        view = ConfigurationView(
+            {'foo': 1},
+            [{'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # Default mappings are also searched in order.
+        view = ConfigurationView(
+            {},
+            [{'foo': 1}, {'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # An old key in an earlier map wins over a new key in a later map.
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': 1},
+            [{'task_always_eager': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['task_always_eager'] == 1
+
+        # The same applies when the earlier map uses the new key.
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            [{'CELERY_ALWAYS_EAGER': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
+    def test_missing_key_with_prefix(self):
+        view = ConfigurationView({}, prefix='celery')
+        with pytest.raises(KeyError) as exc_info:
+            view['nonexisting']
+        assert exc_info.value.args[0] == (
+            "Key not found: 'nonexisting' (with prefix: 'celery_nonexisting')"
+        )
+
     def test_update(self):
         changes = dict(self.view.changes)
         self.view.update(a=1, b=2, c=3)
         assert self.view.changes == dict(changes, a=1, b=2, c=3)
 
+    def test_swap_with_keys(self):
+        view = ConfigurationView({})
+        other = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert other['CELERY_ALWAYS_EAGER'] == 1
+
+        view.swap_with(other)
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
     def test_contains(self):
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
         assert 'new' not in self.view
+
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
 
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
@@ -458,3 +595,44 @@ class test_ChainMap:
         callback.assert_not_called()
         a.update(x=1)
         callback.assert_called_once_with(x=1)
+
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'foo': 1, 'bar': 2}, id='mapping'),
+        pytest.param([('foo', 1), ('bar', 2)], id='list-of-pairs'),
+        pytest.param((('foo', 1), ('bar', 2)), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('foo', 1), ('bar', 2)]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_with_positional_argument_notifies_observer(self, updates):
+        a = ChainMap()
+        observed = {}
+        a.bind_to(observed.update)
+
+        a.update(updates)
+        assert a.changes == observed == {'foo': 1, 'bar': 2}
+
+    def test_pop_applies_key_t(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.pop('foo') == 1
+        assert 'foo' not in cm
+
+    def test_get_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm['foo'] = 1
+        assert cm.get('foo') == 1
+        assert cm.get('missing', 'fallback') == 'fallback'
+
+    def test_setdefault_applies_key_t_once(self):
+        cm = ChainMap(key_t=lambda key: key + '!')
+        cm.setdefault('foo', 1)
+        assert cm.changes == {'foo!': 1}
+        cm.setdefault('foo', 2)
+        assert cm.changes == {'foo!': 1}
+
+    def test_getitem_respects_map_order(self):
+        cm = ChainMap({'foo': 1}, {'foo': 2, 'bar': 3})
+        assert cm['foo'] == 1
+        assert cm['bar'] == 3

@@ -10,11 +10,13 @@ from billiard.pool import ApplyResult
 from kombu.asynchronous import Hub
 
 import t.skip
+from celery.app import base as app_base
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+from t.unit.conftest import restore_execv_state
 
 try:
     from celery.concurrency import asynpool
@@ -66,7 +68,8 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer(self, _get_start_method, _signals, set_mp_process_title, restore_logging):
         from celery import signals
         from celery._state import _tls
         from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
@@ -85,13 +88,11 @@ class test_process_initializer:
                 'celeryd', hostname='awesome.worker.com',
             )
 
-            with patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    S.assert_called_with(app, 'luke.worker.com')
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                process_initializer(app, 'luke.worker.com')
+                S.assert_called_with(app, 'luke.worker.com')
 
             os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
             app.log.setup = Mock(name='log_setup')
@@ -100,8 +101,46 @@ class test_process_initializer:
             finally:
                 os.environ.pop('CELERY_LOG_FILE', None)
 
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='spawn')
+    def test_process_initializer_spawned_child(self, _get_start_method, _signals, set_mp_process_title,
+                                               restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'spawned.worker.com')
+                assert os.environ['FORKED_BY_MULTIPROCESSING'] == '1'
+                # base was imported before the child knew it was spawned, so
+                # the flag has to be set too, not just the variable.
+                assert app_base.USING_EXECV
+                S.assert_called_with(app, 'spawned.worker.com')
+            assert app.loader.init_worker.call_count
+
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer_forked_child(self, _get_start_method, _signals, set_mp_process_title,
+                                              restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'forked.worker.com')
+                assert 'FORKED_BY_MULTIPROCESSING' not in os.environ
+                assert not app_base.USING_EXECV
+                S.assert_not_called()
+
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_pdeath_sig(self, _get_start_method, _set_pdeathsig, set_mp_process_title, restore_logging):
         from celery import signals
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
@@ -1114,3 +1153,28 @@ class test_TaskPool:
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 8.0
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_fork(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=True)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _forking_enable.assert_called_once_with(True)
+        _set_start_method.assert_not_called()
+
+    @patch.dict(os.environ, clear=False)
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_spawn(self, _forking_enable, _set_start_method):
+        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=False)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _set_start_method.assert_called_once_with('spawn', force=True)
+        _forking_enable.assert_not_called()
+        # spawned children must be flagged as fresh interpreters so they
+        # re-run setup_worker_optimizations in process_initializer.
+        assert os.environ.get('FORKED_BY_MULTIPROCESSING') == '1'

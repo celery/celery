@@ -7,7 +7,7 @@ import pytest
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
-from celery import Task, chain, group, uuid
+from celery import Task, chain, chord, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
@@ -1284,6 +1284,73 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_chain_ending_in_group(self):
+        c = chain(
+            [
+                self.mytask.si(),
+                group(
+                    [self.mytask.si(), self.mytask.si()],
+                    app=self.app,
+                ),
+            ],
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
+    def test_replace_chain_ending_in_group_with_tuple(self):
+        c = chain(
+            (
+                self.mytask.si(),
+                group(
+                    [self.mytask.si(), self.mytask.si()],
+                    app=self.app,
+                ),
+            ),
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
+    def test_replace_chain_ending_in_group_with_positional_tasks(self):
+        c = chain(
+            self.mytask.si(),
+            group(
+                [self.mytask.si(), self.mytask.si()],
+                app=self.app,
+            ),
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
     def test_replace_run(self):
         with pytest.raises(Ignore):
             self.task_replaced_by_other_task.run()
@@ -1893,6 +1960,16 @@ class test_apply_async(TasksCase):
                 *expected_args,
                 **expected_kwargs
             )
+
+    def test_apply_async_does_not_mutate_cached_execution_options(self):
+        """apply_async() must not mutate cached execution options."""
+        task = self.task_with_ignored_result
+        original_options = task._get_exec_options().copy()
+
+        with patch.object(self.app, 'send_task'):
+            task.apply_async()
+
+        assert task._get_exec_options() == original_options
 
     def test_task_with_result(self):
         with patch.object(self.app, 'send_task') as send_task:

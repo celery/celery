@@ -92,6 +92,10 @@ class Queues(dict):
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
+        if self.max_priority is not None:
+            if queue.queue_arguments is None:
+                queue.queue_arguments = {}
+            self._set_max_priority(queue.queue_arguments)
         super().__setitem__(name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
@@ -134,10 +138,6 @@ class Queues(dict):
             queue.exchange = self.default_exchange
         if not queue.routing_key:
             queue.routing_key = self.default_routing_key
-        if self.max_priority is not None:
-            if queue.queue_arguments is None:
-                queue.queue_arguments = {}
-            self._set_max_priority(queue.queue_arguments)
         self[queue.name] = queue
         return queue
 
@@ -195,8 +195,9 @@ class Queues(dict):
             else:
                 consume_from = self._consume_from
 
-            for queue in exclude:
-                consume_from.pop(queue, None)
+            for name in exclude:
+                queue = self.aliases.get(name)
+                consume_from.pop(queue.name if queue is not None else name, None)
 
     def new_missing(self, name):
         queue_arguments = None
@@ -360,9 +361,9 @@ class AMQP:
             expires = expires and expires.isoformat()
 
         if argsrepr is None:
-            argsrepr = saferepr(args, self.argsrepr_maxsize)
+            argsrepr = saferepr(args, self.argsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
         if kwargsrepr is None:
-            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize)
+            kwargsrepr = saferepr(kwargs, self.kwargsrepr_maxsize, maxlevels=self.app.conf.task_repr_maxlevels)
 
         if not root_id:  # empty root_id defaults to task_id
             root_id = task_id
@@ -657,7 +658,9 @@ class AMQP:
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
-        if ('task_routes' in kwargs or 'task_routes' in args):
-            self.flush_routes()
-            self.router = self.Router()
-        return
+        route_keys = self.app.conf._to_keys('task_routes')
+        for key in route_keys:
+            if key in kwargs or (args and key in args[0]):
+                self.flush_routes()
+                self.router = self.Router()
+                return

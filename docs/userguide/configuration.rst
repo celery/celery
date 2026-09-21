@@ -419,6 +419,19 @@ methods that have been registered with :mod:`kombu.serialization.registry`.
 
     :ref:`calling-serializers`.
 
+.. setting:: task_repr_maxlevels
+
+``task_repr_maxlevels``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 3.
+
+Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
+Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
+:const:`None` for no limit.
+
 .. setting:: task_publish_retry
 
 ``task_publish_retry``
@@ -941,6 +954,12 @@ Result serialization format.
 See :ref:`calling-serializers` for information about supported
 serialization formats.
 
+.. versionchanged:: 5.7
+
+    The database backend now honors this setting; see the note under
+    :ref:`conf-database-result-backend` for details on what changes for
+    existing deployments.
+
 .. setting:: result_compression
 
 ``result_compression``
@@ -966,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
@@ -981,7 +1003,18 @@ and client first and turn the setting on afterwards.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue) to be written to backend.
+retries, queue, stamps) to be written to backend.
+
+.. versionadded:: 5.7
+    Added storing task stamping metadata (``stamps``) in the database backend.
+
+.. note::
+
+    When using the database backend with :setting:`result_extended` set to ``True``,
+    task stamping metadata is stored in a ``stamps`` column. For existing database deployments
+    upgrading with an already-created ``celery_taskmeta`` table, operators must execute the
+    appropriate DDL migration to add the column before upgrading (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
+    or ``BYTEA`` on PostgreSQL); this migration is required as result writes will otherwise fail.
 
 .. setting:: result_expires
 
@@ -1054,7 +1087,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -1096,6 +1129,24 @@ Database backend settings
 
         result_backend_always_retry = True
         result_backend_max_retries = 10
+
+.. note::
+
+    **Database backend now honors** :setting:`result_serializer`
+
+    Prior to Celery 5.7, the database backend always stored the ``result``
+    column of the ``celery_taskmeta`` and ``celery_tasksetmeta`` tables as a
+    Python pickle, regardless of the configured :setting:`result_serializer`
+    (see `celery/celery#3025 <https://github.com/celery/celery/issues/3025>`_).
+    As of 5.7, the column holds the bytes produced by whatever serializer you
+    configure, exactly like every other result backend.
+
+    No schema change or migration is required: the column type on the
+    database side is unchanged, only what gets written into it. Rows written
+    by an earlier Celery version are always a pickle blob no matter what
+    :setting:`result_serializer` says, and are still read back correctly
+    after upgrading — the backend detects and unpickles them automatically.
+    Only newly written results use the configured serializer.
 
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1257,6 +1308,19 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. note::
+
+    Starting in Celery 5.7, the database result backend supports storing task
+    children in the ``children`` column of ``celery_taskmeta``.
+    Celery automatically attempts to add this missing column to existing tables
+    at startup. If your database user does not have DDL / ``ALTER TABLE`` permissions,
+    you can execute the migration manually:
+
+    .. code-block:: sql
+
+        ALTER TABLE celery_taskmeta ADD COLUMN children BLOB;  -- SQLite / MySQL
+        ALTER TABLE celery_taskmeta ADD COLUMN children BYTEA; -- PostgreSQL
 
 .. setting:: database_engine_callback
 
@@ -2155,7 +2219,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
@@ -3447,6 +3511,9 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
+
 Accepts an integer or the string ``"auto"``. Setting it to ``"auto"``
 (equivalent to passing ``--concurrency=auto``) enables cgroup-aware
 sizing on Linux: for CPU-bound pools (``prefork``, ``solo``) the value
@@ -3455,7 +3522,7 @@ is derived from the CFS bandwidth quota
 ``cpu.cfs_period_us`` on cgroup v1), preventing oversubscription inside
 Kubernetes pods and Docker containers with CPU limits. For greenlet
 pools (``gevent``, ``eventlet``) and the thread pool, ``"auto"`` is a
-no-op and falls back to ``os.cpu_count()`` — concurrency for those
+no-op and falls back to ``os.cpu_count()``; concurrency for those
 pools is bound by memory and file descriptors, not CPU. On non-Linux
 platforms or when no cgroup CPU controller is mounted, ``"auto"``
 silently falls back to ``os.cpu_count()``.
@@ -3478,6 +3545,9 @@ to the workers.
 To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
+
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
 
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
@@ -4248,6 +4318,31 @@ Default: Disabled by default.
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
 
+.. setting:: worker_pool_start_method
+
+``worker_pool_start_method``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: ``"fork"``.
+
+Start method used to create the child processes of the prefork pool. Only
+meaningful for the prefork pool; ignored by the eventlet/gevent/solo pools.
+
+- ``"fork"`` (default): children are created with ``fork()``. This is fast,
+  and shares the parent's already-imported modules and memory copy-on-write,
+  but is **unsafe** when the parent process has started threads or uses
+  C-extensions that are not fork-safe (for example gRPC, ``psycopg`` or
+  CUDA), and can deadlock or corrupt state in the children.
+- ``"spawn"``: each child is started in a fresh Python interpreter. This is
+  safe in the presence of threads and fork-unsafe C-extensions, at the cost
+  of slower start-up, higher memory usage, and the requirement that the app
+  and task arguments are picklable and that your entry point is guarded by
+  ``if __name__ == '__main__':``. A replacement child has to finish importing
+  your application within :setting:`worker_proc_alive_timeout`, so raise that
+  setting for applications that take longer to import.
+
 .. setting:: worker_autoscaler
 
 ``worker_autoscaler``
@@ -4428,8 +4523,10 @@ that it's possible to shut down in a timely manner.
 Default: None.
 
 When using cron, the number of seconds :mod:`~celery.bin.beat` can look back
-when deciding whether a cron schedule is due. When set to `None`, cronjobs that
-are past due will always run immediately.
+when deciding whether a cron schedule is due. Only the most recent missed run
+time is considered: if it's within the deadline the task runs immediately,
+otherwise it waits until its next scheduled time. When set to `None`, cronjobs
+that are past due will always run immediately.
 
 .. warning::
 
