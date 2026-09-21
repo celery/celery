@@ -35,5 +35,5 @@ jobs:
     uses: ./.github/workflows/smoke-tests.yml
     with:
       test_path: ${{ matrix.test_path }}
-      python_versions: '["3.13"]'
+      python_versions: '["3.14", "3.15"]'
       dev_requirements: true
