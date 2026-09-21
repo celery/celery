@@ -359,10 +359,6 @@ class Signature(dict):
                 immutable=immutable,
             )
 
-        # Issue #8182: Mark as not originating from serialization
-        if "from_serialized" not in self:
-            self["from_serialized"] = False
-
     def __call__(self, *partial_args, **partial_kwargs):
         """Call the task directly (in the current process)."""
         args, kwargs, _ = self._merge(partial_args, partial_kwargs, None)
@@ -860,12 +856,15 @@ class Signature(dict):
         # Issue #8182:
         # Mark this signature as originating from a serialization
         dic = dict(self)
-        dic["from_serialized"] = True
-
+        dic["_from_serialized"] = True
         return signature, (dic,)
 
     def __json__(self):
-        return dict(self)
+        # Issue #8182:
+        # Mark this signature as originating from a serialization
+        dic = dict(self)
+        dic["_from_serialized"] = True
+        return dic
 
     def __repr__(self):
         return self.reprcall()
@@ -1889,11 +1888,11 @@ class group(Signature):
                 chord_size += _chord._descend(sig)
 
                 # Issue 8182:
-                # Set chord size not in ForkedWorker via "from_serialized"
+                # Set chord size not in ForkedWorker via "_from_serialized"
                 # marker check
                 if (
                     isinstance(chord_obj, Signature)
-                    and not chord_obj["from_serialized"]
+                    and "_from_serialized" not in chord_obj
                     and next_task is None
                 ):
                     app.backend.set_chord_size(group_id, chord_size)

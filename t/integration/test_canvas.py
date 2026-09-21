@@ -1246,7 +1246,7 @@ class test_chain:
 
         actual = sig.delay().get(timeout=TIMEOUT)
 
-        assert actual == [[1, [3, 4]], 5]
+        assert tuple(actual) == ([1, [3, 4]], 5)
 
     def test_chain_group_chain_to_chord_sync(self, manager):
         """
@@ -1279,7 +1279,7 @@ class test_chain:
 
         actual = sig.delay().get(timeout=TIMEOUT)
 
-        assert actual == [[1, -3], 5]
+        assert tuple(actual) == ([1, -3], 5)
 
 
 class test_result_set:
