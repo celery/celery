@@ -4543,10 +4543,14 @@ within the timeout. Note that :option:`--timeout <celery inspect
 --timeout>` defaults to one second, which a probe that also has to
 establish a broker connection can easily exceed.
 
-Beat replies with the same ``{'ok': 'pong'}`` a worker sends. The
-control node runs in its own thread, so a reply shows that the beat
-process is alive and reaching the broker -- it doesn't on its own prove
-that the scheduler loop is still advancing.
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends, and stops
+replying once the scheduler falls behind -- see
+:setting:`beat_remote_control_max_tick_age`.
+
+The node name defaults to ``celerybeat@hostname`` and can be set with
+:option:`--hostname <celery beat --hostname>`. The setting itself can be
+overridden per process with
+:option:`--enable-remote-control <celery beat --enable-remote-control>`.
 
 Note that when this is enabled, beat will also show up as a node in
 the output of destination-less :program:`celery inspect ping` and
@@ -4560,6 +4564,34 @@ process.
 
 Availability: RabbitMQ (AMQP) and Redis transports (the same
 transports that support worker remote control).
+
+.. setting:: beat_remote_control_max_tick_age
+
+``beat_remote_control_max_tick_age``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (twice :setting:`beat_max_loop_interval`).
+
+Only has an effect when :setting:`beat_enable_remote_control` is
+enabled.
+
+Seconds the scheduler may go without completing a pass before beat
+stops answering :program:`celery inspect ping`. The control node runs
+in a thread of its own, so without this a ping would be answered even
+by a beat whose scheduler loop had wedged -- the exact failure a health
+check exists to catch.
+
+The default tolerates exactly one missed pass. Beat records a tick when
+it starts, so a process that wedges before its first tick goes stale on
+the same schedule rather than looking healthy forever.
+
+Beat declines by staying silent, because :program:`celery inspect`
+exits non-zero only when no node replies at all; an error reply would
+leave the exit status at zero. Each refusal is logged as a warning.
+
+Set to ``0`` to answer regardless of how long ago the last tick was.
 
 .. setting:: beat_logfile
 

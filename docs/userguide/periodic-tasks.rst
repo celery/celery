@@ -488,9 +488,11 @@ Health checks
 
 By default there's no way to check whether a running beat process is
 still healthy. If you enable the
-:setting:`beat_enable_remote_control` setting, beat joins the same
-remote-control exchange the workers use (as a node named
-``celerybeat@hostname``) and answers :program:`celery inspect ping`:
+:setting:`beat_enable_remote_control` setting -- or pass
+:option:`--enable-remote-control <celery beat --enable-remote-control>`
+-- beat joins the same remote-control exchange the workers use (as a
+node named ``celerybeat@hostname``) and answers
+:program:`celery inspect ping`:
 
 .. code-block:: console
 
@@ -498,9 +500,59 @@ remote-control exchange the workers use (as a node named
     ->  celerybeat@example.com: OK
             pong
 
-The command exits non-zero when beat doesn't reply within the
-timeout, so it can be used directly as a liveness probe, for example
-in Kubernetes:
+The command exits non-zero when nobody replies within the timeout.
+Give :option:`--timeout <celery inspect --timeout>` room to spare: it
+defaults to one second, and the probe has to establish a broker
+connection of its own before it can ask anything.
+
+Beat's reply is the same ``{'ok': 'pong'}`` a worker sends, so nothing
+downstream has to special-case it.
+
+What a reply means
+~~~~~~~~~~~~~~~~~~
+
+The control node runs in its own thread, so on its own a reply would
+only prove that the process is alive and reaching the broker -- not
+that the schedule is advancing. To close that gap, beat stops answering
+once the scheduler has not completed a pass for
+:setting:`beat_remote_control_max_tick_age` seconds, which defaults to
+twice the scheduler's maximum loop interval. A wedged scheduler
+therefore fails the probe rather than passing it.
+
+Silence is deliberate: :program:`celery inspect` exits non-zero only
+when *no* node replies, so an error reply would leave the exit status
+at zero and the probe green. Beat logs a warning each time it declines,
+so the reason is visible in its own output.
+
+Set :setting:`beat_remote_control_max_tick_age` to ``0`` to answer
+regardless of tick age.
+
+Use it as a readiness probe first
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because the check travels over the broker, it fails whenever the broker
+is unreachable -- including during an ordinary broker restart, and for
+every beat pod at once. Restarting beat does not fix a broker outage,
+and a beat that restarts re-reads its schedule, so a liveness probe
+wired straight to this command can turn a short broker blip into a
+cluster-wide restart storm. Prefer a readiness probe:
+
+.. code-block:: yaml
+
+    readinessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      failureThreshold: 3
+
+If you do want a liveness probe -- to have a wedged beat restarted
+automatically -- give it enough ``failureThreshold`` to ride out a
+broker restart, and enough ``initialDelaySeconds`` for the pidbox
+consumer to have connected, or the first probe will kill a healthy pod:
 
 .. code-block:: yaml
 
@@ -509,19 +561,46 @@ in Kubernetes:
         command:
           - /bin/sh
           - -c
-          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
-      initialDelaySeconds: 30
+          - celery -A proj inspect ping -t 10 -d celerybeat@$(hostname)
+      initialDelaySeconds: 60
       periodSeconds: 60
+      failureThreshold: 5
 
-Give :option:`--timeout <celery inspect --timeout>` room to spare: it
-defaults to one second, and the probe has to establish a broker
-connection before it can ask anything.
+Comparison with a heartbeat file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Beat's reply is the same ``{'ok': 'pong'}`` a worker sends, so nothing
-downstream has to special-case it. Note what the check does and does
-not prove: the control node runs in its own thread, so a reply means
-the beat process is alive and reaching the broker, not that the
-scheduler loop is still advancing.
+Projects such as `django-celery-beat`_ and Nautobot take a different
+approach: the scheduler touches a file on each tick, and the probe
+checks its age. That has no broker dependency at all, so it cannot be
+taken down by a broker outage, and it proves the tick loop directly.
+
+The trade-off is reach. A file is only visible from inside the
+container, so it answers "is *this* beat alive" and nothing more.
+Remote control answers the same question from anywhere that can talk to
+the broker, which is what lets ``celery status`` and centralised
+monitoring see beat alongside the workers. Pick the file if you only
+need a local probe; pick remote control if you want beat visible in the
+same place as everything else.
+
+.. _django-celery-beat:
+    https://github.com/celery/django-celery-beat
+
+Interactions worth knowing
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Beat shows up as a node in destination-less
+  :program:`celery inspect ping` and :program:`celery status` output
+  once this is enabled. If you count nodes in those replies, the count
+  changes.
+* For the same reason, a destination-less broadcast with a reply limit
+  -- ``app.control.ping(limit=1)``, say -- may now come back with beat
+  instead of a worker.
+* Beat implements ``ping`` and nothing else. Other remote-control
+  commands are ignored silently, ``shutdown`` included: ``celery
+  control shutdown`` stops your workers and leaves beat running.
+* A beat scheduler embedded in a worker
+  (:option:`-B <celery worker -B>`) never starts a control node, since
+  the worker already answers for that process.
 
 .. _beat-custom-schedulers:
 
