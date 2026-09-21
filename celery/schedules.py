@@ -722,12 +722,10 @@ class crontab(BaseSchedule):
         now = self.maybe_make_aware(self.now()).astimezone(schedule_tz)
 
         next_run_at = self._next_occurrence(last_run_at)
-        print("next_run_at", next_run_at.isoformat())
         if next_run_at.fold and self._orig_hour != "*":
             # do not run the second hours of a daylight saving end (folded)
             # except if we were asked for an every hour run ("*")
             next_run_at = self._next_occurrence(next_run_at)
-            print("next_run_at after folded", next_run_at.isoformat())
 
         if C_REMDEBUG:  # pragma: no cover
             print(
