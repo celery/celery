@@ -206,6 +206,39 @@ class test_Inspect:
         ret = inspect.report()
         assert len(ret) == 1
         assert ret[NODENAME] == {'ok': ANY}
+        assert 'software -> celery:' in ret[NODENAME]['ok']
+
+    @flaky
+    def test_report_with_multiserver_result_backend(self, manager):
+        """Tests bugreport with multi-server and Sentinel result backends."""
+        app = manager.app
+        orig_backend = app.conf.result_backend
+        try:
+            app.conf.result_backend = (
+                'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+            )
+            report = app.bugreport()
+            assert 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/' in report
+
+            app.conf.result_backend = (
+                'sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0'
+            )
+            report = app.bugreport()
+            assert 'secret1' not in report
+            assert 'secret2' not in report
+            assert 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0' in report
+
+            app.conf.result_backend = 'redis://:p,ass@word@localhost:6379/0'
+            report = app.bugreport()
+            assert 'p,ass@word' not in report
+            assert 'redis://:********@localhost:6379/0' in report
+
+            app.conf.result_backend = 'redis://user:p,a@ss@localhost:6379/0'
+            report = app.bugreport()
+            assert 'p,a@ss' not in report
+            assert 'redis://user:********@localhost:6379/0' in report
+        finally:
+            app.conf.result_backend = orig_backend
 
     @flaky
     def test_revoked(self, inspect):
