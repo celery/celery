@@ -13,6 +13,12 @@ except ImportError:
     Cluster = PasswordAuthenticator = None
 
 try:
+    from couchbase.exceptions import DocumentNotFoundException
+except ImportError:  # pragma: no cover
+    class DocumentNotFoundException(Exception):
+        """Stand-in so ``except`` clauses stay valid without the SDK."""
+
+try:
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     FMT_AUTO = None
@@ -98,7 +104,12 @@ class CouchbaseBackend(KeyValueStoreBackend):
         return self._get_connection()
 
     def get(self, key):
-        return self.connection.get(key).content
+        try:
+            return self.connection.get(key).content
+        except DocumentNotFoundException:
+            # A missing document means no (or expired) result, not an error:
+            # the KV backend contract is to return None for absent keys.
+            return None
 
     def set(self, key, value):
         # Since 4.0.0 value is JSONType in couchbase lib, so parameter format isn't needed
@@ -111,4 +122,9 @@ class CouchbaseBackend(KeyValueStoreBackend):
         return self.connection.get_multi(keys)
 
     def delete(self, key):
-        self.connection.remove(key)
+        try:
+            self.connection.remove(key)
+        except DocumentNotFoundException:
+            # Deleting an absent (already expired or forgotten) key is a
+            # no-op, matching the other KV backends.
+            pass

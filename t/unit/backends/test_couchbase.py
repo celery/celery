@@ -19,6 +19,8 @@ COUCHBASE_BUCKET = 'celery_bucket'
 
 pytest.importorskip('couchbase')
 
+from couchbase.exceptions import DocumentNotFoundException, TimeoutException  # noqa: E402
+
 
 class test_CouchbaseBackend:
 
@@ -61,6 +63,36 @@ class test_CouchbaseBackend:
         assert x.get('1f3fab') == sentinel.retval
         x._connection.get.assert_called_once_with('1f3fab')
 
+    def test_get_missing_document_returns_None(self):
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.get = Mock(
+            side_effect=DocumentNotFoundException('missing'))
+        # absent or expired results must surface as None, like every
+        # other KV backend, not as an exception through get_task_meta
+        assert x.get('1f3fab') is None
+        x._connection.get.assert_called_once_with('1f3fab')
+
+    def test_get_task_meta_pending_for_missing_document(self):
+        # the user-visible contract this PR is about: AsyncResult(id).state
+        # must read PENDING when the result document was never stored (or
+        # has expired), instead of raising
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.get = Mock(
+            side_effect=DocumentNotFoundException('missing'))
+        assert x.get_task_meta('1f3fab')['status'] == states.PENDING
+
+    def test_get_unrelated_sdk_errors_propagate(self):
+        # only DocumentNotFoundException maps to an absent result; any other
+        # SDK error (a timeout, say) must still reach the caller instead of
+        # silently reading as a pending result
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.get = Mock(side_effect=TimeoutException('timed out'))
+        with pytest.raises(TimeoutException):
+            x.get('1f3fab')
+
     def test_set_no_expires(self):
         self.app.conf.couchbase_backend_settings = None
         x = CouchbaseBackend(app=self.app)
@@ -88,6 +120,15 @@ class test_CouchbaseBackend:
         # should return None
         assert x.delete('1f3fab') is None
         x._connection.remove.assert_called_once_with('1f3fab')
+
+    def test_delete_missing_document_is_noop(self):
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.remove = Mock(
+            side_effect=DocumentNotFoundException('missing'))
+        # forget()/delete() on an already-expired or never-stored result
+        # must not raise, matching the other KV backends
+        assert x.delete('1f3fab') is None
 
     def test_config_params(self):
         self.app.conf.couchbase_backend_settings = {
