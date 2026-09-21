@@ -81,6 +81,13 @@ class test_Queues:
         assert isinstance(q['foo'], Queue)
         assert q['foo'].routing_key == 'rk'
 
+    def test_add_preserves_exchange_without_default(self):
+        exchange = Exchange('')
+        queues = Queues()
+        queues.add(Queue('foo', exchange=exchange))
+
+        assert queues['foo'].exchange is exchange
+
     def test_setitem_adds_default_exchange(self):
         q = Queues(default_exchange=Exchange('bar'))
         assert q.default_exchange
@@ -88,6 +95,18 @@ class test_Queues:
         queue.exchange = None
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
+
+    def test_setitem_adds_default_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo')
+
+        assert queues['foo'].routing_key == 'default-key'
+
+    def test_setitem_preserves_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo', routing_key='explicit-key')
+
+        assert queues['foo'].routing_key == 'explicit-key'
 
     def test_setitem_adds_max_priority(self):
         queues = Queues(max_priority=10)
@@ -229,6 +248,17 @@ class test_Queues:
         assert q.name == "spontaneous"
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
+
+    def test_missing_queue_invalid_type_raises_error(self):
+        queues = Queues(create_missing_queue_type="invalid")
+
+        with pytest.raises(ValueError) as exc_info:
+            queues['foo']
+
+        assert str(exc_info.value) == (
+            "Invalid queue type 'invalid'. "
+            "Valid types are 'classic' and 'quorum'."
+        )
 
 
 class test_default_queues:
