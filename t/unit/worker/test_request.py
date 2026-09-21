@@ -470,6 +470,8 @@ class test_Request(RequestCase):
 
         on_call = Mock(side_effect=assert_sender_has_request)
         task_failure.connect(on_call)
+        sentinel = Mock()
+        req.task.request_stack.push(sentinel)
 
         try:
             req.on_failure(einfo)
@@ -487,10 +489,11 @@ class test_Request(RequestCase):
             einfo=einfo
         )
 
-        assert captured_request[0] == req._context
+        assert captured_request[0] is req._context
 
-        # after the on_failure, task request stack is cleared
-        assert req.task.request_stack.top is None
+        # after the on_failure, the previous task request is restored
+        assert req.task.request_stack.top is sentinel
+        req.task.request_stack.pop()
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
                                                                  einfo.exception.exc,

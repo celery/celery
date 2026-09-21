@@ -741,12 +741,14 @@ class Request:
             # Temporarily add the context to the request stack so that
             # the task_failure handlers can access it.
             self.task.request_stack.push(self._context)
-            signals.task_failure.send(sender=self.task, task_id=self.id,
-                                      exception=exc, args=self.args,
-                                      kwargs=self.kwargs,
-                                      traceback=exc_info.traceback,
-                                      einfo=exc_info)
-            self.task.request_stack.pop()
+            try:
+                signals.task_failure.send(sender=self.task, task_id=self.id,
+                                          exception=exc, args=self.args,
+                                          kwargs=self.kwargs,
+                                          traceback=exc_info.traceback,
+                                          einfo=exc_info)
+            finally:
+                self.task.request_stack.pop()
 
         if send_failed_event:
             self.send_event(
