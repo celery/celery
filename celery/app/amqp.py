@@ -658,7 +658,9 @@ class AMQP:
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
-        if ('task_routes' in kwargs or 'task_routes' in args):
-            self.flush_routes()
-            self.router = self.Router()
-        return
+        route_keys = self.app.conf._to_keys('task_routes')
+        for key in route_keys:
+            if key in kwargs or (args and key in args[0]):
+                self.flush_routes()
+                self.router = self.Router()
+                return
