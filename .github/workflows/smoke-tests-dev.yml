@@ -1,0 +1,39 @@
+name: Smoke Tests (dev requirements)
+
+on:
+  push:
+    branches: [ 'main' ]
+    paths:
+      - '**.py'
+      - '**.txt'
+      - '.github/workflows/smoke-tests.yml'
+      - '.github/workflows/smoke-tests-dev.yml'
+      - 't/smoke/workers/docker/dev'
+      - 'tox.ini'
+  pull_request:
+    branches: [ 'main' ]
+    paths:
+      - '**.py'
+      - '**.txt'
+      - '.github/workflows/smoke-tests.yml'
+      - '.github/workflows/smoke-tests-dev.yml'
+      - 't/smoke/workers/docker/dev'
+      - 'tox.ini'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  Smoke-tests-dev:
+    strategy:
+      fail-fast: false
+      matrix:
+        test_path:
+          - t/smoke/tests/test_worker.py
+          - t/smoke/tests/test_tasks.py
+    uses: ./.github/workflows/smoke-tests.yml
+    with:
+      test_path: ${{ matrix.test_path }}
+      python_versions: '["3.13"]'
+      dev_requirements: true
