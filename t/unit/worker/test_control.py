@@ -1097,6 +1097,42 @@ class test_ControlPanel:
         assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
         assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
 
+    @pytest.mark.parametrize('ready_state', sorted(states.READY_STATES))
+    def test_revoke_keeps_finished_result(self, ready_state):
+        # A chord header failure marks the body tasks FAILURE and revokes
+        # them; the REVOKED write must not replace a result that is ready.
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.side_effect = lambda tid: (
+                ready_state if tid == 'task-1' else states.PENDING)
+            state = self.create_state()
+
+            control._revoke(state, ['task-1', 'task-2'])
+
+            assert 'task-1' in worker_state.revoked
+            assert 'task-2' in worker_state.revoked
+            self.app.backend.mark_as_revoked.assert_called_once_with(
+                'task-2', reason='revoked', store_result=True)
+
+    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES))
+    def test_revoke_marks_unfinished_task(self, unready_state):
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.return_value = unready_state
+            state = self.create_state()
+
+            control._revoke(state, ['task-1'])
+
+            self.app.backend.mark_as_revoked.assert_called_once_with(
+                'task-1', reason='revoked', store_result=True)
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_state_lookup_failure_defensive(self):
+        self.app.backend.get_state.side_effect = Exception('Backend error')
+        state = self.create_state()
+
+        control._revoke(state, ['task-1'])
+
+        assert 'task-1' in worker_state.revoked
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_failure_defensive(self):
         self.app.backend.mark_as_revoked.side_effect = Exception("Backend error")
