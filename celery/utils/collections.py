@@ -298,6 +298,11 @@ class ChainMap(MutableMapping):
 
     def update(self, *args, **kwargs):
         # type: (*Any, **Any) -> Any
+        if args:
+            # args contains at most one item: a mapping, or a list, tuple, or
+            # generator of key/value pairs. Normalize it to a dict so
+            # observers always receive one consistent, reusable format.
+            args = dict(*args),
         result = self.changes.update(*args, **kwargs)
         for callback in self._observers:
             callback(*args, **kwargs)
@@ -387,15 +392,16 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
         prefix = self.prefix
         if prefix:
             pkey = prefix + key if not key.startswith(prefix) else key
-            return match_case(pkey, prefix), key
-        return key,
+            keys = match_case(pkey, prefix), key
+        else:
+            keys = key,
+        return keys + (tuple(f(key) for f in self._keys) if self._keys else ())
 
     def __getitem__(self, key):
         # type: (str) -> Any
         keys = self._to_keys(key)
-        all_keys = keys + (tuple(f(key) for f in self._keys) if self._keys else ())
         for mapping in self.maps:
-            for k in all_keys:
+            for k in keys:
                 try:
                     return mapping[self._key(k)]
                 except KeyError:
@@ -404,9 +410,9 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
             # support subclasses implementing __missing__
             return self.__missing__(key)
         except KeyError:
-            if len(keys) > 1:
+            if self.prefix and len(keys) > 1:
                 raise KeyError(
-                    'Key not found: {1!r} (with prefix: {0!r})'.format(*keys))
+                    f'Key not found: {keys[1]!r} (with prefix: {keys[0]!r})')
             raise
 
     def __setitem__(self, key, value):
@@ -432,8 +438,8 @@ class ConfigurationView(ChainMap, AttributeDictMixin):
     def __contains__(self, key):
         # type: (str) -> bool
         contains = super().__contains__
-        all_keys = self._to_keys(key) + (tuple(f(key) for f in self._keys) if self._keys else ())
-        return any(contains(k) for k in all_keys)
+        keys = self._to_keys(key)
+        return any(contains(k) for k in keys)
 
     def swap_with(self, other):
         # type: (ConfigurationView) -> None
