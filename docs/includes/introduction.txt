@@ -1,4 +1,4 @@
-:Version: 5.6.2 (recovery)
+:Version: 5.7.0a1 (Collider)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -37,13 +37,13 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.1.x runs on,
+Celery version 5.7.x runs on,
 
-- Python 3.6 or newer versions
-- PyPy3.6 (7.3) or newer
+- Python 3.11 or newer versions
+- PyPy3.11 or newer
 
 
-From the next major version (Celery 6.x) Python 3.7 or newer is required.
+From the next major version (Celery 6.x) Python 3.12 or newer is required.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
