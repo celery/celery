@@ -2,6 +2,8 @@ import itertools
 import json
 import random
 import ssl
+import threading
+import time
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
@@ -669,6 +671,168 @@ class test_RedisResultConsumer:
         # The race_pop raised KeyError, so the entry was never actually removed.
         # The important thing is that on_wait_for_pending did not crash.
         assert task_id in consumer.backend._pending_messages
+
+    def _lock_is_held(self, lock):
+        # probe from another thread: a non-blocking acquire fails
+        # iff some thread currently holds the lock.
+        held = []
+
+        def probe():
+            acquired = lock.acquire(blocking=False)
+            held.append(not acquired)
+            if acquired:
+                lock.release()
+
+        t = threading.Thread(target=probe)
+        t.start()
+        t.join()
+        return held[0]
+
+    def test_pubsub_operations_hold_pubsub_lock(self):
+        """All operations on the shared pubsub object must hold _pubsub_lock."""
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        calls = []
+
+        def assert_locked(name):
+            def _call(*args, **kwargs):
+                calls.append((name, self._lock_is_held(consumer._pubsub_lock)))
+                return None
+            return _call
+
+        consumer._pubsub.subscribe.side_effect = assert_locked('subscribe')
+        consumer._pubsub.unsubscribe.side_effect = assert_locked('unsubscribe')
+        consumer._pubsub.get_message.side_effect = assert_locked('get_message')
+
+        consumer.consume_from('some-task')
+        consumer.drain_events(timeout=0)
+        consumer.cancel_for('some-task')
+
+        assert calls == [
+            ('subscribe', True),
+            ('get_message', True),
+            ('unsubscribe', True),
+        ]
+
+    def test_concurrent_pubsub_access_is_serialized(self):
+        """Race test for #4670.
+
+        subscribe/unsubscribe are issued from arbitrary threads (apply_async,
+        AsyncResult.__del__) while the drainer thread polls get_message on
+        the same pubsub object.  Without serialization the fake pubsub below
+        observes overlapping calls.
+        """
+        consumer = self.get_consumer()
+        consumer.start('initial')
+
+        active = 0
+        violations = []
+        guard = threading.Lock()
+
+        def racey(name):
+            def _call(*args, **kwargs):
+                nonlocal active
+                with guard:
+                    if active:
+                        violations.append(name)
+                    active += 1
+                try:
+                    time.sleep(0.002)  # widen the race window
+                finally:
+                    with guard:
+                        active -= 1
+                return None
+            return _call
+
+        consumer._pubsub.subscribe.side_effect = racey('subscribe')
+        consumer._pubsub.unsubscribe.side_effect = racey('unsubscribe')
+        consumer._pubsub.get_message.side_effect = racey('get_message')
+
+        stop = threading.Event()
+
+        def drain():
+            while not stop.is_set():
+                consumer.drain_events(timeout=0)
+
+        def hammer(n):
+            for i in range(50):
+                task_id = f'task-{n}-{i}'
+                consumer.consume_from(task_id)
+                consumer.cancel_for(task_id)
+
+        drainer = threading.Thread(target=drain)
+        workers = [threading.Thread(target=hammer, args=(n,))
+                   for n in range(4)]
+        drainer.start()
+        for t in workers:
+            t.start()
+        for t in workers:
+            t.join()
+        stop.set()
+        drainer.join()
+
+        assert not violations
+
+    def test_on_after_fork_replaces_pubsub_lock(self):
+        # the inherited lock may be held by a thread that did not survive
+        # the fork, so the child must not reuse it.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        inherited_lock = consumer._pubsub_lock
+        consumer.on_after_fork()
+        assert consumer._pubsub_lock is not inherited_lock
+
+    def test_drain_events_without_pubsub_sleeps_outside_lock(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+
+        def check_unlocked(_):
+            assert not self._lock_is_held(consumer._pubsub_lock)
+
+        with patch('celery.backends.redis.time.sleep') as sleep:
+            sleep.side_effect = check_unlocked
+            consumer.drain_events(timeout=1)
+        sleep.assert_called_once_with(1)
+
+    def test_stop_closes_pubsub(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        consumer.stop()
+        pubsub.close.assert_called_once()
+
+    def test_stop_without_pubsub_is_noop(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.stop()
+
+    def test_consume_from_starts_when_pubsub_missing(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.consume_from('some-task')
+        assert consumer._pubsub is not None
+        assert b'celery-task-meta-some-task' in consumer._pubsub._subscribed_to
+
+    def test_drain_events_processes_message(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        message = {'type': 'message', 'data': b'encoded-meta'}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub.get_message.side_effect = None
+        consumer._pubsub.get_message.return_value = message
+        with patch.object(consumer, '_decode_result', return_value=meta), \
+                patch.object(
+                    consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_called_once_with(meta, message)
+
+        # non-message types (e.g. subscribe confirmations) are ignored
+        consumer._pubsub.get_message.return_value = {
+            'type': 'subscribe', 'data': 1}
+        with patch.object(
+                consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_not_called()
 
 
 class basetest_RedisBackend:
