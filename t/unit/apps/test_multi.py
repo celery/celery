@@ -184,6 +184,46 @@ class test_multi_args:
         nodes = list(multi_args(p, cmd='celery multi', suffix='""'))
         assert [n.options['-c'] for n in nodes] == ['10', '10', '3']
 
+    def test_parse__index_list_out_of_range_with_named_nodes(self, tmp_path):
+        p = NamespacedOptionParser([
+            'foo', 'bar', '-c', '3', '-c:1,5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError, match="5"):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
+    def test_parse__index_list_zero_with_named_nodes(self, tmp_path):
+        p = NamespacedOptionParser([
+            'foo', 'bar', '-c', '3', '-c:0,1', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError, match="0"):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
+    def test_parse__range_with_count_assigns_without_raising(self, tmp_path):
+        p = NamespacedOptionParser([
+            '3', '-c:1-5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        nodes = list(multi_args(p, cmd='celery multi', suffix='""'))
+        assert [n.options['-c'] for n in nodes] == ['10', '10', '10']
+
+    def test_parse__single_out_of_range_with_count_raises(self, tmp_path):
+        p = NamespacedOptionParser([
+            '3', '-c:5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
     def test_optmerge(self):
         p = NamespacedOptionParser(['foo', 'test'])
         p.parse()

@@ -8,6 +8,20 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+.. _version-5.6.3:
+
+5.6.3
+=====
+
+:release-date: TBD
+:release-by: TBD
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- Fix ``celery multi`` silently dropping comma-separated index lists (e.g. ``-c:1,2``)
+  when used with named nodes (#10661)
+
 .. _version-5.6.2:
 
 5.6.2

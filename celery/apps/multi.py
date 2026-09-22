@@ -317,6 +317,10 @@ class MultiParser:
                 # node name and dashes in it are not range separators.
                 ranges = False
         if ranges:
+            # In range mode the node names *are* the indexes, so the mapping
+            # pass is an identity.  Keep it first regardless: reordering would
+            # make out-of-range members of ``-c:1-5`` raise instead of being
+            # ignored, which is a behaviour change for the count form.
             self._update_ns_opts(p, names)
             self._update_ns_ranges(p, ranges)
         else:
