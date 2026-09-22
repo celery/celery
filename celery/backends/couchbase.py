@@ -19,6 +19,11 @@ except ImportError:  # pragma: no cover
         """Stand-in so ``except`` clauses stay valid without the SDK."""
 
 try:
+    from couchbase.options import GetMultiOptions
+except ImportError:  # pragma: no cover
+    GetMultiOptions = None
+
+try:
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     FMT_AUTO = None
@@ -119,7 +124,23 @@ class CouchbaseBackend(KeyValueStoreBackend):
             self.connection.upsert(key, value, ttl=self.expires)
 
     def mget(self, keys):
-        return self.connection.get_multi(keys)
+        # ``get_multi`` returns a MultiGetResult, which is neither a mapping
+        # (no ``.items()``) nor iterable, so the KV contract's
+        # ``_mget_to_results`` cannot consume it. By default it also raises
+        # on the first failed key. Ask the SDK to keep per-key results, then
+        # build the plain dict: a missing document means no result (None),
+        # any other per-key failure is a real error and is re-raised.
+        if GetMultiOptions is None:  # pragma: no cover - SDK without the option
+            return self.connection.get_multi(keys)
+        result = self.connection.get_multi(
+            keys, GetMultiOptions(return_exceptions=True))
+        values = {key: None for key in keys}
+        for key, res in result.results.items():
+            values[key] = res.content
+        for exc in result.exceptions.values():
+            if not isinstance(exc, DocumentNotFoundException):
+                raise exc
+        return values
 
     def delete(self, key):
         try:
