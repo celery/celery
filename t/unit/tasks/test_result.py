@@ -7,11 +7,12 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from celery import states, uuid
+from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
 from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
+from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
+                           denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -860,6 +861,7 @@ class test_GroupResult:
             nested = self.app.GroupResult(uuid(), [nested])
         ts = self.app.GroupResult(uuid(), [successful[0], nested])
         callback = Mock() if with_callback else None
+        assert ts.supports_native_join
 
         values = getattr(ts, method)(propagate=False, callback=callback)
 
@@ -889,9 +891,29 @@ class test_GroupResult:
             self.app.AsyncResult(failed['id']),
         ])
         ts = self.app.GroupResult(uuid(), [nested])
+        assert ts.supports_native_join
 
         with pytest.raises(ValueError, match='failed'):
             getattr(ts, method)(**kwargs)
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_get_nested_sync_subtasks(self, method, depth):
+        ts = self.app.GroupResult(uuid(), make_mock_group(self.app, 2))
+        expected = [0, 1]
+        for _ in range(depth):
+            ts = self.app.GroupResult(uuid(), [ts])
+            expected = [expected]
+        assert ts.supports_native_join
+
+        with patch('celery.result.task_join_will_block',
+                   _state.orig_task_join_will_block):
+            with denied_join_result():
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)()
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)(disable_sync_subtasks=True)
+                assert getattr(ts, method)(disable_sync_subtasks=False) == expected
 
     def test_failed_join_report(self):
         res = Mock()
