@@ -846,6 +846,53 @@ class test_GroupResult:
         with pytest.raises(KeyError):
             ts.join_native(propagate=True)
 
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    @pytest.mark.parametrize('with_callback', [False, True])
+    def test_get_nested_propagate_false(self, method, depth, with_callback):
+        successful = make_mock_group(self.app, 2)
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            successful[1], self.app.AsyncResult(failed['id']),
+        ])
+        for _ in range(depth - 1):
+            nested = self.app.GroupResult(uuid(), [nested])
+        ts = self.app.GroupResult(uuid(), [successful[0], nested])
+        callback = Mock() if with_callback else None
+
+        values = getattr(ts, method)(propagate=False, callback=callback)
+
+        if with_callback:
+            assert values is None
+            assert callback.call_count == len(ts)
+            by_id = dict(args for args, _ in callback.call_args_list)
+            values = [by_id[result.id] for result in ts.results]
+        nested_values = values[1]
+        for _ in range(depth - 1):
+            assert len(nested_values) == 1
+            nested_values = nested_values[0]
+        error = nested_values[1]
+        assert isinstance(error, ValueError)
+        assert error.args == ('failed',)
+        expected = [1, error]
+        for _ in range(depth - 1):
+            expected = [expected]
+        assert values == [0, expected]
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('kwargs', [{}, {'propagate': True}])
+    def test_get_nested_propagate_raises(self, method, kwargs):
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            self.app.AsyncResult(failed['id']),
+        ])
+        ts = self.app.GroupResult(uuid(), [nested])
+
+        with pytest.raises(ValueError, match='failed'):
+            getattr(ts, method)(**kwargs)
+
     def test_failed_join_report(self):
         res = Mock()
         ts = self.app.GroupResult(uuid(), [res])

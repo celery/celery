@@ -871,7 +871,7 @@ class ResultSet(ResultBase):
             if isinstance(meta, list):
                 value = []
                 for children_result in meta:
-                    value.append(children_result.get())
+                    value.append(children_result.get(propagate=propagate))
             else:
                 value = meta['result']
                 if propagate and meta['status'] in states.PROPAGATE_STATES:
