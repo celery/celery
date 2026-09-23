@@ -2222,8 +2222,10 @@ class _chord(Signature):
         if visitor is not None:
             visitor.on_chord_header_end(self, **headers)
 
-        if visitor is not None and self.body is not None:
-            visitor_headers = visitor.on_chord_body(self, **headers) or {}
+        if self.body is not None:
+            visitor_headers = None
+            if visitor is not None:
+                visitor_headers = visitor.on_chord_body(self, **headers) or {}
             headers = self._stamp_headers(visitor_headers, append_stamps, **headers)
             self.body.stamp(visitor, append_stamps, **headers)
 
