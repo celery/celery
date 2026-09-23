@@ -1978,6 +1978,43 @@ class test_group(CanvasCase):
 
 
 class test_chord(CanvasCase):
+    def test_stamp_without_visitor_stamps_body(self):
+        x = chord(group(self.add.s(2, 2), self.add.s(4, 4)), body=self.mul.s(4))
+        x.stamp(custom="header")
+        tasks = x.tasks.tasks if isinstance(x.tasks, group) else x.tasks
+        for task in tasks:
+            assert task.options["custom"] == "header"
+        assert x.body.options["custom"] == "header"
+
+    def test_stamp_with_visitor_stamps_body(self):
+        class _Visitor:
+            def on_signature(self, sig, **headers):
+                return {}
+
+            def on_chord_header_start(self, sig, **headers):
+                return {}
+
+            def on_chord_header_end(self, sig, **headers):
+                pass
+
+            def on_chord_body(self, sig, **headers):
+                return {}
+
+        x = chord(group(self.add.s(2, 2), self.add.s(4, 4)), body=self.mul.s(4))
+        x.stamp(_Visitor(), custom="header")
+        assert x.body.options["custom"] == "header"
+
+    def test_stamped_chord_applies_end_to_end_without_visitor(self):
+        # Smoke: a chord stamped without a visitor still runs to completion,
+        # i.e. stamping the body never breaks the apply path.
+        @self.app.task(shared=False)
+        def xsum(values):
+            return sum(values)
+
+        x = chord(group(self.add.s(2, 2), self.add.s(4, 4)), body=xsum.s())
+        x.stamp(custom="header")
+        assert x.apply().get() == 12
+
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
             yield self.add.s(1, 1)
