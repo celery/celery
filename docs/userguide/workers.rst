@@ -636,12 +636,16 @@ Persistent revokes
 
 Revoking tasks works by sending a broadcast message to all the workers,
 the workers then keep a list of revoked tasks in memory. When a worker starts
-up it will synchronize revoked tasks with other workers in the cluster.
+up it will synchronize revoked tasks with other workers in the cluster: the
+ids received this way count as revoked from that moment on, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later.
 
 The list of revoked tasks is in-memory so if all workers restart the list
 of revoked ids will also vanish. If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
-argument to :program:`celery worker`:
+argument to :program:`celery worker` (the ids read from the file count as
+revoked from the start of the worker, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later):
 
 .. code-block:: console
 

@@ -162,6 +162,18 @@ class test_multi_args:
         with pytest.raises(KeyError):
             list(multi_args(p6))
 
+    def test_parse__single_name_with_dash_is_not_a_range(self, tmp_path):
+        p = NamespacedOptionParser([
+            'worker-1', '-c:worker-1', '5',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        nodes = list(multi_args(p, cmd='celery multi', suffix='""'))
+        assert len(nodes) == 1
+        assert nodes[0].name == 'worker-1@'
+        assert '-c 5' in nodes[0].argv
+
     def test_optmerge(self):
         p = NamespacedOptionParser(['foo', 'test'])
         p.parse()

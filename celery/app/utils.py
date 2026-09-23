@@ -7,8 +7,6 @@ from collections.abc import Mapping
 from copy import deepcopy
 from types import ModuleType
 
-from kombu.utils.url import maybe_sanitize_url
-
 from celery.exceptions import ImproperlyConfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
@@ -19,7 +17,7 @@ from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY
 
 __all__ = (
     'Settings', 'appstr', 'bugreport',
-    'filter_hidden_settings', 'find_app',
+    'filter_hidden_settings', 'find_app', 'sanitize_url',
 )
 
 #: Format used to generate bug-report information.
@@ -80,6 +78,18 @@ class Settings(ConfigurationView):
         super().__init__(*args, **kwargs)
 
         self.deprecated_settings = deprecated_settings
+
+    def copy(self):
+        self.finalize()
+        copied = super().copy()
+        if 'deprecated_settings' in self.changes:
+            copied.changes['deprecated_settings'] = (
+                self.changes['deprecated_settings']
+            )
+        else:
+            copied.changes.pop('deprecated_settings', None)
+        return copied
+    __copy__ = copy
 
     @property
     def broker_read_url(self):
@@ -277,7 +287,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
         )))
 
     preconf = {info.convert.get(k, k): v for k, v in preconf.items()}
-    defaults = dict(deepcopy(info.defaults), **preconf)
+    defaults = deepcopy(info.defaults)
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
@@ -303,11 +313,12 @@ class AppPickler:
 
     def build_standard_kwargs(self, main, changes, loader, backend, amqp,
                               events, log, control, accept_magic_kwargs,
-                              config_source=None):
+                              config_source=None, config_source_silent=False):
         return {'main': main, 'loader': loader, 'backend': backend,
                 'amqp': amqp, 'changes': changes, 'events': events,
                 'log': log, 'control': control, 'set_as_current': False,
-                'config_source': config_source}
+                'config_source': config_source,
+                'config_source_silent': config_source_silent}
 
     def construct(self, cls, **kwargs):
         return cls(**kwargs)
@@ -324,6 +335,94 @@ def _unpickle_app_v2(cls, kwargs):
     return cls(**kwargs)
 
 
+def sanitize_url(url, mask='*' * 8):
+    """Sanitize URL, masking passwords.
+
+    Supports:
+    - Standard single-server URLs (e.g. ``redis://:secret@localhost:6379/0``)
+    - Passwords containing separators such as semicolons or commas
+    - Multi-server URLs with shared scheme (e.g. ``cache+memcached://user:secret@s1:11211;s2:11211/``)
+    - Redis Sentinel multi-node URLs (e.g. ``sentinel://:secret@h1:26379;sentinel://:secret@h2:26379/0``
+      or ``sentinel://:secret@h1:26379;h2:26379/0``)
+    - URLs with query strings containing semicolons (e.g. ``redis://user:secret@localhost:6379?a=1;b=2``)
+
+    Fails closed on malformed URLs to prevent credential leakage.
+    """
+    if not url or not isinstance(url, str):
+        return url
+
+    def _mask_uinfo(uinfo):
+        if ':' in uinfo:
+            user, _, _ = uinfo.partition(':')
+            return f'{user}:{mask}'
+        return uinfo
+
+    try:
+        if '://' not in url:
+            return url
+
+        # If it is a semicolon-separated list of full URLs (e.g. sentinel://...;sentinel://...)
+        parts = url.split(';')
+        if len(parts) > 1 and any('://' in p for p in parts[1:]):
+            return ';'.join(sanitize_url(p.strip(), mask=mask) for p in parts)
+
+        scheme, _, rest = url.partition('://')
+
+        # Separate authority from path/query/fragment
+        idx = len(rest)
+        for sep in ('/', '?', '#'):
+            pos = rest.find(sep)
+            if pos != -1 and pos < idx:
+                idx = pos
+        authority = rest[:idx]
+        tail = rest[idx:]
+
+        if '@' not in authority:
+            # No credentials in authority: clean empty chunks if multi-host
+            host_sep = ';' if ';' in authority else (',' if ',' in authority else None)
+            if host_sep:
+                h_list = [h.strip() for h in authority.split(host_sep) if h.strip()]
+                return f'{scheme}://{host_sep.join(h_list)}{tail}'
+            return f'{scheme}://{authority}{tail}'
+
+        uinfo, _, host_part = authority.rpartition('@')
+
+        server_sep = ';' if ';' in authority else (',' if ',' in authority else None)
+
+        is_multiserver = False
+        if server_sep:
+            raw_chunks = [c.strip() for c in authority.split(server_sep) if c.strip()]
+            if len(raw_chunks) > 1:
+                has_corrupt_chunk = any(c.startswith(':') for c in raw_chunks if '@' not in c)
+                has_at_without_colon = any(':' not in c.rpartition('@')[0] for c in raw_chunks if '@' in c)
+                if not has_corrupt_chunk and not has_at_without_colon:
+                    is_multiserver = True
+
+        if not is_multiserver:
+            if authority.count('@') > 1 and ':' not in uinfo:
+                return f'{scheme}://{mask}@{host_part}{tail}'
+            sanitized_uinfo = _mask_uinfo(uinfo)
+            return f'{scheme}://{sanitized_uinfo}@{host_part}{tail}'
+
+        servers = [c.strip() for c in authority.split(server_sep) if c.strip()]
+        sanitized_servers = []
+        for s in servers:
+            if '@' in s:
+                u, _, h = s.rpartition('@')
+                sanitized_servers.append(f'{_mask_uinfo(u)}@{h}')
+            else:
+                sanitized_servers.append(s)
+
+        sanitized_authority = server_sep.join(sanitized_servers)
+        return f'{scheme}://{sanitized_authority}{tail}'
+
+    except Exception:
+        if isinstance(url, str) and '@' in url and '://' in url:
+            import re
+            return re.sub(r'(://[^:@/]*:)([^@/]*)(@)', r'\g<1>' + mask + r'\3', url)
+        return '<unparsable url>'
+
+
 def filter_hidden_settings(conf):
     """Filter sensitive settings."""
     def maybe_censor(key, value, mask='*' * 8):
@@ -336,7 +435,7 @@ def filter_hidden_settings(conf):
                 from kombu import Connection
                 return Connection(value).as_uri(mask=mask)
             elif 'backend' in key.lower():
-                return maybe_sanitize_url(value, mask=mask)
+                return sanitize_url(value, mask=mask)
 
         return value
 
@@ -369,7 +468,7 @@ def bugreport(app):
         py_v=_platform.python_version(),
         driver_v=driver_v,
         transport=transport,
-        results=maybe_sanitize_url(app.conf.result_backend or 'disabled'),
+        results=sanitize_url(app.conf.result_backend or 'disabled'),
         human_settings=app.conf.humanize(),
         loader=qualname(app.loader.__class__),
     )

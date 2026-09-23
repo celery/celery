@@ -2,7 +2,7 @@ import os
 import pickle
 import sys
 from importlib import import_module
-from time import time
+from time import monotonic, time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -17,10 +17,7 @@ from celery.worker import state
 @pytest.fixture
 def reset_state():
     yield
-    state.active_requests.clear()
-    state.revoked.clear()
-    state.revoked_stamps.clear()
-    state.total_count.clear()
+    state.reset_state()
 
 
 class MockShelve(dict):
@@ -92,6 +89,28 @@ class test_maybe_shutdown:
 
 
 @pytest.mark.usefixtures('reset_state')
+class test_merge_revoked:
+
+    def test_nothing(self):
+        size = len(state.revoked)
+        state.merge_revoked(None)
+        state.merge_revoked([])
+        state.merge_revoked({})
+        assert len(state.revoked) == size
+
+    def test_ids_only(self):
+        ahead = monotonic() + 10 ** 6
+        try:
+            state.merge_revoked({'from-dict': [ahead, 0, 'from-dict']})
+            state.merge_revoked(['from-list'])
+            stamps = state.revoked.as_dict()
+            assert stamps['from-dict'] <= monotonic()
+            assert stamps['from-list'] <= monotonic()
+        finally:
+            state.revoked.discard('from-dict')
+            state.revoked.discard('from-list')
+
+
 class test_Persistent:
 
     @pytest.fixture
@@ -121,6 +140,17 @@ class test_Persistent:
         p.merge()
         for item in data:
             assert item in state.revoked
+
+    def test_merge_stamps_saved_items_locally(self, p):
+        # The stamps in the state db count from the boot of the host the
+        # worker ran on; after a reboot they are ahead of the clock.
+        saved = LimitedSet()
+        saved.add('rebooted', now=monotonic() + 10 ** 6)
+        p.db['zrevoked'] = p.compress(p._dumps(saved))
+        p.merge()
+        assert 'rebooted' in state.revoked
+        assert state.revoked.as_dict()['rebooted'] <= monotonic()
+        state.revoked.discard('rebooted')
 
     def test_merge_dict(self, p):
         p.clock = Mock()
@@ -192,14 +222,87 @@ class test_state:
             state.task_ready(request)
         assert len(state.active_requests) == 0
 
+    def test_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+        assert request not in state.reserved_requests
+        assert state.requests[request.id] is request
+
+    def test_reserved_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_reserved(request)
+        assert request not in state.scheduled_requests
+        assert request in state.reserved_requests
+
+    def test_ready_discards_scheduled(self):
+        request = SimpleReq('foo')
+        state.task_scheduled(request)
+        assert request in state.scheduled_requests
+
+        state.task_ready(request)
+        assert request not in state.scheduled_requests
+        assert request.id not in state.requests
+
+    def test_scheduled_is_noop_when_already_reserved(self):
+        """Regression: with a threaded timer (``celery.utils.timer2.Timer``,
+        used by the non-eventloop pools) an ETA already in the past fires on
+        the timer thread immediately, so ``apply_eta_task()`` ->
+        ``task_reserved()`` can run *before* the strategy reaches
+        ``task_scheduled()``.  Re-adding the request to
+        ``scheduled_requests`` then would misreport its state and let
+        ``Consumer.on_close()`` drop a still-running task from ``requests``.
+        """
+        request = SimpleReq('foo')
+        state.task_reserved(request)
+
+        state.task_scheduled(request)
+
+        assert request not in state.scheduled_requests
+        assert request in state.reserved_requests
+        assert state.requests[request.id] is request
+
+    def test_scheduled_is_noop_when_already_active(self):
+        request = SimpleReq('foo')
+        state.task_accepted(request)
+
+        state.task_scheduled(request)
+
+        assert request not in state.scheduled_requests
+        assert request in state.active_requests
+        assert state.requests[request.id] is request
+
+    def test_reset_state_clears_scheduled(self):
+        state.task_scheduled(SimpleReq('foo'))
+        assert len(state.scheduled_requests) == 1
+        state.reset_state()
+        assert len(state.scheduled_requests) == 0
+
 
 class test_state_configuration():
 
     @staticmethod
     def import_state():
-        with patch.dict(sys.modules):
-            del sys.modules['celery.worker.state']
-            return import_module('celery.worker.state')
+        worker_package = import_module('celery.worker')
+        original = sys.modules['celery.worker.state']
+        try:
+            with patch.dict(sys.modules):
+                del sys.modules['celery.worker.state']
+                return import_module('celery.worker.state')
+        finally:
+            # ``import_module`` also rebinds the ``state`` attribute on the
+            # ``celery.worker`` package, and ``patch.dict`` only restores
+            # ``sys.modules``.  Without putting the original back, every
+            # later ``from celery.worker import state`` would hand out this
+            # throwaway copy -- with its own empty ``requests`` /
+            # ``*_requests`` containers -- while the rest of celery (e.g.
+            # ``celery.worker.consumer.consumer``) keeps using the real
+            # ones, so any test touching both would silently work on two
+            # different sets of state.
+            worker_package.state = original
 
     @patch.dict(os.environ, {
         'CELERY_WORKER_REVOKES_MAX': '50001',
