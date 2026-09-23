@@ -258,10 +258,15 @@ class ElasticsearchBackend(KeyValueStoreBackend):
         return [self.get(key) for key in keys]
 
     def delete(self, key):
-        if self.doc_type:
-            self.server.delete(index=self.index, id=key, doc_type=self.doc_type)
-        else:
-            self.server.delete(index=self.index, id=key)
+        try:
+            if self.doc_type:
+                self.server.delete(index=self.index, id=key, doc_type=self.doc_type)
+            else:
+                self.server.delete(index=self.index, id=key)
+        except elasticsearch.exceptions.NotFoundError:
+            # deleting an already-expired, already-forgotten or never-stored
+            # result must keep forget() idempotent, like the other KV backends
+            pass
 
     def _get_server(self):
         """Connect to the Elasticsearch server."""

@@ -5,7 +5,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 from kombu.utils.encoding import bytes_to_str
 
-from celery import states
+from celery import states, uuid
 
 try:
     from elasticsearch import exceptions
@@ -970,3 +970,24 @@ class test_ElasticsearchBackend:
             exceptions.NotFoundError("not found",
                                      ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
                                                      NodeConfig("https", "localhost", 9200)), None))
+
+    def test_forget_missing_task_is_noop(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.delete.side_effect = exceptions.NotFoundError(
+            "not found",
+            ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                            NodeConfig("https", "localhost", 9200)), None)
+        # forget() on a result that was expired, already forgotten or never
+        # stored must not raise elasticsearch.NotFoundError
+        x.forget(uuid())
+
+    def test_forget_twice_is_noop(self):
+        x = ElasticsearchBackend(app=self.app)
+        x._server = Mock()
+        x._server.delete.side_effect = [None, exceptions.NotFoundError(
+            "not found",
+            ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
+                            NodeConfig("https", "localhost", 9200)), None)]
+        x.forget(uuid())
+        x.forget(uuid())
