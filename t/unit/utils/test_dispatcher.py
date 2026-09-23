@@ -183,6 +183,32 @@ class test_Signal:
         garbage_collect()
         self._testIsClean(a_signal)
 
+    def test_boundmethods_of_different_instances(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(b.a, sender=self)
+        try:
+            assert len(a_signal.receivers) == 2
+            result = a_signal.send(sender=self, val='test')
+            assert result == [(a.a, 'test'), (b.a, 'test')]
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+            a_signal.disconnect(b.a, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_disconnect_boundmethod_keeps_other_instance(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(b.a, sender=self)
+        try:
+            assert a_signal.disconnect(b.a, sender=self)
+            result = a_signal.send(sender=self, val='test')
+            assert result == [(a.a, 'test')]
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+            a_signal.disconnect(b.a, sender=self)
+        self._testIsClean(a_signal)
+
     def test_disconnect_retryable_decorator(self):
         # Regression test for https://github.com/celery/celery/issues/9119
 
