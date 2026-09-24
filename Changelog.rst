@@ -8,6 +8,7 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
+
 Unreleased
 ==========
 
@@ -16,6 +17,319 @@ Unreleased
   percent sign. Log file paths passed through ``celery multi`` are formatted
   twice and require ``%%%%`` to preserve a literal percent sign in the final
   worker path (#10663).
+
+.. _version-5.7.0a1:
+
+5.7.0b1
+=======
+
+:release-date: 2026-09-22
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0 Alpha 1 is now available for testing.
+Please help us test this version and report any issues.
+
+Features
+~~~~~~~~
+
+- Allow Redis backend SSL config with redis:// URLs (#10313)
+- Add ``task_repr_maxlevels`` setting to control argsrepr/kwargsrepr depth (#10371)
+- Add ``celery_beat_task`` header in task options (#9702)
+- Add runtime to the task-success signal (#9516)
+- Add the request context to ``task_failure`` when a worker is lost (#9720)
+- Support queue aliases in ``Queues.deselect()`` (#10649)
+- Allow ``worker_pool_start_method='spawn'`` with the asynchronous prefork pool (#10584)
+- Add ``datefmt`` support to ``ColorFormatter``/``TaskFormatter`` (#10488)
+- Enable heartbeat on the event dispatcher connection (#10500)
+
+Bug Fixes
+~~~~~~~~~
+
+Canvas / chains / chords / groups
+----------------------------------
+
+- Propagate chained task failures to the chord body (#10323); fix chord hang
+  when a member is revoked via ``app.control.revoke`` (#10527, reworked at #10564)
+- Fix ``Signature.clone()`` sharing kwargs with the original (#10571); fix
+  linked-signature option isolation during deepcopy (#10594)
+- ``Task.replace()`` with a chain containing a group now returns a result
+  instead of hanging (#9604); fix crash with tuple-backed chains (#10626)
+- Skip empty groups in (eager) chains (#10321, #10644); fix empty group/chain
+  handling in headers (#9772, #10646)
+- Preserve group errback mutability (#10385); preserve ``aggregate_duplicates``
+  through nested stamp merges
+
+Worker / broker / connection handling
+--------------------------------------
+
+- Fix worker consuming unexpected queues, and stalling, after broker
+  reconnect (#10335, #10346)
+- Fix ``Consumer.on_close()`` wiping in-flight reservations, breaking
+  ``worker_disable_prefetch`` (#10345)
+- Detect spawned pool children in ``process_initializer`` (#10583); keep a
+  cancelled task unacked when a child reports ``SystemExit`` (#10667)
+- Fix revoked tasks running anyway after mingle merged revoke stamps from
+  another host (#10668)
+- Bound already-open broker sockets before connection teardown (#10570)
+
+Results / backends
+--------------------
+
+- Make ``result_compression`` actually compress stored results (#10504);
+  fix Redis result compression with ``decode_responses`` (#10612)
+- Honor a timeout of 0 instead of waiting/polling forever (``wait_for``,
+  ``ResultSet.join``, ``get_many``, result drainer) (#10487, #10524, #10603)
+- ``DatabaseBackend`` now honors ``result_serializer`` (#10536, closes #3025);
+  fix ``KeyError`` in MongoDB backend for requestless results (#10503)
+- Redact SAS tokens / lowercase account keys in the Azure Block Blob backend,
+  and keep it picklable (#10620, #10647)
+- Cache extension entry-point discovery to fix ``apply_async`` CPU overhead
+  (#10516); bound ``State._tasks_to_resolve`` to fix unbounded memory growth
+  (#10534)
+
+Beat / scheduling / timezones
+--------------------------------
+
+- Handle DST gaps in ``make_aware``; normalize aware datetimes into the
+  schedule timezone in ``crontab.remaining_delta`` (#10324, #10420, #10494)
+- Fix beat sleeping too long / reheap entries that request a later retry
+  (#10558, #10468); fix crontab state restoration across persistence cycles
+  (#10563)
+- Return the exact fractional ``utcoffset()`` instead of rounding it (#10625);
+  preserve negative UTC offsets in ``LocalTimezone.fromutc`` (#10519)
+
+Configuration
+---------------
+
+- ``ConfigurationView``: fix membership checks, map-order lookups,
+  ``swap_with()``, and honor ``config_from_object(silent=True)`` on lazy
+  config load (#10586, #10597, #10604, #10532)
+- Keep preconfigured values out of configuration defaults (#10575); prevent
+  ``add_defaults()`` crashing when ``config_from_object()`` fails on an
+  already-configured app (#10621)
+- Mask ``broker_read_url``/``broker_write_url`` and credentials in inspect
+  stats (#10398, #10485)
+
+Documentation
+~~~~~~~~~~~~~
+
+23 doc fixes/clarifications, including: clarified chord errback signatures
+(#10300), canvas calling behavior (#10447), acks-late vs. retry semantics
+(#10448), rate-limit/prefetch interactions (#10291), SQS FIFO message
+properties (#10446), and numerous grammar/typo fixes across the config and
+extending guides.
+
+Tests & CI
+~~~~~~~~~~
+
+13 test-suite improvements (moving custom-worker tests into the smoke suite,
+guarding integration tests, pinning Redis client timeouts, etc.) plus 9
+CI/tooling updates (CI matrix changes, trying Python 3.15 pre-release,
+pre-commit autoupdates).
+
+Dependency Updates
+~~~~~~~~~~~~~~~~~~~
+
+~65 dependency bumps, mostly routine Dependabot/pre-commit updates (pytest,
+cryptography, boto3/moto, gevent, GitHub Actions like ``actions/checkout``,
+``codeql-action``, plus ``kombu`` and ``click-repl`` version bumps).
+
+Reverts
+~~~~~~~
+
+- Reverted the RabbitMQ 4.3.0 "exclusive queues" default fix (#10289), later
+  replaced with a transient-queue-specific fix (#10290)
+- Reverted a Redis ``_pending_messages`` leak fix and a chord-hang fix, both
+  later reworked
+
+
+
+What's Changed
+~~~~~~~~~~~~~~
+
+- fix(defaults): default to exclusive queues for RabbitMQ 4.3.0 compatibility (#10287)
+- Revert "fix(defaults): default to exclusive queues for RabbitMQ 4.3.0 compati…" (#10289)
+- fix(defaults,rpc): RabbitMQ 4.3.0 compatibility for transient queues (#10290)
+- Removed socket.timeout from reconnection conditions (#10285)
+- fix(worker): skip Broadcast queues in native delayed delivery binding (#10293)
+- [pre-commit.ci] pre-commit autoupdate (#10292)
+- fix(worker): guard heartbeat control command against None event_dispatcher (#10295)
+- fix(redis): keep _reconnect_pubsub compatible with redis-py < 5.3.0 (#10298)
+- docs: clarify chord errback signatures (#10300)
+- Chore(deps): Update python-memcached requirement from >=1.61 to >=1.62 (#10282)
+- Allow Redis backend SSL config with redis URLs (#10313)
+- Skip empty groups in chains (#10321)
+- Handle DST gaps in make_aware (#10324)
+- Fix worker consuming unexpected queues after connection loss (#10335)
+- Apply backend retry policy to all DatabaseBackend DB operations (#10334)
+- Explain prefetching with late acknowledgments (#10343)
+- Add documentation to workers guide around signal exception bytecode stuff (#10276)
+- Fix Consumer.on_close() wiping in-flight reservations and breaking worker_disable_prefetch (#10345)
+- Fix: wrap new-style errback calls in try/except to prevent silent chain halt (#10214)
+- Fix free worker stalling after broker reconnect (AsynPool.flush clearing _busy_workers) (#10346)
+- Fix Queues.deselect leaking routing-only queues into consumers (#10348)
+- fix(redis): prevent _pending_messages memory leak in ResultConsumer (#10342)
+- chore(deps): bump cryptography in /requirements/extras (#10350)
+- chore(deps): bump codecov/codecov-action from 6 to 7 (#10349)
+- docs(tasks): warn that rate-limited tasks block the worker's prefetch (#10291)
+- Fix add_consumer not restoring consume_from for known queues (#10352)
+- Fix queue selection by alias to store the real queue name (#10358)
+- Defer default queue lookup for explicitly routed tasks (#10357)
+- Fix pidbox consumer cleanup during reset cycles (#10363)
+- Fix typo (#10365)
+- Redis ResultConsumer: clean up leaked _pending_messages after on_wait_for_pending (#10366)
+- Mark rejected tasks as failed when not requeued (#10369)
+- chore(deps): bump cryptography in /requirements/extras (#10368)
+- chore(deps): bump actions/checkout from 6 to 7 (#10362)
+- Update reserved requests to use new event dispatcher on reconnect (#10383)
+- Tolerate task cancellation errors after connection loss (#10382)
+- Preserve group errback mutability (#10385)
+- fix(canvas): propagate chained task failures to the chord body (#10323)
+- Document task registration requirement for the celery_worker fixture (#10378)
+- Raise a clear error instead of a bare ValueError when fast_trace_task's worker registry is empty (#10397)
+- chore(deps): bump actions/setup-python from 6 to 7
+- Fix preload options for control command (#10403)
+- Handle UUID task ids in key-value store backend key generation (#10406)
+- Stop eager chain execution on Ignore and Reject (#10404)
+- fix(canvas): restore GroupResult fan-out in chain as_tuple() (#8903 regression) (#10408)
+- Finalize ResultSet barrier when `iter_native` begins (#10407)
+- Move custom-worker integration tests to the smoke suite (#10410)
+- Guard integration tests (#10411)
+- Handle EPERM from os.kill in multi stopwait node liveness check
+- Preserve re-buffered events during dispatcher flush (#10401)
+- Possible secret in repository (#10257)
+- Fix inconsistencies in systemd service examples (#10425)
+- docs: describe canvas calling behavior accurately (#10447)
+- docs: clarify acks late versus retry behavior (#10448)
+- docs: link worker settings to CLI options (#10445)
+- Preserve absolute event timestamps in Gossip (#10418)
+- fix(events): don't drop buffered events appended during publish (#10435)
+- Respect result_extended in the RPC result backend (#10431)
+- docs: Fix grammar errors in extending user guide (#10429)
+- Warn when routing options are set as task attributes
+- docs: show SQS FIFO message properties directly (#10446)
+- Replace static analysis hack in `__init__.py` with `TYPE_CHECKING` guard (#10409)
+- RPC result backend recirculates final results on every state poll (#10459)
+- chore(deps): bump github/codeql-action from 4 to 4.37.4 (#10454)
+- Move task_sent and Result deprecations to the 6.0 timeline (#10455)
+- Raise ImproperlyConfigured with install hint when ephem is missing for solar schedules
+- Normalize aware datetimes into the schedule timezone in crontab.remaining_delta (#10420)
+- Document EventReceiver's first argument under the name it actually has (#10460)
+- Reheap beat entries that request to retry later (#10468)
+- docs: document purpose of bulk_task_producer.py example (#10399)
+- docs: document single-argument link_error errback used by send_task (#10427)
+- chore(deps): bump github/codeql-action from 4.37.4 to 4.37.6 (#10469)
+- Fix shared retry_kwargs mutation in autoretry (#10461)
+- Add MemoryError regression for request callbacks (#10482)
+- chore(deps): bump useblacksmith/setup-docker-builder from 1 to 2
+- chore(deps): bump useblacksmith/setup-docker-builder from 2 to 2.0.1 (#10450)
+- Remove redundant maybe_signature call in unlock_chord (#10395)
+- Fix ineffective traceback clearing in timeout handling (#10493)
+- Fix Redis result consumer redundant unsubscribe (#10497)
+- Fix green pool autoscale capacity handling (#10361)
+- fix(worker): mask credentials in alternates returned by inspect stats (#10485)
+- Add datefmt support to ColorFormatter and TaskFormatter (#10488)
+- Fix TypeError when slicing a regen built from a generator (#10501)
+- Update boto3 requirement from >=1.26.143 to >=1.43.6 and moto 5.2 (#10306)
+- Make result_compression actually compress stored results (#10504)
+- fix: preserve negative UTC offsets in LocalTimezone.fromutc (Fixes #10517) (#10519)
+- fix: handle invalid worker environment values (#10513)
+- Fix certificate expiration during verification (#10510)
+- Fix KeyError in MongoDB backend for results stored without a request (#10503)
+- fix: crontab.remaining_delta skips later minute slots on an earlier day (#10494)
+- Honor a timeout of 0 in wait_for and ResultSet.join instead of waiting forever (#10487)
+- Mask broker_read_url and broker_write_url in filter_hidden_settings (#10398)
+- handle beat_cron_starting_deadline correctly for non-uniform crontabs (#10315)
+- Add task_repr_maxlevels setting to control argsrepr/kwargsrepr depth (#10371)
+- feature: add celery_beat_task header in task options (#9702)
+- Enable heartbeat on the event dispatcher connection (#10500)
+- Update README.rst (#10521)
+- docs: repoint dead :ref: targets to the getting-help/bug-tracker labels (#10578)
+- docs(result): drop doubled 'in in' in the ResultSet class comment (#10577)
+- Document interaction between rate_limit and countdown/eta
+- Cache extension entry-point discovery to fix apply_async CPU overhead (#10516)
+- Bound State._tasks_to_resolve to fix unbounded memory growth (#10534)
+- Fix DjangoTask selection for Celery subclasses without a custom task class (#10529)
+- Honor a timeout of 0 in get_many instead of polling forever (#10524)
+- Fix the delay beat returns when the heap top changes (#10531)
+- Fix: DatabaseBackend now honors result_serializer (#3025) (#10536)
+- Honour `config_from_object(silent=True)` on the lazy config load (#10532)
+- Apply ChainMap._key consistently across its methods (#10545)
+- [Bug] chord hangs when a member is revoked through app.control.revoke (#10527)
+- Show original and prefixed keys in configuration KeyError
+- Forward chord body routing options to chord_unlock (#10442)
+- Update CI matrix to exclude Python 3.10 and 3.14t (#10550)
+- Fix beat sleeping too long when is_due changes the heap (#10558)
+- Fix celery worker shutdown timeout example (#10416)
+- Fix --detach stalling in Docker containers with high fdmax (#9886) (#10080)
+- Fix crontab state restoration across persistence cycles (#10563)
+- Return Option objects consistently from find() (#10565)
+- Propagate setup logging signal errors (#10568)
+- Honour broker connection retry settings when purging at startup (#10567)
+- Fix Signature.clone() sharing kwargs with the original signature (#10571)
+- fix(worker): bound already-open broker sockets before connection teardown (GH-9705) (#10570)
+- Document how the Redis broker stores messages (#10566)
+- `prefork` is not safe anymore (#10339)
+- Revert "fix(redis): prevent _pending_messages memory leak in ResultConsumer (…"
+- Detect spawned pool children in process_initializer (#10583)
+- Allow worker_pool_start_method='spawn' with the asynchronous prefork pool (#10584)
+- Keep preconfigured values out of configuration defaults (#10575)
+- Clean up Docker examples in the contributing guide (#10587)
+- Honor zero timeouts in the result drainer (#10603)
+- Make ConfigurationView membership match key lookup (#10586)
+- Respect map order in ConfigurationView lookups (#10597)
+- Include _keys in ConfigurationView.swap_with() (#10604)
+- Retain fallback context managers until exit (#10610)
+- Preserve explicitly supplied empty timer schedules (#10609)
+- Fix: query_task doesn't find tasks scheduled with an ETA/countdown (#5321) (#10535)
+- Fix Redis result compression with decode_responses enabled (#10612)
+- Docs: add missing @app.task decorator to chain example (#4750) (#10613)
+- fix(canvas): propagate aggregate_duplicates through nested stamp merges
+- Deny access to private attributes and dunders via registered() (#10602)
+- Fix argument forwarding through nested chains in eager execution (#10611)
+- Replacing a task with a chain which contains a group now returns a result instead of hanging (#9604)
+- Fix linked signature option isolation during deepcopy (#10594)
+- Prevent add_defaults() from crashing when config_from_object() fails on an already configured app (#10621)
+- fix(backends.database): store task children with database backend (#8336) (#10606)
+- Prevent spawned worker crashes with explicit lazy=True (#10619)
+- Redact SAS tokens and lowercase account keys in AzureBlockBlobBackend.as_uri (#10620)
+- Preserve configuration when copying settings (#10623)
+- docs: fix 'allows to' grammar in dont_autoretry_for docs (#10615)
+- docs: fix 'Allows to' grammar in configuration settings
+- Warn when two callables collide under one task name (#10576) (#10598)
+- Task.replace() crashes with tuple-backed chains (#10626)
+- Prevent apply_async() from mutating cached execution options (#10624)
+- Support queue aliases in Queues.deselect() (#10649)
+- Add runtime in success signal (#9516)
+- Add the request context to task_failure in case of lost worker (#9720)
+- Set default max priority in Queues.__setitem__() when the queue has none  (#10645)
+- backends.by_url() should accept backend classes (#10635)
+- Fix celery multi crashing on a single node name containing a dash (#10643)
+- Rebuild the GCS storage client after a fork when Firestore is touched first (#10641)
+- Fix empty group/chain handling in chains and group headers (#9772) (#10646)
+- try python 3.15 pre release on the CI (#10636)
+- Keep a cancelled task unacked when the child reports SystemExit (#10667)
+- Return the exact fractional utcoffset() instead of rounding it (#10625)
+- Skip empty groups in eager chains (#10644)
+- Store failures raised as BaseException subclasses with the JSON serializer (#10672)
+- fix(backends.database): store stamping metadata with extended results (#8887) (#10605)
+- fix(app.utils): handle multi-server URLs in sanitize_url and bugreport (#8014) (#10607)
+- Refresh AMQP task routes for all configuration update forms (#10673)
+- Redis result backend: serialize pubsub access between the drainer and result cleanup (#10671)
+- Queues.__setitem__() should apply the default routing key (#10669)
+- Fix revoked tasks running anyway after mingle merged revoke stamps from another host (#10668)
+- Expect the prefetch reduction to be skipped under per-consumer QoS
+- Keep the Azure Block Blob backend picklable (#10647)
+- Update click-repl version to 0.4.0 (#10658)
+- Update kombu version to 5.7.0a1 (#10677)
+- Keep a finished result when a revoke arrives for the task (#10679)
+- Revert "[Bug] chord hangs when a member is revoked through app.control.revoke" (#10564)
+- Chore(deps): Bump pytest from 9.0.2 to 9.0.3
+- Chore(deps): Update gevent requirement from >=1.5.0 to >=26.4.0
+- Chore(deps): Bump pytest-order from 1.3.0 to 1.4.0
+- Chore(deps): Update elasticsearch requirement from <=9.5.0 to <=9.5.1 (#10685)
+
+
 
 .. _version-5.6.2:
 

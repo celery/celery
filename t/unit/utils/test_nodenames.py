@@ -1,5 +1,4 @@
 import pytest
-
 from kombu import Queue
 
 from celery.utils.nodenames import host_format, worker_direct
