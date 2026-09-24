@@ -1,6 +1,7 @@
 """File-system result store backend."""
 import locale
 import os
+import tempfile
 from datetime import datetime
 
 from kombu.utils.encoding import ensure_bytes
@@ -88,8 +89,21 @@ class FilesystemBackend(KeyValueStoreBackend):
             pass
 
     def set(self, key, value):
-        with self.open(self._filename(key), 'wb') as outfile:
-            outfile.write(ensure_bytes(value))
+        filename = self._filename(key)
+        # Write to a temporary file in the same directory and rename it into
+        # place so concurrent readers (e.g. get/get_many polling the same
+        # key) never observe a truncated file.
+        prefix = b'celery-result-' if isinstance(filename, bytes) else 'celery-result-'
+        tmp_fd, tmp_name = tempfile.mkstemp(
+            dir=os.path.dirname(filename), prefix=prefix,
+        )
+        try:
+            with os.fdopen(tmp_fd, 'wb') as outfile:
+                outfile.write(ensure_bytes(value))
+            os.replace(tmp_name, filename)
+        except BaseException:
+            os.unlink(tmp_name)
+            raise
 
     def mget(self, keys):
         for key in keys:
