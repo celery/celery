@@ -7,11 +7,12 @@ from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 
-from celery import states, uuid
+from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
 from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
+from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
+                           denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -845,6 +846,74 @@ class test_GroupResult:
         ])
         with pytest.raises(KeyError):
             ts.join_native(propagate=True)
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    @pytest.mark.parametrize('with_callback', [False, True])
+    def test_get_nested_propagate_false(self, method, depth, with_callback):
+        successful = make_mock_group(self.app, 2)
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            successful[1], self.app.AsyncResult(failed['id']),
+        ])
+        for _ in range(depth - 1):
+            nested = self.app.GroupResult(uuid(), [nested])
+        ts = self.app.GroupResult(uuid(), [successful[0], nested])
+        callback = Mock() if with_callback else None
+        assert ts.supports_native_join
+
+        values = getattr(ts, method)(propagate=False, callback=callback)
+
+        if with_callback:
+            assert values is None
+            assert callback.call_count == len(ts)
+            by_id = dict(args for args, _ in callback.call_args_list)
+            values = [by_id[result.id] for result in ts.results]
+        nested_values = values[1]
+        for _ in range(depth - 1):
+            assert len(nested_values) == 1
+            nested_values = nested_values[0]
+        error = nested_values[1]
+        assert isinstance(error, ValueError)
+        assert error.args == ('failed',)
+        expected = [1, error]
+        for _ in range(depth - 1):
+            expected = [expected]
+        assert values == [0, expected]
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('kwargs', [{}, {'propagate': True}])
+    def test_get_nested_propagate_raises(self, method, kwargs):
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            self.app.AsyncResult(failed['id']),
+        ])
+        ts = self.app.GroupResult(uuid(), [nested])
+        assert ts.supports_native_join
+
+        with pytest.raises(ValueError, match='failed'):
+            getattr(ts, method)(**kwargs)
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_get_nested_sync_subtasks(self, method, depth):
+        ts = self.app.GroupResult(uuid(), make_mock_group(self.app, 2))
+        expected = [0, 1]
+        for _ in range(depth):
+            ts = self.app.GroupResult(uuid(), [ts])
+            expected = [expected]
+        assert ts.supports_native_join
+
+        with patch('celery.result.task_join_will_block',
+                   _state.orig_task_join_will_block):
+            with denied_join_result():
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)()
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)(disable_sync_subtasks=True)
+                assert getattr(ts, method)(disable_sync_subtasks=False) == expected
 
     def test_failed_join_report(self):
         res = Mock()

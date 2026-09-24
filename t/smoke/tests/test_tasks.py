@@ -6,10 +6,25 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
-from t.integration.tasks import add, identity
+from t.integration.tasks import add, add_ignore_result, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
                            soft_time_limit_lower_than_time_limit, soft_time_limit_must_exceed_time_limit)
+
+
+class test_apply_async:
+    def test_apply_async_does_not_alter_cached_execution_options(self, celery_setup: CeleryTestSetup):
+        app = celery_setup.app
+        app.conf.task_default_queue = celery_setup.worker.worker_queue
+        task = app.tasks[add_ignore_result.name]
+
+        before = app.send_task(task.name, args=(1, 2))
+        # Empty options must not cache the task's ignore_result=True default.
+        task.apply_async(args=(3, 4))
+        after = app.send_task(task.name, args=(5, 6))
+
+        assert before.get(timeout=RESULT_TIMEOUT) == 3
+        assert after.get(timeout=RESULT_TIMEOUT) == 11
 
 
 class test_task_termination(SuiteOperations):
@@ -41,6 +56,8 @@ class test_task_termination(SuiteOperations):
             filters={"name": "celery"},
         )
 
+        pids_before = {item["pid"] for item in pinfo_before}
+
         with pytest.raises(expected_error):
             self.apply_self_termination_task(celery_setup.worker, method).get()
 
@@ -50,23 +67,19 @@ class test_task_termination(SuiteOperations):
             wait=wait_fixed(0.1),
             reraise=True,
         )
-        def wait_for_two_celery_processes():
+        def wait_for_new_child_process():
             pinfo_current = celery_setup.worker.get_running_processes_info(
                 ["pid", "name"],
                 filters={"name": "celery"},
             )
-            if len(pinfo_current) != 2:
+            pids_current = {item["pid"] for item in pinfo_current}
+            # The old child can still be alive when the count is back to
+            # two, so wait for a pid that was not there before the task.
+            if len(pids_current) != 2 or not pids_current - pids_before:
                 assert False, f"Child process did not respawn with method: {method.name}"
+            return pids_current
 
-        wait_for_two_celery_processes()
-
-        pinfo_after = celery_setup.worker.get_running_processes_info(
-            ["pid", "name"],
-            filters={"name": "celery"},
-        )
-
-        pids_before = {item["pid"] for item in pinfo_before}
-        pids_after = {item["pid"] for item in pinfo_after}
+        pids_after = wait_for_new_child_process()
         assert len(pids_before | pids_after) == 3
 
     @pytest.mark.parametrize(

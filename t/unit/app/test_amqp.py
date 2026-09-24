@@ -81,6 +81,13 @@ class test_Queues:
         assert isinstance(q['foo'], Queue)
         assert q['foo'].routing_key == 'rk'
 
+    def test_add_preserves_exchange_without_default(self):
+        exchange = Exchange('')
+        queues = Queues()
+        queues.add(Queue('foo', exchange=exchange))
+
+        assert queues['foo'].exchange is exchange
+
     def test_setitem_adds_default_exchange(self):
         q = Queues(default_exchange=Exchange('bar'))
         assert q.default_exchange
@@ -88,6 +95,44 @@ class test_Queues:
         queue.exchange = None
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
+
+    def test_setitem_adds_default_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo')
+
+        assert queues['foo'].routing_key == 'default-key'
+
+    def test_setitem_preserves_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo', routing_key='explicit-key')
+
+        assert queues['foo'].routing_key == 'explicit-key'
+
+    def test_setitem_adds_max_priority(self):
+        queues = Queues(max_priority=10)
+        queue = Queue('foo')
+        queues[queue.name] = queue
+        assert queues['foo'].queue_arguments['x-max-priority'] == 10
+
+    def test_add_and_setitem_apply_same_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues.add(Queue('foo'))
+        queues['bar'] = Queue('bar')
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 10
+        assert queues['bar'].queue_arguments['x-max-priority'] == 10
+
+    def test_add_preserves_queue_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues.add(Queue('foo', queue_arguments={'x-max-priority': 3}))
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 3
+
+    def test_setitem_preserves_queue_max_priority(self):
+        queues = Queues(max_priority=10)
+        queues['foo'] = Queue('foo', queue_arguments={'x-max-priority': 3})
+
+        assert queues['foo'].queue_arguments['x-max-priority'] == 3
 
     def test_select_add(self):
         q = Queues()
@@ -106,6 +151,37 @@ class test_Queues:
         q.select(['foo', 'bar'])
         q.deselect('bar')
         assert sorted(q._consume_from.keys()) == ['foo']
+
+    def test_deselect_by_alias_removes_selected_queue(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.select(['barfoo', 'bar'])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    def test_deselect_by_alias_removes_queue_selected_by_real_name(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.select(['foo', 'bar'])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    def test_deselect_by_alias_removes_default_queue(self):
+        q = Queues([Queue('foo', alias='barfoo'), Queue('bar')])
+        q.deselect('barfoo')
+
+        assert list(q.consume_from) == ['bar']
+        assert list(q) == ['foo', 'bar']
+
+    @pytest.mark.parametrize('create_missing', [True, False])
+    def test_deselect_unknown_queue_does_not_create_queue(self, create_missing):
+        q = Queues([Queue('foo')], create_missing=create_missing)
+        q.deselect('missing')
+
+        assert list(q.consume_from) == ['foo']
+        assert list(q) == ['foo']
 
     def test_deselect_without_explicit_consume_selection_removes_excluded_queue(self):
         q = Queues([Queue('foo'), Queue('bar')])
@@ -172,6 +248,17 @@ class test_Queues:
         assert q.name == "spontaneous"
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
+
+    def test_missing_queue_invalid_type_raises_error(self):
+        queues = Queues(create_missing_queue_type="invalid")
+
+        with pytest.raises(ValueError) as exc_info:
+            queues['foo']
+
+        assert str(exc_info.value) == (
+            "Invalid queue type 'invalid'. "
+            "Valid types are 'classic' and 'quorum'."
+        )
 
 
 class test_default_queues:
@@ -445,6 +532,71 @@ class test_AMQP(test_AMQP_Base):
         r1 = self.app.amqp.routes
         r2 = self.app.amqp.routes
         assert r1 is r2
+
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'task_routes': {}}, id='mapping'),
+        pytest.param([('task_routes', {})], id='list-of-pairs'),
+        pytest.param((('task_routes', {}),), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('task_routes', {})]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_task_routes_from_positional_argument_rebuilds_router(self, updates):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(updates)
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_from_keyword_argument_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(task_routes={})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_legacy_key_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update({'CELERY_ROUTES': {}})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_namespace_rebuilds_router(self):
+        with self.Celery(namespace='CELERY', set_as_current=False) as app:
+            previous_router = app.amqp.router
+
+            with patch.object(
+                    app.amqp, 'flush_routes',
+                    wraps=app.amqp.flush_routes) as flush_routes:
+                app.conf.update({'CELERY_TASK_ROUTES': {}})
+
+            flush_routes.assert_called_once_with()
+            assert app.amqp.router is not previous_router
+
+    def test_update_unrelated_setting_does_not_rebuild_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(worker_prefetch_multiplier=1)
+
+        flush_routes.assert_not_called()
+        assert self.app.amqp.router is previous_router
 
     def update_conf_runtime_for_tasks_queues(self):
         self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})

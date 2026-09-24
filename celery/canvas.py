@@ -59,6 +59,20 @@ def maybe_unroll_group(group):
         return group.tasks[0] if size == 1 else group
 
 
+def _is_empty_group(task):
+    """Return True if the task is a group with no members.
+
+    Shared by canvas construction (_chain.__or__) and both execution
+    paths -- the worker path (_chain.prepare_steps) and the eager path
+    (_chain.apply) -- so all three agree on which groups are skipped.
+    """
+    return (
+        isinstance(task, group) and
+        isinstance(task.tasks, (list, tuple)) and
+        not task.tasks
+    )
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -973,6 +987,9 @@ class _chain(Signature):
             return self.apply_async(args, kwargs)
 
     def __or__(self, other):
+        if _is_empty_group(other):
+            # chain | group() -> chain (empty group is a no-op)
+            return self
         if isinstance(other, group):
             # unroll group with one member
             other = maybe_unroll_group(other)
@@ -1180,6 +1197,38 @@ class _chain(Signature):
             use_link = True
         steps = deque(tasks)
 
+        # The reverse walk below identifies the chain's first task -- the one
+        # that receives the partial ``args``/``kwargs`` -- by ``not steps``.
+        # A leading step that contributes no task of its own (an empty group
+        # or a nested chain) would be the one popped last and silently
+        # swallow those partial args (Issue #9772).  Normalise the head of
+        # the chain up front so the first *real* task is the last one
+        # popped: nested chains are spliced in place, and empty groups are
+        # stripped as long as another step follows them.  A chain made up of
+        # empty groups only keeps a single one, matching the in-loop skip
+        # below, so that it still yields an (empty) group result.
+        while steps:
+            head = steps[0]
+            if not isinstance(head, abstract.CallableSignature):
+                head = steps[0] = from_dict(head, app=app)
+            if isinstance(head, _chain):
+                steps.popleft()
+                if clone:
+                    head = head.clone()
+                steps.extendleft(reversed(head.tasks))
+                continue
+            if isinstance(head, group):
+                head = steps[0] = maybe_unroll_group(head)
+                if (
+                    len(steps) > 1 and
+                    isinstance(head, group) and
+                    isinstance(head.tasks, (list, tuple)) and
+                    not head.tasks
+                ):
+                    steps.popleft()
+                    continue
+            break
+
         # optimization: now the pop func is a local variable
         steps_pop = steps.pop
         steps_extend = steps.extend
@@ -1205,12 +1254,7 @@ class _chain(Signature):
                 # when groups are nested, they are unrolled - all tasks within
                 # groups should be called in parallel
                 task = maybe_unroll_group(task)
-                if (
-                    isinstance(task, group) and
-                    isinstance(task.tasks, (list, tuple)) and
-                    not task.tasks and
-                    (steps or prev_task)
-                ):
+                if _is_empty_group(task) and (steps or prev_task):
                     continue
 
             # first task gets partial args from chain
@@ -1308,7 +1352,13 @@ class _chain(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
-        for task in self.tasks:
+        tasks = list(self.tasks)
+        for index, task in enumerate(tasks):
+            if _is_empty_group(task) and (
+                    index < len(tasks) - 1 or last is not None):
+                # Skip empty groups, mirroring _chain.prepare_steps:
+                # an empty group is a no-op, unless it is the only task.
+                continue
             res = task.clone().apply(
                 (last.get(),) if last else fargs, fkwargs,
                 **dict(self.options, **options))
@@ -1799,6 +1849,11 @@ class group(Signature):
                     task.tasks, partial_args, group_id, root_id, app,
                 )
                 yield from unroll
+            elif isinstance(task, _chain) and not task.tasks:
+                # An empty chain contributes no task and has no result to
+                # freeze, so drop it rather than fail on ``freeze()``.
+                # (Issue #9772)
+                continue
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
@@ -1942,12 +1997,14 @@ class group(Signature):
 
     def _freeze_tasks(self, tasks, group_id, chord, root_id, parent_id):
         """Creates a generator for the AsyncResult of each task in the tasks argument."""
+        # Empty chains are dropped here as in ``_prepared``.  (Issue #9772)
         yield from (task.freeze(group_id=group_id,
                                 chord=chord,
                                 root_id=root_id,
                                 parent_id=parent_id,
                                 group_index=group_index)
-                    for group_index, task in enumerate(tasks))
+                    for group_index, task in enumerate(tasks)
+                    if not (isinstance(task, _chain) and not task.tasks))
 
     def _unroll_tasks(self, tasks):
         """Creates a generator for the cloned tasks of the tasks argument."""
@@ -1982,6 +2039,10 @@ class group(Signature):
             # if this is a group, flatten it by adding all of the group's tasks to the stack
             if isinstance(task, group):
                 stack.extendleft(task.tasks)
+            elif isinstance(task, _chain) and not task.tasks:
+                # An empty chain contributes no task and has no result to
+                # freeze; drop it here as ``_prepared`` does.  (Issue #9772)
+                continue
             else:
                 new_tasks.append(task)
                 yield task.freeze(group_id=group_id,
