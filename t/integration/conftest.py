@@ -145,6 +145,24 @@ def ZZZZ_set_app_current(app, celery_session_app):
 
 
 @pytest.fixture(scope='session')
+def celery_parameters():
+    """Parameters for initializing the Celery app."""
+    return {}
+
+
+@pytest.fixture(scope='session')
+def use_celery_app_trap():
+    """Whether to enable the app trap (raises exception when using current/default apps)."""
+    return False
+
+
+@pytest.fixture(scope='session')
+def celery_worker_parameters():
+    """Parameters for initializing Celery workers."""
+    return {}
+
+
+@pytest.fixture(scope='session')
 def celery_class_tasks():
     from t.integration.tasks import ClassBasedAutoRetryTask
     return [ClassBasedAutoRetryTask]
