@@ -1,4 +1,3 @@
-from kombu.utils.encoding import ensure_bytes
 import os
 import pickle
 import sys
@@ -7,6 +6,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 import t.skip
 from celery import states, uuid
