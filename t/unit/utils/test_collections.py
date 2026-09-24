@@ -606,6 +606,30 @@ class test_BufferMap:
         b.extend(1, list(range(20)))
         self.assert_size_and_first(b, 20, 0)
 
+    def test_bufmaxsize_parameter_is_honored(self):
+        b = BufferMap(None, bufmaxsize=3)
+        b.extend(1, list(range(10)))
+        self.assert_size_and_first(b, 3, 7)
+
+    def test_total_tracks_bufmaxsize_eviction(self):
+        b = BufferMap(None, bufmaxsize=3)
+        for i in range(5):
+            b.put(1, i)
+        self.assert_size_and_first(b, 3, 2)
+
+    def test_init_from_iterable(self):
+        b = BufferMap(None, {'a': [1, 2, 3], 'b': [4, 5]})
+        self.assert_size_and_first(b, 5, 1)
+
+    def test_init_from_iterable_wraps_values_in_buffers(self):
+        b = BufferMap(None, {'a': [1, 2, 3]})
+        assert isinstance(b['a'], Messagebuffer)
+        assert b.take('a') == 1
+
+    def test_init_from_iterable_enforces_maxsize(self):
+        b = BufferMap(4, {'a': list(range(50))})
+        self.assert_size_and_first(b, 4, 46)
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
