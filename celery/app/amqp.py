@@ -510,8 +510,7 @@ class AMQP:
                               retry=None, retry_policy=None,
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
-                              headers=None, exchange_type=None,
-                              timeout=None, confirm_timeout=None, **kwargs):
+                              headers=None, timeout=None, confirm_timeout=None, **kwargs):
             retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
@@ -535,19 +534,22 @@ class AMQP:
                     pass
                 delivery_mode = delivery_mode or default_delivery_mode
 
-            if exchange_type is None:
-                try:
-                    exchange_type = queue.exchange.type
-                except AttributeError:
-                    exchange_type = 'direct'
+            if exchange is None:
+                exchange = getattr(queue, 'exchange', default_exchange)
+            if isinstance(exchange, Exchange):
+                exchange = exchange.name
 
-            # convert to anon-exchange, when exchange not set and direct ex.
-            if (not exchange or not routing_key) and exchange_type == 'direct':
-                exchange, routing_key = '', qname
-            elif exchange is None:
-                # not topic exchange, and exchange not undefined
-                exchange = queue.exchange.name or default_exchange
-                routing_key = routing_key or queue.routing_key or default_rkey
+            # The unnamed exchange routes by queue name.
+            if not exchange:
+                exchange = ''
+                if qname is not None:
+                    routing_key = qname
+
+            if routing_key is None:
+                routing_key = getattr(queue, 'routing_key', None)
+                if routing_key is None:
+                    routing_key = default_rkey
+
             if declare is None and queue and not isinstance(queue, Broadcast):
                 declare = [queue]
 
