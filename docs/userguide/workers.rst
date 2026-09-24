@@ -47,6 +47,7 @@ The ``hostname`` argument can expand the following variables:
     - ``%h``:  Hostname, including domain name.
     - ``%n``:  Hostname only.
     - ``%d``:  Domain name only.
+    - ``%%``:  Literal percent sign.
 
 If the current hostname is *george.example.com*, these will expand to:
 
@@ -59,6 +60,17 @@ If the current hostname is *george.example.com*, these will expand to:
 +----------+----------------+------------------------------+
 | ``%d``   | ``worker1@%d`` | *worker1@example.com*        |
 +----------+----------------+------------------------------+
+
+When starting ``celery worker`` directly, use ``%%`` for a literal percent
+sign in a node or host format string. For example, ``logs/%%n-%n.log`` keeps
+``%n`` literal before the hyphen and expands the worker name after it.
+
+``celery multi`` formats option values before passing them to the worker. The
+worker formats log file paths again, so a literal percent sign in a log file
+path needs ``%%%%`` when passed through ``multi``. For example,
+``--logfile=logs/%%%%n-%n.log`` becomes ``logs/%n-worker.log`` for a worker named
+``worker``. The process-index placeholders ``%i`` and ``%I`` are preserved by
+``multi`` for the worker to expand.
 
 .. admonition:: Note for :pypi:`supervisor` users
 

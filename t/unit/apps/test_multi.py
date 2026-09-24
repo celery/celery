@@ -8,6 +8,7 @@ import pytest
 
 import t.skip
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser, Node, format_opt
+from celery.utils.nodenames import node_format
 
 
 class test_functions:
@@ -54,6 +55,22 @@ def multi_args(p, *args, **kwargs):
 
 
 class test_multi_args:
+
+    @pytest.mark.parametrize('template,worker_arg,expected', [
+        ('%%%%n-%n.log', '%%n-worker.log', '%n-worker.log'),
+        ('50%%%%d.log', '50%%d.log', '50%d.log'),
+        ('%%%%x.log', '%%x.log', '%x.log'),
+        ('%%%%i-%i.log', '%%i-%i.log', '%i-0.log'),
+        ('%%%%I%I.log', '%%I%I.log', '%I.log'),
+    ])
+    def test_logfile_percent_escape(self, tmp_path, template, worker_arg, expected):
+        node = Node('worker@example.com', options={
+            '--logfile': str(tmp_path / template),
+            '--pidfile': str(tmp_path / 'worker.pid'),
+        })
+        logfile_arg = next(arg for arg in node.argv if arg.startswith('--logfile='))
+        assert logfile_arg == f'--logfile={tmp_path / worker_arg}'
+        assert node_format(logfile_arg.partition('=')[2], node.name) == str(tmp_path / expected)
 
     @patch('celery.apps.multi.os.mkdir')
     @patch('celery.apps.multi.gethostname')
