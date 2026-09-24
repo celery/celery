@@ -325,7 +325,6 @@ What's Changed
 - Chore(deps): Update elasticsearch requirement from <=9.5.0 to <=9.5.1 (#10685)
 
 
->>>>>>> upstream/main
 
 .. _version-5.6.2:
 
