@@ -248,7 +248,8 @@ class Node:
 
     @cached_property
     def pidfile(self):
-        return self.expander(self.getopt('--pidfile', '-p'))
+        # The worker formats the expanded argv once more before creating its pidfile.
+        return node_format(self.expander(self.getopt('--pidfile', '-p')), self.name)
 
     @cached_property
     def logfile(self):

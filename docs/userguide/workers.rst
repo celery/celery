@@ -66,10 +66,12 @@ sign in a node or host format string. For example, ``logs/%%n-%n.log`` keeps
 ``%n`` literal before the hyphen and expands the worker name after it.
 
 ``celery multi`` formats option values before passing them to the worker. The
-worker formats log file paths again, so a literal percent sign in a log file
-path needs ``%%%%`` when passed through ``multi``. For example,
+worker formats log and pid file paths again, so a literal percent sign in these
+paths needs ``%%%%`` when passed through ``multi``. For example,
 ``--logfile=logs/%%%%n-%n.log`` becomes ``logs/%n-worker.log`` for a worker named
-``worker``. The process-index placeholders ``%i`` and ``%I`` are preserved by
+``worker``. Similarly, ``--pidfile=%%%%n-%n.pid`` becomes ``%n-worker.pid``;
+``multi stop`` and ``multi stopwait`` look up that same final path.
+The process-index placeholders ``%i`` and ``%I`` are preserved by
 ``multi`` for the worker to expand.
 
 .. admonition:: Note for :pypi:`supervisor` users
