@@ -486,6 +486,29 @@ class test_AMQP(test_AMQP_Base):
         assert kwargs['exchange'] == 'custom_exchange'
         assert kwargs['routing_key'] == ''
 
+    def test_send_task_message_unnamed_exchange_overrides_routing_key_with_queue_name(self):
+        queue = Queue('foo', Exchange(''), routing_key='rk_celery')
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue=queue, routing_key='explicit_rk_celery', retry=False,
+        )
+
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['exchange'] == ''
+        assert kwargs['routing_key'] == 'foo'
+
+    def test_send_task_message_unnamed_exchange_preserves_routing_key_without_queue(self):
+        prod = Mock(name='producer')
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            exchange='', routing_key='rk_celery', retry=False,
+        )
+
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['exchange'] == ''
+        assert kwargs['routing_key'] == 'rk_celery'
+
     def test_send_task_message__no_default_queue(self):
         conf = self.app.conf
         conf.task_create_missing_queues = False

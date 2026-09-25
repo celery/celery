@@ -72,6 +72,52 @@ class test_task_exchange:
                 assert message.delivery_info["exchange"] == exchange.name
                 assert message.delivery_info["routing_key"] == ""
 
+    def test_send_task_unnamed_exchange_overrides_routing_key_with_queue_name(self, celery_setup_app: Celery):
+        app = celery_setup_app
+        queue = Queue(uuid(), Exchange(""), routing_key="rk_celery")
+        app.conf.update(broker_transport_options={"confirm_publish": True})
+
+        with app.connection_for_write() as connection:
+            with connection.channel() as channel:
+                bound_queue = queue(channel)
+                bound_queue.declare()
+
+                result = app.send_task(
+                    "tasks.add", args=(1, 2), queue=queue, routing_key="explicit_rk_celery",
+                    connection=connection, ignore_result=True,
+                )
+
+                message = bound_queue.get(no_ack=True)
+                assert message is not None
+                assert message.headers["id"] == result.id
+                assert message.delivery_info["exchange"] == ""
+                assert message.delivery_info["routing_key"] == queue.name
+
+    def test_send_task_unnamed_exchange_preserves_routing_key_without_queue(self, celery_setup_app: Celery):
+        app = celery_setup_app
+        routing_key = uuid()
+        queue = Queue(routing_key, Exchange(""))
+        app.conf.update(
+            broker_transport_options={"confirm_publish": True},
+            task_routes={"tasks.add": {"exchange": ""}},
+        )
+
+        with app.connection_for_write() as connection:
+            with connection.channel() as channel:
+                bound_queue = queue(channel)
+                bound_queue.declare()
+
+                result = app.send_task(
+                    "tasks.add", args=(1, 2), routing_key=routing_key,
+                    connection=connection, ignore_result=True,
+                )
+
+                message = bound_queue.get(no_ack=True)
+                assert message is not None
+                assert message.headers["id"] == result.id
+                assert message.delivery_info["exchange"] == ""
+                assert message.delivery_info["routing_key"] == routing_key
+
     @pytest.mark.parametrize("exchange_as_string", [True, False], ids=["string", "exchange-object"])
     def test_send_task_uses_explicit_exchange_without_routing_key(
         self, celery_setup_app: Celery, exchange_as_string: bool,
