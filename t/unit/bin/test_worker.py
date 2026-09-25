@@ -166,6 +166,11 @@ class test_concurrency_value_callback:
         with pytest.raises(click.BadParameter):
             _concurrency_value(_mk_ctx(None), None, 'garbage')
 
+    @pytest.mark.parametrize('raw', ['-1', '-8'])
+    def test_negative_integer_raises_bad_parameter(self, raw):
+        with pytest.raises(click.BadParameter):
+            _concurrency_value(_mk_ctx(None), None, raw)
+
     def test_invalid_string_mentions_auto_in_message(self):
         with pytest.raises(click.BadParameter) as exc_info:
             _concurrency_value(_mk_ctx(None), None, 'bogus')

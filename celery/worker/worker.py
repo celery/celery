@@ -30,7 +30,7 @@ from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
-from celery.utils.sysinfo import effective_cpu_count, is_auto_concurrency
+from celery.utils.sysinfo import cpu_budget, is_auto_concurrency
 from celery.utils.text import str_to_list
 from celery.utils.threads import bound_open_broker_sockets, default_socket_timeout
 
@@ -131,37 +131,40 @@ class WorkController:
 
         # Set default concurrency
         if is_auto_concurrency(self.concurrency):
-            # Cap to cgroup CFS quota only for CPU-bound pools. Greenlet pools
-            # (gevent, eventlet) and the thread pool scale by IO concurrency,
-            # not CPU, so ``auto`` is a no-op for them and falls back to
-            # ``os.cpu_count()``. Resolve ``self.pool_cls`` first so the check
-            # works for alias names, dotted import paths, and class objects.
-            resolved_pool = (
-                _concurrency.get_implementation(self.pool_cls)
-                if isinstance(self.pool_cls, str) else self.pool_cls
+            # Only prefork is CPU-bound, so only prefork is capped to the
+            # cgroup quota. Resolve the class here so ``issubclass`` sees it;
+            # the later ``get_implementation`` is a no-op on a class.
+            from celery.concurrency.prefork import TaskPool as PreforkPool
+            pool_name = (
+                self.pool_cls if isinstance(self.pool_cls, str)
+                else f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
             )
-            pool_module = getattr(resolved_pool, '__module__', '').rsplit(
-                '.', 1)[-1]
-            is_cpu_bound = pool_module in ('prefork', 'solo')
-            self.concurrency = effective_cpu_count(
-                use_cgroup_quota=is_cpu_bound,
+            self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+            is_cpu_bound = (
+                isinstance(self.pool_cls, type)
+                and issubclass(self.pool_cls, PreforkPool)
             )
-            host_cpus = os.cpu_count() or 2
-            if is_cpu_bound:
+            budget = cpu_budget(use_cgroup_quota=is_cpu_bound)
+            self.concurrency = budget.count
+            if not is_cpu_bound:
+                self._pending_concurrency_log = (
+                    'info',
+                    "worker_concurrency='auto' only sizes the prefork pool; "
+                    "using available cpus=%d for pool=%s. For IO-bound "
+                    "workloads set --concurrency=<N> explicitly (typical "
+                    "values: 100-1000 for gevent/eventlet).",
+                    (self.concurrency, pool_name),
+                )
+            else:
+                quota = (
+                    'no cgroup cpu quota found' if budget.quota is None
+                    else f'cgroup cpu quota={budget.quota:.2f}'
+                )
                 self._pending_concurrency_log = (
                     'info',
                     "worker_concurrency='auto' resolved to %d "
-                    "(pool=%s, host cpu_count=%d).",
-                    (self.concurrency, pool_module, host_cpus),
-                )
-            else:
-                self._pending_concurrency_log = (
-                    'info',
-                    "worker_concurrency='auto' is a no-op for non-CPU-bound "
-                    "pools; using os.cpu_count()=%d for pool=%s. For IO-bound "
-                    "workloads set --concurrency=<N> explicitly (typical "
-                    "values: 100-1000 for gevent/eventlet).",
-                    (self.concurrency, pool_module),
+                    "(pool=%s, %s, available cpus=%d).",
+                    (self.concurrency, pool_name, quota, budget.available),
                 )
         elif not self.concurrency:
             try:

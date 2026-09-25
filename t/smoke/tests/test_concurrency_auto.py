@@ -2,7 +2,7 @@
 
 These tests run real workers in Docker containers with real CFS quotas
 (``cpu_quota``/``cpu_period`` on the container), so the cgroup files read by
-``celery.utils.sysinfo.effective_cpu_count()`` are written by the kernel —
+``celery.utils.sysinfo.cpu_budget()`` are written by the kernel —
 nothing is mocked. They complement the unit tests in
 ``t/unit/utils/test_sysinfo.py``, which exercise the parsing logic against
 synthetic files.
@@ -33,6 +33,15 @@ def worker_cpu_quota() -> int:
     return 2 * CPU_PERIOD
 
 
+@pytest.fixture
+def worker_cpuset_cpus() -> str | None:
+    """CPU affinity applied to the worker container (``--cpuset-cpus``).
+
+    None means unpinned; override per test class.
+    """
+    return None
+
+
 # Same container as t/smoke/workers/dev.py, plus a CFS quota. Module-level
 # definition shadows the default worker container for tests in this file only.
 default_worker_container = container(
@@ -52,6 +61,7 @@ default_worker_container = container(
     command=fxtr("default_worker_command"),
     cpu_quota=fxtr("worker_cpu_quota"),
     cpu_period=CPU_PERIOD,
+    cpuset_cpus=fxtr("worker_cpuset_cpus"),
 )
 
 
@@ -66,10 +76,10 @@ def default_worker_container_session_cls() -> type[CeleryWorkerContainer]:
 
 
 def container_cpu_count(worker: CeleryTestWorker) -> int:
-    """``os.cpu_count()`` as seen inside the worker container (host CPUs,
-    unaffected by the CFS quota)."""
+    """CPUs in the affinity mask inside the worker container (host CPUs
+    unless ``--cpuset-cpus`` is set; unaffected by the CFS quota)."""
     exit_code, output = worker.container.exec_run(
-        'python -c "import os; print(os.cpu_count())"'
+        'python -c "import os; print(len(os.sched_getaffinity(0)))"'
     )
     assert exit_code == 0, output
     return int(output.decode().strip())
@@ -100,7 +110,7 @@ class test_auto_prefork_with_quota:
         worker = celery_setup.worker
         expected = min(container_cpu_count(worker), 2)
         worker.assert_log_exists(
-            f"worker_concurrency='auto' resolved to {expected} (pool=prefork",
+            f"worker_concurrency='auto' resolved to {expected} (pool=prefork, cgroup cpu quota=2.00",
             timeout=RESULT_TIMEOUT,
         )
         pool = get_pool_stats(celery_setup, worker)
@@ -122,7 +132,7 @@ class test_auto_prefork_fractional_quota:
     def test_fractional_quota_rounds_up_to_one(self, celery_setup: CeleryTestSetup):
         worker = celery_setup.worker
         worker.assert_log_exists(
-            "worker_concurrency='auto' resolved to 1 (pool=prefork",
+            "worker_concurrency='auto' resolved to 1 (pool=prefork, cgroup cpu quota=0.50",
             timeout=RESULT_TIMEOUT,
         )
         pool = get_pool_stats(celery_setup, worker)
@@ -145,11 +155,38 @@ class test_auto_prefork_no_quota:
         worker = celery_setup.worker
         expected = container_cpu_count(worker)
         worker.assert_log_exists(
-            f"worker_concurrency='auto' resolved to {expected} (pool=prefork",
+            f"worker_concurrency='auto' resolved to {expected} (pool=prefork, no cgroup cpu quota found",
             timeout=RESULT_TIMEOUT,
         )
         pool = get_pool_stats(celery_setup, worker)
         assert pool["max-concurrency"] == expected
+
+
+class test_auto_prefork_cpuset_no_quota:
+    """No CFS quota but pinned to one core (``--cpuset-cpus=0``): auto must
+    size from the affinity mask, not the host CPU count."""
+
+    @pytest.fixture
+    def worker_cpu_quota(self) -> int:
+        return -1
+
+    @pytest.fixture
+    def worker_cpuset_cpus(self) -> str:
+        return "0"
+
+    @pytest.fixture
+    def default_worker_command(self, default_worker_container_cls: type[CeleryWorkerContainer]) -> list[str]:
+        return default_worker_container_cls.command("--concurrency=auto", "--pool=prefork")
+
+    def test_cpuset_caps_pool_size(self, celery_setup: CeleryTestSetup):
+        worker = celery_setup.worker
+        worker.assert_log_exists(
+            "worker_concurrency='auto' resolved to 1 (pool=prefork, no cgroup cpu quota found, available cpus=1)",
+            timeout=RESULT_TIMEOUT,
+        )
+        pool = get_pool_stats(celery_setup, worker)
+        assert pool["max-concurrency"] == 1
+        assert len(pool["processes"]) == 1
 
 
 class test_auto_threads_noop:
@@ -163,7 +200,7 @@ class test_auto_threads_noop:
     def test_threads_pool_ignores_quota(self, celery_setup: CeleryTestSetup):
         worker = celery_setup.worker
         worker.assert_log_exists(
-            "worker_concurrency='auto' is a no-op for non-CPU-bound",
+            "worker_concurrency='auto' only sizes the prefork pool",
             timeout=RESULT_TIMEOUT,
         )
         expected = container_cpu_count(worker)
@@ -171,20 +208,23 @@ class test_auto_threads_noop:
         assert pool["max-concurrency"] == expected
 
 
-class test_auto_solo:
-    """quota=2 CPUs + solo pool: solo is CPU-bound, resolution path must run."""
+class test_auto_solo_noop:
+    """quota=2 CPUs + solo pool: solo runs one task at a time, so auto is a
+    documented no-op and must NOT consult the quota."""
 
     @pytest.fixture
     def default_worker_command(self, default_worker_container_cls: type[CeleryWorkerContainer]) -> list[str]:
         return default_worker_container_cls.command("--concurrency=auto", "--pool=solo")
 
-    def test_solo_pool_resolves_auto(self, celery_setup: CeleryTestSetup):
+    def test_solo_pool_is_noop(self, celery_setup: CeleryTestSetup):
         worker = celery_setup.worker
-        expected = min(container_cpu_count(worker), 2)
         worker.assert_log_exists(
-            f"worker_concurrency='auto' resolved to {expected} (pool=solo",
+            "worker_concurrency='auto' only sizes the prefork pool",
             timeout=RESULT_TIMEOUT,
         )
+        worker.assert_log_does_not_exist("worker_concurrency='auto' resolved to")
+        pool = get_pool_stats(celery_setup, worker)
+        assert pool["max-concurrency"] == 1
 
 
 class test_default_concurrency_unchanged:

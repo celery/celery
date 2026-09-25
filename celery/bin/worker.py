@@ -34,7 +34,11 @@ def _concurrency_value(ctx, _param, value):
         parsed = int(value)
     except (TypeError, ValueError):
         raise click.BadParameter(
-            f"must be an integer or 'auto', got {value!r}"
+            f"must be a non-negative integer or 'auto', got {value!r}"
+        )
+    if parsed < 0:
+        raise click.BadParameter(
+            f"must be a non-negative integer or 'auto', got {value!r}"
         )
     return parsed or ctx.obj.app.conf.worker_concurrency
 
@@ -220,9 +224,11 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Pool Options",
               help="Number of child processes processing the queue. "
                    "The default is the number of CPUs available "
-                   "on your system. Use 'auto' to size from the "
-                   "cgroup CPU quota (Linux only; applies to "
-                   "prefork/solo pools).")
+                   "on your system. Use 'auto' to size the prefork "
+                   "pool from the cgroup CPU quota and CPU affinity "
+                   "mask (Linux only). For the threads, gevent, "
+                   "eventlet and solo pools 'auto' is a no-op and "
+                   "uses the number of CPUs available to the process.")
 @click.option('-P',
               '--pool',
               default='prefork',

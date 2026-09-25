@@ -1,10 +1,11 @@
 import importlib
 import os
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
-from celery.utils.sysinfo import AUTO_CONCURRENCY, df, effective_cpu_count, is_auto_concurrency, load_average
+from celery.utils.sysinfo import (AUTO_CONCURRENCY, PROC_SELF_CGROUP, CpuBudget, _ancestors, available_cpu_count,
+                                  cgroup_cpu_quota, cpu_budget, df, is_auto_concurrency, load_average)
 
 try:
     posix = importlib.import_module('posix')
@@ -55,158 +56,218 @@ class test_is_auto_concurrency:
         assert is_auto_concurrency(AUTO_CONCURRENCY)
 
 
-class test_effective_cpu_count:
+def _fake_fs(files):
+    """Patch ``_read_text`` to serve ``files`` ({path: content})."""
+    return patch(
+        'celery.utils.sysinfo._read_text',
+        side_effect=lambda path: files.get(path),
+    )
 
-    def test_use_cgroup_quota_false_returns_cpu_count(self):
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8):
-            assert effective_cpu_count(use_cgroup_quota=False) == 8
 
-    def test_cgroup_v2_max_returns_fallback(self):
-        # cgroup v2 reports "max" when no quota is set.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    mock_open(read_data='max 100000'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 8
+def _available(n):
+    return patch('celery.utils.sysinfo.available_cpu_count', return_value=n)
 
-    def test_cgroup_v2_quota_returns_ceil(self):
-        # 1.5 CPU quota → ceil(150000 / 100000) == 2.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    mock_open(read_data='150000 100000'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 2
 
-    def test_cgroup_v2_quota_clamped_to_host(self):
-        # A quota larger than host CPU count must not over-report.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=4), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    mock_open(read_data='8000000 100000'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 4
+V2_MAX = '/sys/fs/cgroup/cpu.max'
+V1_QUOTA = '/sys/fs/cgroup/cpu/cpu.cfs_quota_us'
+V1_PERIOD = '/sys/fs/cgroup/cpu/cpu.cfs_period_us'
+PROC_V2 = '0::/kubepods/burstable/pod1/ctr1\n'
+PROC_V1 = (
+    '12:cpu,cpuacct:/docker/abc\n'
+    '11:memory:/docker/abc\n'
+    '1:name=systemd:/docker/abc\n'
+)
 
-    def test_cgroup_v2_sub_one_quota_floors_to_one(self):
-        # ceil(0.3) == 1, never 0.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    mock_open(read_data='30000 100000'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 1
 
-    def test_cgroup_v1_quota(self):
-        v1_quota = '/sys/fs/cgroup/cpu/cpu.cfs_quota_us'
-        v1_period = '/sys/fs/cgroup/cpu/cpu.cfs_period_us'
+class test_available_cpu_count:
 
-        def fake_open(path, *args, **kwargs):
-            if path == v1_quota:
-                return mock_open(read_data='200000')()
-            if path == v1_period:
-                return mock_open(read_data='100000')()
-            raise FileNotFoundError(path)
+    def test_prefers_process_cpu_count(self):
+        with patch('celery.utils.sysinfo.os') as os_mock:
+            os_mock.process_cpu_count.return_value = 3
+            os_mock.sched_getaffinity.return_value = {0, 1}
+            os_mock.cpu_count.return_value = 8
+            assert available_cpu_count() == 3
+            os_mock.sched_getaffinity.assert_not_called()
 
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p in (v1_quota, v1_period),
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    side_effect=fake_open,
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 2
+    def test_process_cpu_count_none_uses_cpu_count(self):
+        with patch('celery.utils.sysinfo.os', spec=['process_cpu_count', 'cpu_count']) as os_mock:
+            os_mock.process_cpu_count.return_value = None
+            os_mock.cpu_count.return_value = 8
+            assert available_cpu_count() == 8
 
-    def test_cgroup_v1_disabled_quota_returns_fallback(self):
-        # cgroup v1 uses -1 to mean "no quota".
-        v1_quota = '/sys/fs/cgroup/cpu/cpu.cfs_quota_us'
-        v1_period = '/sys/fs/cgroup/cpu/cpu.cfs_period_us'
+    def test_falls_back_to_sched_getaffinity(self):
+        with patch('celery.utils.sysinfo.os', spec=['sched_getaffinity', 'cpu_count']) as os_mock:
+            os_mock.sched_getaffinity.return_value = {0, 1}
+            os_mock.cpu_count.return_value = 8
+            assert available_cpu_count() == 2
 
-        def fake_open(path, *args, **kwargs):
-            if path == v1_quota:
-                return mock_open(read_data='-1')()
-            if path == v1_period:
-                return mock_open(read_data='100000')()
-            raise FileNotFoundError(path)
+    def test_affinity_oserror_falls_back_to_cpu_count(self):
+        with patch('celery.utils.sysinfo.os', spec=['sched_getaffinity', 'cpu_count']) as os_mock:
+            os_mock.sched_getaffinity.side_effect = OSError('nope')
+            os_mock.cpu_count.return_value = 8
+            assert available_cpu_count() == 8
 
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p in (v1_quota, v1_period),
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    side_effect=fake_open,
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 8
-
-    def test_no_cgroup_returns_fallback(self):
-        # No cgroup files present (non-Linux or no CPU controller).
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    return_value=False,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 8
-
-    def test_malformed_cgroup_v2_falls_back(self):
-        # Garbage in the file should not crash the worker.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    mock_open(read_data='not a number'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 8
-
-    def test_unreadable_cgroup_v2_falls_back(self):
-        # Permission denied on the cgroup file should not crash.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=8), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    side_effect=lambda p: p == '/sys/fs/cgroup/cpu.max',
-                ), \
-                patch(
-                    'celery.utils.sysinfo.open',
-                    side_effect=PermissionError('denied'),
-                    create=True,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=True) == 8
+    def test_no_affinity_api_uses_cpu_count(self):
+        with patch('celery.utils.sysinfo.os', spec=['cpu_count']) as os_mock:
+            os_mock.cpu_count.return_value = 8
+            assert available_cpu_count() == 8
 
     def test_cpu_count_none_uses_default_two(self):
-        # When os.cpu_count() returns None (rare), fall back to 2.
-        with patch('celery.utils.sysinfo.os.cpu_count', return_value=None), \
-                patch(
-                    'celery.utils.sysinfo.os.path.exists',
-                    return_value=False,
-                ):
-            assert effective_cpu_count(use_cgroup_quota=False) == 2
-            assert effective_cpu_count(use_cgroup_quota=True) == 2
+        with patch('celery.utils.sysinfo.os', spec=['cpu_count']) as os_mock:
+            os_mock.cpu_count.return_value = None
+            assert available_cpu_count() == 2
+
+
+@pytest.mark.parametrize('path, expected', [
+    ('/', ['/']),
+    ('/a/b', ['/a/b', '/a', '/']),
+    ('a/b', ['/a/b', '/a', '/']),
+    # v1 seen from inside a private cgroup namespace.
+    ('/../..', ['/']),
+])
+def test_ancestors(path, expected):
+    assert _ancestors(path) == expected
+
+
+class test_cgroup_cpu_quota:
+
+    def test_no_files_returns_none(self):
+        with _fake_fs({}):
+            assert cgroup_cpu_quota() is None
+
+    def test_v2_root_when_proc_unavailable(self):
+        # No /proc/self/cgroup: only the mount root is inspected, which is
+        # the process's own cgroup inside a private cgroup namespace.
+        with _fake_fs({V2_MAX: '200000 100000\n'}):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_v2_max_returns_none(self):
+        with _fake_fs({V2_MAX: 'max 100000\n'}):
+            assert cgroup_cpu_quota() is None
+
+    def test_v2_own_cgroup_from_proc(self):
+        files = {
+            PROC_SELF_CGROUP: PROC_V2,
+            '/sys/fs/cgroup/kubepods/burstable/pod1/ctr1/cpu.max': '150000 100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 1.5
+
+    def test_v2_ancestor_limit_is_honored(self):
+        # cgroupns=host: the leaf has no quota, the pod-level ancestor does.
+        files = {
+            PROC_SELF_CGROUP: PROC_V2,
+            '/sys/fs/cgroup/kubepods/burstable/pod1/ctr1/cpu.max': 'max 100000\n',
+            '/sys/fs/cgroup/kubepods/burstable/pod1/cpu.max': '300000 100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 3.0
+
+    def test_v2_minimum_along_chain_wins(self):
+        files = {
+            PROC_SELF_CGROUP: PROC_V2,
+            '/sys/fs/cgroup/kubepods/burstable/pod1/ctr1/cpu.max': '400000 100000\n',
+            '/sys/fs/cgroup/kubepods/burstable/pod1/cpu.max': '200000 100000\n',
+            '/sys/fs/cgroup/kubepods/cpu.max': '800000 100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_v2_root_cgroup_line(self):
+        # Private cgroup namespace: /proc/self/cgroup reports "0::/".
+        files = {
+            PROC_SELF_CGROUP: '0::/\n',
+            V2_MAX: '200000 100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_v1_quota_from_proc(self):
+        files = {
+            PROC_SELF_CGROUP: PROC_V1,
+            '/sys/fs/cgroup/cpu/docker/abc/cpu.cfs_quota_us': '200000\n',
+            '/sys/fs/cgroup/cpu/docker/abc/cpu.cfs_period_us': '100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_v1_root_when_proc_unavailable(self):
+        with _fake_fs({V1_QUOTA: '200000\n', V1_PERIOD: '100000\n'}):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_v1_disabled_quota_returns_none(self):
+        # cgroup v1 uses -1 to mean "no quota".
+        with _fake_fs({V1_QUOTA: '-1\n', V1_PERIOD: '100000\n'}):
+            assert cgroup_cpu_quota() is None
+
+    def test_v1_ancestor_limit_is_honored(self):
+        files = {
+            PROC_SELF_CGROUP: PROC_V1,
+            '/sys/fs/cgroup/cpu/docker/abc/cpu.cfs_quota_us': '-1\n',
+            '/sys/fs/cgroup/cpu/docker/abc/cpu.cfs_period_us': '100000\n',
+            '/sys/fs/cgroup/cpu/docker/cpu.cfs_quota_us': '50000\n',
+            '/sys/fs/cgroup/cpu/docker/cpu.cfs_period_us': '100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 0.5
+
+    def test_malformed_v2_falls_through_to_v1(self):
+        # A hybrid host can expose both hierarchies. Garbage in cpu.max must
+        # not mask a valid v1 quota.
+        files = {
+            V2_MAX: 'not a number\n',
+            V1_QUOTA: '200000\n',
+            V1_PERIOD: '100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+
+    def test_malformed_v2_only_returns_none(self):
+        with _fake_fs({V2_MAX: 'not a number\n'}):
+            assert cgroup_cpu_quota() is None
+
+    def test_malformed_v1_returns_none(self):
+        with _fake_fs({V1_QUOTA: 'x\n', V1_PERIOD: '100000\n'}):
+            assert cgroup_cpu_quota() is None
+
+    def test_unreadable_files_return_none(self):
+        # _read_text swallows OSError (permission denied etc.) as None.
+        with patch('celery.utils.sysinfo.open', side_effect=PermissionError('denied'), create=True):
+            assert cgroup_cpu_quota() is None
+
+    def test_proc_line_without_cpu_controller_is_ignored(self):
+        files = {
+            PROC_SELF_CGROUP: '11:memory:/docker/abc\n',
+            V1_QUOTA: '200000\n',
+            V1_PERIOD: '100000\n',
+        }
+        with _fake_fs(files):
+            # No cpu controller path and no v2 path: falls back to root.
+            assert cgroup_cpu_quota() == 2.0
+
+
+class test_cpu_budget:
+
+    def test_use_cgroup_quota_false_skips_quota(self):
+        with _available(8), patch('celery.utils.sysinfo.cgroup_cpu_quota') as q:
+            assert cpu_budget(use_cgroup_quota=False) == CpuBudget(8, 8, None)
+            q.assert_not_called()
+
+    def test_no_quota_returns_available(self):
+        with _available(8), patch('celery.utils.sysinfo.cgroup_cpu_quota', return_value=None):
+            assert cpu_budget() == CpuBudget(8, 8, None)
+
+    def test_quota_returns_ceil(self):
+        # 1.5 CPU quota -> ceil == 2.
+        with _available(8), patch('celery.utils.sysinfo.cgroup_cpu_quota', return_value=1.5):
+            assert cpu_budget() == CpuBudget(2, 8, 1.5)
+
+    def test_quota_clamped_to_available(self):
+        # A quota larger than the affinity set must not over-report.
+        with _available(4), patch('celery.utils.sysinfo.cgroup_cpu_quota', return_value=80.0):
+            assert cpu_budget() == CpuBudget(4, 4, 80.0)
+
+    def test_sub_one_quota_rounds_up_to_one(self):
+        # ceil(0.3) == 1, never 0.
+        with _available(8), patch('celery.utils.sysinfo.cgroup_cpu_quota', return_value=0.3):
+            assert cpu_budget() == CpuBudget(1, 8, 0.3)

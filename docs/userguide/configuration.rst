@@ -3514,18 +3514,36 @@ on the host will be used.
 The command-line equivalent is the
 :option:`--concurrency <celery worker --concurrency>` argument.
 
+.. versionadded:: 5.7
+   The ``"auto"`` value.
+
 Accepts an integer or the string ``"auto"``. Setting it to ``"auto"``
-(equivalent to passing ``--concurrency=auto``) enables cgroup-aware
-sizing on Linux: for CPU-bound pools (``prefork``, ``solo``) the value
-is derived from the CFS bandwidth quota
-(``/sys/fs/cgroup/cpu.max`` on cgroup v2, ``cpu.cfs_quota_us`` /
-``cpu.cfs_period_us`` on cgroup v1), preventing oversubscription inside
-Kubernetes pods and Docker containers with CPU limits. For greenlet
-pools (``gevent``, ``eventlet``) and the thread pool, ``"auto"`` is a
-no-op and falls back to ``os.cpu_count()``; concurrency for those
-pools is bound by memory and file descriptors, not CPU. On non-Linux
-platforms or when no cgroup CPU controller is mounted, ``"auto"``
-silently falls back to ``os.cpu_count()``.
+(equivalent to passing ``--concurrency=auto``) sizes the ``prefork``
+pool from the CPU resources available to the worker process on Linux:
+
+* the scheduler affinity mask (``taskset``, cpusets,
+  ``docker run --cpuset-cpus``), read via :func:`os.process_cpu_count`
+  or :func:`os.sched_getaffinity`, and
+* the cgroup CFS bandwidth quota (``cpu.max`` on cgroup v2,
+  ``cpu.cfs_quota_us`` / ``cpu.cfs_period_us`` on cgroup v1). The
+  worker's own cgroup is resolved from ``/proc/self/cgroup`` and every
+  ancestor up to the root is inspected; the smallest quota found wins,
+  so a limit set on a Kubernetes pod, a Docker container or a systemd
+  slice (``CPUQuota=``) is honored.
+
+The result is ``ceil(quota)``, clamped to at least 1 and at most the
+affinity CPU count. A fractional quota of 1.5 CPUs therefore yields 2
+processes, so the whole quota can be consumed at the cost of some CFS
+throttling; integer quotas are unaffected. When no quota is set the
+affinity CPU count is used and the worker logs at INFO level that no
+quota was found.
+
+For greenlet pools (``gevent``, ``eventlet``), the thread pool and the
+``solo`` pool, ``"auto"`` is a no-op and resolves to the affinity CPU
+count: concurrency for the IO pools is bound by memory and file
+descriptors, not CPU, and ``solo`` always runs one task at a time. On
+non-Linux platforms or when no cgroup CPU controller is mounted,
+``"auto"`` resolves to the affinity CPU count as well.
 
 .. setting:: worker_prefetch_multiplier
 
