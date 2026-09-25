@@ -62,6 +62,9 @@ Worker / broker / connection handling
 - Fix revoked tasks running anyway after mingle merged revoke stamps from
   another host (#10668)
 - Bound already-open broker sockets before connection teardown (#10570)
+- Use a queue's configured exchange and routing key when sending a task
+  without explicit exchange or routing key arguments, rather than the unnamed
+  exchange and queue name (#10704).
 
 Results / backends
 --------------------
