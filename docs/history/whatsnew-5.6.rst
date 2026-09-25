@@ -198,8 +198,8 @@ Task Registration Compatibility
 
 Repeated registration of the same bound method no longer triggers a
 duplicate-task-name warning. Explicit app tasks take precedence over shared
-tasks with the same name, and :meth:`~celery.Celery.register_task` accepts a
-pending task proxy.
+tasks with the same name, including built-in tasks, and
+:meth:`~celery.Celery.register_task` accepts a pending task proxy.
 
 SQS: Reverted to ``pycurl`` from ``urllib3``
 --------------------------------------------
