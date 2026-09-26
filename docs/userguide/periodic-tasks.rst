@@ -516,7 +516,7 @@ only prove that the process is alive and reaching the broker -- not
 that the schedule is advancing. To close that gap, beat stops answering
 once the scheduler has not completed a pass for
 :setting:`beat_remote_control_max_tick_age` seconds, which defaults to
-twice the scheduler's maximum loop interval. A wedged scheduler
+twice the interval the scheduler settled on. A wedged scheduler
 therefore fails the probe rather than passing it.
 
 Silence is deliberate: :program:`celery inspect` exits non-zero only
@@ -527,32 +527,24 @@ so the reason is visible in its own output.
 Set :setting:`beat_remote_control_max_tick_age` to ``0`` to answer
 regardless of tick age.
 
-Use it as a readiness probe first
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Choosing a probe
+~~~~~~~~~~~~~~~~
 
-Because the check travels over the broker, it fails whenever the broker
-is unreachable -- including during an ordinary broker restart, and for
-every beat pod at once. Restarting beat does not fix a broker outage,
-and a beat that restarts re-reads its schedule, so a liveness probe
-wired straight to this command can turn a short broker blip into a
-cluster-wide restart storm. Prefer a readiness probe:
+Only a **liveness** probe actually recovers a wedged beat: beat serves
+no traffic and sits behind no Service, so marking a pod NotReady
+removes nothing and starts no remediation. A readiness probe on beat
+buys you visibility in ``kubectl get pods`` and gating for Deployment
+rollouts -- useful, but it will not restart anything.
 
-.. code-block:: yaml
+The catch is that this check travels over the broker, so it fails
+whenever the broker is unreachable -- during an ordinary broker
+restart, and for every beat pod at once. Restarting beat does not fix a
+broker outage, and a beat that restarts re-reads its schedule. Wired
+carelessly, a short blip becomes a cluster-wide restart storm.
 
-    readinessProbe:
-      exec:
-        command:
-          - /bin/sh
-          - -c
-          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
-      initialDelaySeconds: 30
-      periodSeconds: 60
-      failureThreshold: 3
-
-If you do want a liveness probe -- to have a wedged beat restarted
-automatically -- give it enough ``failureThreshold`` to ride out a
-broker restart, and enough ``initialDelaySeconds`` for the pidbox
-consumer to have connected, or the first probe will kill a healthy pod:
+So use a liveness probe, but give it a ``failureThreshold`` that rides
+out a broker restart and an ``initialDelaySeconds`` long enough for the
+control node to have connected, or the first probe kills a healthy pod:
 
 .. code-block:: yaml
 
@@ -565,6 +557,25 @@ consumer to have connected, or the first probe will kill a healthy pod:
       initialDelaySeconds: 60
       periodSeconds: 60
       failureThreshold: 5
+
+With those numbers a wedged beat is restarted after about five
+minutes, while a broker restart has to last that long before it costs
+you anything.
+
+Add a readiness probe as well if you want the state surfaced in
+``kubectl`` and rollouts gated on beat coming up:
+
+.. code-block:: yaml
+
+    readinessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      failureThreshold: 3
 
 Comparison with a heartbeat file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -601,6 +612,14 @@ Interactions worth knowing
 * A beat scheduler embedded in a worker
   (:option:`-B <celery worker -B>`) never starts a control node, since
   the worker already answers for that process.
+* Node names have to be unique. Two beats resolving to the same name --
+  the same hostname, or containers on ``network_mode: host`` -- share
+  one pidbox queue, so only one of them ever answers. Give each its own
+  :option:`--hostname <celery beat --hostname>` if that can happen.
+* Remote control needs fanout exchanges, so it is available on the
+  RabbitMQ (AMQP) and Redis transports. On a transport without them
+  beat logs one warning at startup and carries on without a control
+  node.
 
 .. _beat-custom-schedulers:
 

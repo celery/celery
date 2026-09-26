@@ -4572,7 +4572,7 @@ transports that support worker remote control).
 
 .. versionadded:: 5.7
 
-Default: :const:`None` (twice :setting:`beat_max_loop_interval`).
+Default: :const:`None` (twice the scheduler's loop interval).
 
 Only has an effect when :setting:`beat_enable_remote_control` is
 enabled.
@@ -4583,9 +4583,16 @@ in a thread of its own, so without this a ping would be answered even
 by a beat whose scheduler loop had wedged -- the exact failure a health
 check exists to catch.
 
-The default tolerates exactly one missed pass. Beat records a tick when
-it starts, so a process that wedges before its first tick goes stale on
-the same schedule rather than looking healthy forever.
+The default tolerates exactly one missed pass, measured against the
+interval the scheduler actually settled on -- a scheduler class may
+choose its own when :setting:`beat_max_loop_interval` is unset, as
+``django-celery-beat`` does -- and never drops below a floor of sixty
+seconds, so that a single slow pass on a short-interval scheduler is
+not mistaken for a stall.
+
+Beat records a tick when it starts, so a process that wedges before its
+first tick goes stale on the same schedule rather than looking healthy
+forever.
 
 Beat declines by staying silent, because :program:`celery inspect`
 exits non-zero only when no node replies at all; an error reply would
