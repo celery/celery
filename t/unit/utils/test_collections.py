@@ -341,6 +341,42 @@ class test_LimitedSet:
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
 
+    def test_add_orders_items_within_the_clock_resolution(self):
+        s = LimitedSet(maxlen=10)
+        s.add('b', now=1.0)
+        s.add(1, now=1.0)  # no comparison between the items themselves
+        s.add('a', now=1.0)
+        assert list(s) == ['b', 1, 'a']
+        assert s.pop() == 'b'
+
+    def test_add_at_time_zero(self):
+        s = LimitedSet(maxlen=10, expires=1)
+        s.add('foo', now=0)
+        assert s.as_dict()['foo'] == 0
+        assert pickle.loads(pickle.dumps(s)) == s
+        s.purge(now=2)
+        assert 'foo' not in s
+
+    def test_update_from_another_clock(self):
+        # The stamps of a set built on another host are not comparable
+        # with ours; merging its items stamps them with the local clock,
+        # merging the set or its dict keeps the stamps.
+        other = LimitedSet(maxlen=10)
+        other.add('foo', now=monotonic() + 10 ** 6)
+        s = LimitedSet(maxlen=10)
+        s.update(list(other))
+        assert s.as_dict()['foo'] <= monotonic()
+        s = LimitedSet(maxlen=10)
+        s.update(other)
+        assert s.as_dict()['foo'] == other.as_dict()['foo']
+
+    def test_eq(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        assert s == pickle.loads(pickle.dumps(s))
+        assert s != LimitedSet(maxlen=2)
+        assert s != {'foo'}
+
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
@@ -595,6 +631,23 @@ class test_ChainMap:
         callback.assert_not_called()
         a.update(x=1)
         callback.assert_called_once_with(x=1)
+
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'foo': 1, 'bar': 2}, id='mapping'),
+        pytest.param([('foo', 1), ('bar', 2)], id='list-of-pairs'),
+        pytest.param((('foo', 1), ('bar', 2)), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('foo', 1), ('bar', 2)]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_with_positional_argument_notifies_observer(self, updates):
+        a = ChainMap()
+        observed = {}
+        a.bind_to(observed.update)
+
+        a.update(updates)
+        assert a.changes == observed == {'foo': 1, 'bar': 2}
 
     def test_pop_applies_key_t(self):
         cm = ChainMap(key_t=lambda key: key + '!')
