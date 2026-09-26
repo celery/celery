@@ -820,22 +820,28 @@ class BufferMap(OrderedDict, Evictable):
         # type: (int, Iterable, int) -> None
         super().__init__()
         self.maxsize = maxsize
-        self.bufmaxsize = 1000
+        self.bufmaxsize = bufmaxsize
         if iterable:
-            self.update(iterable)
-        self.total = sum(len(buf) for buf in self.items())
+            for key, items in dict(iterable).items():
+                self._get_or_create_buffer(key).extend(items)
+        self.total = sum(len(buf) for buf in self.values())
+        self.maxsize and self.evict()
 
     def put(self, key, item):
         # type: (Any, Any) -> None
-        self._get_or_create_buffer(key).put(item)
-        self.total += 1
+        buf = self._get_or_create_buffer(key)
+        before = len(buf)
+        buf.put(item)
+        self.total += len(buf) - before
         self.move_to_end(key)   # least recently used.
         self.maxsize and self._evict()
 
     def extend(self, key, it):
         # type: (Any, Iterable) -> None
-        self._get_or_create_buffer(key).extend(it)
-        self.total += len(it)
+        buf = self._get_or_create_buffer(key)
+        before = len(buf)
+        buf.extend(it)
+        self.total += len(buf) - before
         self.maxsize and self._evict()
 
     def take(self, key, *default):
