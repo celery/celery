@@ -8,7 +8,6 @@ This document contains change notes for bugfix & new features
 in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
-
 .. _version-5.7.0a1:
 
 5.7.0b1
@@ -23,6 +22,12 @@ Please help us test this version and report any issues.
 Features
 ~~~~~~~~
 
+- Add native group progress tracking for Redis backend (#10530)
+  - Groups can now track progress efficiently with O(1) queries using ``track_progress=True``
+  - ``GroupResult.progress()`` returns ``(completed_count, total_count)`` tuple
+  - Uses Redis hash with Lua script for atomic, idempotent increments
+  - Falls back to O(N) calculation for non-Redis backends
+  - Progress tracking is opt-in to avoid performance impact on non-tracking groups
 - Allow Redis backend SSL config with redis:// URLs (#10313)
 - Add ``task_repr_maxlevels`` setting to control argsrepr/kwargsrepr depth (#10371)
 - Add ``celery_beat_task`` header in task options (#9702)
@@ -132,7 +137,6 @@ Reverts
   replaced with a transient-queue-specific fix (#10290)
 - Reverted a Redis ``_pending_messages`` leak fix and a chord-hang fix, both
   later reworked
-
 
 
 What's Changed
