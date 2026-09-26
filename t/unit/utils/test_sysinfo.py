@@ -1,4 +1,5 @@
 import importlib
+import ntpath
 import os
 from unittest.mock import patch
 
@@ -130,6 +131,19 @@ def test_ancestors(path, expected):
 
 
 class test_cgroup_cpu_quota:
+
+    @pytest.mark.timeout(5)
+    def test_paths_are_posix_on_windows(self):
+        # cgroup paths are POSIX; with os.path == ntpath the ancestor walk
+        # never reached '/' and hung worker startup on Windows.
+        files = {
+            PROC_SELF_CGROUP: PROC_V2,
+            '/sys/fs/cgroup/kubepods/burstable/pod1/cpu.max': '200000 100000\n',
+        }
+        with patch.object(os, 'path', ntpath), _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+        with patch.object(os, 'path', ntpath), _fake_fs({}):
+            assert cgroup_cpu_quota() is None
 
     def test_no_files_returns_none(self):
         with _fake_fs({}):

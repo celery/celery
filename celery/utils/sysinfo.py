@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import posixpath
 from math import ceil
 from typing import NamedTuple
 
@@ -109,23 +110,23 @@ def _ancestors(path: str) -> list[str]:
     with ``/`` (a v1 hierarchy seen from inside a private cgroup
     namespace can yield ``/../..`` shapes) is normalised first.
     """
-    norm = os.path.normpath('/' + path.lstrip('/'))
+    norm = posixpath.normpath('/' + path.lstrip('/'))
     out = [norm]
     while norm != '/':
-        norm = os.path.dirname(norm)
+        norm = posixpath.dirname(norm)
         out.append(norm)
     return out
 
 
 def _read_v2_quota(cgroup_dir: str) -> tuple[str, str] | None:
-    content = _read_text(os.path.join(cgroup_dir, 'cpu.max'))
+    content = _read_text(posixpath.join(cgroup_dir, 'cpu.max'))
     parts = content.split() if content else []
     return (parts[0], parts[1]) if len(parts) == 2 else None
 
 
 def _read_v1_quota(cgroup_dir: str) -> tuple[str, str] | None:
-    quota = _read_text(os.path.join(cgroup_dir, 'cpu.cfs_quota_us'))
-    period = _read_text(os.path.join(cgroup_dir, 'cpu.cfs_period_us'))
+    quota = _read_text(posixpath.join(cgroup_dir, 'cpu.cfs_quota_us'))
+    period = _read_text(posixpath.join(cgroup_dir, 'cpu.cfs_period_us'))
     if quota is None or period is None:
         return None
     return quota.strip(), period.strip()
@@ -138,7 +139,7 @@ def _min_quota(base: str, cgroup_path: str, read) -> float | None:
     """
     quotas = []
     for rel in _ancestors(cgroup_path):
-        raw = read(os.path.join(base, rel.lstrip('/')))
+        raw = read(posixpath.join(base, rel.lstrip('/')))
         cpus = _parse_quota(*raw) if raw else None
         if cpus is not None:
             quotas.append(cpus)
@@ -169,7 +170,7 @@ def cgroup_cpu_quota() -> float | None:
         if cpus is not None:
             return cpus
     if v1_path is not None:
-        cpus = _min_quota(os.path.join(CGROUP_ROOT, 'cpu'), v1_path, _read_v1_quota)
+        cpus = _min_quota(posixpath.join(CGROUP_ROOT, 'cpu'), v1_path, _read_v1_quota)
         if cpus is not None:
             return cpus
     return None
