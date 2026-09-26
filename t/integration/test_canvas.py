@@ -3692,6 +3692,28 @@ class test_stamping_mechanism:
             assert canvas_workflow.apply_async().get() == [42] * 2
             assert assertion_result
 
+    def test_stamping_chord_body_receives_stamp_without_visitor(self, manager):
+        """A plain (visitor-less) chord stamp reaches the body task at runtime."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        body_stamps = {}
+        body_stamped_headers = []
+
+        @task_received.connect
+        def task_received_handler(request=None, **kwargs):
+            if request.task_name == xsum.name:
+                body_stamps.update(request.stamps or {})
+                body_stamped_headers.extend(request.stamped_headers or [])
+
+        c = chord(group(add.s(2, 2), add.s(4, 4)), body=xsum.s())
+        c.stamp(custom="header")
+        assert c.apply_async().get() == 12
+        assert body_stamps.get("custom") == "header"
+        assert "custom" in body_stamped_headers
+
     def test_stamping_example_canvas(self, manager):
         """Test the stamping example canvas from the examples directory"""
         try:
