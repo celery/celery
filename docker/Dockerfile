@@ -50,10 +50,14 @@ RUN chmod gu+x /entrypoint
 
 USER ${CELERY_USER}
 
-RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip \
+# BuildKit creates missing cache-mount parents as root. Rust build backends
+# need to create sibling cache directories as the unprivileged user.
+RUN mkdir -p ${HOME}/.cache
+
+RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip,uid=1000,gid=1000 \
     python -m pip install --upgrade pip setuptools wheel
 
-RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip \
+RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip,uid=1000,gid=1000 \
     python -m pip install \
     -r requirements/default.txt \
     -r requirements/dev.txt \
@@ -67,7 +71,7 @@ RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip \
 
 COPY --chown=1000:1000 . ${HOME}/celery
 
-RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip \
+RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/pip,uid=1000,gid=1000 \
     python -m pip install --no-deps -e ${HOME}/celery
 
 WORKDIR ${HOME}/celery
