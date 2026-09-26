@@ -156,6 +156,20 @@ class test_FilesystemBackend:
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
 
+    def test_forget_missing_task_is_noop(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        # other KV backends tolerate deleting an absent key; forget()
+        # on a result that was expired, already forgotten or never stored
+        # must not raise FileNotFoundError
+        tb.forget(uuid())
+
+    def test_forget_twice_is_noop(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, 42)
+        tb.forget(tid)
+        tb.forget(tid)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
