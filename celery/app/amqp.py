@@ -553,15 +553,18 @@ class AMQP:
 
             # merge default and custom policy
             retry = default_retry if retry is None else retry
-            _rp = (dict(default_policy, **retry_policy) if retry_policy
-                   else default_policy)
+            _rp = (
+                dict(default_policy, **retry_policy)
+                if retry_policy
+                else dict(default_policy)
+            )
 
             if before_receivers:
                 send_before_publish(
                     sender=name, body=body,
                     exchange=exchange, routing_key=routing_key,
                     declare=declare, headers=headers2,
-                    properties=properties, retry_policy=retry_policy,
+                    properties=properties, retry_policy=_rp,
                 )
             ret = producer.publish(
                 body,
@@ -602,7 +605,7 @@ class AMQP:
                     'routing_key': routing_key,
                 })
                 evd.publish('task-sent', sent_event,
-                            producer, retry=retry, retry_policy=retry_policy)
+                            producer, retry=retry, retry_policy=_rp)
             return ret
         return send_task_message
 
