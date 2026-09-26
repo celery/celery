@@ -2,6 +2,7 @@
 import logging
 
 from kombu.asynchronous.timer import to_timestamp
+from kombu.utils.encoding import safe_repr
 
 from celery import signals
 from celery.app import trace as _app_trace
@@ -156,7 +157,7 @@ def default(task, app, consumer,
                 'name': req.name,
                 'args': req.argsrepr,
                 'kwargs': req.kwargsrepr,
-                'eta': req.eta,
+                'eta': safe_repr(req.eta),
             }
             info(_app_trace.LOG_RECEIVED, context, extra={'data': context})
         if (req.expires or req.id in revoked_tasks) and req.revoked():
