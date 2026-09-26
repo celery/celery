@@ -40,7 +40,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         if azurestorage is None or azurestorage.__version__ < '12':
             raise ImproperlyConfigured(
-                "You need to install the azure-storage-blob v12 library to"
+                "You need to install the azure-storage-blob v12 library to "
                 "use the AzureBlockBlob backend")
 
         conf = self.app.conf
@@ -56,6 +56,15 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             'azureblockblob_connection_timeout', 20
         )
         self._read_timeout = conf.get('azureblockblob_read_timeout', 120)
+
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(args, dict(
+            kwargs,
+            expires=self.expires,
+            url=AZURE_BLOCK_BLOB_CONNECTION_PREFIX + self._connection_string,
+            container_name=self._container_name,
+        ))
 
     @classmethod
     def _parse_url(cls, url, prefix=AZURE_BLOCK_BLOB_CONNECTION_PREFIX):

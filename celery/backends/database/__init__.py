@@ -17,10 +17,11 @@ from .session import SessionManager
 
 try:
     from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
+    from sqlalchemy.orm import defer
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
-        'The database result backend requires SQLAlchemy to be installed.'
+        'The database result backend requires SQLAlchemy to be installed. '
         'See https://pypi.org/project/SQLAlchemy/')
 
 logger = logging.getLogger(__name__)
@@ -137,21 +138,26 @@ class DatabaseBackend(BaseBackend):
             **self.engine_options)
 
     def _query_task(self, session, task_id):
-        """Query task by id, falling back to deferring children if missing from database."""
+        """Query task by id, falling back to deferring missing columns from database."""
         try:
             tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
             return tasks and tasks[0]
         except DatabaseError as exc:
-            if 'children' in str(exc).lower():
-                from sqlalchemy.orm import defer
-                tasks = list(session.query(self.task_cls).options(
-                    defer(self.task_cls.children)
-                ).filter(self.task_cls.task_id == task_id))
+            exc_str = str(exc).lower()
+            defers = []
+            if 'children' in exc_str and hasattr(self.task_cls, 'children'):
+                defers.append(defer(self.task_cls.children))
+            if 'stamps' in exc_str and hasattr(self.task_cls, 'stamps'):
+                defers.append(defer(self.task_cls.stamps))
+            if defers:
+                tasks = list(session.query(self.task_cls).options(*defers).filter(
+                    self.task_cls.task_id == task_id
+                ))
                 return tasks and tasks[0]
             raise
 
-    def _store_result(self, task_id, result, state,
-                      traceback=None, request=None, **kwargs):
+    def _store_result(self, task_id, result, state, traceback=None,
+                      request=None, **kwargs):
         """Store return value and state of an executed task."""
         session = self.ResultSession()
         with session_cleanup(session):
@@ -172,10 +178,10 @@ class DatabaseBackend(BaseBackend):
                                      traceback=traceback, request=request,
                                      format_date=False, encode=True)
 
-        # Exclude the primary key id, task_id, and children columns
-        # as we should not set it None or handle children separately
+        # Exclude the primary key id, task_id, children, and stamps columns
+        # as we should not set it None or handle them separately
         columns = [column.name for column in self.task_cls.__table__.columns
-                   if column.name not in {'id', 'task_id', 'children'}]
+                   if column.name not in {'id', 'task_id', 'children', 'stamps'}]
 
         # Iterate through the columns name of the table
         # to set the value from meta.
@@ -190,6 +196,20 @@ class DatabaseBackend(BaseBackend):
                 setattr(task, 'children', ensure_bytes(self.encode(children)))
             else:
                 setattr(task, 'children', None)
+
+        if hasattr(task, 'stamps') and 'stamps' in self.task_cls.__table__.columns:
+            stamped_headers = meta.get('stamped_headers')
+            if stamped_headers:
+                stamps_data = {
+                    h: meta.get(h) for h in stamped_headers if h in meta
+                }
+                stamps_info = {
+                    'stamped_headers': stamped_headers,
+                    'stamps': stamps_data,
+                }
+                setattr(task, 'stamps', ensure_bytes(self.encode(stamps_info)))
+            elif getattr(task, 'stamps', None) is None:
+                setattr(task, 'stamps', None)
 
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
@@ -208,6 +228,17 @@ class DatabaseBackend(BaseBackend):
                 data['kwargs'] = self.decode(data['kwargs'])
             if data.get('children', None) is not None:
                 data['children'] = self.decode(data['children'])
+            raw_stamps = data.pop('stamps', None)
+            if raw_stamps is not None:
+                try:
+                    stamps_info = self.decode(raw_stamps)
+                    if isinstance(stamps_info, dict):
+                        if 'stamped_headers' in stamps_info:
+                            data['stamped_headers'] = stamps_info['stamped_headers']
+                        if 'stamps' in stamps_info and isinstance(stamps_info['stamps'], dict):
+                            data.update(stamps_info['stamps'])
+                except Exception:
+                    pass
             return self.meta_from_decoded(data)
 
     def _decode_stored_result(self, payload):
