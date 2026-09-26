@@ -135,11 +135,14 @@ class WorkController:
             # cgroup quota. Resolve the class here so ``issubclass`` sees it;
             # the later ``get_implementation`` is a no-op on a class.
             from celery.concurrency.prefork import TaskPool as PreforkPool
-            pool_name = (
-                self.pool_cls if isinstance(self.pool_cls, str)
-                else f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
-            )
             self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+            # The CLI hands over a class, so map it back to its alias.
+            target = f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
+            pool_name = next(
+                (alias for alias, path in _concurrency.ALIASES.items()
+                 if path == target),
+                target,
+            )
             is_cpu_bound = (
                 isinstance(self.pool_cls, type)
                 and issubclass(self.pool_cls, PreforkPool)

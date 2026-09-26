@@ -1071,6 +1071,7 @@ class test_WorkController(ConsumerCase):
         mock_budget.assert_called_once_with(use_cgroup_quota=True)
         assert worker.concurrency == 2
         assert worker.pool_cls is MyPool
+        assert worker._pending_concurrency_log[2][1].startswith('myproj.pools:')
 
     @patch('celery.worker.worker.cpu_budget')
     def test_concurrency_auto_no_quota_logged(self, mock_budget):
@@ -1184,6 +1185,8 @@ class test_WorkController(ConsumerCase):
         )
         mock_budget.assert_called_once_with(use_cgroup_quota=True)
         assert worker.concurrency == 2
+        # The CLI passes a class; the log must still name the alias.
+        assert worker._pending_concurrency_log[2][1] == 'prefork'
 
     @patch('celery.worker.worker.cpu_budget')
     def test_concurrency_auto_cli_overrides_config(self, mock_budget):
