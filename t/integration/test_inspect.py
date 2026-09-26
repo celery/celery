@@ -99,7 +99,7 @@ class test_Inspect:
         ]
 
     @flaky
-    def test_active(self, inspect):
+    def test_active(self, app, inspect):
         """Tests listing active tasks"""
         res = sleeping.delay(5)
         sleep(1)
@@ -116,7 +116,7 @@ class test_Inspect:
                 'time_start': ANY,
                 'acknowledged': True,
                 'delivery_info': {
-                    'exchange': '',
+                    'exchange': app.conf.task_default_exchange,
                     'routing_key': 'celery',
                     'priority': 0,
                     'redelivered': False
@@ -126,7 +126,7 @@ class test_Inspect:
         ]
 
     @flaky
-    def test_scheduled(self, inspect):
+    def test_scheduled(self, app, inspect):
         """Tests listing scheduled tasks"""
         exec_time = datetime.now(timezone.utc) + timedelta(seconds=5)
         res = add.apply_async([1, 2], {'z': 3}, eta=exec_time)
@@ -146,7 +146,7 @@ class test_Inspect:
                     'time_start': None,
                     'acknowledged': False,
                     'delivery_info': {
-                        'exchange': '',
+                        'exchange': app.conf.task_default_exchange,
                         'routing_key': 'celery',
                         'priority': 0,
                         'redelivered': False
@@ -157,7 +157,7 @@ class test_Inspect:
         ]
 
     @flaky
-    def test_query_task(self, inspect):
+    def test_query_task(self, app, inspect):
         """Task that does not exist or is finished"""
         ret = inspect.query_task('d08b257e-a7f1-4b92-9fea-be911441cb2a')
         assert len(ret) == 1
@@ -180,7 +180,7 @@ class test_Inspect:
                     'time_start': ANY,
                     'acknowledged': True,
                     'delivery_info': {
-                        'exchange': '',
+                        'exchange': app.conf.task_default_exchange,
                         'routing_key': 'celery',
                         'priority': 0,
                         'redelivered': False
