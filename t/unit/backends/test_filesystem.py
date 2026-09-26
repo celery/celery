@@ -6,6 +6,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 import t.skip
 from celery import states, uuid
@@ -155,6 +156,44 @@ class test_FilesystemBackend:
         tb.mark_as_done(tid, 42)
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_is_atomic_no_tempfile_left_behind(self):
+        import glob
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, {'x': 'y' * 100})
+        assert tb.get(tb.get_key_for_task(tid)) is not None
+        # no temporary files remain in the result directory
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
+
+    def test_concurrent_readers_never_see_torn_payload(self):
+        import threading
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        key = tb.get_key_for_task(uuid())
+        payload = ensure_bytes('{"result": "' + 'x' * 100000 + '"}')
+        stop = threading.Event()
+        errors = []
+
+        def reader():
+            while not stop.is_set():
+                value = tb.get(key)
+                if value is not None:
+                    try:
+                        tb.decode(value)
+                    except Exception as exc:
+                        errors.append(exc)
+                        return
+
+        t = threading.Thread(target=reader, daemon=True)
+        t.start()
+        try:
+            for _ in range(50):
+                tb.set(key, payload)
+        finally:
+            stop.set()
+        t.join(5)
+        assert not errors
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
