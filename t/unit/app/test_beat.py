@@ -1008,6 +1008,13 @@ class test_Service:
         s = beat.Service(app=self.app, scheduler_cls=Mock)
         assert loads(dumps(s))
 
+    def test_start_records_the_effective_max_interval(self):
+        s, sh = self.get_service()
+        assert s.effective_max_interval is None
+        s.scheduler.shutdown_service = s
+        s.start()
+        assert s.effective_max_interval == s.scheduler.max_interval
+
     def test_start_stamps_last_tick(self):
         s, sh = self.get_service()
         assert s._last_tick is None
@@ -1173,6 +1180,19 @@ class test_BeatPidbox:
         assert service.max_interval == 0
         assert pb.max_tick_age == beat.DEFAULT_MAX_INTERVAL * 2
 
+    def test_max_tick_age_uses_the_interval_the_scheduler_settled_on(self):
+        # A scheduler class may pick its own interval when neither the
+        # argument nor beat_max_loop_interval is set -- django-celery-beat
+        # uses five seconds -- so the service's value is not the real cap.
+        pb, service = self.get_pidbox()
+        service.effective_max_interval = 600.0
+        assert pb.max_tick_age == 1200.0
+
+    def test_max_tick_age_never_drops_below_the_floor(self):
+        pb, service = self.get_pidbox()
+        service.effective_max_interval = 5.0   # django-celery-beat
+        assert pb.max_tick_age == pb.min_tick_age
+
     def test_max_tick_age_can_be_configured(self):
         pb, _ = self.get_pidbox()
         self.app.conf.beat_remote_control_max_tick_age = 42.0
@@ -1181,34 +1201,87 @@ class test_BeatPidbox:
     def test_not_stale_before_the_first_tick_is_recorded(self):
         pb, service = self.get_pidbox()
         service._last_tick = None
-        assert pb._tick_age() is None
-        assert pb._is_stale() is False
+        assert pb.tick_age() is None
+        assert pb.is_stale() is False
 
     def test_stale_once_a_tick_is_overdue(self):
         pb, service = self.get_pidbox()
         self.app.conf.beat_remote_control_max_tick_age = 10.0
         service._last_tick = time.monotonic()
-        assert pb._is_stale() is False
+        assert pb.is_stale() is False
         service._last_tick = time.monotonic() - 11.0
-        assert pb._is_stale() is True
+        assert pb.is_stale() is True
 
     def test_staleness_check_can_be_disabled(self):
         pb, service = self.get_pidbox()
         self.app.conf.beat_remote_control_max_tick_age = 0
         service._last_tick = time.monotonic() - 10_000.0
-        assert pb._is_stale() is False
+        assert pb.is_stale() is False
 
-    def test_on_message_does_not_reply_when_stale(self):
+    def _fanout(self, pb):
+        # start() asks the transport about fanout, and that call goes
+        # through connection_for_read() too.  These tests drive the
+        # consumer loop, not the guard, so keep it out of their
+        # connection sequence -- otherwise it silently eats the first
+        # one and the test stops exercising what it claims to.
+        return patch.object(pb, 'supports_fanout', return_value=True)
+
+    def _message(self):
+        # handle_message reads headers['clock'] before it does anything
+        # else; a bare Mock there raises inside the clock and the error
+        # is swallowed, which would make these tests pass vacuously.
+        message = Mock(name='message')
+        message.headers = {}
+        return message
+
+    def _stale_pidbox(self, max_tick_age=10.0):
+        pb, service = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = max_tick_age
+        service._last_tick = time.monotonic() - (max_tick_age + 1)
+        pb.node.reply = Mock(name='reply')
+        return pb
+
+    def test_does_not_reply_when_stale(self):
         # Silence is the only thing a probe can see: `celery inspect`
         # exits non-zero only when nothing replies at all.
-        pb, service = self.get_pidbox()
-        self.app.conf.beat_remote_control_max_tick_age = 10.0
-        service._last_tick = time.monotonic() - 11.0
-        pb.node.handle_message = Mock(name='handle_message')
+        pb = self._stale_pidbox()
         with patch('celery.beat.warning') as warning:
-            pb.on_message({'method': 'ping', 'arguments': {}}, Mock())
-        pb.node.handle_message.assert_not_called()
+            pb.on_message({'method': 'ping', 'arguments': {},
+                           'destination': [pb.hostname],
+                           'reply_to': {'exchange': 'r', 'routing_key': 'r'}},
+                          self._message())
+        pb.node.reply.assert_not_called()
         warning.assert_called_once()
+
+    def test_stale_check_ignores_messages_for_other_nodes(self):
+        # The gate runs inside dispatch, which handle_message only
+        # reaches for messages addressed here -- otherwise a stale beat
+        # would log about every worker's liveness probe.
+        pb = self._stale_pidbox()
+        for body in (
+            {'method': 'ping', 'arguments': {},
+             'destination': ['celery@somewhere-else']},
+            {'method': 'ping', 'arguments': {},
+             'pattern': 'celery@*', 'matcher': 'glob'},
+        ):
+            with patch('celery.beat.error') as error:
+                with patch('celery.beat.warning') as warning:
+                    pb.on_message(body, self._message())
+            pb.node.reply.assert_not_called()
+            warning.assert_not_called()
+            error.assert_not_called()   # not "passed because it threw"
+
+    def test_replies_to_a_broadcast_addressed_to_it(self):
+        pb, service = self.get_pidbox()
+        service._last_tick = time.monotonic()
+        pb.node.reply = Mock(name='reply')
+        pb.on_message({'method': 'ping', 'arguments': {},
+                       'pattern': 'celerybeat@*', 'matcher': 'glob',
+                       'reply_to': {'exchange': 'r', 'routing_key': 'r'}},
+                      self._message())
+        pb.node.reply.assert_called_once()
+        assert pb.node.reply.call_args[0][0] == {
+            pb.hostname: {'ok': 'pong'}}
 
     def test_on_message_replies_while_ticking(self):
         pb, service = self.get_pidbox()
@@ -1259,12 +1332,36 @@ class test_BeatPidbox:
         with patch.object(self.app, 'connection_for_read') as cfr:
             conn = cfr.return_value.__enter__.return_value
             conn.drain_events.side_effect = _idle_then_timeout
-            pb.start()
+            with self._fanout(pb):
+                pb.start()
             assert pb.thread.is_alive()
             assert pb.thread.daemon
             pb.stop()
         # cleared only because the thread really did terminate
         assert pb.thread is None
+
+    def test_start_refuses_a_transport_without_fanout(self):
+        # node.listen() would fail on every attempt, and the reconnect
+        # loop cannot tell that apart from a dropped connection, so it
+        # would log an error every retry_interval forever.
+        pb, _ = self.get_pidbox()
+        with patch.object(pb, 'supports_fanout', return_value=False):
+            with patch('celery.beat.warning') as warning:
+                pb.start()
+        assert pb.thread is None
+        warning.assert_called_once()
+
+    def test_supports_fanout_asks_the_transport(self):
+        pb, _ = self.get_pidbox()
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.supports_exchange_type.return_value = False
+            assert pb.supports_fanout() is False
+        cfr.return_value.supports_exchange_type.assert_called_once_with(
+            'fanout')
+
+    def test_supports_fanout_on_a_real_transport(self):
+        pb, _ = self.get_pidbox()
+        assert pb.supports_fanout() is True   # memory:// has fanout
 
     def test_start_is_idempotent_while_running(self):
         pb, _ = self.get_pidbox()
@@ -1272,9 +1369,10 @@ class test_BeatPidbox:
         with patch.object(self.app, 'connection_for_read') as cfr:
             conn = cfr.return_value.__enter__.return_value
             conn.drain_events.side_effect = _idle_then_timeout
-            pb.start()
-            running = pb.thread
-            pb.start()  # must not spawn a second consumer
+            with self._fanout(pb):
+                pb.start()
+                running = pb.thread
+                pb.start()  # must not spawn a second consumer
             assert pb.thread is running
             pb.stop()
         assert pb.thread is None
@@ -1290,7 +1388,8 @@ class test_BeatPidbox:
         with patch.object(self.app, 'connection_for_read') as cfr:
             conn = cfr.return_value.__enter__.return_value
             conn.drain_events.side_effect = _idle_then_timeout
-            pb.start()
+            with self._fanout(pb):
+                pb.start()
             pb.stop()
             pb.stop()  # must not raise or block on the cleared thread
         assert pb.thread is None
@@ -1361,7 +1460,8 @@ class test_BeatPidbox:
 
         with patch.object(self.app, 'connection_for_read',
                           side_effect=next_connection) as cfr:
-            pb.start()
+            with self._fanout(pb):
+                pb.start()
             assert reconnected.wait(timeout=10), 'did not reconnect'
             pb.stop()
         assert cfr.call_count >= 2

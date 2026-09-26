@@ -19,6 +19,7 @@ from threading import Event, Thread
 from billiard import ensure_multiprocessing
 from billiard.common import reset_signals
 from billiard.context import Process
+from kombu import pidbox
 from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 from kombu.utils.functional import maybe_evaluate, reprcall
@@ -31,7 +32,7 @@ from .utils.collections import AttributeDict
 from .utils.functional import is_numeric_value
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
-from .utils.nodenames import gethostname, host_format, nodename, nodesplit
+from .utils.nodenames import default_nodename, host_format
 from .utils.time import humanize_seconds, maybe_make_aware
 
 __all__ = (
@@ -634,15 +635,43 @@ class PersistentScheduler(Scheduler):
         return f'    . db -> {self.schedule_filename}'
 
 
+#: name half of beat's remote-control node name.
+NODENAME_DEFAULT = 'celerybeat'
+
+
 def beat_nodename(hostname=None):
     """Return the node name beat answers remote control commands on.
 
-    Mirrors the worker's resolution: a bare name gains the local host, a
-    bare host gains the ``celerybeat`` name, and ``%h``/``%n``/``%d`` are
-    expanded either way.
+    The worker's own resolution with a different default name, so the
+    two cannot drift: a bare host gains the ``celerybeat`` name, and
+    ``%h``/``%n``/``%d`` expand as they do for ``celery worker -n``.
     """
-    name, host = nodesplit(hostname or '')
-    return host_format(nodename(name or 'celerybeat', host or gethostname()))
+    return host_format(default_nodename(hostname, NODENAME_DEFAULT))
+
+
+class _BeatNode(pidbox.Node):
+    """Pidbox node that stays silent while the scheduler is stalled.
+
+    The staleness check lives here rather than in the consumer callback
+    because :meth:`kombu.pidbox.Node.handle_message` only reaches
+    :meth:`dispatch` for messages actually addressed to this node.
+    Checking earlier would make beat log about every broadcast aimed at
+    a worker.
+    """
+
+    #: owning :class:`BeatPidbox`, set once it has built this node.
+    beat_pidbox = None
+
+    def dispatch(self, method, arguments=None, reply_to=None,
+                 ticket=None, **kwargs):
+        owner = self.beat_pidbox
+        if owner is not None and owner.is_stale():
+            warning('beat pidbox: not answering %s, the scheduler has '
+                    'not ticked for %.1fs (over the %ss limit).',
+                    method, owner.tick_age(), owner.max_tick_age)
+            return None
+        return super().dispatch(method, arguments, reply_to, ticket,
+                                **kwargs)
 
 
 class BeatPidbox:
@@ -672,16 +701,24 @@ class BeatPidbox:
     #: seconds to wait for the thread to terminate in :meth:`stop`.
     join_timeout = 3.0
 
+    #: floor for the derived :attr:`max_tick_age`.  A scheduler with a
+    #: short loop interval (django-celery-beat's is five seconds) would
+    #: otherwise get a window so tight that one slow pass looks like a
+    #: stall, and on a liveness probe that means restart loops.
+    min_tick_age = 60.0
+
     def __init__(self, service):
         self.service = service
         self.app = service.app
         self.hostname = beat_nodename(service.hostname)
         self.state = AttributeDict(app=self.app, service=service)
-        self.node = self.app.control.mailbox.Node(
+        self.node = _BeatNode(
             safe_str(self.hostname),
-            handlers={'ping': self._ping},
             state=self.state,
+            handlers={'ping': self._ping},
+            mailbox=self.app.control.mailbox,
         )
+        self.node.beat_pidbox = self
         self.thread = None
         self._shutdown = Event()
 
@@ -689,19 +726,23 @@ class BeatPidbox:
     def max_tick_age(self):
         """Seconds a tick may be overdue before beat stops replying.
 
-        Falls back to twice the maximum loop interval, which tolerates
-        exactly one missed pass.  ``0`` disables the check.
+        Falls back to twice the interval the scheduler actually settled
+        on -- which a scheduler class may choose itself, so it is not
+        always :setting:`beat_max_loop_interval` -- with
+        :attr:`min_tick_age` as a floor.  ``0`` disables the check.
 
-        Resolved from the service rather than from ``service.scheduler``
-        on purpose: the scheduler is a lazy attribute, and this runs on
-        the consumer thread, which must not be the one to build it.
+        The service records that interval on the main thread once the
+        scheduler exists, because the scheduler is a lazy attribute and
+        this runs on the consumer thread, which must not build it.
         """
         configured = self.app.conf.beat_remote_control_max_tick_age
         if configured is not None:
             return configured
-        return (self.service.max_interval or DEFAULT_MAX_INTERVAL) * 2
+        interval = (self.service.effective_max_interval or
+                    self.service.max_interval or DEFAULT_MAX_INTERVAL)
+        return max(interval * 2, self.min_tick_age)
 
-    def _tick_age(self):
+    def tick_age(self):
         # Read of a single float attribute written by the scheduler
         # thread.  That is atomic under CPython, so no lock is needed --
         # but keep it a plain attribute for that reason: splitting it
@@ -711,11 +752,11 @@ class BeatPidbox:
             return None
         return time.monotonic() - last_tick
 
-    def _is_stale(self):
+    def is_stale(self):
         max_tick_age = self.max_tick_age
         if not max_tick_age:
             return False
-        tick_age = self._tick_age()
+        tick_age = self.tick_age()
         return tick_age is not None and tick_age > max_tick_age
 
     def _ping(self, state, **_kwargs):
@@ -727,18 +768,30 @@ class BeatPidbox:
                 return
             if body.get('method') not in self.node.handlers:
                 return
-            if self._is_stale():
-                warning('beat pidbox: not answering %s, the scheduler '
-                        'has not ticked for %.1fs (over the %ss limit).',
-                        body.get('method'), self._tick_age(),
-                        self.max_tick_age)
-                return
             self.node.handle_message(body, message)
         except Exception as exc:  # pylint: disable=broad-except
             error('beat pidbox command error: %r', exc, exc_info=True)
 
+    def supports_fanout(self):
+        # Reads the transport's declared capabilities; no connection is
+        # opened, so this is safe to call before starting the thread.
+        connection = self.app.connection_for_read()
+        try:
+            return connection.supports_exchange_type('fanout')
+        finally:
+            ignore_errors(connection, connection.release)
+
     def start(self):
         if self.thread is not None and self.thread.is_alive():
+            return
+        if not self.supports_fanout():
+            # Without fanout, node.listen() fails on every attempt.  The
+            # reconnect loop cannot tell that apart from a connection
+            # that dropped, so it would retry forever, once per
+            # retry_interval, for the life of the process.
+            warning('beat pidbox: the %s transport has no fanout '
+                    'exchanges, so remote control is unavailable.',
+                    self.app.connection_for_read().transport_cls)
             return
         self._shutdown.clear()
         self.thread = Thread(
@@ -850,6 +903,9 @@ class Service:
             if remote_control is None else remote_control)
         self.hostname = hostname
 
+        #: interval the scheduler settled on, recorded once it exists so
+        #: the pidbox thread never has to build the lazy attribute.
+        self.effective_max_interval = None
         self._pidbox = None
         #: monotonic timestamp of the last scheduler pass, read by the
         #: pidbox thread to decide whether beat is still ticking.
@@ -871,6 +927,8 @@ class Service:
         if embedded_process:
             signals.beat_embedded_init.send(sender=self)
             platforms.set_process_title('celery beat')
+
+        self.effective_max_interval = self.scheduler.max_interval
 
         if self.remote_control:
             self._pidbox = BeatPidbox(self)
