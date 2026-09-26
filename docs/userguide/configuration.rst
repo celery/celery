@@ -3182,8 +3182,8 @@ a connection was closed.
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified
 by the :setting:`broker_heartbeat_checkrate` setting (by default
-this is set to double the rate of the heartbeat value,
-so for the 10 seconds, the heartbeat is checked every 5 seconds).
+this is set to triple the rate of the heartbeat value,
+so for the 10 seconds, the heartbeat is checked about every 3.33 seconds).
 
 .. setting:: broker_heartbeat_checkrate
 
@@ -3191,13 +3191,13 @@ so for the 10 seconds, the heartbeat is checked every 5 seconds).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
-Default: 2.0.
+Default: 3.0.
 
 At intervals the worker will monitor that the broker hasn't missed
 too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
-so if the heartbeat is 10.0 and the rate is the default 2.0, the check
-will be performed every 5 seconds (twice the heartbeat sending rate).
+so if the heartbeat is 10.0 and the rate is the default 3.0, the check
+will be performed about every 3.33 seconds (three times the heartbeat sending rate).
 
 .. setting:: broker_use_ssl
 
