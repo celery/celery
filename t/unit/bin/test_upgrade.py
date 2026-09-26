@@ -20,7 +20,7 @@ def settings_file(tmp_path):
     path.write_bytes(
         b'BROKER_URL = "memory://"\r\n'
         b'CELERY_ALWAYS_EAGER = True\r\n'
-        b'# calf\xc3\xa9\n'
+        b'# \xc3\xa9t\xc3\xa9\n'
     )
     return path
 
@@ -44,7 +44,7 @@ def test_upgrade_settings_renames_keys_and_writes_backup(settings_file):
     assert settings_file.read_bytes() == (
         b'broker_url = "memory://"\r\n'
         b'task_always_eager = True\r\n'
-        b'# calf\xc3\xa9\n'
+        b'# \xc3\xa9t\xc3\xa9\n'
     )
     backup = settings_file.with_name(settings_file.name + '.orig')
     assert backup.read_bytes() == original
@@ -57,7 +57,7 @@ def test_upgrade_settings_django(settings_file):
     assert settings_file.read_bytes() == (
         b'CELERY_BROKER_URL = "memory://"\r\n'
         b'CELERY_TASK_ALWAYS_EAGER = True\r\n'
-        b'# calf\xc3\xa9\n'
+        b'# \xc3\xa9t\xc3\xa9\n'
     )
     assert not settings_file.with_name(settings_file.name + '.orig').exists()
 
