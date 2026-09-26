@@ -1,5 +1,7 @@
 """Redis result store backend."""
+import threading
 import time
+import warnings
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -47,6 +49,11 @@ You need to install the redis library with support of \
 sentinel in order to use the Redis result store backend.
 """
 
+W_REDIS_COMPRESSION_DISABLED = """\
+The Redis result backend is configured with decode_responses enabled.
+The result_compression setting is ignored and results are stored uncompressed.
+"""
+
 W_REDIS_SSL_CERT_OPTIONAL = """
 Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
 celery might not validate the identity of the redis broker when connecting. \
@@ -84,37 +91,58 @@ class ResultConsumer(BaseResultConsumer):
         self._ensure = self.backend.ensure
         self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
+        # redis-py pubsub is not safe for concurrent use, but subscribe/
+        # unsubscribe can be called from any thread or greenlet (e.g. from
+        # AsyncResult.__del__ during garbage collection) while the drainer
+        # is polling the same socket.  Serialize all pubsub operations.
+        self._pubsub_lock = threading.RLock()
 
     def on_after_fork(self):
+        # the lock may have been held by a thread that did not survive
+        # the fork, so the child starts with a fresh one.
+        self._pubsub_lock = threading.RLock()
         try:
             self.backend.client.connection_pool.reset()
-            if self._pubsub is not None:
-                self._pubsub.close()
+            with self._pubsub_lock:
+                if self._pubsub is not None:
+                    self._pubsub.close()
         except KeyError as e:
             logger.warning(str(e))
         super().on_after_fork()
 
     def _reconnect_pubsub(self):
-        self._pubsub = None
-        self.backend.client.connection_pool.reset()
-        # task state might have changed when the connection was down so we
-        # retrieve meta for all subscribed tasks before going into pubsub mode
-        if self.subscribed_to:
-            metas = self.backend.client.mget(self.subscribed_to)
-            metas = [meta for meta in metas if meta]
-            for meta in metas:
-                self.on_state_change(self._decode_result(meta), None)
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        # subscribed_to maybe empty after on_state_change
-        if self.subscribed_to:
-            self._pubsub.subscribe(*self.subscribed_to)
-        else:
-            self._pubsub.connection = self._pubsub.connection_pool.get_connection()
-            # even if there is nothing to subscribe, we should not lose the callback after connecting.
-            # The on_connect callback will re-subscribe to any channels we previously subscribed to.
-            self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
+        with self._pubsub_lock:
+            self._pubsub = None
+            self.backend.client.connection_pool.reset()
+            # task state might have changed when the connection was down so we
+            # retrieve meta for all subscribed tasks before going into pubsub mode
+            if self.subscribed_to:
+                metas = self.backend.client.mget(self.subscribed_to)
+                metas = [meta for meta in metas if meta]
+                for meta in metas:
+                    self.on_state_change(self._decode_result(meta), None)
+            self._pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
+            # subscribed_to maybe empty after on_state_change
+            if self.subscribed_to:
+                self._pubsub.subscribe(*self.subscribed_to)
+            else:
+                # redis-py < 5.3.0 requires ``command_name`` as a positional
+                # argument to ``ConnectionPool.get_connection``. The argument was
+                # made optional (and ignored) in 5.3.0+, so passing it stays
+                # compatible across both ranges (#10294).
+                try:
+                    self._pubsub.connection = (
+                        self._pubsub.connection_pool.get_connection()
+                    )
+                except TypeError:
+                    self._pubsub.connection = (
+                        self._pubsub.connection_pool.get_connection('pubsub')
+                    )
+                # even if there is nothing to subscribe, we should not lose the callback after connecting.
+                # The on_connect callback will re-subscribe to any channels we previously subscribed to.
+                self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     def _reconnect(self):
         """Re-establish the Redis pub/sub connection with retry."""
@@ -122,40 +150,64 @@ class ResultConsumer(BaseResultConsumer):
 
     def _maybe_cancel_ready_task(self, meta):
         if meta['status'] in states.READY_STATES:
-            self.cancel_for(meta['task_id'])
+            task_id = meta['task_id']
+            self.cancel_for(task_id)
 
     def on_state_change(self, meta, message):
         super().on_state_change(meta, message)
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        self._consume_from(initial_task_id)
+        with self._pubsub_lock:
+            self._pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
+            self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
         for meta in result._iter_meta(**kwargs):
             if meta is not None:
                 self.on_state_change(meta, None)
+                # After on_state_change processes a READY meta, clean up any
+                # leaked entry in _pending_messages. on_state_change may have
+                # buffered this READY meta there (if the result was already
+                # resolved from _pending_results). Since the subscription is now
+                # canceled and the task is complete, this entry will never be
+                # consumed and would leak memory. We only clean up SUCCESS and
+                # FAILURE because REVOKED may still be needed by waiters
+                # (e.g., integration tests for revoke-by-headers).
+                if meta['status'] in (states.SUCCESS, states.FAILURE):
+                    pending_messages = self.backend._pending_messages
+                    task_id = meta['task_id']
+                    try:
+                        buf = pending_messages.pop(task_id)
+                    except KeyError:
+                        pass
+                    else:
+                        pending_messages.total -= len(buf)
 
     def stop(self):
-        if self._pubsub is not None:
-            self._pubsub.close()
+        with self._pubsub_lock:
+            if self._pubsub is not None:
+                self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        if self._pubsub:
-            with self.reconnect_on_error():
-                message = self._pubsub.get_message(timeout=timeout)
-                if message and message['type'] == 'message':
-                    self.on_state_change(self._decode_result(message['data']), message)
-        elif timeout:
+        with self._pubsub_lock:
+            if self._pubsub:
+                with self.reconnect_on_error():
+                    message = self._pubsub.get_message(timeout=timeout)
+                    if message and message['type'] == 'message':
+                        self.on_state_change(
+                            self._decode_result(message['data']), message)
+                return
+        if timeout:
             time.sleep(timeout)
 
     def consume_from(self, task_id):
-        if self._pubsub is None:
-            return self.start(task_id)
-        self._consume_from(task_id)
+        with self._pubsub_lock:
+            if self._pubsub is None:
+                return self.start(task_id)
+            self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
@@ -166,10 +218,12 @@ class ResultConsumer(BaseResultConsumer):
 
     def cancel_for(self, task_id):
         key = self._get_key_for_task(task_id)
-        self.subscribed_to.discard(key)
-        if self._pubsub:
-            with self.reconnect_on_error():
-                self._pubsub.unsubscribe(key)
+        with self._pubsub_lock:
+            if key in self.subscribed_to:
+                self.subscribed_to.discard(key)
+                if self._pubsub:
+                    with self.reconnect_on_error():
+                        self._pubsub.unsubscribe(key)
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
@@ -190,6 +244,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
+    # Redis preserves binary payloads; response decoding disables compression.
+    supports_result_compression = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -277,6 +333,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        if self.compression and self.connparams.get('decode_responses'):
+            warnings.warn(W_REDIS_COMPRESSION_DISABLED, UserWarning)
+            self.compression = None
 
         # If we've received SSL parameters via query string or the
         # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
@@ -382,9 +442,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                           'ssl_cert_reqs']
 
         if scheme == 'redis':
-            # If connparams or query string contain ssl params, raise error
-            if (any(key in connparams for key in ssl_param_keys) or
-                    any(key in query for key in ssl_param_keys)):
+            # If the query string contains SSL params, raise an error. SSL
+            # params configured by redis_backend_use_ssl are already in
+            # defaults/connparams and should be honored, matching the Redis
+            # broker behavior when broker_use_ssl is used with a redis:// URL.
+            if any(key in query for key in ssl_param_keys):
                 raise ValueError(E_REDIS_SSL_PARAMS_AND_SCHEME_MISMATCH)
 
         if scheme == 'rediss':

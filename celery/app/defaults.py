@@ -151,7 +151,7 @@ NAMESPACES = Namespace(
     control=Namespace(
         queue_ttl=Option(300.0, type='float'),
         queue_expires=Option(10.0, type='float'),
-        queue_exclusive=Option(False, type='bool'),
+        queue_exclusive=Option(True, type='bool'),
         queue_durable=Option(False, type='bool'),
         exchange=Option('celery', type='string'),
     ),
@@ -182,7 +182,7 @@ NAMESPACES = Namespace(
         queue_expires=Option(60.0, type='float'),
         queue_ttl=Option(5.0, type='float'),
         queue_prefix=Option('celeryev'),
-        queue_exclusive=Option(False, type='bool'),
+        queue_exclusive=Option(True, type='bool'),
         queue_durable=Option(False, type='bool'),
         serializer=Option('json'),
         exchange=Option('celeryev', type='string'),
@@ -307,6 +307,7 @@ NAMESPACES = Namespace(
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
         remote_tracebacks=Option(False, type='bool'),
+        repr_maxlevels=Option(3, type='int'),
         routes=Option(type='any'),
         send_sent_event=Option(
             False, type='bool', old={'celery_send_task_sent_event'},
@@ -345,6 +346,7 @@ NAMESPACES = Namespace(
         ),
         hijack_root_logger=Option(True, type='bool'),
         log_color=Option(type='bool'),
+        log_datefmt=Option(None, type='string'),
         log_format=Option(DEFAULT_PROCESS_LOG_FMT),
         lost_wait=Option(10.0, type='float', old={'celeryd_worker_lost_wait'}),
         max_memory_per_child=Option(type='int'),
@@ -352,6 +354,7 @@ NAMESPACES = Namespace(
         pool=Option(DEFAULT_POOL),
         pool_putlocks=Option(True, type='bool'),
         pool_restarts=Option(False, type='bool'),
+        pool_start_method=Option('fork', type='string'),
         proc_alive_timeout=Option(4.0, type='float'),
         prefetch_multiplier=Option(4, type='int'),
         eta_task_limit=Option(None, type='int'),
@@ -367,6 +370,7 @@ NAMESPACES = Namespace(
             False, type='bool', old={'celery_send_events'},
         ),
         state_db=Option(),
+        task_log_datefmt=Option(None, type='string'),
         task_log_format=Option(DEFAULT_TASK_LOG_FMT),
         timer=Option(type='string'),
         timer_precision=Option(1.0, type='float'),
@@ -400,8 +404,9 @@ def flatten(d, root='', keyfilter=_flatten_keys):
                 yield from keyfilter(ns, key, opt)
 
 
+_OPTIONS = dict(flatten(NAMESPACES))
 DEFAULTS = {
-    key: opt.default for key, opt in flatten(NAMESPACES)
+    key: opt.default for key, opt in _OPTIONS.items()
 }
 __compat = list(flatten(NAMESPACES, keyfilter=_to_compat))
 _OLD_DEFAULTS = {old_key: opt.default for old_key, _, opt in __compat}
@@ -426,7 +431,11 @@ def find_deprecated_settings(source):  # pragma: no cover
 
 @memoize(maxsize=None)
 def find(name, namespace='celery'):
-    """Find setting by name."""
+    """Find setting by name.
+
+    Returns:
+        Tuple: of ``(namespace, key, type)``.
+    """
     # - Try specified name-space first.
     namespace = namespace.lower()
     try:
@@ -444,4 +453,4 @@ def find(name, namespace='celery'):
                 except KeyError:
                     pass
     # - See if name is a qualname last.
-    return searchresult(None, name.lower(), DEFAULTS[name.lower()])
+    return searchresult(None, name.lower(), _OPTIONS[name.lower()])

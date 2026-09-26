@@ -5,10 +5,12 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
+from celery import states
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
-from celery.result import AsyncResult, EagerResult, GroupResult
+from celery.exceptions import Ignore, Reject
+from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
 SIG = Signature({
     'task': 'TASK',
@@ -22,6 +24,36 @@ SIG = Signature({
 def return_True(*args, **kwargs):
     # Task run functions can't be closures/lambdas, as they're pickled.
     return True
+
+
+def _group_result_sizes_in_as_tuple(tuple_repr):
+    """Return fan-out sizes for each GroupResult node in an as_tuple() tree."""
+    sizes = []
+
+    def walk(tup):
+        if tup is None:
+            return
+        (res, nodes) = tup
+        if nodes is not None:
+            sizes.append(len(nodes))
+            for child in nodes:
+                walk(child)
+        _, parent = res
+        walk(parent)
+
+    walk(tuple_repr)
+    return sizes
+
+
+def _group_result_sizes_on_spine(result):
+    """Return fan-out sizes for each GroupResult on the parent spine."""
+    sizes = []
+    node = result
+    while node is not None:
+        if isinstance(node, GroupResult):
+            sizes.append(len(node.results))
+        node = node.parent
+    return sizes
 
 
 class test_maybe_unroll_group:
@@ -230,6 +262,49 @@ class test_Signature(CanvasCase):
         assert kwargs == {'foo': 1}
         assert options == {'task_id': 3}
 
+    def test_clone_does_not_alias_kwargs(self):
+        # gh #10560: clone() used to hand back a signature that shared the
+        # original's kwargs dict, so mutating a clone corrupted the source
+        # (and every sibling clone). Mirrors the defensive copy already made
+        # for options.
+        original = self.add.s(1, 2)
+        original.kwargs['shared'] = {'nested': True}
+
+        clone_a = original.clone()
+        clone_b = original.clone()
+        assert clone_a.kwargs is not original.kwargs
+        assert clone_b.kwargs is not original.kwargs
+        assert clone_a.kwargs is not clone_b.kwargs
+
+        clone_a.kwargs['added_on_clone'] = 1
+        assert 'added_on_clone' not in original.kwargs
+        assert 'added_on_clone' not in clone_b.kwargs
+
+    def test_clone_does_not_alias_kwargs_with_non_kwargs_overrides(self):
+        # _merge() returns self.kwargs unchanged when no kwargs override is
+        # given, so clone(<option>) / clone(args=...) hit the same aliasing.
+        original = self.add.s(1, 2)
+        assert original.clone(priority=5).kwargs is not original.kwargs
+        assert original.clone(countdown=10).kwargs is not original.kwargs
+        assert original.clone(args=(3,)).kwargs is not original.kwargs
+
+    def test_clone_does_not_alias_kwargs_when_immutable(self):
+        # the immutable short-circuit in _merge() also returned self.kwargs.
+        original = self.add.si(1, 2)
+        clone = original.clone()
+        assert clone.kwargs is not original.kwargs
+        clone.kwargs['x'] = 1
+        assert 'x' not in original.kwargs
+
+    def test_clone_kwargs_copy_is_shallow(self):
+        # deliberately a shallow dict copy, not a deepcopy: canvas primitives
+        # keep live objects in kwargs (a task Signature, a lazy iterator for
+        # chunks/xmap/xstarmap) that must not be duplicated or consumed.
+        nested = {'keep_identity': True}
+        original = self.add.s(1, 2)
+        original.kwargs['nested'] = nested
+        assert original.clone().kwargs['nested'] is nested
+
     def test_merge_options__none(self):
         sig = self.add.si()
         _, _, new_options = sig._merge()
@@ -411,6 +486,37 @@ class test_chain(CanvasCase):
         assert x.clone().args == x.args
         assert isinstance(x.clone(), chain_type)
 
+    @pytest.mark.parametrize('depth', (1, 3))
+    @pytest.mark.parametrize('args,kwargs,expected', (
+        ((3,), {}, 50),
+        ((), {'x': 3}, 50),
+        ((3,), {'y': 4}, 70),
+    ))
+    def test_apply_nested_chain_with_arguments(
+        self, depth, args, kwargs, expected,
+    ):
+        workflow = chain(self.add.s(y=2), self.mul.s(10))
+        for _ in range(depth):
+            workflow = chain(workflow)
+        original = json.dumps(workflow)
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == expected
+        assert json.dumps(workflow) == original
+
+    def test_apply_nested_chain_with_immutable_first_task(self):
+        workflow = chain(chain(self.add.si(2, 3), self.mul.s(10)))
+
+        assert workflow.apply(args=(99,), kwargs={'y': 99}).get() == 50
+
+    def test_apply_nested_chain_with_tasks_keyword(self):
+        @self.app.task
+        def count_tasks(tasks):
+            return len(tasks)
+
+        workflow = chain(chain(count_tasks.s(), self.mul.s(10)))
+
+        assert workflow.apply(kwargs={'tasks': [1, 2, 3]}).get() == 30
+
     def test_repr(self):
         x = self.add.s(2, 2) | self.add.s(2)
         assert repr(x) == f'{self.add.name}(2, 2) | add(2)'
@@ -466,6 +572,110 @@ class test_chain(CanvasCase):
         g2 = group([self.add.s(3, 3), self.add.s(5, 5)])
         c = g1 | g2
         assert isinstance(c, chord)
+
+    def test_empty_groups_are_skipped_in_chain(self):
+        c = chain(
+            group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app),
+            group(app=self.app),
+            group(app=self.app),
+        )
+
+        assert isinstance(c, group)
+        result = c.apply_async()
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
+    def test_empty_group_body_is_skipped_when_chain_upgrades_to_chord(self):
+        c = self.add.s(1, 1) | group(
+            [self.add.s(2, 2), self.add.s(3, 3)],
+            app=self.app,
+        ) | group(app=self.app)
+
+        result = c.apply_async()
+
+        assert isinstance(result, GroupResult)
+        assert len(result.results) == 2
+
+    def test_generator_backed_empty_group_is_not_skipped_when_chained(self):
+        def tasks():
+            yield from ()
+
+        c = group([self.add.s(2, 2)], app=self.app) | group(tasks(), app=self.app)
+
+        assert isinstance(c, chord)
+
+    def test_known_empty_generator_backed_group_is_skipped_in_chain(self):
+        def tasks():
+            yield from ()
+
+        c = _chain(
+            group([self.add.s(2, 2)], app=self.app),
+            group(tasks(), app=self.app),
+            app=self.app,
+        )
+
+        prepared_tasks, results = c.prepare_steps((), {}, c.tasks)
+
+        assert len(prepared_tasks) == 1
+        assert prepared_tasks[0].task == self.add.name
+        assert isinstance(results[0], AsyncResult)
+
+    def test_trailing_empty_group_is_skipped_in_eager_chain_apply(self):
+        # The eager path (_chain.apply) must agree with the worker path
+        # (_chain.prepare_steps, fixed in #10321): empty groups are skipped.
+        c = chain(self.add.s(2, 2), group(app=self.app))
+
+        assert isinstance(c, _chain)
+        assert c.apply().get() == 4
+
+    def test_middle_empty_group_is_skipped_in_eager_chain_apply(self):
+        # chain() reduces its arguments with __or__, which drops the
+        # empty group at construction time, so no chord upgrade happens
+        # and both execution paths agree.
+        c = chain(
+            self.add.s(2, 2), group(app=self.app), self.add.s(2),
+        )
+
+        assert isinstance(c, _chain)
+        prepared, _ = c.prepare_steps((), {}, c.tasks)
+
+        assert [t.task for t in prepared] == [self.add.name, self.add.name]
+        assert c.apply().get() == 6
+
+    def test_empty_group_is_skipped_in_directly_constructed_chain_apply(self):
+        # _chain.__or__ drops empty groups, so only a directly constructed or
+        # deserialized chain still carries one into the eager path.
+        c = _chain(self.add.s(2, 2), group(app=self.app),
+                   self.add.s(2), app=self.app)
+        assert c.apply().get() == 6
+
+    def test_trailing_empty_group_is_skipped_in_directly_constructed_chain(
+            self):
+        c = _chain(self.add.s(2, 2), group(app=self.app), app=self.app)
+        assert c.apply().get() == 4
+
+    def test_lone_empty_group_is_not_skipped_in_eager_chain_apply(self):
+        # Mirrors prepare_steps: an empty group survives when it is the
+        # only task.
+        c = _chain(group(app=self.app), app=self.app)
+        assert c.apply().get() == []
+
+    def test_empty_groups_are_dropped_at_chain_construction(self):
+        # _chain.__or__ treats an empty group as a no-op in any
+        # position: it is dropped instead of upgrading the chain
+        # into a chord with an empty header.
+        trailing = chain(self.add.s(2, 2), group(app=self.app))
+        assert isinstance(trailing, _chain)
+        assert [t.task for t in trailing.tasks] == [self.add.name]
+
+        middle = chain(self.add.s(2, 2), group(app=self.app), self.add.s(2))
+        assert isinstance(middle, _chain)
+        assert [t.task for t in middle.tasks] == [self.add.name, self.add.name]
+        assert not any(isinstance(task, chord) for task in middle.tasks)
+
+        leading = chain(group(app=self.app), self.add.s(2, 2))
+        assert isinstance(leading, _chain)
+        assert [t.task for t in leading.tasks] == [self.add.name]
 
     def test_prepare_steps_set_last_task_id_to_chain(self):
         last_task = self.add.s(2).set(task_id='42')
@@ -709,6 +919,51 @@ class test_chain(CanvasCase):
         assert res.parent.parent.get() == 8
         assert res.parent.parent.parent is None
 
+    @pytest.mark.parametrize('args,kwargs', (((4,), {}), ((), {'x': 4})))
+    def test_apply_chord_in_chain_with_arguments(self, args, kwargs):
+        workflow = chain(
+            chord([self.add.s(y=2), self.add.s(y=3)], self.xsum.s()),
+            self.mul.s(10),
+        )
+
+        assert workflow.apply(args=args, kwargs=kwargs).get() == 130
+
+    def test_apply_stops_chain_when_task_raises_ignore(self):
+        executed = []
+
+        @self.app.task(shared=False)
+        def ignoring():
+            raise Ignore()
+
+        @self.app.task(shared=False)
+        def should_not_run(*args):
+            executed.append(True)
+            return 'ran'
+
+        res = (ignoring.s() | should_not_run.s()).apply()
+
+        assert executed == []
+        assert res.state == states.IGNORED
+        assert res.get() is None
+
+    def test_apply_stops_chain_when_task_raises_reject(self):
+        executed = []
+
+        @self.app.task(shared=False)
+        def rejecting():
+            raise Reject()
+
+        @self.app.task(shared=False)
+        def should_not_run(*args):
+            executed.append(True)
+            return 'ran'
+
+        res = (rejecting.s() | should_not_run.s()).apply()
+
+        assert executed == []
+        assert res.state == states.REJECTED
+        assert res.get() is None
+
     def test_kwargs_apply(self):
         x = chain(self.add.s(), self.add.s(8), self.add.s(10))
         res = x.apply(kwargs={'x': 1, 'y': 1}).get()
@@ -850,6 +1105,39 @@ class test_chain(CanvasCase):
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_consecutive_groups_in_chain_preserve_group_results_in_as_tuple(self, task_protocol):
+        # Regression for #8903: chain(head, mid..., group(G1), group(G2), tail...)
+        # must keep GroupResult fan-out in as_tuple(), not collapse to a short
+        # parent spine with no group children. Run under both task protocols:
+        # protocol 1 enables use_link in prepare_steps().
+        self.app.conf.task_protocol = task_protocol
+        n = 3
+        worker_tasks = [self.add.si(i, i) for i in range(n)]
+        post_tasks = [
+            chain(self.add.si(i, 0), self.add.si(0, i), app=self.app)
+            for i in range(n)
+        ]
+        canvas = chain(
+            self.add.si(0, 0),
+            self.add.si(1, 0),
+            self.add.si(0, 1),
+            group(worker_tasks, app=self.app),
+            group(post_tasks, app=self.app),
+            self.add.si(2, 0),
+            self.add.s(3),
+            task_id='last-task-id',
+            app=self.app,
+        )
+        tup = canvas.apply_async().as_tuple()
+        restored = result_from_tuple(tup, app=self.app)
+
+        for sizes in (
+            _group_result_sizes_in_as_tuple(tup),
+            _group_result_sizes_on_spine(restored),
+        ):
+            assert sizes.count(n) >= 2, sizes
+
     def test_upgrade_to_chord_on_chain(self):
         group1 = group(self.add.si(10, 10), self.add.si(10, 10))
         group2 = group(self.xsum.s(), self.xsum.s())
@@ -960,6 +1248,247 @@ class test_chain(CanvasCase):
         assert c.id == 'my-explicit-id'
         assert result.id == 'my-explicit-id'
 
+    def test_chain_with_empty_group_does_not_crash(self):
+        """Empty groups chained after a group must not raise.
+
+        Regression test for https://github.com/celery/celery/issues/9772
+        """
+        # ``chain(group(...), group(), group())`` folds the empty groups
+        # away in ``group.__or__``; build the chain directly so that the
+        # empty groups reach ``prepare_steps``.
+        g1 = group([self.add.s(2, 2), self.add.s(4, 4)], app=self.app)
+        c = _chain(g1, group(app=self.app), group(app=self.app), app=self.app)
+        res = c.apply_async()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 2
+
+    def test_chain_empty_group_between_tasks(self):
+        """An empty group between tasks in a chain should be skipped."""
+        c = chain(self.add.s(2, 2), group(), self.add.s(4, 4))
+        res = c.freeze()  # should not raise
+        assert isinstance(res, AsyncResult)
+
+    def test_chain_empty_group_first_passes_args(self):
+        """When an empty group precedes a real task, partial args must
+        be forwarded to the first non-empty step.
+
+        Regression test for issue #9772.
+        """
+        # Use _chain directly to avoid the chain() constructor converting
+        # group() | task into a chord.
+        c = _chain(group(), self.add.s(), app=self.app)
+        tasks, _ = c.prepare_steps((2, 2), {}, c.tasks)
+        # tasks are returned in reverse order; the first logical task
+        # (add) is last in the list.
+        first_task = tasks[-1]
+        assert first_task.args == (2, 2)
+
+    def test_chain_empty_group_first_args_go_to_first_real_task(self):
+        """chain(group(), add.s(y))(x) -- args pass through to first real task.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((1, 2), {}, c.tasks)
+        # tasks are in reverse order; last element is the first logical task
+        first_task = tasks[-1]
+        assert first_task.args == (1, 2, 10), (
+            f"Expected args (1, 2, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_multiple_leading_empty_groups_args(self):
+        """chain(group(), group(), add.s(y))(x) -- multiple leading empty groups.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), group(), self.add.s(10), app=self.app)
+        tasks, _ = c.prepare_steps((3,), {}, c.tasks)
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected args (3, 10) on first real task, got {first_task.args}"
+        )
+
+    def test_chain_empty_group_in_middle(self):
+        """chain(add.s(x), group(), add.s(y)) -- empty group in middle.
+
+        The empty group should be silently skipped without affecting the chain.
+        Regression test for issue #9772.
+        """
+        c = _chain(self.add.s(1, 2), group(), self.add.s(10), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        # Should produce 2 real tasks, not crash
+        assert len(tasks) == 2
+        assert len(results) == 2
+
+    def test_chain_trailing_empty_group(self):
+        """chain(add.s(x), group()) -- trailing empty group.
+
+        The trailing empty group should be silently dropped.
+        Regression test for issue #9772.
+        """
+        c = _chain(self.add.s(1, 2), group(), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+
+    def test_chain_empty_group_args_reach_correct_task(self):
+        """chain(group(), add.s(x), add.s(y))(z) -- z goes to add.s(x), not add.s(y).
+
+        Verifies that partial args are prepended to the chain's *first* real
+        task (add.s(x)), not the *last* task (add.s(y)).
+        Regression test for issue #9772.
+        """
+        c = _chain(group(), self.add.s(100), self.add.s(200), app=self.app)
+        tasks, _ = c.prepare_steps((5,), {}, c.tasks)
+        # tasks is in reverse order: [add.s(200), add.s(100)]
+        first_logical_task = tasks[-1]   # add.s(100) with args prepended
+        last_logical_task = tasks[0]     # add.s(200) with NO extra args
+        assert first_logical_task.args == (5, 100), (
+            f"Expected (5, 100) on first task, got {first_logical_task.args}"
+        )
+        assert last_logical_task.args == (200,), (
+            f"Expected (200,) on last task (no extra args), got {last_logical_task.args}"
+        )
+
+    def test_chain_only_empty_groups(self):
+        """chain(group(), group()) -- chain of only empty groups.
+
+        Every step is a no-op, but the chain must still produce a result,
+        so a single empty group is kept rather than dropping every step
+        (consistent with how a sole empty group is handled since #10321).
+        Regression test for issue #9772.
+        """
+        c = _chain(group(app=self.app), group(app=self.app), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], group)
+        assert not tasks[0].tasks
+        assert len(results) == 1
+        assert isinstance(results[0], GroupResult)
+
+    def test_chain_only_empty_groups_freeze_returns_result(self):
+        """chain(group(), group()).freeze() must return a result, not raise.
+
+        Callers rely on freeze() returning an object with .id and .parent.
+        Regression test for issue #9772.
+        """
+        c = _chain(group(app=self.app), group(app=self.app), app=self.app)
+        res = c.freeze()
+        assert isinstance(res, GroupResult)
+        assert res.id is not None
+
+    def test_nested_chain_with_leading_empty_group(self):
+        """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
+
+        A nested chain at the head of the chain is spliced before the
+        first task is determined, so the empty group leading it is
+        stripped and the partial args still reach ``add.s(x)``.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((5,), {}, outer.tasks)
+        # Should produce 2 real tasks: add.s(10) and add.s(20)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        # First logical task (last in reversed list) should get args
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_multiple_leading_empty_groups_after_splice(self):
+        """_chain(_chain(group(), group(), add.s(x)), add.s(y)) -- spliced empty groups.
+
+        After the inner chain is spliced, both leading empty groups must
+        be stripped and partial args must still reach the first real task.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        tasks, results = outer.prepare_steps((7,), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+        first_task = tasks[-1]
+        assert first_task.args == (7, 10), (
+            f"Expected (7, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_only_empty_groups_spliced(self):
+        """_chain(_chain(group(), group()), add.s(x)) -- inner chain is all empty groups.
+
+        After splicing, the inner chain contributes no real tasks.
+        The outer add.s(x) should still receive partial args correctly.
+        Regression test for issue #9772.
+        """
+        inner = _chain(group(), group(), app=self.app)
+        outer = _chain(inner, self.add.s(10), app=self.app)
+        tasks, results = outer.prepare_steps((3,), {}, outer.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (3, 10), (
+            f"Expected (3, 10) on first task, got {first_task.args}"
+        )
+
+    def test_nested_chain_trailing_empty_group_after_splice(self):
+        """_chain(add.s(x), _chain(add.s(y), group())) -- trailing empty in spliced chain.
+
+        The trailing empty group from the inner chain should be silently
+        dropped after splicing.
+        Regression test for issue #9772.
+        """
+        inner = _chain(self.add.s(10), group(), app=self.app)
+        outer = _chain(self.add.s(1, 2), inner, app=self.app)
+        tasks, results = outer.prepare_steps((), {}, outer.tasks)
+        assert len(tasks) == 2
+        assert len(results) == 2
+
+    def test_chain_leading_empty_chain_passes_args(self):
+        """_chain(_chain(), add.s(x))(y) -- a leading empty chain must not swallow args.
+
+        Regression test for issue #9772.
+        """
+        c = _chain(_chain(app=self.app), self.add.s(10), app=self.app)
+        tasks, results = c.prepare_steps((5,), {}, c.tasks)
+        assert len(tasks) == 1
+        assert len(results) == 1
+        assert tasks[-1].args == (5, 10), (
+            f"Expected (5, 10) on first real task, got {tasks[-1].args}"
+        )
+
+    def test_chain_leading_empty_group_as_dict_strip(self):
+        """Leading empty group passed as a serialized dict should be stripped.
+
+        Exercises the from_dict conversion path in the head normalisation
+        of prepare_steps().  (Issue #9772)
+        """
+        # Serialize an empty group to a dict so it enters the
+        # ``not isinstance(head, CallableSignature)`` branch.
+        empty_dict = dict(group())
+        c = _chain(app=self.app)
+        c.tasks = [empty_dict, self.add.s(10)]
+        tasks, results = c.prepare_steps((5,), {}, c.tasks)
+        assert len(tasks) == 1
+        first_task = tasks[-1]
+        assert first_task.args == (5, 10), (
+            f"Expected (5, 10), got {first_task.args}"
+        )
+
+    def test_chain_freeze_nested_chain_leading_empty_group_no_clone(self):
+        """freeze() uses clone=False; a nested chain with a leading empty
+        group must still forward the chain's partial args in place.
+        (Issue #9772)
+        """
+        inner = _chain(group(), self.add.s(10), app=self.app)
+        outer = _chain(inner, self.add.s(20), app=self.app)
+        outer.args = (5,)
+        res = outer.freeze()
+        assert isinstance(res, AsyncResult)
+        # freeze() prepares the original signatures in place, so the first
+        # real task of the spliced inner chain carries the partial args.
+        assert inner.tasks[1].args == (5, 10)
+
 
 class test_group(CanvasCase):
     def test_repr(self):
@@ -1038,7 +1567,7 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(sig.clone(immutable=True))
+            child_sig.link_error.assert_called_with(sig.clone())
 
     def test_link_error_with_dict_sig(self):
         g1 = group(Mock(name='t1'), Mock(name='t2'), app=self.app)
@@ -1048,7 +1577,17 @@ class test_group(CanvasCase):
         # We expect that all group children will be given the errback to ensure
         # it gets called
         for child_sig in g1.tasks:
-            child_sig.link_error.assert_called_with(errback.clone(immutable=True))
+            child_sig.link_error.assert_called_with(errback.clone())
+
+    def test_link_error_preserves_mutable_errback(self):
+        g1 = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
+        errback = self.add.s()
+
+        linked = g1.link_error(errback)
+
+        assert len(linked) == 2
+        for child_sig in g1.tasks:
+            assert child_sig.options['link_error'][0].immutable is False
 
     def test_apply_empty(self):
         x = group(app=self.app)
@@ -1238,16 +1777,31 @@ class test_group(CanvasCase):
         # the encapsulated chains - in this case 1 for each child chord
         mock_set_chord_size.assert_has_calls((call(ANY, 1),) * child_count)
 
-    @pytest.mark.xfail(reason="Invalid canvas setup with bad exception")
     def test_apply_contains_chords_containing_empty_chain(self):
+        """A chord whose header contains only empty chains should not hang.
+
+        Empty chains are no-ops; when every header member is an empty chain
+        the header group is effectively empty and the chord body should be
+        executed immediately.  Regression test for issue #9772.
+        """
         gchild_sig = chain(tuple())
         child_count = 24
         child_chord = chord((gchild_sig,), self.add.si(0, 0))
         group_sig = group((child_chord,) * child_count)
-        # This is an invalid setup because we can't complete a chord header if
-        # there are no actual tasks which will run in it. However, the current
-        # behaviour of an `IndexError` isn't particularly helpful to a user.
-        group_sig.apply_async()
+        with patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            # Previously this raised IndexError.  After fixing #9772 the
+            # empty chains are stripped from the chord header, so apply_async
+            # should not be called for any header tasks (they are all no-ops).
+            group_sig.apply_async()
+        # No header tasks should be applied -- every chain is empty.
+        # The child_count calls we see are the chord bodies being applied
+        # (each chord's body is self.add.si(0, 0)).
+        assert mock_apply_async.call_count == child_count, (
+            f"Expected {child_count} apply_async calls (one per chord body), "
+            f"got {mock_apply_async.call_count}"
+        )
 
     def test_apply_contains_chords_containing_chain_with_empty_tail(self):
         ggchild_count = 42
@@ -1382,6 +1936,46 @@ class test_group(CanvasCase):
         res = self.helper_test_get_delay(sig.delay())
         assert res == [3, 2]
 
+    def test_group_prepared_skips_empty_chain(self):
+        """_prepared() must skip empty chains that appear as group members.
+
+        An empty chain (``chain()``) in a group is a no-op and cannot be
+        frozen, so it must be silently dropped.  (Issue #9772)
+        """
+        empty_chain = _chain(app=self.app)  # chain with no tasks
+        real_task = self.add.s(1, 2)
+        g = group(empty_chain, real_task)
+        _, group_id, root_id = g._freeze_gid({})
+        prepared = list(g._prepared(g.tasks, [], group_id, root_id, self.app))
+        # Only the real task should appear; the empty chain is skipped.
+        assert len(prepared) == 1
+        task, result, gid = prepared[0]
+        assert task.args == (1, 2)
+
+    def test_group_freeze_skips_empty_chain(self):
+        """freeze() must skip empty chains so the frozen results match the
+        tasks that will actually be applied.  (Issue #9772)
+        """
+        g = group(_chain(app=self.app), self.add.s(1, 2), app=self.app)
+        res = g.freeze()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 1
+        assert len(g.tasks) == 1
+        assert g.tasks[0].args == (1, 2)
+
+    def test_group_freeze_skips_empty_chain_in_generator(self):
+        """Generator-backed groups freeze through ``_freeze_tasks``; empty
+        chains must be skipped there too.  (Issue #9772)
+        """
+        def tasks():
+            yield _chain(app=self.app)
+            yield self.add.s(1, 2)
+
+        g = group(tasks(), app=self.app)
+        res = g.freeze()
+        assert isinstance(res, GroupResult)
+        assert len(res.results) == 1
+
 
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
@@ -1434,6 +2028,23 @@ class test_chord(CanvasCase):
     def test_app_when_header_is_empty(self):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
+
+    def test_freeze_empty_group_body_returns_result(self):
+        """An empty group body still exists and should be frozen.
+
+        This is a defensive check for chains that may upgrade a group into a
+        chord whose body is an empty group.
+        """
+        x = chord(
+            group(self.add.s(2, 2), app=self.app),
+            group(app=self.app),
+            app=self.app,
+        )
+
+        result = x.freeze()
+
+        assert isinstance(result, GroupResult)
+        assert result.parent is not None
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_app_fallback_to_current(self):
@@ -1659,21 +2270,32 @@ class test_chord(CanvasCase):
         # We also expect the body to have no initial options - since all of the
         # embedded body elements are confirmed to be `body_elem` this is valid
         assert body_elem.options == {}
-        # When we freeze the chord, its body will be cloned and options set
+        # Freezing the group clones every task it holds and freezes the clone;
+        # the frozen chord (now living in ``top_group.tasks``) is where the
+        # body is cloned and per-element ``group_index`` options are set.
         top_group.freeze()
+        frozen_chord = list(top_group.tasks)[0]
         with subtests.test(
             msg="Validate body group indices count from 0 after freezing"
         ):
-            assert isinstance(chord_obj.body, group_type)
+            assert isinstance(frozen_chord.body, group_type)
 
             assert all(
                 embedded_body_elem is not body_elem
-                for embedded_body_elem in chord_obj.body.tasks
+                for embedded_body_elem in frozen_chord.body.tasks
             )
             assert all(
                 embedded_body_elem.options["group_index"] == i
-                for i, embedded_body_elem in enumerate(chord_obj.body.tasks)
+                for i, embedded_body_elem in enumerate(frozen_chord.body.tasks)
             )
+        # Freezing a group must not mutate a signature the caller still holds
+        # a reference to: the original chord and its body are left untouched.
+        with subtests.test(msg="Original chord signature is not mutated by freeze"):
+            assert all(
+                embedded_body_elem is body_elem
+                for embedded_body_elem in chord_obj.body.tasks
+            )
+            assert body_elem.options == {}
 
     def test_freeze_tasks_is_not_group(self):
         x = chord([self.add.s(2, 2)], body=self.add.s(), app=self.app)
@@ -2091,3 +2713,31 @@ class test_merge_dictionaries(CanvasCase):
     def test_none_values(self, d1, d2, expected_result):
         _merge_dictionaries(d1, d2)
         assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_result', [
+        (
+            True,
+            {'nested': {'shared': [1, 2], 'only_d1': 1, 'only_d2': 2}}
+        ),
+        (
+            False,
+            {'nested': {'shared': 1, 'only_d1': 1, 'only_d2': 2}}
+        ),
+    ])
+    def test_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_result):
+        """aggregate_duplicates must be propagated into nested dictionaries."""
+        d1 = {'nested': {'shared': 1, 'only_d1': 1}}
+        d2 = {'nested': {'shared': 2, 'only_d2': 2}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == expected_result
+
+    @pytest.mark.parametrize('aggregate_duplicates,expected_value', [
+        (True, [1, 2]),
+        (False, 1),
+    ])
+    def test_deeply_nested_dictionaries_honor_aggregate_duplicates(self, aggregate_duplicates, expected_value):
+        """aggregate_duplicates must survive more than one level of recursion."""
+        d1 = {'level1': {'level2': {'level3': {'shared': 1}}}}
+        d2 = {'level1': {'level2': {'level3': {'shared': 2}}}}
+        _merge_dictionaries(d1, d2, aggregate_duplicates=aggregate_duplicates)
+        assert d1 == {'level1': {'level2': {'level3': {'shared': expected_value}}}}

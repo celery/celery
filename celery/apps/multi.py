@@ -198,8 +198,11 @@ class Node:
             try:
                 os.kill(pid, sig)
             except OSError as exc:
-                if exc.errno != errno.ESRCH:
+                if exc.errno not in (errno.ESRCH, errno.EPERM):
                     raise
+                # ESRCH: pid is gone. EPERM: the pid was recycled by
+                # the OS and now belongs to another user's process.
+                # Either way, treat it as this node no longer being alive.
                 maybe_call(on_error, self)
                 return False
             return True
@@ -310,7 +313,9 @@ class MultiParser:
             try:
                 names, prefix = self._get_ranges(names), range_prefix
             except ValueError:
-                pass
+                # The single argument isn't a node count, so it's a plain
+                # node name and dashes in it are not range separators.
+                ranges = False
         self._update_ns_opts(p, names)
         self._update_ns_ranges(p, ranges)
 

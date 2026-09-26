@@ -12,13 +12,17 @@
 -r extras/thread.txt
 -r extras/elasticsearch.txt
 -r extras/couchdb.txt
-# -r extras/couchbase.txt
+# The couchbase unit tests mock the SDK but import it (importorskip), so they
+# only run when it is installed. Mirrors extras/couchbase.txt minus the
+# platforms without wheels: no PyPy builds, no CPython 3.15 wheel, and the
+# Windows job only runs 3.14 which has no wheel either.
+couchbase>=3.0.0; platform_python_implementation != 'PyPy' and platform_system != 'Windows' and python_version < '3.15'
 -r extras/arangodb.txt
 -r extras/consul.txt
 -r extras/cosmosdbsql.txt
 -r extras/cassandra.txt
 -r extras/azureblockblob.txt
-git+https://github.com/celery/kombu.git
+kombu>=5.6.2
 
 # SQS dependencies other than boto
 pycurl>=7.43.0.5,<7.45.4; sys_platform != 'win32' and platform_python_implementation=="CPython" and python_version < "3.9"

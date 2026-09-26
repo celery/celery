@@ -101,7 +101,11 @@ class LocalTimezone(tzinfo):
     def fromutc(self, dt: datetime) -> datetime:
         # The base tzinfo class no longer implements a DST
         # offset aware .fromutc() in Python 3 (Issue #2306).
-        offset = int(self.utcoffset(dt).seconds / 60.0)
+        # Use the signed value: `timedelta.seconds` is normalized to
+        # [0, 86399] with the sign carried by `timedelta.days`, so it
+        # silently flips negative UTC offsets into large positive ones.
+        # (see #10517)
+        offset = int(self.utcoffset(dt).total_seconds() // 60)
         try:
             tz = self._offset_cache[offset]
         except KeyError:
@@ -348,12 +352,27 @@ def _is_ambiguous(dt: datetime, tz: tzinfo) -> bool:
     return _can_detect_ambiguous(tz) and dateutil_tz.datetime_ambiguous(dt)
 
 
+def _is_imaginary(dt: datetime, tz: tzinfo) -> bool:
+    """Return True if ``dt`` does not exist in ``tz`` due to a DST transition."""
+
+    if not _can_detect_ambiguous(tz):
+        return False
+
+    try:
+        return not dateutil_tz.datetime_exists(dt, tz)
+    except ValueError:
+        return False
+
+
 def make_aware(dt: datetime, tz: tzinfo) -> datetime:
     """Set timezone for a :class:`~datetime.datetime` object."""
 
     dt = dt.replace(tzinfo=tz)
     if _is_ambiguous(dt, tz):
-        dt = min(dt.replace(fold=0), dt.replace(fold=1))
+        if _is_imaginary(dt, tz):
+            dt = dateutil_tz.resolve_imaginary(dt)
+        else:
+            dt = min(dt.replace(fold=0), dt.replace(fold=1))
     return dt
 
 
@@ -434,12 +453,20 @@ def utcoffset(
         time: ModuleType = _time,
         localtime: Callable[..., _time.struct_time] = _time.localtime) -> float:
     """Return the current offset to UTC in hours."""
+    # Use true division, not floor division: `time.timezone`/`time.altzone`
+    # are seconds *west* of UTC, and for a fractional-hour zone (e.g.
+    # India/Sri Lanka at UTC+5:30, seconds = -19800) floor-dividing rounds
+    # the magnitude *up* (-19800 // 3600 == -6) while the same fractional
+    # offset on the west-of-UTC side is unaffected (floor and truncation
+    # agree for positive dividends). Either kind of rounding is wrong for
+    # some fractional-hour zone or other -- `adjust_timestamp()` below is
+    # pure arithmetic on this value, so keep it exact instead.
     if localtime().tm_isdst:
-        return time.altzone // 3600
-    return time.timezone // 3600
+        return time.altzone / 3600
+    return time.timezone / 3600
 
 
-def adjust_timestamp(ts: float, offset: int,
+def adjust_timestamp(ts: float, offset: float,
                      here: Callable[..., float] = utcoffset) -> float:
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600

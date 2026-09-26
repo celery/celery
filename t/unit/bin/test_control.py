@@ -235,3 +235,75 @@ def test_events_evtop_shows_friendly_error_when_broker_unreachable(cli_runner: C
     assert 'Error: Could not connect to the message broker.' in res.output
     assert 'Reason: connection failed' in res.output
     assert 'Traceback' not in res.output
+
+
+def test_control_with_preload_option(isolated_cli_runner: CliRunner):
+    res = isolated_cli_runner.invoke(
+        celery,
+        [
+            *_GLOBAL_OPTIONS,
+            # --workdir is a preload option handled by handle_preload_options.
+            '--workdir', '.',
+            'control',
+            *_INSPECT_OPTIONS,
+            'custom_control_cmd',
+            '123',
+            '456',
+        ],
+        catch_exceptions=False,
+    )
+
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert res.output.strip() == 'Error: No nodes replied within time constraint'
+
+
+def test_cli_report_with_multiserver_result_backend(isolated_cli_runner: CliRunner):
+    from t.unit.bin.proj.app import app
+
+    orig_backend = app.conf.result_backend
+    try:
+        app.conf.result_backend = (
+            'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+        )
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/' in res.output
+
+        app.conf.result_backend = (
+            'sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0'
+        )
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'secret1' not in res.output
+        assert 'secret2' not in res.output
+        assert 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0' in res.output
+
+        app.conf.result_backend = 'redis://:p,ass@word@localhost:6379/0'
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'p,ass@word' not in res.output
+        assert 'redis://:********@localhost:6379/0' in res.output
+
+        app.conf.result_backend = 'redis://user:p,a@ss@localhost:6379/0'
+        res = isolated_cli_runner.invoke(
+            celery,
+            ['-A', 't.unit.bin.proj.app', 'report'],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        assert 'p,a@ss' not in res.output
+        assert 'redis://user:********@localhost:6379/0' in res.output
+    finally:
+        app.conf.result_backend = orig_backend

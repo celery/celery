@@ -635,7 +635,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         if task_on_success:
                             task_on_success(retval, uuid, args, kwargs)
                         if success_receivers:
-                            send_success(sender=task, result=retval)
+                            send_success(sender=task, result=retval, runtime=T)
                         if _does_info:
                             info(LOG_SUCCESS, {
                                 'id': uuid,
@@ -759,7 +759,19 @@ def fast_trace_task(task, uuid, request, body, content_type,
                     hostname=None, **_):
     _loc = _localized if not _loc else _loc
     embed = None
-    tasks, accept, hostname = _loc
+    try:
+        tasks, accept, hostname = _loc
+    except ValueError:
+        raise RuntimeError(
+            "fast_trace_task: worker task registry is empty "
+            "(`_loc` was not populated). This normally means "
+            "`setup_worker_optimizations()` never ran in this "
+            "process, which happens when the process was spawned "
+            "rather than forked (e.g. the default prefork pool on "
+            "Windows). Try `--pool=solo` or "
+            "`--pool=threads`, or ensure `use_fast_trace_task` is "
+            "not enabled for this pool type."
+        ) from None
     if content_type:
         args, kwargs, embed = loads(
             body, content_type, content_encoding, accept=accept,

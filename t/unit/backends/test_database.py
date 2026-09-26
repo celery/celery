@@ -1,13 +1,16 @@
+import json
 import os
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 from celery import states, uuid
 from celery.app.task import Context
 from celery.exceptions import ImproperlyConfigured
+from celery.result import result_from_tuple
 
 pytest.importorskip('sqlalchemy')
 
@@ -222,6 +225,80 @@ class test_DatabaseBackend:
         tb._forget = failing_forget
 
         tb.forget('task_id_3')
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_cleanup_retries_on_database_error(self):
+        """Test that cleanup retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        original_cleanup = tb._cleanup
+        call_count = [0]
+
+        def failing_cleanup(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original_cleanup(*args, **kwargs)
+
+        tb._cleanup = failing_cleanup
+
+        tb.cleanup()
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_task_result_exists_retries_on_database_error(self):
+        """Test that task_result_exists retries when database errors occur."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        tb.store_result('task_id_exists', {'result': 'value'}, states.SUCCESS)
+
+        original = tb._task_result_exists
+        call_count = [0]
+
+        def failing(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("temporary failure", None, None)
+            return original(*args, **kwargs)
+
+        tb._task_result_exists = failing
+
+        assert tb.task_result_exists('task_id_exists') is True
+        assert call_count[0] == 2
+        assert tb._sleep.call_count == 1
+
+    def test_create_tables_retries_on_database_error(self):
+        """Test that _create_tables retries when ResultSession() fails."""
+        from celery.backends.database import DatabaseError
+
+        self.app.conf.result_backend_always_retry = True
+        self.app.conf.result_backend_max_retries = 2
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tb._sleep = Mock()
+
+        original = tb.ResultSession
+        call_count = [0]
+
+        def failing(*args, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise DatabaseError("engine init failure", None, None)
+            return original(*args, **kwargs)
+
+        tb.ResultSession = failing
+
+        tb._create_tables()
         assert call_count[0] == 2
         assert tb._sleep.call_count == 1
 
@@ -455,6 +532,228 @@ class test_DatabaseBackend:
         assert rindb.get('foo') == 'baz'
         assert rindb.get('bar').data == 12345
 
+    def test_result_respects_configured_serializer(self):
+        """Regression test for celery/celery#3025.
+
+        The result column must contain the bytes produced by the
+        configured ``result_serializer``, not an implicit pickle blob.
+        """
+        self.app.conf.result_serializer = 'json'
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_done(tid, {'answer': 42})
+
+        session = tb.ResultSession()
+        raw = session.query(Task).filter(Task.task_id == tid).first().result
+        session.close()
+
+        assert raw[:1] != b'\x80', 'result was pickled despite json serializer'
+        assert json.loads(raw) == {'answer': 42}
+        assert tb.get_result(tid) == {'answer': 42}
+
+    def test_result_decode_falls_back_to_pickle_for_legacy_rows(self):
+        """Rows written before the celery/celery#3025 fix are always
+        pickle, regardless of the configured serializer. Reading them
+        back after upgrading must still work.
+        """
+        self.app.conf.result_serializer = 'json'
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        session = tb.ResultSession()
+        task = Task(tid)
+        task.status = states.SUCCESS
+        task.result = dumps({'legacy': 'pickle-data'})
+        session.add(task)
+        session.commit()
+        session.close()
+
+        with patch('celery.backends.database.logger.warning') as warning:
+            meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'legacy': 'pickle-data'}
+        warning.assert_called_once()
+
+    def test_result_decode_does_not_unpickle_non_pickle_garbage(self):
+        """The pickle fallback must not fire on arbitrary bytes that
+        merely fail to decode under the configured serializer -- only on
+        payloads that actually look like a pickle (see review discussion
+        on PR #10536).
+        """
+        self.app.conf.result_serializer = 'json'
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        session = tb.ResultSession()
+        task = Task(tid)
+        task.status = states.SUCCESS
+        task.result = b'not-json-and-not-pickle-either'
+        session.add(task)
+        session.commit()
+        session.close()
+
+        with pytest.raises(Exception):
+            tb.get_task_meta(tid)
+
+    @pytest.mark.parametrize(
+        'result_serializer',
+        ['pickle', 'json'],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_result_with_children(self, result_serializer):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        child1 = self.app.AsyncResult(uuid())
+        child2 = self.app.AsyncResult(uuid())
+
+        request = Context()
+        request.children.extend([child1, child2])
+        tb.store_result(tid, 42, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == 42
+        assert len(meta['children']) == 2
+        deserialized = [result_from_tuple(c, self.app) for c in meta['children']]
+        assert [c.id for c in deserialized] == [child1.id, child2.id]
+
+    def test_async_result_children(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        child_id = uuid()
+        child = self.app.AsyncResult(child_id)
+
+        request = Context()
+        request.children.append(child)
+        tb.store_result(tid, 42, states.SUCCESS, request=request)
+
+        result = self.app.AsyncResult(tid, backend=tb)
+        children = result.children
+        assert children is not None
+        assert len(children) == 1
+        assert children[0].id == child_id
+
+    def test_store_result_no_children(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.store_result(tid, 42, states.SUCCESS)
+        meta = tb.get_task_meta(tid)
+        assert meta['children'] is None
+        result = self.app.AsyncResult(tid)
+        assert result.children is None
+
+    def test_migrate_missing_columns(self):
+        import sqlalchemy as sa
+        engine = sa.create_engine('sqlite:///:memory:')
+        metadata = sa.MetaData()
+        sa.Table(
+            'celery_taskmeta', metadata,
+            sa.Column('id', sa.Integer, primary_key=True),
+            sa.Column('task_id', sa.String(155), unique=True),
+            sa.Column('status', sa.String(50)),
+            sa.Column('result', sa.LargeBinary, nullable=True),
+            sa.Column('date_done', sa.DateTime, nullable=True),
+            sa.Column('traceback', sa.Text, nullable=True),
+        )
+        metadata.create_all(engine)
+
+        session_mgr = SessionManager()
+        session_mgr.prepare_models(engine)
+
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        cols = {c['name'] for c in inspector.get_columns('celery_taskmeta')}
+        assert 'children' in cols
+
+    def test_store_result_task_without_children_attribute(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        class TaskWithoutChildren:
+            pass
+
+        dummy = TaskWithoutChildren()
+        tb._update_result(dummy, 42, states.SUCCESS)
+        assert not hasattr(dummy, 'children')
+
+    def test_migrate_missing_columns_failure_logs_warning_and_degrades_gracefully(self):
+        import sqlalchemy as sa
+        engine = sa.create_engine('sqlite:///:memory:')
+        metadata = sa.MetaData()
+        sa.Table(
+            'celery_taskmeta', metadata,
+            sa.Column('id', sa.Integer, primary_key=True),
+            sa.Column('task_id', sa.String(155), unique=True),
+            sa.Column('status', sa.String(50)),
+            sa.Column('result', sa.LargeBinary, nullable=True),
+            sa.Column('date_done', sa.DateTime, nullable=True),
+            sa.Column('traceback', sa.Text, nullable=True),
+        ).create(engine)
+
+        session_mgr = SessionManager()
+        failing_conn = Mock()
+        failing_conn.execute.side_effect = Exception("permission denied: ALTER TABLE")
+
+        class FailingBegin:
+            def __enter__(self):
+                return failing_conn
+
+            def __exit__(self, *args):
+                pass
+
+        with patch.object(engine, 'begin', return_value=FailingBegin()):
+            with patch('celery.backends.database.session.logger.warning') as mock_warn:
+                session_mgr.prepare_models(engine)
+                assert mock_warn.called
+                logged_msg = mock_warn.call_args[0][0]
+                assert "Failed to add missing column" in logged_msg
+
+        # Test backend tolerant read path on this database:
+        tb = DatabaseBackend('sqlite:///:memory:', app=self.app)
+        with engine.begin() as conn:
+            conn.execute(sa.text(
+                "INSERT INTO celery_taskmeta (task_id, status, result) VALUES ('test-tid', 'SUCCESS', :res)"
+            ), {'res': tb.encode(42)})
+
+        tb.session_manager.session_factory = lambda *a, **kw: sa.orm.sessionmaker(bind=engine)()
+        meta = tb.get_task_meta('test-tid')
+        assert meta['result'] == 42
+        assert meta['children'] is None
+
+    def test_query_task_fallback_on_operational_error(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        session = Mock()
+
+        # Simulate first query failing with 'no such column: celery_taskmeta.children'
+        from sqlalchemy.exc import DatabaseError
+        err = DatabaseError("SELECT", {}, Exception("no such column: celery_taskmeta.children"))
+        query_mock = Mock()
+        query_mock.filter.side_effect = [err, [Mock(task_id=tid, to_dict=lambda: {'task_id': tid})]]
+        query_mock.options.return_value = query_mock
+        session.query.return_value = query_mock
+
+        res = tb._query_task(session, tid)
+        assert res.task_id == tid
+        assert query_mock.options.called
+
+    def test_migrate_missing_columns_ignores_exceptions(self):
+        session_mgr = SessionManager()
+        mock_engine = Mock()
+        with patch('celery.backends.database.session.inspect', side_effect=Exception("inspect error")):
+            with patch('celery.backends.database.session.logger.warning') as mock_warn:
+                # Must not raise and must log warning
+                session_mgr._migrate_missing_columns(mock_engine)
+                assert mock_warn.called
+
+    def test_migrate_missing_columns_when_table_not_exists(self):
+        session_mgr = SessionManager()
+        mock_engine = Mock()
+        mock_inspector = Mock()
+        mock_inspector.has_table.return_value = False
+        with patch('celery.backends.database.session.inspect', return_value=mock_inspector):
+            session_mgr._migrate_missing_columns(mock_engine)
+        mock_inspector.get_columns.assert_not_called()
+
     def test_mark_as_started(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
@@ -512,11 +811,13 @@ class test_DatabaseBackend:
         tb = DatabaseBackend(self.uri, app=self.app)
         assert loads(dumps(tb))
 
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_save__restore__delete_group(self):
         tb = DatabaseBackend(self.uri, app=self.app)
 
         tid = uuid()
-        res = {'something': 'special'}
+        res = self.app.GroupResult(
+            tid, [self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())])
         assert tb.save_group(tid, res) == res
 
         res2 = tb.restore_group(tid)
@@ -526,6 +827,29 @@ class test_DatabaseBackend:
         assert tb.restore_group(tid) is None
 
         assert tb.restore_group('xxx-nonexisting-id') is None
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_save__restore_group_respects_configured_serializer(self):
+        """Regression test for celery/celery#3025 (group results).
+
+        Covers the real GroupResult.save()/.restore() path (see review
+        discussion on PR #10536), not just an arbitrary value.
+        """
+        self.app.conf.result_serializer = 'json'
+        tb = DatabaseBackend(self.uri, app=self.app)
+
+        tid = uuid()
+        res = self.app.GroupResult(
+            tid, [self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())])
+        tb.save_group(tid, res)
+
+        session = tb.ResultSession()
+        raw = session.query(TaskSet).filter(
+            TaskSet.taskset_id == tid).first().result
+        session.close()
+
+        assert raw[:1] != b'\x80', 'group result was pickled despite json serializer'
+        assert tb.restore_group(tid) == res
 
     def test_cleanup(self):
         tb = DatabaseBackend(self.uri, app=self.app)
@@ -613,6 +937,207 @@ class test_DatabaseBackend_result_extended():
         assert meta['name'] == 'mytask'
         assert meta['retries'] == 2
         assert meta['worker'] == "celery@worker_1"
+
+    @pytest.mark.parametrize(
+        'result_serializer',
+        ['pickle', 'json'],
+        ids=['using pickle', 'using json']
+    )
+    def test_store_result_with_stamps(self, result_serializer):
+        self.app.conf.result_serializer = result_serializer
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=(1, 2), kwargs={'foo': 'bar'},
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'},
+                          stamped_headers=['stamp1', 'stamp2'],
+                          stamps={'stamp1': ['val1'], 'stamp2': 'val2'})
+
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert meta['stamped_headers'] == ['stamp1', 'stamp2']
+        assert meta['stamp1'] == ['val1']
+        assert meta['stamp2'] == 'val2'
+        # Matches BaseBackend: stamps are flattened, and 'stamps' key is never leaked
+        assert 'stamps' not in meta
+
+    def test_store_result_without_stamps(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+
+        request = Context(args=(1, 2), kwargs={'foo': 'bar'},
+                          task='mytask', retries=2,
+                          hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+
+        assert meta['result'] == {'fizz': 'buzz'}
+        assert 'stamps' not in meta
+        assert 'stamped_headers' not in meta
+
+    def test_store_result_stamps_header_missing_from_meta(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask',
+                          stamped_headers=['stamp1', 'stamp_missing'],
+                          stamps={'stamp1': 'val1'})
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+        assert meta['stamp1'] == 'val1'
+        assert 'stamp_missing' not in meta
+        assert meta['stamped_headers'] == ['stamp1', 'stamp_missing']
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_corrupt_non_dict_payload(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask',
+                          stamped_headers=['stamp1'],
+                          stamps={'stamp1': 'val1'})
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid).first()
+        task.stamps = ensure_bytes(tb.encode("not-a-dict"))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta = tb.get_task_meta(tid)
+        assert meta['result'] == 'res'
+        # Corrupt / non-dict payload fails closed and never leaks raw bytes into meta
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_only_stamps_without_headers(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask')
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid).first()
+        task.stamps = ensure_bytes(tb.encode({'stamps': {'only_stamps': 'value'}}))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta = tb.get_task_meta(tid)
+        assert meta['only_stamps'] == 'value'
+        assert 'stamped_headers' not in meta
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_only_headers_without_stamps(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask')
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid).first()
+        task.stamps = ensure_bytes(tb.encode({'stamped_headers': ['only_header']}))
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta = tb.get_task_meta(tid)
+        assert meta['stamped_headers'] == ['only_header']
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_disabled_when_result_extended_false(self):
+        self.app.conf.result_extended = False
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.task_cls is Task
+        assert not hasattr(Task, 'stamps')
+        tid = uuid()
+        request = Context(stamped_headers=['stamp1'], stamps={'stamp1': 'val1'})
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid)
+        assert 'stamp1' not in meta
+        assert 'stamped_headers' not in meta
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_missing_column_graceful_fallback(self):
+        from sqlalchemy.exc import DatabaseError
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.store_result(tid, 'res', states.SUCCESS)
+
+        session = tb.ResultSession()
+
+        # When DatabaseError occurs with 'stamps', _query_task defers the column
+        with patch.object(session, 'query') as mock_query:
+            first_mock = Mock()
+            first_mock.filter.side_effect = DatabaseError(
+                "SELECT celery_taskmeta.stamps", None, Exception("no such column: celery_taskmeta.stamps")
+            )
+            second_mock = Mock()
+            second_filter = Mock()
+            second_filter.return_value = [tb.task_cls(tid)]
+            second_mock.filter = second_filter
+            first_mock.options.side_effect = lambda opt: second_mock
+
+            mock_query.return_value = first_mock
+            task = tb._query_task(session, tid)
+            assert task is not None
+            assert task.task_id == tid
+
+    def test_stamped_signature_roundtrip_with_async_result(self):
+        from celery.canvas import signature
+        from celery.result import AsyncResult
+
+        tb = DatabaseBackend(self.uri, app=self.app)
+        sig = signature('mytask')
+        sig.stamp(stamp_key='stamp_value', custom_run_id=123)
+
+        tid = uuid()
+        request = Context(
+            task='mytask',
+            stamped_headers=sig.options['stamped_headers'],
+            stamps={h: sig.options[h] for h in sig.options['stamped_headers'] if h in sig.options}
+        )
+
+        tb.store_result(tid, {'status': 'completed'}, states.SUCCESS, request=request)
+        async_res = AsyncResult(tid, backend=tb)
+        assert async_res.result == {'status': 'completed'}
+        assert async_res.state == states.SUCCESS
+
+        meta = tb.get_task_meta(tid)
+        assert meta['stamp_key'] == 'stamp_value'
+        assert meta['custom_run_id'] == 123
+        assert set(meta['stamped_headers']) == {'stamp_key', 'custom_run_id'}
+        assert 'stamps' not in meta
+
+    def test_store_result_stamps_corrupt_unpicklable_decode_error(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(), kwargs={}, task='mytask')
+        tb.store_result(tid, 'res', states.SUCCESS, request=request)
+        session = tb.ResultSession()
+        task = session.query(tb.task_cls).filter(tb.task_cls.task_id == tid).first()
+        task.stamps = b'corrupt-unpicklable-blob'
+        session.commit()
+        session.close()
+        tb._cache.clear()
+        meta = tb.get_task_meta(tid)
+        assert meta['result'] == 'res'
+        assert 'stamps' not in meta
+
+    def test_task_extended_to_dict_tolerant_of_stamps_error(self):
+        from unittest.mock import PropertyMock
+
+        from celery.backends.database.models import TaskExtended
+        task = TaskExtended('test-task')
+        with patch.object(TaskExtended, 'stamps', new_callable=PropertyMock, side_effect=Exception("error")):
+            d = task.to_dict()
+            assert d['stamps'] is None
+
+    def test_query_task_unrelated_database_error_raises(self):
+        from sqlalchemy.exc import DatabaseError
+        tb = DatabaseBackend(self.uri, app=self.app)
+        session = Mock()
+        session.query.side_effect = DatabaseError("SELECT", {}, Exception("unrelated connection lost"))
+        with pytest.raises(DatabaseError):
+            tb._query_task(session, 'some-id')
 
     @pytest.mark.parametrize(
         'result_serializer, args, kwargs',

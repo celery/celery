@@ -12,9 +12,10 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, delta_resolution, ffwd, get_exponential_backoff_interval,
-                               humanize_seconds, localize, make_aware, maybe_iso8601, maybe_make_aware,
-                               maybe_timedelta, rate, remaining, timezone, utcoffset)
+from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
+                               get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
+                               maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
+                               utcoffset)
 
 
 class test_LocalTimezone:
@@ -43,6 +44,22 @@ class test_LocalTimezone:
         assert not y.dst(datetime.now())
 
         assert y.tzname(datetime.now())
+
+    def test_fromutc_with_negative_offset(self, patching):
+        # Regression test for #10517: negative UTC offsets (western
+        # hemisphere) must not lose their sign when converting from UTC.
+        # `timedelta.seconds` is normalized to [0, 86399] with the sign in
+        # `timedelta.days`, so the old code turned a -04:00 offset into +20:00.
+        time = patching('celery.utils.time._time')
+        time.timezone = 5 * 3600        # UTC-5 standard time (US Eastern)
+        time.daylight = True
+        time.altzone = 4 * 3600         # UTC-4 daylight saving time
+        time.tzname = ('EST', 'EDT')
+        x = LocalTimezone()
+        x._isdst = Mock(return_value=True)   # force DST: -04:00
+        result = x.fromutc(datetime(2026, 6, 15, 12, 0))
+        assert result.utcoffset() == timedelta(hours=-4)
+        assert result == datetime(2026, 6, 15, 8, 0, tzinfo=result.tzinfo)
 
 
 class test_iso8601:
@@ -244,6 +261,25 @@ class test_make_aware:
         wtz = make_aware(datetime.now(_timezone.utc), tz)
         assert wtz.tzinfo == tz
 
+    def test_tz_when_zoneinfo_and_time_does_not_exist(self):
+        tz = ZoneInfo('US/Eastern')
+        wtz = make_aware(datetime(2024, 3, 10, 2, 30), tz)
+
+        assert wtz == datetime(2024, 3, 10, 3, 30, tzinfo=tz)
+        assert wtz.utcoffset().total_seconds() == -4 * 60 * 60
+
+    def test_imaginary_detection_ignores_unsupported_timezones(self):
+        assert not _is_imaginary(datetime.now(_timezone.utc), tzinfo())
+
+    @patch('dateutil.tz.datetime_exists')
+    def test_imaginary_detection_handles_dateutil_value_error(self, datetime_exists_mock):
+        datetime_exists_mock.side_effect = ValueError
+        tz = ZoneInfo('US/Eastern')
+        dt = datetime(2024, 3, 10, 2, 30, tzinfo=tz)
+
+        assert not _is_imaginary(dt, tz)
+        datetime_exists_mock.assert_called_once_with(dt, tz)
+
     def test_maybe_make_aware(self):
         aware = datetime.now(_timezone.utc).replace(tzinfo=timezone.utc)
         assert maybe_make_aware(aware)
@@ -355,6 +391,39 @@ class test_utcoffset:
         assert utcoffset(time=_time) is not None
         _time.daylight = False
         assert utcoffset(time=_time) is not None
+
+    def test_utcoffset_whole_hour_unaffected(self, patching):
+        # US Eastern standard time: UTC-5, i.e. 5 hours *west* of UTC, so
+        # time.timezone (seconds west of UTC) is positive.
+        _time = patching('celery.utils.time._time')
+        _time.timezone = 5 * 3600
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == 5
+
+    def test_utcoffset_fractional_hour_offset(self, patching):
+        # Regression test: time.timezone/altzone (seconds west of UTC) must
+        # not be rounded at all, or a fractional-hour, east-of-UTC zone
+        # (e.g. India/Sri Lanka/Iran at UTC+5:30, so time.timezone ==
+        # -19800) picks up an error in one direction or the other:
+        # -19800 // 3600 == -6 (floor) and int(-19800 / 3600) == -5
+        # (truncate) are both 30 minutes off. The exact value is -5.5.
+        _time = patching('celery.utils.time._time')
+        _time.timezone = -19800  # UTC+5:30 standard time (India, Sri Lanka)
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == -5.5
+
+        _time.altzone = -19800  # same offset while a DST rule is in effect
+        localtime = Mock(return_value=Mock(tm_isdst=1))
+        assert utcoffset(time=_time, localtime=localtime) == -5.5
+
+    def test_utcoffset_quarter_hour_offset(self, patching):
+        # Quarter-hour zones are where floor and truncation actually
+        # diverge in severity: floor is 15 minutes off, truncation would be
+        # 45 minutes off. Only the exact value is correct for both.
+        _time = patching('celery.utils.time._time')
+        _time.timezone = -20700  # UTC+5:45 (Nepal)
+        localtime = Mock(return_value=Mock(tm_isdst=0))
+        assert utcoffset(time=_time, localtime=localtime) == -5.75
 
 
 class test_get_exponential_backoff_interval:

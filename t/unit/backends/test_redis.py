@@ -2,6 +2,8 @@ import itertools
 import json
 import random
 import ssl
+import threading
+import time
 from contextlib import contextmanager
 from datetime import timedelta
 from pickle import dumps, loads
@@ -15,7 +17,10 @@ except ImportError:
     exceptions = None
     CredentialProvider = None
 
+from kombu.utils.encoding import ensure_bytes
+
 from celery import signature, states, uuid
+from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
@@ -271,6 +276,25 @@ class test_RedisResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
+    def test_cancel_for_never_subscribed_is_noop(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        task_id = uuid()
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.assert_not_called()
+
+    def test_cancel_for_second_call_after_already_cancelled_is_noop(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        task_id = uuid()
+        consumer.consume_from(task_id)
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.reset_mock()
+        # simulates AsyncResult.__del__ firing again after get() already
+        # drove cleanup once — this is the literal deadlock trigger in #10477
+        consumer.cancel_for(task_id)
+        consumer._pubsub.unsubscribe.assert_not_called()
+
     @patch('celery.backends.redis.ResultConsumer.cancel_for')
     @patch('celery.backends.asynchronous.BaseResultConsumer.on_state_change')
     def test_drain_events_connection_error(self, parent_on_state_change, cancel_for):
@@ -320,6 +344,363 @@ class test_RedisResultConsumer:
         consumer.backend.client.mget.assert_called_once()
         consumer._pubsub.subscribe.assert_called_once()
         consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
+    def test__reconnect_pubsub_redis_py_below_5_3_compat(self):
+        """Regression test for celery#10294.
+
+        On redis-py < 5.3.0, ConnectionPool.get_connection requires
+        ``command_name`` as a positional argument. _reconnect_pubsub must
+        remain compatible with that older signature when no tasks are
+        subscribed.
+        """
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.subscribed_to = set()
+
+        def legacy_get_connection(command_name, *args, **kwargs):
+            return Mock(name='legacy-connection')
+
+        # Replace the auto-mocked get_connection with one that mirrors the
+        # redis-py < 5.3.0 signature: command_name is required.
+        consumer._pubsub = Mock(name='pubsub')
+        consumer._pubsub.connection_pool = Mock(name='connection_pool')
+        consumer._pubsub.connection_pool.get_connection.side_effect = (
+            legacy_get_connection
+        )
+        consumer.backend.client = Mock(name='client')
+        consumer.backend.client.pubsub.return_value = consumer._pubsub
+
+        # Must not raise TypeError about a missing 'command_name' argument.
+        consumer._reconnect_pubsub()
+
+    def test_on_wait_for_pending_cleans_up_leaked_success_messages(self):
+        """Regression test for #8166.
+
+        When on_state_change processes a SUCCESS meta for a result that has
+        already been resolved and removed from _pending_results, it buffers
+        the meta in _pending_messages. on_wait_for_pending should then
+        clean up this leaked entry after canceling the subscription.
+        """
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-1'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for SUCCESS
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_does_not_cleanup_revoked_messages(self):
+        """REVOKED state should not be cleaned up - it may still be needed by waiters."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-2'
+        meta = {
+            'task_id': task_id,
+            'status': states.REVOKED,
+            'result': None,
+        }
+
+        # Manually put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should NOT clean up REVOKED
+        consumer.on_wait_for_pending(MockResult())
+
+        # REVOKED meta should still be in buffer
+        assert task_id in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_cleans_up_leaked_failure_messages(self):
+        """FAILURE state should be cleaned up like SUCCESS."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-3'
+        meta = {
+            'task_id': task_id,
+            'status': states.FAILURE,
+            'result': Exception('test'),
+        }
+
+        # Manually put the meta into _pending_messages to simulate the leak
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should trigger cleanup for FAILURE
+        consumer.on_wait_for_pending(MockResult())
+
+        # The leaked entry should be removed
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_skips_cleanup_when_not_in_pending_messages(self):
+        """When the task is not in _pending_messages, cleanup should be a no-op."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-4'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Do NOT put the meta into _pending_messages
+        assert task_id not in consumer.backend._pending_messages
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        # Call on_wait_for_pending - should not raise even though entry is missing
+        consumer.on_wait_for_pending(MockResult())
+
+        # Should still be absent (no crash)
+        assert task_id not in consumer.backend._pending_messages
+
+    def test_on_wait_for_pending_handles_keyerror_race(self):
+        """If BufferMap.pop raises KeyError, the exception should be swallowed."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-5'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+
+        # Put the meta into _pending_messages
+        consumer.backend._pending_messages.put(task_id, meta)
+        assert task_id in consumer.backend._pending_messages
+
+        # Simulate a race where the entry is removed between the `in` check and pop
+        # by replacing pop with a side effect that raises KeyError
+        original_pop = consumer.backend._pending_messages.pop
+
+        def race_pop(key):
+            raise KeyError(key)
+        consumer.backend._pending_messages.pop = race_pop
+
+        # Create a mock result object with _iter_meta
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [meta]
+
+        try:
+            # Call on_wait_for_pending - should not raise despite the race
+            consumer.on_wait_for_pending(MockResult())
+        finally:
+            consumer.backend._pending_messages.pop = original_pop
+
+        # The race_pop raised KeyError, so the entry was never actually removed.
+        # The important thing is that on_wait_for_pending did not crash.
+        assert task_id in consumer.backend._pending_messages
+
+    def _lock_is_held(self, lock):
+        # probe from another thread: a non-blocking acquire fails
+        # iff some thread currently holds the lock.
+        held = []
+
+        def probe():
+            acquired = lock.acquire(blocking=False)
+            held.append(not acquired)
+            if acquired:
+                lock.release()
+
+        t = threading.Thread(target=probe)
+        t.start()
+        t.join()
+        return held[0]
+
+    def test_pubsub_operations_hold_pubsub_lock(self):
+        """All operations on the shared pubsub object must hold _pubsub_lock."""
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        calls = []
+
+        def assert_locked(name):
+            def _call(*args, **kwargs):
+                calls.append((name, self._lock_is_held(consumer._pubsub_lock)))
+                return None
+            return _call
+
+        consumer._pubsub.subscribe.side_effect = assert_locked('subscribe')
+        consumer._pubsub.unsubscribe.side_effect = assert_locked('unsubscribe')
+        consumer._pubsub.get_message.side_effect = assert_locked('get_message')
+
+        consumer.consume_from('some-task')
+        consumer.drain_events(timeout=0)
+        consumer.cancel_for('some-task')
+
+        assert calls == [
+            ('subscribe', True),
+            ('get_message', True),
+            ('unsubscribe', True),
+        ]
+
+    def test_concurrent_pubsub_access_is_serialized(self):
+        """Race test for #4670.
+
+        subscribe/unsubscribe are issued from arbitrary threads (apply_async,
+        AsyncResult.__del__) while the drainer thread polls get_message on
+        the same pubsub object.  Without serialization the fake pubsub below
+        observes overlapping calls.
+        """
+        consumer = self.get_consumer()
+        consumer.start('initial')
+
+        active = 0
+        violations = []
+        guard = threading.Lock()
+
+        def racey(name):
+            def _call(*args, **kwargs):
+                nonlocal active
+                with guard:
+                    if active:
+                        violations.append(name)
+                    active += 1
+                try:
+                    time.sleep(0.002)  # widen the race window
+                finally:
+                    with guard:
+                        active -= 1
+                return None
+            return _call
+
+        consumer._pubsub.subscribe.side_effect = racey('subscribe')
+        consumer._pubsub.unsubscribe.side_effect = racey('unsubscribe')
+        consumer._pubsub.get_message.side_effect = racey('get_message')
+
+        stop = threading.Event()
+
+        def drain():
+            while not stop.is_set():
+                consumer.drain_events(timeout=0)
+
+        def hammer(n):
+            for i in range(50):
+                task_id = f'task-{n}-{i}'
+                consumer.consume_from(task_id)
+                consumer.cancel_for(task_id)
+
+        drainer = threading.Thread(target=drain)
+        workers = [threading.Thread(target=hammer, args=(n,))
+                   for n in range(4)]
+        drainer.start()
+        for t in workers:
+            t.start()
+        for t in workers:
+            t.join()
+        stop.set()
+        drainer.join()
+
+        assert not violations
+
+    def test_on_after_fork_replaces_pubsub_lock(self):
+        # the inherited lock may be held by a thread that did not survive
+        # the fork, so the child must not reuse it.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        inherited_lock = consumer._pubsub_lock
+        consumer.on_after_fork()
+        assert consumer._pubsub_lock is not inherited_lock
+
+    def test_drain_events_without_pubsub_sleeps_outside_lock(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+
+        def check_unlocked(_):
+            assert not self._lock_is_held(consumer._pubsub_lock)
+
+        with patch('celery.backends.redis.time.sleep') as sleep:
+            sleep.side_effect = check_unlocked
+            consumer.drain_events(timeout=1)
+        sleep.assert_called_once_with(1)
+
+    def test_stop_closes_pubsub(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        consumer.stop()
+        pubsub.close.assert_called_once()
+
+    def test_stop_without_pubsub_is_noop(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.stop()
+
+    def test_consume_from_starts_when_pubsub_missing(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        consumer.consume_from('some-task')
+        assert consumer._pubsub is not None
+        assert b'celery-task-meta-some-task' in consumer._pubsub._subscribed_to
+
+    def test_drain_events_processes_message(self):
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        message = {'type': 'message', 'data': b'encoded-meta'}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub.get_message.side_effect = None
+        consumer._pubsub.get_message.return_value = message
+        with patch.object(consumer, '_decode_result', return_value=meta), \
+                patch.object(
+                    consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_called_once_with(meta, message)
+
+        # non-message types (e.g. subscribe confirmations) are ignored
+        consumer._pubsub.get_message.return_value = {
+            'type': 'subscribe', 'data': 1}
+        with patch.object(
+                consumer, 'on_state_change') as on_state_change:
+            consumer.drain_events(timeout=0)
+        on_state_change.assert_not_called()
 
 
 class basetest_RedisBackend:
@@ -461,6 +842,17 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
 
+    def test_url_with_decode_responses_disables_compression(self):
+        self.app.conf.result_compression = 'gzip'
+        backend = self.Backend(
+            app=self.app, url='redis://localhost/0?decode_responses=true',
+        )
+
+        assert backend.compression is None
+        assert backend.connparams['decode_responses']
+        assert self.app.conf.result_compression == 'gzip'
+        assert self.Backend(app=self.app).compression == 'gzip'
+
     def test_url_with_credential_provider(self):
         self.app.conf.redis_socket_timeout = 30.0
         self.app.conf.redis_socket_connect_timeout = 100.0
@@ -558,6 +950,31 @@ class test_RedisBackend(basetest_RedisBackend):
         assert x.connparams['password'] == 'bosco'
         assert x.connparams['socket_timeout'] == 30.0
         assert x.connparams['socket_connect_timeout'] == 100.0
+        assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
+        assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
+        assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
+        assert x.connparams['ssl_keyfile'] == '/path/to/client.key'
+
+        from redis.connection import SSLConnection
+        assert x.connparams['connection_class'] is SSLConnection
+
+    def test_backend_ssl_with_redis_scheme(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+            'ssl_certfile': '/path/to/client.crt',
+            'ssl_keyfile': '/path/to/client.key',
+        }
+        x = self.Backend(
+            'redis://:bosco@vandelay.com:123//1', app=self.app,
+        )
+        assert x.connparams
+        assert x.connparams['host'] == 'vandelay.com'
+        assert x.connparams['db'] == 1
+        assert x.connparams['port'] == 123
+        assert x.connparams['password'] == 'bosco'
         assert x.connparams['ssl_cert_reqs'] == ssl.CERT_REQUIRED
         assert x.connparams['ssl_ca_certs'] == '/path/to/ca.crt'
         assert x.connparams['ssl_certfile'] == '/path/to/client.crt'
@@ -754,6 +1171,15 @@ class test_RedisBackend(basetest_RedisBackend):
         with pytest.raises(ValueError):
             self.Backend(
                 uri,
+                app=self.app,
+            )
+
+    def test_backend_ssl_url_redis_scheme_invalid(self):
+        pytest.importorskip('redis')
+
+        with pytest.raises(ValueError):
+            self.Backend(
+                'redis://:bosco@vandelay.com:123//1?ssl_cert_reqs=required',
                 app=self.app,
             )
 
@@ -1085,6 +1511,69 @@ class test_RedisBackend(basetest_RedisBackend):
                 # Restore original __version__
                 if original_version is not None:
                     redis.__version__ = original_version
+
+
+class test_RedisBackend_result_compression(basetest_RedisBackend):
+    """Round trips across the backend boundary, not through encode() alone.
+
+    ``store_result`` and ``get_result`` go through the backend's own set and
+    get, so a payload that the backend altered on the way in or out would
+    show up here even though the encoding tests in ``test_base`` pass.
+    """
+
+    def stored(self, tid):
+        return self.b.client.keyspace[self.b.get_key_for_task(tid)]
+
+    def backend(self, compression='gzip', serializer='json'):
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = compression
+        self.b = self.Backend(app=self.app)
+        return self.b
+
+    def test_store_and_get_compressed_result(self):
+        b = self.backend()
+        assert b.compression == 'gzip'
+        tid = uuid()
+        result = {'value': 'a repetitive value ' * 40}
+        b.store_result(tid, result, states.SUCCESS)
+
+        assert self.stored(tid).startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_state(tid) == states.SUCCESS
+        assert b.get_result(tid) == result
+
+    def test_compressed_result_is_smaller_on_the_wire(self):
+        result = {'value': 'a repetitive value ' * 40}
+        tid = uuid()
+        self.backend(compression=None).store_result(tid, result, states.SUCCESS)
+        plain = len(self.stored(tid))
+        self.backend().store_result(tid, result, states.SUCCESS)
+        assert len(self.stored(tid)) < plain
+
+    def test_store_and_get_compressed_binary_serializer_result(self):
+        # kombu's dumps returns bytes for pickle, so the payload is bytes
+        # before compression as well as after it. That is the combination
+        # that a write path assuming str breaks on.
+        b = self.backend(serializer='pickle')
+        tid = uuid()
+        result = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        b.store_result(tid, result, states.SUCCESS)
+
+        assert self.stored(tid).startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result(tid) == result
+
+    def test_get_result_written_before_compression(self):
+        tid = uuid()
+        self.backend(compression=None).store_result(tid, {'foo': 'bar'},
+                                                    states.SUCCESS)
+        key = self.b.get_key_for_task(tid)
+        # A real Redis hands the payload back as bytes whatever went in.
+        written = ensure_bytes(self.stored(tid))
+        assert not written.startswith(COMPRESSED_PAYLOAD_MAGIC)
+
+        b = self.backend()
+        b.client.keyspace[key] = written
+        assert b.get_result(tid) == {'foo': 'bar'}
 
 
 class test_RedisBackend_chords_simple(basetest_RedisBackend):
