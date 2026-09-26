@@ -92,6 +92,8 @@ class Queues(dict):
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
+        if not queue.routing_key:
+            queue.routing_key = self.default_routing_key
         if self.max_priority is not None:
             if queue.queue_arguments is None:
                 queue.queue_arguments = {}
@@ -134,10 +136,8 @@ class Queues(dict):
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
-        if queue.exchange is None or queue.exchange.name == '':
+        if self.default_exchange and (queue.exchange is None or queue.exchange.name == ''):
             queue.exchange = self.default_exchange
-        if not queue.routing_key:
-            queue.routing_key = self.default_routing_key
         self[queue.name] = queue
         return queue
 
@@ -202,7 +202,7 @@ class Queues(dict):
     def new_missing(self, name):
         queue_arguments = None
         if self.create_missing_queue_type and self.create_missing_queue_type != "classic":
-            if self.create_missing_queue_type not in ("classic", "quorum"):
+            if self.create_missing_queue_type != "quorum":
                 raise ValueError(
                     f"Invalid queue type '{self.create_missing_queue_type}'. "
                     "Valid types are 'classic' and 'quorum'."
@@ -658,7 +658,9 @@ class AMQP:
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
-        if ('task_routes' in kwargs or 'task_routes' in args):
-            self.flush_routes()
-            self.router = self.Router()
-        return
+        route_keys = self.app.conf._to_keys('task_routes')
+        for key in route_keys:
+            if key in kwargs or (args and key in args[0]):
+                self.flush_routes()
+                self.router = self.Router()
+                return
