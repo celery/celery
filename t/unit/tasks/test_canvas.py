@@ -185,13 +185,21 @@ class test_Signature(CanvasCase):
 
     def test_json(self):
         x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
-        assert x.__json__() == dict(x)
+        y = x.__json__()
+        # Issue #8182: reduce adds marker
+        assert y['_from_serialized']
+        del y['_from_serialized']
+        assert y == dict(x)
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
         x = Signature('TASK', (2, 4), app=self.app)
         fun, args = x.__reduce__()
-        assert fun(*args) == x
+        y = fun(*args)
+        # Issue #8182: reduce adds marker
+        assert y['_from_serialized']
+        del y['_from_serialized']
+        assert y == x
 
     def test_replace(self):
         x = Signature('TASK', ('A',), {})
