@@ -211,3 +211,18 @@ class test_CouchBackend_result:
             assert self.backend.get_state(tid) == states.FAILURE
             assert isinstance(self.backend.get_result(tid), KeyError)
             assert self.backend.get_traceback(tid) == trace
+
+    def test_forget_missing_task_is_noop(self):
+        x = CouchBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.delete.side_effect = pycouchdb.exceptions.NotFound
+        # forget() on a result that was expired, already forgotten or never
+        # stored must not raise pycouchdb.exceptions.NotFound
+        x.forget(uuid())
+
+    def test_forget_twice_is_noop(self):
+        x = CouchBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.delete.side_effect = [None, pycouchdb.exceptions.NotFound]
+        x.forget(uuid())
+        x.forget(uuid())
