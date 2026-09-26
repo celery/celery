@@ -21,7 +21,7 @@ try:
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
-        'The database result backend requires SQLAlchemy to be installed.'
+        'The database result backend requires SQLAlchemy to be installed. '
         'See https://pypi.org/project/SQLAlchemy/')
 
 logger = logging.getLogger(__name__)
