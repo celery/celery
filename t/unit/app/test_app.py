@@ -35,7 +35,7 @@ from celery.contrib.testing.mocks import ContextMock
 from celery.exceptions import DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
 from celery.loaders.base import unconfigured
 from celery.platforms import pyimplementation
-from celery.utils.collections import DictAttribute
+from celery.utils.collections import AttributeDict, DictAttribute
 from celery.utils.objects import Bunch
 from celery.utils.serialization import pickle
 from celery.utils.time import LocalTimezone, localize, timezone, to_utc
@@ -542,6 +542,106 @@ class test_App:
         patching.setenv('CELERY_BROKER_URL', '')
         with self.Celery(broker='foo://baribaz') as app:
             assert app.conf.broker_url == 'foo://baribaz'
+
+    def test_strict_typing_default(self):
+        with self.Celery() as app:
+            assert app.strict_typing is True
+            assert app.conf.strict_typing is True
+
+    @pytest.mark.parametrize(
+        'config', [{}, {'strict_typing': True}, {'strict_typing': False}],
+    )
+    def test_strict_typing_none_uses_configuration(self, config):
+        with self.Celery(strict_typing=None, config_source=config) as app:
+            assert not app.configured
+            assert app.strict_typing is config.get('strict_typing', True)
+
+    @pytest.mark.parametrize('strict_typing', [True, False])
+    def test_strict_typing_with_replaced_configuration(self, strict_typing):
+        with self.Celery() as app:
+            app.conf = AttributeDict(strict_typing=strict_typing)
+            assert app.strict_typing is strict_typing
+            app.strict_typing = not strict_typing
+            assert app.conf.strict_typing is (not strict_typing)
+
+    def test_strict_typing_from_lazy_configuration(self):
+        with self.Celery() as app:
+            app.config_from_object({'strict_typing': False})
+            assert not app.configured
+            assert app.strict_typing is False
+            assert app.configured
+
+    @pytest.mark.parametrize('strict_typing', [True, False])
+    @pytest.mark.parametrize('namespace', [None, 'CELERY'])
+    def test_strict_typing_constructor_overrides_configuration(
+        self, strict_typing, namespace,
+    ):
+        key = 'CELERY_STRICT_TYPING' if namespace else 'strict_typing'
+        with self.Celery(
+            strict_typing=strict_typing, namespace=namespace,
+        ) as app:
+            app.config_from_object(
+                {key: not strict_typing}, namespace=namespace,
+            )
+            assert app.strict_typing is strict_typing
+            assert app.conf.strict_typing is strict_typing
+
+    def test_strict_typing_from_namespaced_configuration(self):
+        with self.Celery() as app:
+            app.config_from_object(
+                {'CELERY_STRICT_TYPING': False}, namespace='CELERY',
+            )
+            assert app.strict_typing is False
+
+    @pytest.mark.parametrize('configured', [True, False])
+    def test_strict_typing_attribute_assignment(self, configured):
+        with self.Celery() as app:
+            if configured:
+                assert app.strict_typing is True
+            app.strict_typing = False
+            assert app.conf.strict_typing is False
+            app.conf.strict_typing = True
+            assert app.strict_typing is True
+
+    def test_strict_typing_attribute_with_legacy_configuration(self):
+        with self.Celery() as app:
+            app.strict_typing = False
+            app.conf.CELERY_ALWAYS_EAGER = False
+            assert app.strict_typing is False
+            assert app.conf.task_always_eager is False
+
+    @pytest.mark.parametrize('configured', [True, False])
+    @pytest.mark.parametrize('namespace', [None, 'CELERY'])
+    def test_strict_typing_survives_pickle(self, configured, namespace):
+        key = 'CELERY_STRICT_TYPING' if namespace else 'strict_typing'
+        with self.Celery(strict_typing=False, namespace=namespace) as app:
+            app.config_from_object({key: True})
+            if configured:
+                assert app.strict_typing is False
+            with pickle.loads(pickle.dumps(app)) as restored:
+                assert restored.strict_typing is False
+                assert restored.conf.strict_typing is False
+
+    @pytest.mark.parametrize('use_attribute', [True, False])
+    def test_strict_typing_with_pending_legacy_config_survives_pickle(
+        self, use_attribute,
+    ):
+        with self.Celery(strict_typing=True) as app:
+            if use_attribute:
+                app.strict_typing = False
+            app.conf.CELERY_ALWAYS_EAGER = False
+            with pickle.loads(pickle.dumps(app)) as restored:
+                assert not app.configured
+                assert not restored.configured
+                assert restored.strict_typing is (not use_attribute)
+                assert restored.conf.task_always_eager is False
+
+    def test_strict_typing_runtime_change_survives_pickle(self):
+        with self.Celery(strict_typing=True) as app:
+            assert app.strict_typing is True
+            app.strict_typing = False
+            with pickle.loads(pickle.dumps(app)) as restored:
+                assert restored.strict_typing is False
 
     def test_pending_configuration_non_true__kwargs(self):
         with self.Celery(task_create_missing_queues=False) as app:

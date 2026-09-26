@@ -307,6 +307,15 @@ class Celery:
         autofinalize (bool): If set to False a :exc:`RuntimeError`
             will be raised if the task registry or tasks are used before
             the app is finalized.
+        strict_typing (bool or None): Default argument checking for tasks.
+            Defaults to the :setting:`strict_typing` setting.
+
+            .. versionchanged:: 5.7
+
+                The default is now ``None``, which uses the application
+                configuration (default: :const:`True`). Pass :const:`False`
+                explicitly to disable argument checking. Reading
+                ``app.strict_typing`` now loads pending configuration.
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 
@@ -385,7 +394,7 @@ class Celery:
                  amqp=None, events=None, log=None, control=None,
                  set_as_current=True, tasks=None, broker=None, include=None,
                  changes=None, config_source=None, fixups=None, task_cls=None,
-                 autofinalize=True, namespace=None, strict_typing=True,
+                 autofinalize=True, namespace=None, strict_typing=None,
                  config_source_silent=False, **kwargs):
 
         self._local = threading.local()
@@ -411,7 +420,6 @@ class Celery:
         self.steps = defaultdict(set)
         self.autofinalize = autofinalize
         self.namespace = namespace
-        self.strict_typing = strict_typing
 
         self.configured = False
         self._config_source = config_source
@@ -443,6 +451,7 @@ class Celery:
         self.__autoset('broker_url', broker)
         self.__autoset('result_backend', backend)
         self.__autoset('include', include)
+        self.__autoset('strict_typing', strict_typing)
 
         for key, value in kwargs.items():
             self.__autoset(key, value)
@@ -1504,7 +1513,7 @@ class Celery:
 
     def __reduce_keys__(self):
         """Keyword arguments used to reconstruct the object when unpickling."""
-        return {
+        keys = {
             'main': self.main,
             'changes':
                 self._conf.changes if self.configured else self._preconf,
@@ -1520,6 +1529,11 @@ class Celery:
             'task_cls': self.task_cls,
             'namespace': self.namespace,
         }
+        if not self.configured and 'strict_typing' in self._preconf:
+            # Restore the constructor marker without loading configuration,
+            # so this option can still accompany legacy configuration keys.
+            keys['strict_typing'] = self._preconf['strict_typing']
+        return keys
 
     def __reduce_args__(self):
         """Deprecated method, please use :meth:`__reduce_keys__` instead."""
@@ -1673,6 +1687,22 @@ class Celery:
     @conf.setter
     def conf(self, d):
         self._conf = d
+
+    @property
+    def strict_typing(self):
+        """Default argument checking for tasks bound to this app."""
+        # Resolve pending configuration before looking up namespaced keys
+        # so explicit constructor values take precedence on the first read.
+        conf = self.conf
+        if isinstance(conf, Settings):
+            conf.finalize()
+        return conf.strict_typing
+
+    @strict_typing.setter
+    def strict_typing(self, value):
+        if not self.configured:
+            self._preconf_set_by_auto.add('strict_typing')
+        self.conf.strict_typing = value
 
     @cached_property
     def control(self):
