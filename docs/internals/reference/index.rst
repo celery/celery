@@ -20,6 +20,7 @@
     celery.concurrency.eventlet
     celery.concurrency.gevent
     celery.concurrency.thread
+    celery.concurrency.asyncio
     celery.concurrency.base
     celery.backends
     celery.backends.base
@@ -55,6 +56,7 @@
     celery.backends.database.session
     celery.utils
     celery.utils.abstract
+    celery.utils.coroutines
     celery.utils.collections
     celery.utils.nodenames
     celery.utils.deprecated

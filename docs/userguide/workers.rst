@@ -537,7 +537,7 @@ Commands
 
 ``revoke``: Revoking tasks
 --------------------------
-:pool support: all, terminate only supported by prefork, eventlet and gevent
+:pool support: all, terminate only supported by prefork, eventlet, gevent and asyncio
 :broker support: *amqp, redis*
 :command: :program:`celery -A proj control revoke <task_id>`
 
@@ -784,6 +784,12 @@ limits for client side operation using ``timeout`` argument of
 
     The gevent pool does not implement soft time limits. Additionally,
     it will not enforce the hard time limit if the task is blocking.
+
+.. note::
+
+    The asyncio pool implements both limits, by cancelling the coroutine;
+    see :ref:`concurrency-asyncio`. A coroutine that swallows the
+    cancellation cannot be stopped, as there is no child process to kill.
 
 
 Changing time limits at run-time

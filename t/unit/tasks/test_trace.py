@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import ANY, Mock, PropertyMock, patch
 from uuid import uuid4
 
@@ -16,6 +17,7 @@ from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
 from celery.result import AsyncResult
 from celery.states import PENDING
+from celery.utils.coroutines import get_coroutine_runner, set_coroutine_runner
 from celery.worker.state import successful_requests
 
 
@@ -1272,3 +1274,128 @@ class test_stackprotection:
             assert task.result.loglevel == 5
         finally:
             reset_worker_optimizations(self.app)
+
+
+class test_coroutine_tasks(TraceCase):
+    """``async def`` task bodies are awaited by the tracer."""
+
+    @pytest.fixture(autouse=True)
+    def restore_runner(self):
+        previous = get_coroutine_runner()
+        # No pool here, so the tracer needs the fallback to run the bodies.
+        self.app.conf.worker_resolve_coroutines = True
+        try:
+            yield
+        finally:
+            set_coroutine_runner(previous)
+            self.app.conf.worker_resolve_coroutines = False
+
+    def test_refuses_in_a_worker_without_a_pool_or_the_setting(self):
+        from celery.exceptions import ImproperlyConfigured
+
+        self.app.conf.worker_resolve_coroutines = False
+
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            return x + y
+
+        # eager=False: this is the worker path, where a pool could have
+        # provided a loop and did not.  A request with an id, because at
+        # this point the failure really is stored in the backend.
+        _, info, _ = trace(self.app, add_async, (2, 2), eager=False,
+                           request={'id': 'id-1'})
+        assert info.state == states.FAILURE
+        assert isinstance(info.retval, ImproperlyConfigured)
+
+    def test_unset_resolves_with_a_deprecation_warning(self):
+        """The setting's own default: still runs, for one deprecation cycle."""
+        from celery.exceptions import CPendingDeprecationWarning
+
+        self.app.conf.worker_resolve_coroutines = None
+
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            return x + y
+
+        with pytest.warns(CPendingDeprecationWarning, match='Celery 6.0'):
+            retval, info, _ = trace(self.app, add_async, (2, 2), eager=False,
+                                    request={'id': 'id-2'})
+        assert info is None
+        assert retval == 4
+
+    def test_eager_always_resolves(self):
+        """There is no worker, so no pool can ever own a loop for it."""
+        self.app.conf.worker_resolve_coroutines = False
+
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            return x + y
+
+        retval, info, _ = trace(self.app, add_async, (2, 2), eager=True)
+        assert info is None
+        assert retval == 4
+
+    def test_result_is_the_awaited_value(self):
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            await asyncio.sleep(0)
+            return x + y
+
+        retval, _, _ = trace(self.app, add_async, (2, 2))
+        assert retval == 4
+
+    def test_failure_inside_the_coroutine(self):
+        @self.app.task(shared=False)
+        async def fails():
+            raise KeyError('boom')
+
+        _, info, _ = trace(self.app, fails, ())
+        assert info.state == states.FAILURE
+
+    def test_retry_raised_inside_the_coroutine(self):
+        @self.app.task(shared=False)
+        async def retries():
+            raise Retry('need to retry')
+
+        _, info, _ = trace(self.app, retries, ())
+        assert info.state == states.RETRY
+
+    def test_ignore_raised_inside_the_coroutine(self):
+        @self.app.task(shared=False)
+        async def ignores():
+            raise Ignore()
+
+        _, info, _ = trace(self.app, ignores, ())
+        assert info.state == states.IGNORED
+
+    def test_uses_the_runner_installed_by_the_pool(self):
+        seen = []
+
+        def runner(coro):
+            seen.append(coro)
+            return asyncio.run(coro)
+
+        set_coroutine_runner(runner)
+
+        @self.app.task(shared=False)
+        async def add_async(x, y):
+            return x + y
+
+        retval, _, _ = trace(self.app, add_async, (1, 1))
+        assert retval == 2
+        assert len(seen) == 1
+
+    def test_synchronous_body_returning_a_coroutine(self):
+        async def inner():
+            return 'inner'
+
+        @self.app.task(shared=False)
+        def returns_coroutine():
+            return inner()
+
+        retval, _, _ = trace(self.app, returns_coroutine, ())
+        assert retval == 'inner'
+
+    def test_synchronous_tasks_are_untouched(self):
+        retval, _, _ = trace(self.app, self.add, (2, 2))
+        assert retval == 4
