@@ -32,7 +32,7 @@ Configuration ->
 {scheduler_info}
     . logfile -> {logfile}@%{loglevel}
     . maxinterval -> {hmax_interval} ({max_interval}s)
-""".strip()
+{remote_control_info}""".strip()
 
 logger = get_logger('celery.beat')
 
@@ -50,7 +50,9 @@ class Beat:
                  scheduler_cls: str | None = None,  # XXX use scheduler
                  redirect_stdouts: bool | None = None,
                  redirect_stdouts_level: str | None = None,
-                 quiet: bool = False, **kwargs: Any) -> None:
+                 quiet: bool = False,
+                 remote_control: bool | None = None,
+                 hostname: str | None = None, **kwargs: Any) -> None:
         self.app = app = app or self.app
         either = self.app.either
         self.loglevel = loglevel
@@ -63,6 +65,8 @@ class Beat:
         self.redirect_stdouts_level = either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
         self.quiet = quiet
+        self.remote_control = remote_control
+        self.hostname = hostname
 
         self.max_interval = max_interval
         self.socket_timeout = socket_timeout
@@ -98,6 +102,8 @@ class Beat:
             max_interval=self.max_interval,
             scheduler_cls=self.scheduler_cls,
             schedule_filename=self.schedule,
+            remote_control=self.remote_control,
+            hostname=self.hostname,
         )
 
         if not self.quiet:
@@ -144,7 +150,13 @@ class Beat:
             scheduler_info=scheduler.info,
             hmax_interval=humanize_seconds(scheduler.max_interval),
             max_interval=scheduler.max_interval,
+            remote_control_info=self._remote_control_info(service),
         )
+
+    def _remote_control_info(self, service: beat.Service) -> str:
+        if not service.remote_control:
+            return ''
+        return f'    . remote control -> {beat.beat_nodename(service.hostname)}'
 
     def set_process_title(self) -> None:
         arg_start = 'manage' in sys.argv[0] and 2 or 1

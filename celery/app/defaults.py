@@ -73,6 +73,8 @@ NAMESPACES = Namespace(
     beat=Namespace(
         __old__=OLD_NS_BEAT,
 
+        enable_remote_control=Option(False, type='bool'),
+        remote_control_max_tick_age=Option(None, type='float'),
         max_loop_interval=Option(0, type='float'),
         schedule=Option({}, type='dict'),
         scheduler=Option('celery.beat:PersistentScheduler'),

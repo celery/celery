@@ -4519,6 +4519,87 @@ that are past due will always run immediately.
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
 
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends, and stops
+replying once the scheduler falls behind -- see
+:setting:`beat_remote_control_max_tick_age`.
+
+The node name defaults to ``celerybeat@hostname`` and can be set with
+:option:`--hostname <celery beat --hostname>`. The setting itself can be
+overridden per process with
+:option:`--enable-remote-control <celery beat --enable-remote-control>`.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
+.. setting:: beat_remote_control_max_tick_age
+
+``beat_remote_control_max_tick_age``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (twice the scheduler's loop interval).
+
+Only has an effect when :setting:`beat_enable_remote_control` is
+enabled.
+
+Seconds the scheduler may go without completing a pass before beat
+stops answering :program:`celery inspect ping`. The control node runs
+in a thread of its own, so without this a ping would be answered even
+by a beat whose scheduler loop had wedged -- the exact failure a health
+check exists to catch.
+
+The default tolerates exactly one missed pass, measured against the
+interval the scheduler actually settled on -- a scheduler class may
+choose its own when :setting:`beat_max_loop_interval` is unset, as
+``django-celery-beat`` does -- and never drops below a floor of sixty
+seconds, so that a single slow pass on a short-interval scheduler is
+not mistaken for a stall.
+
+Beat records a tick when it starts, so a process that wedges before its
+first tick goes stale on the same schedule rather than looking healthy
+forever.
+
+Beat declines by staying silent, because :program:`celery inspect`
+exits non-zero only when no node replies at all; an error reply would
+leave the exit status at zero. Each refusal is logged as a warning.
+
+Set to ``0`` to answer regardless of how long ago the last tick was.
+
 .. setting:: beat_logfile
 
 ``beat_logfile``

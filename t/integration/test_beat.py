@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+from threading import Event, Thread
+from time import monotonic, sleep
 from uuid import uuid4
 
 import pytest
@@ -129,3 +131,96 @@ class test_beat_tick_heap_top_changed:
         assert scheduler.tick() == 0
         assert app.AsyncResult(second_task_id).get(timeout=30) == 7
         assert scheduler.schedule['first'].total_run_count == 0
+
+
+class test_beat_remote_control:
+    """A running beat must answer while it ticks, and stop when it wedges.
+
+    The unit and smoke tests both write ``Service._last_tick`` directly,
+    so neither covers the scheduler loop keeping the node answerable on
+    its own.  That gap matters: a false positive there silences a
+    healthy beat, and on a liveness probe it restarts one that is
+    working fine.
+    """
+
+    #: kept short so the test doesn't have to wait out a real window;
+    #: an explicit setting also bypasses BeatPidbox.min_tick_age.
+    max_tick_age = 2.0
+
+    @staticmethod
+    def _wait_until(predicate, timeout):
+        deadline = monotonic() + timeout
+        while monotonic() < deadline:
+            if predicate():
+                return True
+            sleep(0.2)
+        return False
+
+    @pytest.fixture
+    def beat_node(self, app):
+        app.conf.beat_enable_remote_control = True
+        app.conf.beat_remote_control_max_tick_age = self.max_tick_age
+        app.conf.beat_schedule = {}
+        service = beat.Service(
+            app=app,
+            max_interval=0.5,
+            scheduler_cls='celery.beat:Scheduler',
+            hostname=f'celerybeat-{uuid4().hex[:8]}@%h',
+        )
+        thread = Thread(target=service.start, name='beat-integration',
+                        daemon=True)
+        thread.start()
+        node = beat.beat_nodename(service.hostname)
+        try:
+            if not self._wait_until(
+                lambda: app.control.ping(destination=[node], timeout=3),
+                timeout=25,
+            ):
+                # Say which of the two it was: a node that never came up
+                # looks identical to one that came up and went stale
+                # immediately because the loop stopped refreshing.
+                pidbox = service._pidbox
+                pytest.fail(
+                    f'beat never answered a ping: thread_alive='
+                    f'{thread.is_alive()} pidbox='
+                    f'{pidbox is not None and pidbox.thread is not None} '
+                    f'tick_age={pidbox and pidbox.tick_age()}')
+            yield service, node
+        finally:
+            service.stop()
+            thread.join(timeout=30)
+
+    @flaky
+    def test_a_ticking_beat_keeps_answering(self, app, beat_node):
+        _, node = beat_node
+        # Well past the staleness window: a loop that keeps up must never
+        # let the node fall silent.
+        deadline = monotonic() + self.max_tick_age * 4
+        while monotonic() < deadline:
+            assert app.control.ping(destination=[node], timeout=5) == [
+                {node: {'ok': 'pong'}}
+            ], 'a healthy beat stopped answering'
+            sleep(0.25)
+
+    @flaky
+    def test_a_wedged_scheduler_falls_silent(self, app, beat_node):
+        service, node = beat_node
+        # Wedge the loop the way a stuck tick would, rather than writing
+        # _last_tick: the pidbox thread stays up and connected, and only
+        # the scheduler stops advancing.
+        released = Event()
+
+        def wedged_tick(*args, **kwargs):
+            released.wait()
+            return 0.5
+
+        service.scheduler.tick = wedged_tick
+        try:
+            assert self._wait_until(
+                lambda: app.control.ping(destination=[node],
+                                         timeout=3) == [],
+                timeout=20,
+            ), 'a wedged beat kept answering'
+        finally:
+            # let the loop run again so the fixture can stop it
+            released.set()

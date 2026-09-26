@@ -1,9 +1,13 @@
 import dbm
 import errno
 import pickle
+import socket
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
+from threading import Event
+from time import sleep
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -1004,6 +1008,37 @@ class test_Service:
         s = beat.Service(app=self.app, scheduler_cls=Mock)
         assert loads(dumps(s))
 
+    def test_start_records_the_effective_max_interval(self):
+        s, sh = self.get_service()
+        assert s.effective_max_interval is None
+        s.scheduler.shutdown_service = s
+        s.start()
+        assert s.effective_max_interval == s.scheduler.max_interval
+
+    def test_start_stamps_last_tick(self):
+        s, sh = self.get_service()
+        assert s._last_tick is None
+        s.scheduler.shutdown_service = s
+        s.start()
+        assert s._last_tick is not None
+
+    def test_reduce_preserves_hostname(self):
+        s = beat.Service(app=self.app, scheduler_cls=Mock,
+                         hostname='probe@example.com')
+        cls, args = s.__reduce__()
+        assert cls(*args).hostname == 'probe@example.com'
+
+    def test_reduce_preserves_remote_control(self):
+        # EmbeddedService forces remote_control off, and billiard pickles
+        # the service when the embedded beat runs under a spawning start
+        # method.  If __reduce__ drops the flag the child re-reads the
+        # config and silently starts a control node anyway.
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.Service(app=self.app, scheduler_cls=Mock,
+                         remote_control=False)
+        cls, args = s.__reduce__()
+        assert cls(*args).remote_control is False
+
     def test_start(self):
         s, sh = self.get_service()
         schedule = s.scheduler.schedule
@@ -1052,6 +1087,470 @@ class test_Service:
         s.start()
         assert s._is_shutdown.is_set()
 
+    def test_start_starts_and_stops_pidbox_when_enabled(self):
+        self.app.conf.beat_enable_remote_control = True
+        s, sh = self.get_service()
+        s.scheduler.shutdown_service = s
+        with patch('celery.beat.BeatPidbox') as BeatPidbox:
+            s.start()
+        BeatPidbox.assert_called_once_with(s)
+        BeatPidbox.return_value.start.assert_called_once_with()
+        BeatPidbox.return_value.stop.assert_called_once_with()
+
+    def test_start_does_not_start_pidbox_by_default(self):
+        s, sh = self.get_service()
+        s.scheduler.shutdown_service = s
+        with patch('celery.beat.BeatPidbox') as BeatPidbox:
+            s.start()
+        BeatPidbox.assert_not_called()
+
+    def test_remote_control_argument_overrides_setting(self):
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.Service(app=self.app, scheduler_cls=Mock,
+                         remote_control=False)
+        assert s.remote_control is False
+        s2, _ = self.get_service()
+        assert s2.remote_control is True
+
+
+def _idle_then_timeout(*args, **kwargs):
+    """Stand in for ``drain_events``, blocking instead of spinning.
+
+    Raising :exc:`socket.timeout` immediately turns the consumer loop
+    into a busy-wait that burns a core for the duration of the test.
+    """
+    sleep(0.01)
+    raise socket.timeout()
+
+
+class test_beat_nodename:
+
+    def test_defaults_to_celerybeat_at_local_host(self):
+        from celery.utils.nodenames import gethostname
+        assert beat.beat_nodename() == f'celerybeat@{gethostname()}'
+        assert beat.beat_nodename('') == f'celerybeat@{gethostname()}'
+
+    def test_bare_value_is_the_host(self):
+        # matches `celery worker -n foo` giving celery@foo
+        assert beat.beat_nodename('example.com') == 'celerybeat@example.com'
+
+    def test_full_nodename_is_kept(self):
+        assert beat.beat_nodename('probe@example.com') == 'probe@example.com'
+
+    def test_expands_host_abbreviations(self):
+        from celery.utils.nodenames import gethostname
+        assert beat.beat_nodename('probe@%h') == f'probe@{gethostname()}'
+
+
+class test_BeatPidbox:
+
+    def get_pidbox(self):
+        service = beat.Service(app=self.app, scheduler_cls=Mock)
+        return beat.BeatPidbox(service), service
+
+    def test_enable_remote_control_setting_defaults_to_false(self):
+        assert self.app.conf.beat_enable_remote_control is False
+
+    def test_node_name(self):
+        from celery.utils.nodenames import gethostname
+        pb, _ = self.get_pidbox()
+        assert pb.node.hostname == f'celerybeat@{gethostname()}'
+
+    def test_node_name_follows_the_service_hostname(self):
+        service = beat.Service(app=self.app, scheduler_cls=Mock,
+                               hostname='probe@example.com')
+        assert beat.BeatPidbox(service).node.hostname == 'probe@example.com'
+
+    def test_ping_handler_replies_pong(self):
+        # Must match the worker's reply exactly: Inspect.ping and
+        # Control.ping both document {HOSTNAME: {'ok': 'pong'}} as
+        # their return contract.
+        pb, _ = self.get_pidbox()
+        assert pb.node.handlers['ping'](pb.state) == {'ok': 'pong'}
+
+    def test_max_tick_age_defaults_to_twice_the_loop_interval(self):
+        self.app.conf.beat_max_loop_interval = 120.0
+        pb, _ = self.get_pidbox()
+        assert pb.max_tick_age == 240.0
+
+    def test_max_tick_age_falls_back_to_the_module_default(self):
+        # beat_max_loop_interval defaults to 0, which the scheduler
+        # itself reads as "use DEFAULT_MAX_INTERVAL".
+        pb, service = self.get_pidbox()
+        assert service.max_interval == 0
+        assert pb.max_tick_age == beat.DEFAULT_MAX_INTERVAL * 2
+
+    def test_max_tick_age_uses_the_interval_the_scheduler_settled_on(self):
+        # A scheduler class may pick its own interval when neither the
+        # argument nor beat_max_loop_interval is set -- django-celery-beat
+        # uses five seconds -- so the service's value is not the real cap.
+        pb, service = self.get_pidbox()
+        service.effective_max_interval = 600.0
+        assert pb.max_tick_age == 1200.0
+
+    def test_max_tick_age_never_drops_below_the_floor(self):
+        pb, service = self.get_pidbox()
+        service.effective_max_interval = 5.0   # django-celery-beat
+        assert pb.max_tick_age == pb.min_tick_age
+
+    def test_max_tick_age_can_be_configured(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = 42.0
+        assert pb.max_tick_age == 42.0
+
+    def test_not_stale_before_the_first_tick_is_recorded(self):
+        pb, service = self.get_pidbox()
+        service._last_tick = None
+        assert pb.tick_age() is None
+        assert pb.is_stale() is False
+
+    def test_stale_once_a_tick_is_overdue(self):
+        pb, service = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = 10.0
+        service._last_tick = time.monotonic()
+        assert pb.is_stale() is False
+        service._last_tick = time.monotonic() - 11.0
+        assert pb.is_stale() is True
+
+    def test_staleness_check_can_be_disabled(self):
+        pb, service = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = 0
+        service._last_tick = time.monotonic() - 10_000.0
+        assert pb.is_stale() is False
+
+    def _fanout(self, pb):
+        # start() asks the transport about fanout, and that call goes
+        # through connection_for_read() too.  These tests drive the
+        # consumer loop, not the guard, so keep it out of their
+        # connection sequence -- otherwise it silently eats the first
+        # one and the test stops exercising what it claims to.
+        return patch.object(pb, 'supports_fanout', return_value=True)
+
+    def _message(self):
+        # handle_message reads headers['clock'] before it does anything
+        # else; a bare Mock there raises inside the clock and the error
+        # is swallowed, which would make these tests pass vacuously.
+        message = Mock(name='message')
+        message.headers = {}
+        return message
+
+    def _stale_pidbox(self, max_tick_age=10.0):
+        pb, service = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = max_tick_age
+        service._last_tick = time.monotonic() - (max_tick_age + 1)
+        pb.node.reply = Mock(name='reply')
+        return pb
+
+    def test_does_not_reply_when_stale(self):
+        # Silence is the only thing a probe can see: `celery inspect`
+        # exits non-zero only when nothing replies at all.
+        pb = self._stale_pidbox()
+        with patch('celery.beat.warning') as warning:
+            pb.on_message({'method': 'ping', 'arguments': {},
+                           'destination': [pb.hostname],
+                           'reply_to': {'exchange': 'r', 'routing_key': 'r'}},
+                          self._message())
+        pb.node.reply.assert_not_called()
+        warning.assert_called_once()
+
+    def test_stale_check_ignores_messages_for_other_nodes(self):
+        # The gate runs inside dispatch, which handle_message only
+        # reaches for messages addressed here -- otherwise a stale beat
+        # would log about every worker's liveness probe.
+        pb = self._stale_pidbox()
+        for body in (
+            {'method': 'ping', 'arguments': {},
+             'destination': ['celery@somewhere-else']},
+            {'method': 'ping', 'arguments': {},
+             'pattern': 'celery@*', 'matcher': 'glob'},
+        ):
+            with patch('celery.beat.error') as error:
+                with patch('celery.beat.warning') as warning:
+                    pb.on_message(body, self._message())
+            pb.node.reply.assert_not_called()
+            warning.assert_not_called()
+            error.assert_not_called()   # not "passed because it threw"
+
+    def test_replies_to_a_broadcast_addressed_to_it(self):
+        pb, service = self.get_pidbox()
+        service._last_tick = time.monotonic()
+        pb.node.reply = Mock(name='reply')
+        pb.on_message({'method': 'ping', 'arguments': {},
+                       'pattern': 'celerybeat@*', 'matcher': 'glob',
+                       'reply_to': {'exchange': 'r', 'routing_key': 'r'}},
+                      self._message())
+        pb.node.reply.assert_called_once()
+        assert pb.node.reply.call_args[0][0] == {
+            pb.hostname: {'ok': 'pong'}}
+
+    def test_on_message_replies_while_ticking(self):
+        pb, service = self.get_pidbox()
+        self.app.conf.beat_remote_control_max_tick_age = 10.0
+        service._last_tick = time.monotonic()
+        pb.node.handle_message = Mock(name='handle_message')
+        body = {'method': 'ping', 'arguments': {}}
+        message = Mock(name='message')
+        pb.on_message(body, message)
+        pb.node.handle_message.assert_called_once_with(body, message)
+
+    def test_on_message_ignores_unknown_method(self):
+        # handle_message is the only path that sends a reply, so not
+        # calling it is exactly "produces no reply".
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        for method in ('active', 'stats', 'shutdown', 'revoke'):
+            pb.on_message({'method': method, 'arguments': {}}, Mock())
+        pb.node.handle_message.assert_not_called()
+
+    def test_on_message_dispatches_known_method(self):
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        body = {'method': 'ping', 'arguments': {}}
+        message = Mock(name='message')
+        pb.on_message(body, message)
+        pb.node.handle_message.assert_called_once_with(body, message)
+
+    def test_on_message_ignores_non_dict_body(self):
+        # A non-dict payload used to raise AttributeError out through
+        # drain_events, where it was mis-logged as a connection error
+        # and cost a channel teardown plus a reconnect.
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(name='handle_message')
+        with patch('celery.beat.error') as error:
+            pb.on_message('not a mapping', Mock())
+        pb.node.handle_message.assert_not_called()
+        error.assert_not_called()  # ignored, not logged as a command error
+
+    def test_on_message_survives_handler_error(self):
+        pb, _ = self.get_pidbox()
+        pb.node.handle_message = Mock(side_effect=KeyError('boom'))
+        pb.on_message({'method': 'ping', 'arguments': {}}, Mock())
+
+    def test_start_stop_thread_lifecycle(self):
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            conn = cfr.return_value.__enter__.return_value
+            conn.drain_events.side_effect = _idle_then_timeout
+            with self._fanout(pb):
+                pb.start()
+            assert pb.thread.is_alive()
+            assert pb.thread.daemon
+            pb.stop()
+        # cleared only because the thread really did terminate
+        assert pb.thread is None
+
+    def test_start_refuses_a_transport_without_fanout(self):
+        # node.listen() would fail on every attempt, and the reconnect
+        # loop cannot tell that apart from a dropped connection, so it
+        # would log an error every retry_interval forever.
+        pb, _ = self.get_pidbox()
+        with patch.object(pb, 'supports_fanout', return_value=False):
+            with patch('celery.beat.warning') as warning:
+                pb.start()
+        assert pb.thread is None
+        warning.assert_called_once()
+
+    def test_supports_fanout_asks_the_transport(self):
+        pb, _ = self.get_pidbox()
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.supports_exchange_type.return_value = False
+            assert pb.supports_fanout() is False
+        cfr.return_value.supports_exchange_type.assert_called_once_with(
+            'fanout')
+
+    def test_supports_fanout_on_a_real_transport(self):
+        pb, _ = self.get_pidbox()
+        assert pb.supports_fanout() is True   # memory:// has fanout
+
+    def test_start_is_idempotent_while_running(self):
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            conn = cfr.return_value.__enter__.return_value
+            conn.drain_events.side_effect = _idle_then_timeout
+            with self._fanout(pb):
+                pb.start()
+                running = pb.thread
+                pb.start()  # must not spawn a second consumer
+            assert pb.thread is running
+            pb.stop()
+        assert pb.thread is None
+
+    def test_stop_before_start_is_a_noop(self):
+        pb, _ = self.get_pidbox()
+        pb.stop()
+        assert pb.thread is None
+
+    def test_stop_twice_is_a_noop(self):
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            conn = cfr.return_value.__enter__.return_value
+            conn.drain_events.side_effect = _idle_then_timeout
+            with self._fanout(pb):
+                pb.start()
+            pb.stop()
+            pb.stop()  # must not raise or block on the cleared thread
+        assert pb.thread is None
+
+    def test_stop_warns_and_keeps_thread_that_will_not_die(self):
+        pb, _ = self.get_pidbox()
+        pb.join_timeout = 0.01
+        pb.thread = Mock(name='thread')
+        pb.thread.is_alive.return_value = True
+        with patch('celery.beat.warning') as warning:
+            pb.stop()
+        pb.thread.join.assert_called_once_with(timeout=0.01)
+        warning.assert_called_once()
+        # kept, so the idempotent start() cannot add a second consumer
+        assert pb.thread is not None
+
+    def test_loop_exits_on_error_during_shutdown(self):
+        pb, _ = self.get_pidbox()
+
+        def raise_after_shutdown(*args, **kwargs):
+            pb._shutdown.set()
+            raise ConnectionResetError('gone during shutdown')
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=raise_after_shutdown) as cfr:
+            pb._loop()  # must break out instead of retrying
+        assert cfr.call_count == 1
+
+    def test_loop_exits_when_an_open_connection_drops_during_shutdown(self):
+        # The reconnect path must also notice a shutdown in progress,
+        # and go quietly -- this is not a surprise failure.
+        pb, _ = self.get_pidbox()
+        pb.node.listen = Mock(name='listen')
+
+        def drop(*args, **kwargs):
+            pb._shutdown.set()
+            raise ConnectionResetError('gone during shutdown')
+
+        connection = MagicMock()
+        connection.__enter__.return_value.drain_events.side_effect = drop
+        with patch.object(self.app, 'connection_for_read',
+                          return_value=connection) as cfr:
+            with patch('celery.beat.warning') as warning:
+                pb._loop()
+        assert cfr.call_count == 1
+        warning.assert_not_called()
+
+    def test_loop_reconnects_on_connection_error(self):
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0.01
+        pb.node.listen = Mock(name='listen')
+
+        conn_bad = MagicMock()
+        conn_bad.__enter__.return_value.drain_events.side_effect = (
+            ConnectionResetError('broker gone'))
+        conn_ok = MagicMock()
+        conn_ok.__enter__.return_value.drain_events.side_effect = (
+            _idle_then_timeout)
+        conns = iter([conn_bad])
+        reconnected = Event()
+
+        def next_connection(*args, **kwargs):
+            try:
+                return next(conns)
+            except StopIteration:
+                reconnected.set()
+                return conn_ok
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=next_connection) as cfr:
+            with self._fanout(pb):
+                pb.start()
+            assert reconnected.wait(timeout=10), 'did not reconnect'
+            pb.stop()
+        assert cfr.call_count >= 2
+        assert pb.thread is None
+
+    def test_connect_honours_broker_connection_max_retries(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 7)
+
+    def test_loop_stops_once_connect_retries_are_exhausted(self):
+        # ensure_connection() applies the retry policy itself, so once it
+        # raises there is nothing left to wait for.  Reconnecting here
+        # would hand it a fresh budget and make the setting meaningless.
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0
+        self.app.conf.broker_connection_max_retries = 1
+
+        def exhausted(*args, **kwargs):
+            # Safety net: fail the assertion below rather than spinning
+            # here forever if the give-up path ever regresses.
+            if cfr.call_count > 3:
+                pb._shutdown.set()
+            connection = MagicMock()
+            connection.ensure_connection.side_effect = (
+                ConnectionResetError('broker down'))
+            return connection
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=exhausted) as cfr:
+            with patch('celery.beat.warning') as warning:
+                pb._loop()
+        assert cfr.call_count == 1
+        warning.assert_called_once()
+
+    def test_connect_honours_broker_connection_retry_disabled(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_retry = False
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 0)
+
+    def test_connect_releases_connection_it_could_not_establish(self):
+        pb, _ = self.get_pidbox()
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.ensure_connection.side_effect = (
+                ConnectionResetError('gone'))
+            with pytest.raises(ConnectionResetError):
+                pb._connect()
+        cfr.return_value.release.assert_called_once_with()
+
+    def test_error_handler_logs_the_retry(self):
+        pb, _ = self.get_pidbox()
+        with patch('celery.beat.error') as error:
+            pb._error_handler(ConnectionResetError('gone'), 5)
+        error.assert_called_once()
+
+    def test_loop_does_not_retry_when_retry_disabled(self):
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0
+        self.app.conf.broker_connection_retry = False
+
+        def fail(*args, **kwargs):
+            # Safety net: if the no-retry guard ever regresses, fail the
+            # assertion below rather than looping here forever.
+            if cfr.call_count > 3:
+                pb._shutdown.set()
+            raise ConnectionResetError('gone')
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=fail) as cfr:
+            with patch('celery.beat.warning') as warning:
+                pb._loop()
+        assert cfr.call_count == 1
+        # the consumer is gone for good, so say so out loud
+        warning.assert_called_once()
+
+    def test_loop_is_quiet_when_stopped_deliberately(self):
+        pb, _ = self.get_pidbox()
+        pb._shutdown.set()
+        with patch('celery.beat.warning') as warning:
+            pb._loop()
+        warning.assert_not_called()
+
 
 class test_EmbeddedService:
 
@@ -1091,6 +1590,18 @@ class test_EmbeddedService:
 
         s.stop()
         assert s.service.stopped
+
+    def test_embedded_disables_remote_control(self):
+        self.app.conf.beat_enable_remote_control = True
+        s = beat.EmbeddedService(self.app, thread=True)
+        assert s.service.remote_control is False
+        if beat._Process is not None:
+            p = beat.EmbeddedService(self.app)
+            assert p.service.remote_control is False
+
+    def test_embedded_remote_control_is_an_overridable_default(self):
+        s = beat.EmbeddedService(self.app, thread=True, remote_control=True)
+        assert s.service.remote_control is True
 
 
 class test_schedule:
