@@ -434,6 +434,15 @@ of worker processes/threads can be changed using the
 :option:`--concurrency <celery worker --concurrency>` argument and defaults
 to the number of CPUs available on the machine.
 
+.. versionadded:: 5.7
+   ``--concurrency=auto``.
+
+Inside a container or a systemd unit with a CPU limit the host CPU count
+overstates what the worker may use. Passing ``--concurrency=auto`` sizes
+the prefork pool from the cgroup CPU quota and the CPU affinity mask
+instead (Linux only); for the threads, gevent, eventlet and solo pools it
+is a no-op. See :setting:`worker_concurrency` for details.
+
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
     More pool processes are usually better, but there's a cut-off point where
