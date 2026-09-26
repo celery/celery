@@ -825,7 +825,7 @@ class BufferMap(OrderedDict, Evictable):
             for key, items in dict(iterable).items():
                 self._get_or_create_buffer(key).extend(items)
         self.total = sum(len(buf) for buf in self.values())
-        self.maxsize and self._evict()
+        self.maxsize and self.evict()
 
     def put(self, key, item):
         # type: (Any, Any) -> None

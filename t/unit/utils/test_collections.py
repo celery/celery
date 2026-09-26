@@ -630,6 +630,13 @@ class test_BufferMap:
         b = BufferMap(4, {'a': list(range(50))})
         self.assert_size_and_first(b, 4, 46)
 
+    def test_init_from_iterable_enforces_maxsize_beyond_evict_limit(self):
+        # _evict() removes at most 100 items per call, so seeding more than
+        # 100 items over maxsize must rely on the unlimited evict() to keep
+        # the constructor's guarantee.
+        b = BufferMap(4, {'a': list(range(1000))})
+        self.assert_size_and_first(b, 4, 996)
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
