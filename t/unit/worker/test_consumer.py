@@ -2,6 +2,7 @@ import errno
 import logging
 import socket
 from collections import deque
+from time import monotonic
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, call, patch
 
@@ -17,6 +18,7 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.utils.time import utcoffset
+from celery.worker import state as worker_state
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
@@ -1647,6 +1649,7 @@ class test_Mingle:
         c = Mock()
         c.app.connection_for_read = _amqp_connection()
         mingle = Mingle(c)
+        c.controller.state.revoked = LimitedSet()
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {}
         mingle.start(c)
@@ -1678,16 +1681,45 @@ class test_Mingle:
             },
         }
 
-        our_revoked = c.controller.state.revoked = LimitedSet()
-
-        mingle.start(c)
-        I.hello.assert_called_with(c.hostname, our_revoked._data)
+        our_revoked = LimitedSet()
+        our_revoked.add('ours')
+        with patch.object(worker_state, 'revoked', our_revoked):
+            c.controller.state = worker_state
+            mingle.start(c)
+        I.hello.assert_called_with(c.hostname, ['ours'])
         c.app.clock.adjust.assert_has_calls([
             call(312), call(29),
         ], any_order=True)
         assert 'Aig-1' in our_revoked
         assert 'Aig-2' in our_revoked
         assert 'Big-1' in our_revoked
+
+    def test_start_stamps_received_revoked_items_locally(self):
+        # The stamps of a neighbour count from the boot of its host; taken
+        # as they are, the ones ahead of the local clock never expire and,
+        # once they fill the set, evict every id revoked here as the
+        # oldest one the moment it is added (#4300).
+        c = Mock()
+        c.app.connection_for_read = _amqp_connection()
+        mingle = Mingle(c)
+
+        Aig = LimitedSet()
+        Aig.add('Aig-1', now=monotonic() + 10 ** 6)
+        I = c.app.control.inspect.return_value = Mock()
+        I.hello.return_value = {
+            'A@example.com': {'clock': 312, 'revoked': Aig._data},
+        }
+
+        our_revoked = LimitedSet(maxlen=1, expires=3600)
+        with patch.object(worker_state, 'revoked', our_revoked):
+            c.controller.state = worker_state
+            mingle.start(c)
+        assert 'Aig-1' in our_revoked
+        assert our_revoked.as_dict()['Aig-1'] <= monotonic()
+
+        our_revoked.add('ours')
+        assert 'ours' in our_revoked
+        assert 'Aig-1' not in our_revoked
 
 
 def _amqp_connection():

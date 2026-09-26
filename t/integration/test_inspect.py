@@ -1,12 +1,14 @@
 import os
 import re
 from datetime import datetime, timedelta, timezone
-from time import sleep
+from time import monotonic, sleep
 from unittest.mock import ANY
 
 import pytest
 
+from celery import uuid
 from celery.utils.nodenames import anon_nodename
+from celery.worker import state as worker_state
 
 from .tasks import add, sleeping
 
@@ -206,6 +208,39 @@ class test_Inspect:
         ret = inspect.report()
         assert len(ret) == 1
         assert ret[NODENAME] == {'ok': ANY}
+        assert 'software -> celery:' in ret[NODENAME]['ok']
+
+    @flaky
+    def test_report_with_multiserver_result_backend(self, manager):
+        """Tests bugreport with multi-server and Sentinel result backends."""
+        app = manager.app
+        orig_backend = app.conf.result_backend
+        try:
+            app.conf.result_backend = (
+                'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/'
+            )
+            report = app.bugreport()
+            assert 'cache+memcached://172.19.26.240:11211;172.19.26.242:11211/' in report
+
+            app.conf.result_backend = (
+                'sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0'
+            )
+            report = app.bugreport()
+            assert 'secret1' not in report
+            assert 'secret2' not in report
+            assert 'sentinel://:********@h1:26379;sentinel://:********@h2:26379/0' in report
+
+            app.conf.result_backend = 'redis://:p,ass@word@localhost:6379/0'
+            report = app.bugreport()
+            assert 'p,ass@word' not in report
+            assert 'redis://:********@localhost:6379/0' in report
+
+            app.conf.result_backend = 'redis://user:p,a@ss@localhost:6379/0'
+            report = app.bugreport()
+            assert 'p,a@ss' not in report
+            assert 'redis://user:********@localhost:6379/0' in report
+        finally:
+            app.conf.result_backend = orig_backend
 
     @flaky
     def test_revoked(self, inspect):
@@ -219,6 +254,31 @@ class test_Inspect:
         ret = inspect.revoked()
         assert len(ret) == 1
         assert result.task_id in ret[NODENAME]
+
+    @flaky
+    def test_hello_stamps_received_revoked_ids_locally(self, inspect):
+        """The revoked ids of another worker are taken as ids, stamped here."""
+        # Stamps ahead of the local clock, as from a host with a longer
+        # uptime: taken as they are, they would never expire (#4300).
+        ahead = monotonic() + 10 ** 6
+        received = [uuid() for _ in range(2)]
+        try:
+            ret = inspect.hello(
+                'other@host',
+                revoked={task_id: [ahead, seq, task_id] for seq, task_id in enumerate(received)},
+            )
+            assert len(ret) == 1
+            # The session worker runs in this process: its set is right here.
+            stamps = worker_state.revoked.as_dict()
+            for task_id in received:
+                assert stamps[task_id] <= monotonic()
+            # The reply carries the ids alone.
+            reply = ret[NODENAME]['revoked']
+            assert isinstance(reply, list)
+            assert set(received) <= set(reply)
+        finally:
+            for task_id in received:
+                worker_state.revoked.discard(task_id)
 
     @flaky
     def test_conf(self, inspect):
