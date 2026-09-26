@@ -407,26 +407,7 @@ and can contain the following keys:
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries. Default is 0.2.
-
-- `retry_errors`
-
-    `retry_errors` is a tuple of exception classes that should be retried.
-    It will be ignored if not specified. Default is None (ignored).
-
-    For example, if you want to retry only tasks that were timed out, you can use
-    :exc:`~kombu.exceptions.TimeoutError`:
-
-    .. code-block:: python
-
-        from kombu.exceptions import TimeoutError
-
-        add.apply_async((2, 2), retry=True, retry_policy={
-            'max_retries': 3,
-            'retry_errors': (TimeoutError, ),
-        })
-
-    .. versionadded:: 5.3
+    retries. Default is 1.
 
 For example, the default policy correlates to:
 
@@ -436,11 +417,10 @@ For example, the default policy correlates to:
         'max_retries': 3,
         'interval_start': 0,
         'interval_step': 0.2,
-        'interval_max': 0.2,
-        'retry_errors': None,
+        'interval_max': 1,
     })
 
-the maximum time spent retrying will be 0.4 seconds. It's set relatively
+the maximum time spent retrying will be 0.6 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down -- For example, many web server processes waiting
 to retry, blocking other incoming requests.
