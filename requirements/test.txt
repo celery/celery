@@ -5,7 +5,7 @@ pytest-subtests==0.15.0
 pytest-timeout==2.4.0
 pytest-click==1.1.0
 pytest-order==1.5.0
-boto3>=1.43.93
+boto3>=1.43.98
 moto==5.2.3
 # type checking
 mypy==2.3.1; platform_python_implementation=="CPython"
