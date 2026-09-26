@@ -38,6 +38,9 @@ RUN chmod +x /usr/local/bin/create-linux-user \
     && /usr/local/bin/create-linux-user \
     && rm /usr/local/bin/create-linux-user
 
+# Let the developer user create folders inside .cache when installing packages.
+RUN install -d -o 1000 -g 1000 "${HOME}/.cache"
+
 WORKDIR ${HOME}
 
 COPY --chown=1000:1000 requirements ${HOME}/requirements
