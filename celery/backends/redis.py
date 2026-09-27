@@ -86,9 +86,9 @@ logger = get_logger(__name__)
 _NO_SOCKET = object()
 
 
-class _PubSubCommandState(threading.local):
-    #: set while this thread is inside a redis-py pubsub call.
-    active = False
+class _LockDepth(threading.local):
+    #: how many ``_locked()`` blocks this thread is inside.
+    value = 0
 
 
 def _socket_readable(sock, timeout):
@@ -131,7 +131,7 @@ class ResultConsumer(BaseResultConsumer):
         # only one thread waits on the socket, the others wait for it here.
         self._pubsub_read = threading.Condition(self._pubsub_lock)
         self._socket_waiter = False
-        self._command_state = _PubSubCommandState()
+        self._lock_depth = _LockDepth()
 
     def on_after_fork(self):
         # the lock may have been held by a thread that did not survive
@@ -160,10 +160,11 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
-            # subscribed_to maybe empty after on_state_change
-            if self.subscribed_to:
-                with self._pubsub_call():
-                    self._pubsub.subscribe(*self.subscribed_to)
+            # on_state_change may have queued cancels, which are only sent
+            # when the lock is released: don't subscribe to those again.
+            channels = self.subscribed_to - self._pending_unsubscribe
+            if channels:
+                self._pubsub.subscribe(*channels)
             else:
                 # redis-py < 5.3.0 requires ``command_name`` as a positional
                 # argument to ``ConnectionPool.get_connection``. The argument was
@@ -262,15 +263,12 @@ class ResultConsumer(BaseResultConsumer):
     def _drain_one(self, pubsub, timeout):
         with self.reconnect_on_error():
             connection = pubsub.connection
-            # redis-py may reconnect and re-subscribe inside these calls.
-            with self._pubsub_call():
-                # checked before waiting on the raw socket: data already in
-                # the parser buffer, or decrypted by TLS, is invisible to
-                # poll().
-                if not (pubsub.subscribed and connection is not None and
-                        connection.can_read(timeout=0)):
-                    return False
-                message = pubsub.get_message(timeout=timeout)
+            # checked before waiting on the raw socket: data already in the
+            # parser buffer, or decrypted by TLS, is invisible to poll().
+            if not (pubsub.subscribed and connection is not None and
+                    connection.can_read(timeout=0)):
+                return False
+            message = pubsub.get_message(timeout=timeout)
             if message and message['type'] == 'message':
                 self.on_state_change(
                     self._decode_result(message['data']), message)
@@ -305,54 +303,52 @@ class ResultConsumer(BaseResultConsumer):
         self._pending_unsubscribe.discard(key)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
-            with self.reconnect_on_error(), self._pubsub_call():
+            with self.reconnect_on_error():
                 self._pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
         # Never blocks: this runs from AsyncResult.__del__, where a gevent
-        # greenlet cannot switch away.  If the lock is busy, its holder
-        # unsubscribes on the way out.
+        # greenlet cannot switch away.  If the lock is busy, or this thread
+        # already holds it, the holder unsubscribes on the way out.
         self._pending_unsubscribe.add(self._get_key_for_task(task_id))
         self._flush_pending_unsubscribe()
 
     def _flush_pending_unsubscribe(self):
-        if self._command_state.active:
-            # Called from inside a redis-py pubsub call on this thread,
-            # almost always AsyncResult.__del__ run by the garbage collector.
-            # The lock is reentrant so it would let us in, but redis-py's
-            # own pubsub lock is not: a nested command deadlocks.  Leave the
-            # key queued, the caller flushes it once the call returns.
+        if self._lock_depth.value:
+            # This thread is inside a pubsub operation, e.g. the garbage
+            # collector ran AsyncResult.__del__ in the middle of a subscribe
+            # or get_message().  The lock is reentrant and would let us in,
+            # but the connection must only see one operation at a time (and
+            # redis-py's own pubsub lock is not reentrant: a nested command
+            # deadlocks).  The outermost _locked() flushes on exit.
             return
         # Re-check after every release: a key added while we held the lock
         # may have missed its own acquire attempt.
         while self._pending_unsubscribe and \
                 self._pubsub_lock.acquire(blocking=False):
+            self._lock_depth.value += 1
             try:
                 while self._pending_unsubscribe:
                     key = self._pending_unsubscribe.pop()
                     if key in self.subscribed_to:
                         self.subscribed_to.discard(key)
                         if self._pubsub:
-                            with self.reconnect_on_error(), \
-                                    self._pubsub_call():
+                            with self.reconnect_on_error():
                                 self._pubsub.unsubscribe(key)
             finally:
+                self._lock_depth.value -= 1
                 self._pubsub_lock.release()
 
     @contextmanager
-    def _pubsub_call(self):
-        state = self._command_state
-        outer, state.active = state.active, True
-        try:
-            yield
-        finally:
-            state.active = outer
-
-    @contextmanager
     def _locked(self):
+        depth = self._lock_depth
         try:
             with self._pubsub_lock:
-                yield
+                depth.value += 1
+                try:
+                    yield
+                finally:
+                    depth.value -= 1
         finally:
             self._flush_pending_unsubscribe()
 
