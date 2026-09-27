@@ -441,8 +441,10 @@ class AMQP:
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             expires = now + timedelta(seconds=expires)
-        eta = eta and eta.isoformat()
-        expires = expires and expires.isoformat()
+        if not isinstance(eta, str):
+            eta = eta and eta.isoformat()
+        if not isinstance(expires, str):
+            expires = expires and expires.isoformat()
 
         return task_message(
             headers={},
