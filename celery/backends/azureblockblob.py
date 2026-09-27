@@ -40,7 +40,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         if azurestorage is None or azurestorage.__version__ < '12':
             raise ImproperlyConfigured(
-                "You need to install the azure-storage-blob v12 library to"
+                "You need to install the azure-storage-blob v12 library to "
                 "use the AzureBlockBlob backend")
 
         conf = self.app.conf

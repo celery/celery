@@ -67,7 +67,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         self.project = conf.get('gcs_project')
         if not self.project:
             raise ImproperlyConfigured(
-                'Missing project:specify gcs_project to use gcs backend'
+                'Missing project: specify gcs_project to use gcs backend'
             )
         self.base_path = conf.get('gcs_base_path', '').strip('/')
         self._threadpool_maxsize = int(conf.get('gcs_threadpool_maxsize', 10))
