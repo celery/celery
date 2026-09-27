@@ -1,6 +1,8 @@
 import itertools
 import json
 import random
+import select
+import socket
 import ssl
 import threading
 import time
@@ -701,6 +703,247 @@ class test_RedisResultConsumer:
                 consumer, 'on_state_change') as on_state_change:
             consumer.drain_events(timeout=0)
         on_state_change.assert_not_called()
+
+    def test_drain_events_waits_for_socket_outside_lock(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        rsock, wsock = socket.socketpair()
+        pubsub.connection._sock = rsock
+        waiting = threading.Event()
+
+        def readable(timeout):
+            return bool(select.select([rsock], [], [], timeout)[0])
+
+        def can_read(timeout=0):
+            waiting.set()
+            return readable(0)
+
+        def get_message(timeout=None):
+            waiting.set()
+            if readable(timeout):
+                rsock.recv(1)
+
+        pubsub.connection.can_read.side_effect = can_read
+        pubsub.get_message.side_effect = get_message
+        drainer = threading.Thread(
+            target=consumer.drain_events, kwargs={'timeout': 3})
+        drainer.start()
+        try:
+            assert waiting.wait(5)
+            start = time.monotonic()
+            consumer.consume_from('other')
+            elapsed = time.monotonic() - start
+        finally:
+            wsock.send(b'x')
+            drainer.join(5)
+            rsock.close()
+            wsock.close()
+        assert not drainer.is_alive()
+        assert elapsed < 1
+        assert b'celery-task-meta-other' in pubsub._subscribed_to
+
+    def test_drain_events_wakes_threads_waiting_behind_socket_waiter(self):
+        # the message the socket waiter reads may be the one another
+        # waiting thread is after, and the socket then stays quiet for it.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        data = threading.Event()
+        pubsub.connection.can_read.side_effect = \
+            lambda timeout=0: data.is_set()
+        first = []
+
+        def socket_readable(sock, timeout):
+            if not first:
+                first.append(True)
+                return data.wait(timeout)
+            time.sleep(timeout)
+            return False
+
+        done = {}
+
+        def drain(name):
+            consumer.drain_events(timeout=3)
+            done[name] = time.monotonic()
+
+        with patch('celery.backends.redis._socket_readable',
+                   side_effect=socket_readable):
+            reader = threading.Thread(target=drain, args=('reader',))
+            reader.start()
+            while not consumer._socket_waiter and reader.is_alive():
+                time.sleep(0.01)
+            other = threading.Thread(target=drain, args=('other',))
+            other.start()
+            time.sleep(0.2)
+            start = time.monotonic()
+            data.set()
+            reader.join(5)
+            other.join(5)
+        assert set(done) == {'reader', 'other'}
+        assert done['other'] - start < 1
+        assert not consumer._socket_waiter
+
+    def test_consume_from_is_not_starved_by_gevent_drainer(self):
+        gevent = pytest.importorskip('gevent')
+        from gevent.event import Event
+        from gevent.lock import RLock
+
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._pubsub_lock = RLock()
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.return_value = False
+        pubsub.get_message.side_effect = \
+            lambda timeout=None: gevent.sleep(timeout)
+        stop = Event()
+
+        def drain():
+            while not stop.is_set():
+                consumer.drain_events(timeout=0.05)
+
+        subscribed = False
+        with patch('celery.backends.redis._socket_readable', create=True,
+                   side_effect=lambda sock, timeout: gevent.sleep(timeout)):
+            g = gevent.spawn(drain)
+            gevent.sleep(0)
+            try:
+                with gevent.Timeout(2, False):
+                    consumer.consume_from('other')
+                    subscribed = True
+            finally:
+                stop.set()
+                g.join(5)
+        assert g.dead
+        assert subscribed
+        assert b'celery-task-meta-other' in pubsub._subscribed_to
+
+    def test_cancel_for_does_not_block_on_busy_lock(self):
+        # AsyncResult.__del__ ends up in cancel_for, and a gevent greenlet
+        # being finalized cannot block on a lock.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        consumer.consume_from('some-task')
+        in_subscribe = threading.Event()
+        release = threading.Event()
+
+        def slow_subscribe(*keys):
+            in_subscribe.set()
+            release.wait(5)
+            pubsub._subscribed_to.update(keys)
+
+        pubsub.subscribe.side_effect = slow_subscribe
+        holder = threading.Thread(
+            target=consumer.consume_from, args=('other',))
+        holder.start()
+        canceller = None
+        try:
+            assert in_subscribe.wait(5)
+            canceller = threading.Thread(
+                target=consumer.cancel_for, args=('some-task',))
+            canceller.start()
+            canceller.join(1)
+            cancel_blocked = canceller.is_alive()
+        finally:
+            release.set()
+            holder.join(5)
+            if canceller is not None:
+                canceller.join(5)
+        assert not cancel_blocked
+        # the lock holder unsubscribed on its way out
+        assert b'celery-task-meta-some-task' not in consumer.subscribed_to
+        assert b'celery-task-meta-some-task' not in pubsub._subscribed_to
+        assert not consumer._pending_unsubscribe
+
+    def test_consume_from_keeps_key_with_deferred_cancel(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        key = b'celery-task-meta-some-task'
+        consumer.consume_from('some-task')
+        with consumer._pubsub_lock:
+            other = threading.Thread(
+                target=consumer.cancel_for, args=('some-task',))
+            other.start()
+            other.join(5)
+            assert key in consumer._pending_unsubscribe
+            consumer.consume_from('some-task')
+        assert key in consumer.subscribed_to
+        assert key in consumer._pubsub._subscribed_to
+        assert not consumer._pending_unsubscribe
+
+    def test_drain_events_skips_pubsub_replaced_while_waiting(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        old = consumer._pubsub
+        old.connection.can_read.return_value = False
+
+        def reconnect(sock, timeout):
+            consumer._pubsub = Mock()
+            return True
+
+        with patch('celery.backends.redis._socket_readable',
+                   side_effect=reconnect):
+            consumer.drain_events(timeout=1)
+        old.get_message.assert_not_called()
+        consumer._pubsub.get_message.assert_not_called()
+
+    def test_drain_events_not_subscribed_waits_for_subscription(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.subscribed = False
+        pubsub.subscribed_event.wait.return_value = False
+        with patch('celery.backends.redis._socket_readable') as readable:
+            consumer.drain_events(timeout=1)
+        pubsub.subscribed_event.wait.assert_called_once_with(1)
+        readable.assert_not_called()
+        pubsub.get_message.assert_not_called()
+
+    def test_drain_events_without_socket_returns(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.side_effect = [False, True]
+        pubsub.connection._sock = None
+        with patch('celery.backends.redis._socket_readable') as readable:
+            consumer.drain_events(timeout=None)
+        readable.assert_not_called()
+        pubsub.get_message.assert_called_once_with(timeout=None)
+
+
+class test_socket_readable:
+
+    def test_readable_and_timeout(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        try:
+            assert not _socket_readable(rsock, 0)
+            wsock.send(b'x')
+            assert _socket_readable(rsock, 1)
+            assert _socket_readable(rsock, None)
+        finally:
+            rsock.close()
+            wsock.close()
+
+    def test_without_poll_uses_selectors(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        try:
+            with patch('celery.backends.redis.select', spec=[]):
+                assert not _socket_readable(rsock, 0)
+                wsock.send(b'x')
+                assert _socket_readable(rsock, 1)
+        finally:
+            rsock.close()
+            wsock.close()
+
+    def test_closed_socket_counts_as_readable(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        rsock.close()
+        wsock.close()
+        assert _socket_readable(rsock, 1)
 
 
 class basetest_RedisBackend:
