@@ -156,3 +156,11 @@ class test_DocumentDBBackend:
 
         self.backend.delete(b"mykey")
         self.backend.delete(b"mykey")
+
+    @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
+    def test_delete_reraises_other_http_failures(self, mock_client):
+        mock_client.DeleteDocument.side_effect = \
+            cosmosdbsql.HTTPFailure(500)
+
+        with pytest.raises(cosmosdbsql.HTTPFailure):
+            self.backend.delete(b"mykey")
