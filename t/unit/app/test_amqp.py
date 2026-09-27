@@ -449,6 +449,7 @@ class test_AMQP(test_AMQP_Base):
             task_default_routing_key='default_rk_celery',
         )
         prod = Mock(name='producer')
+        # With no routing arguments, use the default queue through the unnamed exchange.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event, retry=False,
         )
@@ -472,6 +473,7 @@ class test_AMQP(test_AMQP_Base):
             task_default_routing_key='shared_key',
         )
         prod = Mock(name='producer')
+        # With only a queue (or no routing options), target the resolved queue despite shared bindings.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue_name, retry=False,
@@ -487,6 +489,7 @@ class test_AMQP(test_AMQP_Base):
     def test_send_task_message_with_topic_queue(self):
         queue = Queue('foo', Exchange('custom_exchange', type='topic'), routing_key='custom_key')
         prod = Mock(name='producer')
+        # A topic queue supplies its exchange and routing key when neither is explicit.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, retry=False,
@@ -496,9 +499,23 @@ class test_AMQP(test_AMQP_Base):
         assert kwargs['exchange'] is queue.exchange
         assert kwargs['routing_key'] == 'custom_key'
 
+    def test_send_task_message_with_direct_queue_and_topic_exchange_type(self):
+        queue = Queue('foo', Exchange('custom_exchange', type='direct'), routing_key='custom_key')
+        prod = Mock(name='producer')
+        # An explicit non-direct exchange_type skips direct queue targeting and uses the queue binding.
+        self.app.amqp.send_task_message(
+            prod, 'foo', self.simple_message_no_sent_event,
+            queue=queue, exchange_type='topic', retry=False,
+        )
+
+        kwargs = prod.publish.call_args[1]
+        assert kwargs['exchange'] is queue.exchange
+        assert kwargs['routing_key'] == 'custom_key'
+
     def test_send_task_message_with_exchange_only(self):
         self.app.conf.task_default_routing_key = 'default_rk_celery'
         prod = Mock(name='producer')
+        # With only an exchange, use the application's default routing key.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             exchange='custom_exchange', retry=False,
@@ -513,6 +530,7 @@ class test_AMQP(test_AMQP_Base):
         queue.exchange = None
         assert queue.exchange is None
         prod = Mock(name='producer')
+        # A queue without an exchange is treated as direct and targeted by its name.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, retry=False,
@@ -526,6 +544,7 @@ class test_AMQP(test_AMQP_Base):
         self.app.conf.task_default_routing_key = 'default_rk_celery'
         queue = Queue('foo', Exchange('custom_exchange', type='direct'), routing_key='')
         prod = Mock(name='producer')
+        # With an explicit exchange, use queue.routing_key even when it is empty.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, exchange='custom_exchange', retry=False,
@@ -538,6 +557,7 @@ class test_AMQP(test_AMQP_Base):
     def test_send_task_message_with_unnamed_queue_exchange_and_explicit_routing_key(self):
         queue = Queue('foo', Exchange(''), routing_key='rk_celery')
         prod = Mock(name='producer')
+        # With an explicit routing key, use the queue's unnamed exchange.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, routing_key='explicit_rk_celery', retry=False,
@@ -551,6 +571,7 @@ class test_AMQP(test_AMQP_Base):
     def test_send_task_message_with_queue_and_explicit_unnamed_exchange(self):
         queue = Queue('foo', Exchange('custom_exchange'), routing_key='custom_key')
         prod = Mock(name='producer')
+        # With an explicit unnamed exchange, use the queue's routing key.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, exchange='', retry=False,
@@ -563,6 +584,7 @@ class test_AMQP(test_AMQP_Base):
     def test_send_task_message_with_explicit_empty_routing_key(self):
         queue = Queue('foo', Exchange('custom_exchange'), routing_key='custom_key')
         prod = Mock(name='producer')
+        # Use the explicit empty routing key as given, with the queue's exchange.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             queue=queue, routing_key='', retry=False,
@@ -574,6 +596,7 @@ class test_AMQP(test_AMQP_Base):
 
     def test_send_task_message_with_unnamed_exchange_and_no_queue(self):
         prod = Mock(name='producer')
+        # With no queue and both routing values explicit, use them as given.
         self.app.amqp.send_task_message(
             prod, 'foo', self.simple_message_no_sent_event,
             exchange='', routing_key='rk_celery', retry=False,

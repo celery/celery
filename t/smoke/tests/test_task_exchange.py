@@ -38,6 +38,7 @@ class test_task_exchange:
                 bound_queue = queue(channel)
                 bound_queue.declare()
 
+                # With no explicit queue, exchange, or routing key, use the default queue.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), connection=connection, ignore_result=True,
                 )
@@ -62,6 +63,7 @@ class test_task_exchange:
                 bound_queue = queue(channel)
                 bound_queue.declare()
 
+                # With an explicit exchange and no routing key argument, use queue.routing_key.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), queue=queue, exchange=exchange,
                     connection=connection, ignore_result=True,
@@ -86,6 +88,7 @@ class test_task_exchange:
                 bound_target_queue = target_queue(channel)
                 bound_target_queue.declare()
 
+                # With an explicit routing key and no exchange argument, use queue.exchange.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), queue=queue, routing_key=target_queue.name,
                     connection=connection, ignore_result=True,
@@ -129,6 +132,7 @@ class test_task_exchange:
                 bound_selected.declare()
                 bound_other.declare()
 
+                # With only a direct queue (or no routing options), use the unnamed exchange and queue name.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), connection=connection, ignore_result=True, **options,
                 )
@@ -156,6 +160,7 @@ class test_task_exchange:
                 bound_other_queue.declare()
                 producer = app.amqp.Producer(channel, exchange=producer_exchange)
 
+                # The explicit unnamed exchange takes precedence over the producer's named exchange.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), queue=queue, exchange=unnamed_exchange, routing_key=queue.name,
                     producer=producer, ignore_result=True,
@@ -182,6 +187,7 @@ class test_task_exchange:
                 bound_queue = queue(channel)
                 bound_queue.declare()
 
+                # The route supplies the unnamed exchange; this call supplies the routing key without a queue.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), routing_key=routing_key,
                     connection=connection, ignore_result=True,
@@ -212,6 +218,7 @@ class test_task_exchange:
                 bound_queue = queue(channel)
                 bound_queue.declare()
 
+                # With only an exchange argument, use task_default_routing_key.
                 result = app.send_task(
                     "tasks.add", args=(1, 2), connection=connection, ignore_result=True,
                     exchange=exchange.name if exchange_as_string else exchange,
