@@ -137,3 +137,30 @@ class test_DocumentDBBackend:
         mock_client.DeleteDocument.assert_called_once_with(
             "dbs/celerydb/colls/celerycol/docs/mykey",
             {"partitionKey": "mykey"})
+
+    @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
+    def test_forget_missing_task_is_noop(self, mock_client):
+        mock_client.DeleteDocument.side_effect = \
+            cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_NOT_FOUND)
+
+        # forget() on a result that was expired, already forgotten or never
+        # stored must not raise HTTPFailure
+        self.backend.delete(b"mykey")
+
+    @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
+    def test_forget_twice_is_noop(self, mock_client):
+        mock_client.DeleteDocument.side_effect = [
+            None,
+            cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_NOT_FOUND),
+        ]
+
+        self.backend.delete(b"mykey")
+        self.backend.delete(b"mykey")
+
+    @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
+    def test_delete_reraises_other_http_failures(self, mock_client):
+        mock_client.DeleteDocument.side_effect = \
+            cosmosdbsql.HTTPFailure(500)
+
+        with pytest.raises(cosmosdbsql.HTTPFailure):
+            self.backend.delete(b"mykey")
