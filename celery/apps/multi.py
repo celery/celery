@@ -248,7 +248,8 @@ class Node:
 
     @cached_property
     def pidfile(self):
-        return self.expander(self.getopt('--pidfile', '-p'))
+        # The worker formats the expanded argv once more before creating its pidfile.
+        return node_format(self.expander(self.getopt('--pidfile', '-p')), self.name)
 
     @cached_property
     def logfile(self):
@@ -313,9 +314,21 @@ class MultiParser:
             try:
                 names, prefix = self._get_ranges(names), range_prefix
             except ValueError:
-                pass
-        self._update_ns_opts(p, names)
-        self._update_ns_ranges(p, ranges)
+                # The single argument isn't a node count, so it's a plain
+                # node name and dashes in it are not range separators.
+                ranges = False
+        if ranges:
+            # In range mode the node names *are* the indexes, so the mapping
+            # pass is an identity.  Keep it first regardless: reordering would
+            # make out-of-range members of ``-c:1-5`` raise instead of being
+            # ignored, which is a behaviour change for the count form.
+            self._update_ns_opts(p, names)
+            self._update_ns_ranges(p, ranges)
+        else:
+            # Split lists such as ``-c:1,2`` first, so the indexes they
+            # contain are mapped to node names just like ``-c:1`` is.
+            self._update_ns_ranges(p, ranges)
+            self._update_ns_opts(p, names)
 
         return (
             self._node_from_options(

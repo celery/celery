@@ -454,8 +454,8 @@ class Backend:
             frozen_group = group_callback.freeze()
 
             if isinstance(frozen_group, GroupResult):
-                # revoke all tasks in the group to prevent execution
-                frozen_group.revoke()
+                # Store the failures before broadcasting the revoke, so the
+                # revoke handler finds them and keeps them (see _revoke()).
 
                 # Handle each task in the group individually
                 for result in frozen_group.results:
@@ -488,6 +488,7 @@ class Backend:
                 frozen_group_id = getattr(frozen_group, 'id', None)
                 if frozen_group_id:
                     backend.mark_as_failure(frozen_group_id, original_exc)
+                frozen_group.revoke()
 
             return None
 
@@ -676,7 +677,7 @@ class Backend:
         return self.persistent if persistent is None else persistent
 
     def encode_result(self, result, state):
-        if state in self.EXCEPTION_STATES and isinstance(result, Exception):
+        if state in self.EXCEPTION_STATES and isinstance(result, BaseException):
             return self.prepare_exception(result)
         return self.prepare_value(result)
 

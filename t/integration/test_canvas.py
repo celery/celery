@@ -9,7 +9,7 @@ import pytest
 
 from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
-from celery.canvas import StampingVisitor
+from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
@@ -20,9 +20,9 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_raises, replace_with_empty_chain,
-                    replace_with_stamped_task, retry_once, return_exception, return_priority, second_order_replace1,
-                    tsum, write_to_file_and_return_int, xsum)
+                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
+                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
+                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
@@ -294,6 +294,18 @@ class test_chain:
         expected_messages = [b'In A', b'In B', b'In/Out C', b'Out B',
                              b'Out A']
         assert redis_messages == expected_messages
+
+    @flaky
+    def test_replace_with_chain_that_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        s = replace_with_chain_which_contains_a_group.s()
+
+        result = s.delay()
+        assert result.get(timeout=TIMEOUT) == [4, 4]
 
     @flaky
     def test_parent_ids(self, manager, num=10):
@@ -1154,6 +1166,57 @@ class test_chain:
         assert actual.count(b'b') == 1
         redis_connection.delete(redis_key)
 
+    @flaky
+    def test_chain_of_group_followed_by_empty_groups(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        ``chain(group(...), group(), group())`` used to raise
+        ``AttributeError: 'NoneType' object has no attribute 'parent'``.
+        """
+        c = chain(group(add.s(2, 2), add.s(4, 4)), group(), group())
+        res = c()
+        assert res.get(timeout=TIMEOUT) == [4, 8]
+
+    @flaky
+    def test_chain_skips_empty_groups_before_chord_body(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        Built explicitly, as a deserialised ``celery.chain`` signature would
+        be, so the empty groups reach ``prepare_steps``: they must be
+        skipped there and the group still upgraded into a chord whose body
+        is ``xsum``.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = _chain(
+            group(add.s(2, 2), add.s(4, 4)), group(), group(), xsum.s(),
+            app=manager.app,
+        )
+        res = c.apply_async()
+        assert res.get(timeout=TIMEOUT) == 12
+
+    @flaky
+    def test_chain_forwards_args_past_leading_empty_steps(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        Partial args must reach the first real task when a chain starts with
+        an empty group, an empty chain, or a nested chain that starts with an
+        empty group.  ``chain(group(), sig)`` is folded into a chord by
+        ``group.__or__``, so the chains are built explicitly here, as a
+        deserialised ``celery.chain`` signature would be.
+        """
+        c = _chain(group(), add.s(10), app=manager.app)
+        assert c.apply_async((5,)).get(timeout=TIMEOUT) == 15
+
+        c = _chain(chain(), add.s(10), app=manager.app)
+        assert c.apply_async((5,)).get(timeout=TIMEOUT) == 15
+
+        c = _chain(_chain(group(), add.s(10)), add.s(20), app=manager.app)
+        assert c.apply_async((5,)).get(timeout=TIMEOUT) == 35
+
 
 class test_result_set:
 
@@ -1182,6 +1245,32 @@ class test_result_set:
         rs.add(add.delay(1, 1))
         rs.add(add.delay(2, 2))
         assert rs.get(timeout=TIMEOUT) == [2, 4]
+
+    @flaky
+    def test_join_exhausted_timeout(self, manager):
+        """A spent positive join budget must not become an unlimited wait."""
+        if not manager.app.conf.result_backend.startswith(('redis', 'rpc')):
+            raise pytest.skip('Requires redis or rpc result backend.')
+
+        assert_ping(manager)
+
+        # Simulate taking 0.3s to handle the first result, exhausting
+        # the 0.2s join timeout before waiting for the second task.
+        completed = add.delay(1, 1)
+        completed.get(timeout=TIMEOUT)
+        rs = ResultSet([completed, delayed_sum.delay([2, 2], pause_time=2)])
+        received = []
+
+        def collect(task_id, value):
+            received.append((task_id, value))
+            sleep(0.3)
+
+        try:
+            with pytest.raises(TimeoutError):
+                rs.join(timeout=0.2, callback=collect)
+            assert received == [(completed.id, 2)]
+        finally:
+            rs.get(timeout=TIMEOUT)
 
     @flaky
     def test_join_native_timeout_zero_gives_up_on_pending_results(self, manager):
@@ -1667,6 +1756,17 @@ class test_group:
         orig_sig = group([add_to_all.s([2, 1], 1), add_to_all.s([4, 3], 1)] * 10)
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [[3, 2], [5, 4]] * 10
+
+    @flaky
+    def test_group_with_empty_chain_members(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        Empty chains inside a group are no-ops; they used to raise
+        ``IndexError`` while the group was being frozen.
+        """
+        res = group(chain(), add.s(1, 2), chain(), add.s(3, 4)).apply_async()
+        assert len(res.results) == 2
+        assert res.get(timeout=TIMEOUT) == [3, 7]
 
 
 def assert_ids(r, expected_value, expected_root_id, expected_parent_id):
@@ -2175,7 +2275,6 @@ class test_chord:
         res = c.delay()
         assert res.get(timeout=TIMEOUT) == 7
 
-    @pytest.mark.xfail(reason="Issue #6176")
     def test_chord_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -2194,7 +2293,6 @@ class test_chord:
         res1 = c1.apply(args=(1,))
         assert res1.get(timeout=TIMEOUT) == [1, 1]
 
-    @pytest.mark.xfail(reason="Issue #6200")
     def test_chain_in_chain_with_args(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -3402,6 +3500,25 @@ class test_chord:
         # propagates the failure so the chord errors.
         with pytest.raises((ExpectedException, ChordError)):
             result.get(timeout=TIMEOUT / 10)
+
+    @flaky
+    def test_chord_header_with_empty_chains(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/9772.
+
+        Empty chains in a chord header used to raise ``IndexError``.  They
+        are no-ops: a header made only of them runs the body straight away,
+        and otherwise only the real header tasks are waited for.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        res = chord([chain()], body=tsum.s())()
+        assert res.get(timeout=TIMEOUT) == 0
+
+        res = chord([chain(), add.s(1, 1), chain(), add.s(2, 2)], body=tsum.s())()
+        assert res.get(timeout=TIMEOUT) == 6
 
 
 class test_signature_serialization:

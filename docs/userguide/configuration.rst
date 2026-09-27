@@ -985,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
@@ -1000,7 +1003,18 @@ and client first and turn the setting on afterwards.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue) to be written to backend.
+retries, queue, stamps) to be written to backend.
+
+.. versionadded:: 5.7
+    Added storing task stamping metadata (``stamps``) in the database backend.
+
+.. note::
+
+    When using the database backend with :setting:`result_extended` set to ``True``,
+    task stamping metadata is stored in a ``stamps`` column. For existing database deployments
+    upgrading with an already-created ``celery_taskmeta`` table, operators must execute the
+    appropriate DDL migration to add the column before upgrading (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
+    or ``BYTEA`` on PostgreSQL); this migration is required as result writes will otherwise fail.
 
 .. setting:: result_expires
 
@@ -1073,7 +1087,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -1294,6 +1308,19 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. note::
+
+    Starting in Celery 5.7, the database result backend supports storing task
+    children in the ``children`` column of ``celery_taskmeta``.
+    Celery automatically attempts to add this missing column to existing tables
+    at startup. If your database user does not have DDL / ``ALTER TABLE`` permissions,
+    you can execute the migration manually:
+
+    .. code-block:: sql
+
+        ALTER TABLE celery_taskmeta ADD COLUMN children BLOB;  -- SQLite / MySQL
+        ALTER TABLE celery_taskmeta ADD COLUMN children BYTEA; -- PostgreSQL
 
 .. setting:: database_engine_callback
 
@@ -2192,7 +2219,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
@@ -3155,8 +3182,8 @@ a connection was closed.
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified
 by the :setting:`broker_heartbeat_checkrate` setting (by default
-this is set to double the rate of the heartbeat value,
-so for the 10 seconds, the heartbeat is checked every 5 seconds).
+this is set to triple the rate of the heartbeat value,
+so for the 10 seconds, the heartbeat is checked about every 3.33 seconds).
 
 .. setting:: broker_heartbeat_checkrate
 
@@ -3164,14 +3191,13 @@ so for the 10 seconds, the heartbeat is checked every 5 seconds).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
-Default: 2.0.
+Default: 3.0.
 
 At intervals the worker will monitor that the broker hasn't missed
 too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
-so if the heartbeat is 10.0 and the rate is the default 2.0, the check
-will be performed every 5 seconds (twice the heartbeat sending rate).
-
+so if the heartbeat is 10.0 and the rate is the default 3.0, the check
+will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``

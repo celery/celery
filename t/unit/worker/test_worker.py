@@ -33,6 +33,7 @@ from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+from t.unit.conftest import restore_execv_state
 
 
 def MockStep(step=None):
@@ -1349,12 +1350,15 @@ class test_WorkController(ConsumerCase):
         w.use_eventloop = True
         w.consumer.restart_count = -1
         pool = components.Pool(w)
-        pool.create(w)
-        pool.register_with_event_loop(w, w.hub)
-        if sys.platform != 'win32':
-            assert isinstance(w.semaphore, LaxBoundedSemaphore)
-            P = w.pool
-            P.start()
+        # Starting the pool can mark this process as a spawned pool child,
+        # which changes how @app.task binds for every test that follows.
+        with restore_execv_state():
+            pool.create(w)
+            pool.register_with_event_loop(w, w.hub)
+            if sys.platform != 'win32':
+                assert isinstance(w.semaphore, LaxBoundedSemaphore)
+                P = w.pool
+                P.start()
 
     def test_wait_for_soft_shutdown(self):
         worker = self.worker

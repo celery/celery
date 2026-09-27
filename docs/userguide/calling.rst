@@ -275,6 +275,10 @@ are executed in a timely manner you should monitor the queue for congestion. Use
 Munin, or similar tools, to receive alerts, so appropriate action can be
 taken to ease the workload. See :ref:`monitoring-munin`.
 
+If the task has a :attr:`~@Task.rate_limit` configured, the rate limit
+is enforced once the ETA has passed: the task starts no earlier than its
+ETA, and rate limiting may delay it further beyond that point.
+
 While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
 and timezone information):
