@@ -535,17 +535,21 @@ class AMQP:
                     pass
                 delivery_mode = delivery_mode or default_delivery_mode
 
+            # If the exchange type is direct and neither exchange nor routing key
+            # is given, assume the caller wants to send only to this queue.
+            if queue and exchange is None and routing_key is None:
+                if exchange_type is None:
+                    try:
+                        exchange_type = queue.exchange.type
+                    except AttributeError:
+                        exchange_type = 'direct'
+                if exchange_type == 'direct':
+                    exchange, routing_key = '', qname
+
+            # Otherwise, if an exchange or routing key is supplied, or the queue
+            # is not direct, use the queue to fill in missing routing information.
             if exchange is None:
-                exchange = getattr(queue, 'exchange', default_exchange)
-            if isinstance(exchange, Exchange):
-                exchange = exchange.name
-
-            # The unnamed exchange routes by queue name.
-            if not exchange:
-                exchange = ''
-                if qname is not None:
-                    routing_key = qname
-
+                exchange = getattr(queue, 'exchange', None) or default_exchange or ''
             if routing_key is None:
                 routing_key = getattr(queue, 'routing_key', None)
                 if routing_key is None:
