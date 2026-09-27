@@ -580,10 +580,10 @@ Add a readiness probe as well if you want the state surfaced in
 Comparison with a heartbeat file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Projects such as `django-celery-beat`_ and Nautobot take a different
-approach: the scheduler touches a file on each tick, and the probe
-checks its age. That has no broker dependency at all, so it cannot be
-taken down by a broker outage, and it proves the tick loop directly.
+A common alternative is to have the scheduler touch a file on every
+tick and let the probe check its age, usually through a custom
+scheduler subclass. That has no broker dependency at all, so a broker
+outage cannot take it down, and it proves the tick loop directly.
 
 The trade-off is reach. A file is only visible from inside the
 container, so it answers "is *this* beat alive" and nothing more.
@@ -592,9 +592,6 @@ the broker, which is what lets ``celery status`` and centralised
 monitoring see beat alongside the workers. Pick the file if you only
 need a local probe; pick remote control if you want beat visible in the
 same place as everything else.
-
-.. _django-celery-beat:
-    https://github.com/celery/django-celery-beat
 
 Interactions worth knowing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
