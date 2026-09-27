@@ -83,6 +83,8 @@ E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
 logger = get_logger(__name__)
 
+_NO_SOCKET = object()
+
 
 def _socket_readable(sock, timeout):
     try:
@@ -114,6 +116,9 @@ class ResultConsumer(BaseResultConsumer):
         # unsubscribe can be called from any thread or greenlet (e.g. from
         # AsyncResult.__del__ during garbage collection) while the drainer
         # is polling the same socket.  Serialize all pubsub operations.
+        self._reset_sync()
+
+    def _reset_sync(self):
         self._pubsub_lock = threading.RLock()
         # keys whose unsubscribe is left to the current lock holder, see
         # cancel_for().
@@ -125,10 +130,7 @@ class ResultConsumer(BaseResultConsumer):
     def on_after_fork(self):
         # the lock may have been held by a thread that did not survive
         # the fork, so the child starts with a fresh one.
-        self._pubsub_lock = threading.RLock()
-        self._pubsub_read = threading.Condition(self._pubsub_lock)
-        self._socket_waiter = False
-        self._pending_unsubscribe = set()
+        self._reset_sync()
         try:
             self.backend.client.connection_pool.reset()
             with self._locked():
@@ -253,6 +255,8 @@ class ResultConsumer(BaseResultConsumer):
     def _drain_one(self, pubsub, timeout):
         with self.reconnect_on_error():
             connection = pubsub.connection
+            # checked before waiting on the raw socket: data already in the
+            # parser buffer, or decrypted by TLS, is invisible to poll().
             if not (pubsub.subscribed and connection is not None and
                     connection.can_read(timeout=0)):
                 return False
@@ -265,15 +269,20 @@ class ResultConsumer(BaseResultConsumer):
     def _wait_for_pubsub(self, pubsub, timeout):
         # Runs without the lock, so it must not touch the connection's
         # parser or buffer; it only waits on the raw socket.
+        # Capped: poll() is not woken when a reconnect closes this socket.
+        wait = 1.0 if timeout is None else min(timeout, 1.0)
         if not pubsub.subscribed:
-            return pubsub.subscribed_event.wait(
-                1.0 if timeout is None else timeout)
-        sock = getattr(pubsub.connection, '_sock', None)
+            return pubsub.subscribed_event.wait(wait)
+        # _sock is private redis-py API.  None means disconnected, so report
+        # readable and let the locked can_read() reconnect.  Should it ever
+        # go away, fall back to checking once per interval.
+        sock = getattr(pubsub.connection, '_sock', _NO_SOCKET)
+        if sock is _NO_SOCKET:
+            time.sleep(wait)
+            return True
         if sock is None:
             return True
-        # bounded even without a timeout: the socket may be closed and
-        # replaced by a reconnect while we wait on it.
-        return _socket_readable(sock, 1.0 if timeout is None else timeout)
+        return _socket_readable(sock, wait)
 
     def consume_from(self, task_id):
         with self._locked():
