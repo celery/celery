@@ -313,8 +313,8 @@ class test_RedisResultConsumer:
         pubsub.subscribe = subscribe
         consumer.consume_from('outer')
 
-        # redis-py's pubsub lock is not reentrant: no UNSUBSCRIBE may be
-        # sent while the SUBSCRIBE is in flight, only after it returned.
+        # one pubsub operation at a time (redis-py < 6.4 deadlocks
+        # otherwise): no UNSUBSCRIBE while the SUBSCRIBE is in flight.
         assert unsubscribes_in_flight == [0]
         pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
         assert consumer.subscribed_to == {
@@ -421,6 +421,33 @@ class test_RedisResultConsumer:
         fresh.subscribe.assert_called_once_with(b'celery-task-meta-initial')
         assert consumer.subscribed_to == {b'celery-task-meta-initial'}
         assert not consumer._pending_unsubscribe
+
+    @patch('celery.backends.redis.logger')
+    def test_locked_error_is_not_replaced_by_failing_unsubscribe(self, logger):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(ValueError, match='outer'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+                raise ValueError('outer')
+        logger.exception.assert_called_once_with(
+            'Failed to unsubscribe pending results')
+        assert consumer._lock_depth.value == 0
+
+    def test_locked_failing_unsubscribe_propagates_on_success(self):
+        # e.g. the retry limit was exceeded and Celery must be restarted.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(RuntimeError, match='dead'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+        assert consumer._lock_depth.value == 0
 
     def test_lock_depth_is_reset_when_subscribe_fails(self):
         consumer = self.get_consumer()

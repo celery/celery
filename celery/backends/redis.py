@@ -319,8 +319,9 @@ class ResultConsumer(BaseResultConsumer):
             # collector ran AsyncResult.__del__ in the middle of a subscribe
             # or get_message().  The lock is reentrant and would let us in,
             # but the connection must only see one operation at a time (and
-            # redis-py's own pubsub lock is not reentrant: a nested command
-            # deadlocks).  The outermost _locked() flushes on exit.
+            # before 6.4 redis-py's own pubsub lock is not reentrant, so a
+            # nested command deadlocks).  The outermost _locked() flushes on
+            # exit.
             return
         # Re-check after every release: a key added while we held the lock
         # may have missed its own acquire attempt.
@@ -341,6 +342,10 @@ class ResultConsumer(BaseResultConsumer):
 
     @contextmanager
     def _locked(self):
+        # Every pubsub operation runs in here, one at a time: the lock keeps
+        # other threads out, and the depth makes cancel_for() calls from this
+        # thread (e.g. AsyncResult.__del__ run by the garbage collector)
+        # wait until the outermost block is done with the connection.
         depth = self._lock_depth
         try:
             with self._pubsub_lock:
@@ -349,8 +354,15 @@ class ResultConsumer(BaseResultConsumer):
                     yield
                 finally:
                     depth.value -= 1
-        finally:
-            self._flush_pending_unsubscribe()
+        except BaseException:
+            # The pending keys may belong to other results, so failing to
+            # unsubscribe them must not replace this operation's own error.
+            try:
+                self._flush_pending_unsubscribe()
+            except Exception:
+                logger.exception('Failed to unsubscribe pending results')
+            raise
+        self._flush_pending_unsubscribe()
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
