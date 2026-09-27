@@ -1,6 +1,6 @@
 import pytest
 
-from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, truncate
+from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, simple_format, truncate
 
 RANDTEXT = """\
 The quick brown
@@ -79,3 +79,20 @@ def test_abbrtask(s, maxsize, expected):
 
 def test_pretty():
     assert pretty(('a', 'b', 'c'))
+
+
+@pytest.mark.parametrize('value,expected', [
+    ('%%', '%'),
+    ('%%n', '%n'),
+    ('%%x', '%x'),
+    ('%%%n', '%worker'),
+    ('%%%%n', '%%n'),
+    ('%n-%%-%n', 'worker-%-worker'),
+])
+def test_simple_format_percent_escape(value, expected):
+    assert simple_format(value, {'n': 'worker'}) == expected
+
+
+def test_simple_format_unknown_key():
+    with pytest.raises(ValueError, match='Unknown format %x'):
+        simple_format('%x', {})
