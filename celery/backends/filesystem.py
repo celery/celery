@@ -113,6 +113,13 @@ class FilesystemBackend(KeyValueStoreBackend):
                            self.chord_keyprefix):
                 if filename.startswith(prefix):
                     path = os.path.join(self.path, filename)
-                    if os.stat(path).st_mtime < cutoff_ts:
-                        self.unlink(path)
+                    try:
+                        # a concurrent forget() or cleanup() from another
+                        # worker/beat sharing the directory may remove the
+                        # file between listdir() and stat()/unlink(); skip
+                        # it and keep processing the rest
+                        if os.stat(path).st_mtime < cutoff_ts:
+                            self.unlink(path)
+                    except FileNotFoundError:
+                        pass
                     break
