@@ -512,7 +512,6 @@ class AMQP:
                               compression=None, declare=None,
                               headers=None, exchange_type=None,
                               timeout=None, confirm_timeout=None, **kwargs):
-            retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
                 headers2.update(headers)
