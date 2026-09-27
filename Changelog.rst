@@ -18,6 +18,9 @@ Unreleased
   twice and require ``%%%%`` to preserve a literal percent sign in the final
   worker path. ``multi`` uses the same final pidfile path when stopping workers
   (#10663).
+- The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
+  and used to publish ``task-sent`` events is now always a dictionary containing
+  the merged configured and per-call retry options, never ``None`` (#10708).
 
 .. _version-5.7.0a1:
 
