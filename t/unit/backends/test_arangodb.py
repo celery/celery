@@ -16,6 +16,8 @@ except ImportError:
 
 pytest.importorskip('pyArango')
 
+from pyArango.theExceptions import AQLQueryError  # noqa: E402
+
 
 class test_ArangoDbBackend:
 
@@ -145,12 +147,33 @@ class test_ArangoDbBackend:
 
         assert self.backend.delete(sentinel.task_id) is None
         self.backend.db.AQLQuery.assert_called_once_with(
-            "REMOVE {_key: @key} IN @@collection",
+            "REMOVE {_key: @key} IN @@collection OPTIONS {ignoreErrors: true}",
             bindVars={
                 "@collection": self.backend.collection,
                 "key": sentinel.task_id,
             },
         )
+
+    def test_delete_missing_key_is_a_no_op(self):
+        # Removing a document that is not there makes ArangoDB raise
+        # ERROR_ARANGO_DOCUMENT_NOT_FOUND (1202), which pyArango surfaces as
+        # AQLQueryError. ignoreErrors leaves the query with nothing to report,
+        # so forget() on an already-absent result does not raise.
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        def raise_unless_errors_ignored(query, bindVars=None, **kwargs):
+            if "ignoreErrors: true" not in query:
+                raise AQLQueryError(
+                    "AQL: document not found (while executing)",
+                    query,
+                    None,
+                    errors={"errorNum": 1202},
+                )
+            return MagicMock()
+
+        self.backend.db.AQLQuery = Mock(side_effect=raise_unless_errors_ignored)
+
+        assert self.backend.delete("key-that-does-not-exist") is None
 
     def test_config_params(self):
         self.app.conf.arangodb_backend_settings = {

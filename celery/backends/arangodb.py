@@ -166,7 +166,9 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if key is None:
             return
         self.db.AQLQuery(
-            "REMOVE {_key: @key} IN @@collection",
+            # ignoreErrors keeps a missing document from raising: deleting a
+            # result that is not there is a no-op, as in the other backends.
+            "REMOVE {_key: @key} IN @@collection OPTIONS {ignoreErrors: true}",
             bindVars={
                 "@collection": self.collection,
                 "key": key,
