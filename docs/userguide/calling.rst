@@ -407,12 +407,13 @@ and can contain the following keys:
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries. Default is 0.2.
+    retries. Default is 1.
 
 - `retry_errors`
 
     `retry_errors` is a tuple of exception classes that should be retried.
-    It will be ignored if not specified. Default is None (ignored).
+    It will be ignored if not specified. Default is None (ignored). These configuration
+    keys are passed through to `kombu.Connection.ensure`, where retry_errors is defined and handled.
 
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
@@ -436,7 +437,7 @@ For example, the default policy correlates to:
         'max_retries': 3,
         'interval_start': 0,
         'interval_step': 0.2,
-        'interval_max': 0.2,
+        'interval_max': 1,
         'retry_errors': None,
     })
 
