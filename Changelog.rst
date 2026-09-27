@@ -9,6 +9,16 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- Fix ``%%`` in node and host format strings to produce a literal percent sign.
+  Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
+  percent sign. Log and pid file paths passed through ``celery multi`` are formatted
+  twice and require ``%%%%`` to preserve a literal percent sign in the final
+  worker path. ``multi`` uses the same final pidfile path when stopping workers
+  (#10663).
+
 .. _version-5.7.0a1:
 
 5.7.0b1
