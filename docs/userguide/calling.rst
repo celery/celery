@@ -441,7 +441,7 @@ For example, the default policy correlates to:
         'retry_errors': None,
     })
 
-the maximum time spent retrying will be 0.4 seconds. It's set relatively
+the maximum time spent retrying will be 0.6 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down -- For example, many web server processes waiting
 to retry, blocking other incoming requests.
