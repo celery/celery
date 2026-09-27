@@ -21,7 +21,7 @@ def celery_backend_cluster() -> None:
 
 
 class test_task_exchange:
-    def test_send_task_targets_default_direct_queue(self, celery_setup_app: Celery):
+    def test_send_task_without_queue_exchange_or_routing_key(self, celery_setup_app: Celery):
         app = celery_setup_app
         exchange = Exchange(uuid(), type="direct")
         queue = Queue(uuid(), exchange=exchange, routing_key="rk_celery")
@@ -48,7 +48,7 @@ class test_task_exchange:
                 assert message.delivery_info["exchange"] == ""
                 assert message.delivery_info["routing_key"] == queue.name
 
-    def test_send_task_uses_empty_queue_routing_key_with_explicit_exchange(self, celery_setup_app: Celery):
+    def test_send_task_with_empty_queue_routing_key_and_explicit_exchange(self, celery_setup_app: Celery):
         app = celery_setup_app
         app.conf.update(
             broker_transport_options={"confirm_publish": True},
@@ -73,7 +73,7 @@ class test_task_exchange:
                 assert message.delivery_info["exchange"] == exchange.name
                 assert message.delivery_info["routing_key"] == ""
 
-    def test_send_task_unnamed_exchange_preserves_explicit_routing_key_with_queue(self, celery_setup_app: Celery):
+    def test_send_task_with_unnamed_queue_exchange_and_explicit_routing_key(self, celery_setup_app: Celery):
         app = celery_setup_app
         queue = Queue(uuid(), Exchange(""), routing_key="rk_celery")
         target_queue = Queue(uuid(), Exchange(""))
@@ -103,49 +103,48 @@ class test_task_exchange:
         indirect=True, ids=["rabbitmq", "redis"],
     )
     @pytest.mark.parametrize("use_default_queue", [False, True], ids=["explicit-queue", "default-queue"])
-    def test_send_task_isolates_queues_with_shared_defaults(
+    def test_send_task_with_queues_sharing_exchange_and_routing_key(
         self, celery_setup_app: Celery, celery_broker_cluster: CeleryBrokerCluster, use_default_queue: bool,
     ):
         app = celery_setup_app
-        queue_a, queue_b, default_queue = Queue(uuid()), Queue(uuid()), Queue(uuid())
+        selected_queue, other_queue = Queue(uuid()), Queue(uuid())
         app.conf.update(
             broker_transport_options={"confirm_publish": True},
-            task_queues=(queue_a, queue_b, default_queue),
-            task_default_queue=default_queue.name,
+            task_queues=(selected_queue, other_queue),
+            task_default_queue=selected_queue.name if use_default_queue else other_queue.name,
             task_default_exchange=uuid(),
             task_default_routing_key="shared_key",
         )
-        queues = [app.amqp.queues[queue.name] for queue in (queue_a, queue_b, default_queue)]
-        for queue in queues:
-            assert queue.exchange.name == app.conf.task_default_exchange
-            assert queue.routing_key == "shared_key"
-        target_queue = default_queue if use_default_queue else queue_a
-        options = {} if use_default_queue else {"queue": target_queue.name}
+        selected_queue = app.amqp.queues[selected_queue.name]
+        other_queue = app.amqp.queues[other_queue.name]
+        assert selected_queue.exchange.name == other_queue.exchange.name == app.conf.task_default_exchange
+        assert selected_queue.exchange.type == 'direct'
+        assert selected_queue.routing_key == other_queue.routing_key == 'shared_key'
+        options = {} if use_default_queue else {"queue": selected_queue.name}
 
         with app.connection_for_write() as connection:
             with connection.channel() as channel:
-                bound_queues = [queue(channel) for queue in queues]
-                for queue in bound_queues:
-                    queue.declare()
+                bound_selected = selected_queue(channel)
+                bound_other = other_queue(channel)
+                bound_selected.declare()
+                bound_other.declare()
 
                 result = app.send_task(
                     "tasks.add", args=(1, 2), connection=connection, ignore_result=True, **options,
                 )
 
-                for queue in bound_queues:
-                    message = queue.get(no_ack=True)
-                    if queue.name == target_queue.name:
-                        assert message is not None
-                        assert message.headers["id"] == result.id
-                        assert message.delivery_info["exchange"] == ""
-                        assert message.delivery_info["routing_key"] == target_queue.name
-                    else:
-                        assert message is None
+                message = bound_selected.get(no_ack=True)
+                assert message is not None
+                assert message.headers["id"] == result.id
+                assert message.delivery_info["exchange"] == ""
+                assert message.delivery_info["routing_key"] == selected_queue.name
+                assert bound_other.get(no_ack=True) is None
 
-    def test_send_task_preserves_unnamed_exchange_object_with_named_producer(self, celery_setup_app: Celery):
+    def test_send_task_with_unnamed_exchange_object_and_named_producer(self, celery_setup_app: Celery):
         app = celery_setup_app
         app.conf.update(broker_transport_options={"confirm_publish": True})
-        queue = Queue(uuid(), Exchange(""))
+        unnamed_exchange = Exchange("")
+        queue = Queue(uuid(), unnamed_exchange)
         producer_exchange = Exchange(uuid(), type="direct")
         other_queue = Queue(uuid(), producer_exchange, routing_key=queue.name)
 
@@ -158,7 +157,7 @@ class test_task_exchange:
                 producer = app.amqp.Producer(channel, exchange=producer_exchange)
 
                 result = app.send_task(
-                    "tasks.add", args=(1, 2), queue=queue, exchange=Exchange(""), routing_key=queue.name,
+                    "tasks.add", args=(1, 2), queue=queue, exchange=unnamed_exchange, routing_key=queue.name,
                     producer=producer, ignore_result=True,
                 )
 
@@ -169,7 +168,7 @@ class test_task_exchange:
                 assert message.delivery_info["routing_key"] == queue.name
                 assert bound_other_queue.get(no_ack=True) is None
 
-    def test_send_task_unnamed_exchange_preserves_routing_key_without_queue(self, celery_setup_app: Celery):
+    def test_send_task_with_unnamed_exchange_route_and_no_queue(self, celery_setup_app: Celery):
         app = celery_setup_app
         routing_key = uuid()
         queue = Queue(routing_key, Exchange(""))
@@ -195,7 +194,7 @@ class test_task_exchange:
                 assert message.delivery_info["routing_key"] == routing_key
 
     @pytest.mark.parametrize("exchange_as_string", [True, False], ids=["string", "exchange-object"])
-    def test_send_task_uses_explicit_exchange_without_routing_key(
+    def test_send_task_with_exchange_only(
         self, celery_setup_app: Celery, exchange_as_string: bool,
     ):
         app = celery_setup_app
