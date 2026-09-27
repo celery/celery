@@ -3197,8 +3197,7 @@ At intervals the worker will monitor that the broker hasn't missed
 too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
 so if the heartbeat is 10.0 and the rate is the default 3.0, the check
-will be performed about every 3.33 seconds (three times the heartbeat sending rate).
-
+will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``
