@@ -98,6 +98,33 @@ class test_tasks:
             assert result.ready() is True
             assert result.successful() is True
 
+    def test_task_sent_event_respects_publish_retry_limit(self, manager, monkeypatch):
+        app = manager.app
+        app.conf.update(
+            task_send_sent_event=True,
+            task_publish_retry_policy={'max_retries': 0},
+        )
+
+        with app.connection_for_write() as connection:
+            producer = app.amqp.Producer(connection)
+            basic_publish = producer.channel.basic_publish
+
+            def publish(*args, **kwargs):
+                # Fail the first task-sent event publish. With max_retries=0,
+                # this should not be retried.
+                if kwargs['routing_key'] == 'task.sent':
+                    raise OSError('Broker connection lost')
+                return basic_publish(*args, **kwargs)
+            monkeypatch.setattr(producer.channel, 'basic_publish', publish)
+
+            result = app.send_task(add.name, args=(1, 2), producer=producer)
+            assert result.get(timeout=TIMEOUT) == 3
+
+        buffered_events = app.amqp._event_dispatcher._outbound_buffer
+        assert len(buffered_events) == 1
+        event, _ = buffered_events[0]
+        assert event['uuid'] == result.id
+
     @flaky
     @pytest.mark.skip(reason="Broken test")
     def test_multiprocess_producer(self, manager):
