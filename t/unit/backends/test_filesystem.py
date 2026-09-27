@@ -167,6 +167,25 @@ class test_FilesystemBackend:
         # no temporary files remain in the result directory
         assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_preserves_file_mode_and_umask_default(self):
+        import stat
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        # new file gets the umask-derived default mode
+        key = tb.get_key_for_task(uuid())
+        tb.set(key, ensure_bytes('{"a": 1}'))
+        new_mode = stat.S_IMODE(os.stat(tb._filename(key)).st_mode)
+        prev_umask = os.umask(0o022)
+        try:
+            expected_default = 0o666 & ~prev_umask
+            assert new_mode == expected_default
+        finally:
+            os.umask(prev_umask)
+        # overwrite preserves the existing file's mode
+        os.chmod(tb._filename(key), 0o640)
+        tb.set(key, ensure_bytes('{"a": 2}'))
+        assert stat.S_IMODE(os.stat(tb._filename(key)).st_mode) == 0o640
+
     def test_concurrent_readers_never_see_torn_payload(self):
         import threading
         tb = FilesystemBackend(app=self.app, url=self.url)
