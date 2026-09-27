@@ -22,7 +22,7 @@ Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
 or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 """.strip()
 
-RE_FORMAT = re.compile(r'%(\w)')
+RE_FORMAT = re.compile(r'%([%\w])')
 
 
 def str_to_list(s: str) -> list[str]:
