@@ -8,6 +8,8 @@ import pytest
 
 import t.skip
 from celery.apps.multi import Cluster, MultiParser, NamespacedOptionParser, Node, format_opt
+from celery.platforms import Pidfile
+from celery.utils.nodenames import node_format
 
 
 class test_functions:
@@ -54,6 +56,44 @@ def multi_args(p, *args, **kwargs):
 
 
 class test_multi_args:
+
+    @pytest.mark.parametrize('option', ['--pidfile', '-p'])
+    @pytest.mark.parametrize('template,expected', [
+        ('%n.pid', 'worker.pid'),
+        ('%%%%n-%n.pid', '%n-worker.pid'),
+        ('50%%%%d.pid', '50%d.pid'),
+        ('%%%%x.pid', '%x.pid'),
+        ('%%%%i-%i.pid', '%i-0.pid'),
+    ])
+    def test_pidfile_lookup_matches_worker(self, tmp_path, option, template, expected):
+        node = Node('worker@example.com', options={
+            option: str(tmp_path / template),
+            '--logfile': str(tmp_path / 'worker.log'),
+        })
+        separator = '=' if option.startswith('--') else ' '
+        pidfile_arg = next(arg.partition(separator)[2] for arg in node.argv
+                           if arg.startswith(option + separator))
+        worker_pidfile = node_format(pidfile_arg, node.name)
+        assert worker_pidfile == str(tmp_path / expected)
+        with Pidfile(worker_pidfile):
+            assert node.pid == os.getpid()
+        assert node.pidfile == worker_pidfile
+
+    @pytest.mark.parametrize('template,worker_arg,expected', [
+        ('%%%%n-%n.log', '%%n-worker.log', '%n-worker.log'),
+        ('50%%%%d.log', '50%%d.log', '50%d.log'),
+        ('%%%%x.log', '%%x.log', '%x.log'),
+        ('%%%%i-%i.log', '%%i-%i.log', '%i-0.log'),
+        ('%%%%I%I.log', '%%I%I.log', '%I.log'),
+    ])
+    def test_logfile_percent_escape(self, tmp_path, template, worker_arg, expected):
+        node = Node('worker@example.com', options={
+            '--logfile': str(tmp_path / template),
+            '--pidfile': str(tmp_path / 'worker.pid'),
+        })
+        logfile_arg = next(arg for arg in node.argv if arg.startswith('--logfile='))
+        assert logfile_arg == f'--logfile={tmp_path / worker_arg}'
+        assert node_format(logfile_arg.partition('=')[2], node.name) == str(tmp_path / expected)
 
     @patch('celery.apps.multi.os.mkdir')
     @patch('celery.apps.multi.gethostname')
