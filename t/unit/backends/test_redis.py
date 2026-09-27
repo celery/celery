@@ -276,138 +276,187 @@ class test_RedisResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
-    def test_cancel_for_reentry_during_subscribe(self):
-        """Regression test for the GC-driven pub/sub deadlock.
+    def _reenter_on(self, consumer, method, *task_ids, error=None):
+        # Make the next call to pubsub.<method> behave like the garbage
+        # collector running AsyncResult.__del__ -> cancel_for(task_id)
+        # while that command is still in flight.
+        real = getattr(consumer._pubsub, method)
+        calls = []
 
-        Mirrors production "Stack A": cyclic GC fires ``AsyncResult.__del__``
-        while ``_consume_from`` is still awaiting the SUBSCRIBE response,
-        which calls ``cancel_for`` against the same ``PubSub``. The nested
-        ``cancel_for`` must be deferred (no inner unsubscribe issued) and
-        drained after the outer subscribe returns.
-        """
+        def reentrant(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                for task_id in task_ids:
+                    consumer.cancel_for(task_id)
+                if error is not None:
+                    raise error
+            return real(*args)
+
+        setattr(consumer._pubsub, method, reentrant)
+        return calls
+
+    def test_cancel_for_reentry_during_subscribe_is_deferred(self):
         consumer = self.get_consumer()
         consumer.start('initial')
-        outer_key = b'celery-task-meta-outer'
-        inner_key = b'celery-task-meta-inner'
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.reset_mock()
+        unsubscribed_during_subscribe = []
 
-        # Pre-subscribe the channel that the nested cancel will target so the
-        # eventual drain actually issues an UNSUBSCRIBE we can observe.
-        consumer.subscribed_to.add(inner_key)
-
-        unsubscribe_order = []
-        real_unsubscribe = consumer._pubsub.unsubscribe
-
-        def tracking_unsubscribe(*args):
-            unsubscribe_order.append(args)
-            return real_unsubscribe(*args)
-
-        consumer._pubsub.unsubscribe = tracking_unsubscribe
-
-        reentry_done = []
-
-        def reentrant_subscribe(*args):
-            # Simulate GC firing AsyncResult.__del__ -> cancel_for here,
-            # exactly when the outer SUBSCRIBE is still mid-flight.
-            if not reentry_done:
-                reentry_done.append(True)
-                consumer.cancel_for('inner')
-                # Inner cancel MUST NOT have issued UNSUBSCRIBE yet --
-                # doing so would deadlock the shared PubSub connection.
-                assert unsubscribe_order == []
+        def subscribe(*args):
+            consumer.cancel_for('inner')
+            unsubscribed_during_subscribe.append(
+                consumer._pubsub.unsubscribe.call_count)
             consumer._pubsub._subscribed_to.update(args)
 
-        consumer._pubsub.subscribe = reentrant_subscribe
-
+        consumer._pubsub.subscribe = subscribe
         consumer.consume_from('outer')
 
-        assert reentry_done == [True]
-        # Outer subscribe ran, then the deferred inner cancel drained.
-        assert unsubscribe_order == [(inner_key,)]
-        assert outer_key in consumer._pubsub._subscribed_to
-        assert inner_key not in consumer.subscribed_to
+        # no UNSUBSCRIBE was sent while the SUBSCRIBE was in flight ...
+        assert unsubscribed_during_subscribe == [0]
+        # ... but it was sent once the SUBSCRIBE returned.
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-inner')
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-outer'}
+        assert consumer._reentry.depth == 0
+        assert not consumer._reentry.deferred
 
-    def test_cancel_for_reentry_during_unsubscribe(self):
-        """Regression test for the GC-driven pub/sub deadlock.
-
-        Mirrors production "Stack B": an outer ``cancel_for`` -> UNSUBSCRIBE
-        is interrupted by a second ``AsyncResult.__del__`` firing another
-        ``cancel_for``. The nested ``cancel_for`` must defer rather than
-        re-enter the connection mid-UNSUBSCRIBE.
-        """
+    def test_cancel_for_reentry_during_unsubscribe_is_deferred(self):
         consumer = self.get_consumer()
         consumer.start('initial')
-        outer_key = b'celery-task-meta-outer'
-        inner_key = b'celery-task-meta-inner'
-
-        consumer.subscribed_to.add(outer_key)
-        consumer.subscribed_to.add(inner_key)
-
-        unsubscribe_order = []
-        reentry_done = []
-
-        def reentrant_unsubscribe(*args):
-            unsubscribe_order.append(args)
-            if not reentry_done:
-                reentry_done.append(True)
-                consumer.cancel_for('inner')
-                # The inner cancel must NOT have produced a nested
-                # UNSUBSCRIBE while we're still inside this one.
-                assert unsubscribe_order == [args]
-            consumer._pubsub._subscribed_to.difference_update(args)
-
-        consumer._pubsub.unsubscribe = reentrant_unsubscribe
+        consumer.consume_from('outer')
+        consumer.consume_from('inner')
+        calls = self._reenter_on(consumer, 'unsubscribe', 'inner')
 
         consumer.cancel_for('outer')
 
-        assert reentry_done == [True]
-        # Outer unsubscribe ran first, then deferred inner.
-        assert unsubscribe_order == [(outer_key,), (inner_key,)]
-        assert outer_key not in consumer.subscribed_to
-        assert inner_key not in consumer.subscribed_to
+        # the inner UNSUBSCRIBE is sent after, not inside, the outer one.
+        assert calls == [
+            (b'celery-task-meta-outer',), (b'celery-task-meta-inner',)]
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert consumer._reentry.depth == 0
 
-    def test_drain_deferred_handles_nested_reentry(self):
-        """Re-entries that fire *during* the deferred drain must also defer.
-
-        Guards the drain loop in ``_drain_deferred_cancels`` against losing
-        cancels queued by finalizers that run while an earlier deferred
-        cancel is being processed.
-        """
+    def test_cancel_for_reentry_during_deferred_drain_is_deferred(self):
         consumer = self.get_consumer()
         consumer.start('initial')
-        first_key = b'celery-task-meta-first'
-        second_key = b'celery-task-meta-second'
+        for task_id in ('first', 'second', 'third'):
+            consumer.consume_from(task_id)
+        # 'first' is deferred by the SUBSCRIBE below, and unsubscribing it
+        # while draining triggers another finalizer for 'second'.
+        calls = self._reenter_on(consumer, 'unsubscribe', 'second')
+        self._reenter_on(consumer, 'subscribe', 'first', 'third')
 
-        consumer.subscribed_to.update({first_key, second_key})
-
-        unsubscribe_order = []
-        triggered = []
-
-        def reentrant_unsubscribe(*args):
-            unsubscribe_order.append(args)
-            if args == (first_key,) and not triggered:
-                # During the drain of the *first* deferred cancel, a
-                # second finalizer fires another cancel_for that itself
-                # needs to be queued (not issued inline).
-                triggered.append(True)
-                consumer.cancel_for('second')
-                assert unsubscribe_order == [(first_key,)]
-            consumer._pubsub._subscribed_to.difference_update(args)
-
-        consumer._pubsub.unsubscribe = reentrant_unsubscribe
-
-        # Prime the outer op so the first cancel is deferred too.
-        def reentrant_subscribe(*args):
-            consumer.cancel_for('first')
-            assert unsubscribe_order == []
-            consumer._pubsub._subscribed_to.update(args)
-
-        consumer._pubsub.subscribe = reentrant_subscribe
         consumer.consume_from('outer')
 
-        assert triggered == [True]
-        assert unsubscribe_order == [(first_key,), (second_key,)]
-        assert first_key not in consumer.subscribed_to
-        assert second_key not in consumer.subscribed_to
+        assert calls == [
+            (b'celery-task-meta-first',),
+            (b'celery-task-meta-third',),
+            (b'celery-task-meta-second',),
+        ]
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-outer'}
+        assert consumer._reentry.depth == 0
+
+    @patch('celery.backends.redis.logger')
+    def test_deferred_cancel_error_is_logged_and_drain_continues(self, logger):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('broken')
+        consumer.consume_from('fine')
+        self._reenter_on(consumer, 'subscribe', 'broken', 'fine')
+
+        def unsubscribe(key):
+            if key == b'celery-task-meta-broken':
+                raise ValueError('boom')
+            consumer._pubsub._subscribed_to.discard(key)
+
+        consumer._pubsub.unsubscribe = unsubscribe
+        consumer.consume_from('outer')
+
+        logger.exception.assert_called_once_with(
+            'Failed to cancel deferred pub/sub subscription for task %s',
+            'broken')
+        assert b'celery-task-meta-fine' not in consumer._pubsub._subscribed_to
+        assert consumer._reentry.depth == 0
+        assert not consumer._reentry.deferred
+
+    def test_deferred_cancel_retry_limit_exceeded_propagates(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('broken')
+        consumer.consume_from('pending')
+        self._reenter_on(consumer, 'subscribe', 'broken', 'pending')
+        consumer._pubsub.unsubscribe.side_effect = [
+            RuntimeError('Retry limit exceeded'), None]
+
+        # the consumer can't recover, so the caller has to see it.
+        with pytest.raises(RuntimeError, match='Retry limit exceeded'):
+            consumer.consume_from('outer')
+        assert consumer._reentry.depth == 0
+        assert list(consumer._reentry.deferred) == ['pending']
+
+        # the cancel that was not reached runs on the next operation.
+        consumer.cancel_for('never-subscribed')
+        consumer._pubsub.unsubscribe.assert_called_with(
+            b'celery-task-meta-pending')
+        assert not consumer._reentry.deferred
+
+    @patch('celery.backends.redis.logger')
+    def test_outer_error_is_not_masked_by_failing_drain(self, logger):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        self._reenter_on(
+            consumer, 'subscribe', 'inner', error=ValueError('outer'))
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('drain')
+
+        with pytest.raises(ValueError, match='outer'):
+            consumer.consume_from('outer')
+        logger.exception.assert_called_once_with(
+            'Failed to drain deferred pub/sub cancels')
+        assert consumer._reentry.depth == 0
+
+    def test_outer_error_still_drains_deferred_cancels(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('outer')
+        consumer.consume_from('inner')
+        self._reenter_on(
+            consumer, 'unsubscribe', 'inner', error=ValueError('outer'))
+
+        with pytest.raises(ValueError, match='outer'):
+            consumer.cancel_for('outer')
+        assert b'celery-task-meta-inner' not in consumer.subscribed_to
+        assert consumer._reentry.depth == 0
+
+    def test_cancel_for_from_other_thread_is_not_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('other')
+        # this thread is mid-operation, which must not affect other threads:
+        # they are serialized by the pubsub lock instead.
+        consumer._reentry.depth = 1
+        try:
+            thread = threading.Thread(
+                target=consumer.cancel_for, args=('other',))
+            thread.start()
+            thread.join()
+        finally:
+            consumer._reentry.depth = 0
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-other')
+        assert not consumer._reentry.deferred
+
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork_resets_reentry_state(self, parent_method):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._reentry.depth = 1
+        consumer._reentry.deferred.append('inherited')
+        consumer.on_after_fork()
+        assert consumer._reentry.depth == 0
+        assert not consumer._reentry.deferred
+
     def test_cancel_for_never_subscribed_is_noop(self):
         consumer = self.get_consumer()
         consumer.start('initial')
