@@ -989,5 +989,6 @@ class test_ElasticsearchBackend:
             "not found",
             ApiResponseMeta(404, "HTTP/1.1", HttpHeaders(), 0,
                             NodeConfig("https", "localhost", 9200)), None)]
-        x.forget(uuid())
-        x.forget(uuid())
+        tid = uuid()
+        x.forget(tid)
+        x.forget(tid)

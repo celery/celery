@@ -265,7 +265,10 @@ class ElasticsearchBackend(KeyValueStoreBackend):
                 self.server.delete(index=self.index, id=key)
         except elasticsearch.exceptions.NotFoundError:
             # deleting an already-expired, already-forgotten or never-stored
-            # result must keep forget() idempotent, like the other KV backends
+            # result must keep forget() idempotent, like the other KV backends.
+            # ES also raises NotFoundError when the index itself is missing
+            # (index_not_found_exception); for forget() the outcome is the
+            # same either way - there is nothing to forget.
             pass
 
     def _get_server(self):

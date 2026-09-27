@@ -224,5 +224,6 @@ class test_CouchBackend_result:
         x = CouchBackend(app=self.app)
         x._connection = Mock()
         x._connection.delete.side_effect = [None, pycouchdb.exceptions.NotFound]
-        x.forget(uuid())
-        x.forget(uuid())
+        tid = uuid()
+        x.forget(tid)
+        x.forget(tid)
