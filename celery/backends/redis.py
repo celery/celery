@@ -86,6 +86,11 @@ logger = get_logger(__name__)
 _NO_SOCKET = object()
 
 
+class _LockDepth(threading.local):
+    #: how many ``_locked()`` blocks this thread is inside.
+    value = 0
+
+
 def _socket_readable(sock, timeout):
     try:
         # looked up per call so gevent/eventlet patching after import applies
@@ -126,6 +131,7 @@ class ResultConsumer(BaseResultConsumer):
         # only one thread waits on the socket, the others wait for it here.
         self._pubsub_read = threading.Condition(self._pubsub_lock)
         self._socket_waiter = False
+        self._lock_depth = _LockDepth()
 
     def on_after_fork(self):
         # the lock may have been held by a thread that did not survive
@@ -154,7 +160,13 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
-            # subscribed_to maybe empty after on_state_change
+            # Cancels queued so far (e.g. by on_state_change above) are only
+            # sent when the lock is released.  The new connection never
+            # subscribed to those channels, so just forget them: left in
+            # subscribed_to, a later consume_from() of the same task would
+            # think it is subscribed and never get its result.
+            self.subscribed_to -= self._pending_unsubscribe
+            self._pending_unsubscribe.clear()
             if self.subscribed_to:
                 self._pubsub.subscribe(*self.subscribed_to)
             else:
@@ -300,16 +312,26 @@ class ResultConsumer(BaseResultConsumer):
 
     def cancel_for(self, task_id):
         # Never blocks: this runs from AsyncResult.__del__, where a gevent
-        # greenlet cannot switch away.  If the lock is busy, its holder
-        # unsubscribes on the way out.
+        # greenlet cannot switch away.  If the lock is busy, or this thread
+        # already holds it, the holder unsubscribes on the way out.
         self._pending_unsubscribe.add(self._get_key_for_task(task_id))
         self._flush_pending_unsubscribe()
 
     def _flush_pending_unsubscribe(self):
+        if self._lock_depth.value:
+            # This thread is inside a pubsub operation, e.g. the garbage
+            # collector ran AsyncResult.__del__ in the middle of a subscribe
+            # or get_message().  The lock is reentrant and would let us in,
+            # but the connection must only see one operation at a time (and
+            # before 6.4 redis-py's own pubsub lock is not reentrant, so a
+            # nested command deadlocks).  The outermost _locked() flushes on
+            # exit.
+            return
         # Re-check after every release: a key added while we held the lock
         # may have missed its own acquire attempt.
         while self._pending_unsubscribe and \
                 self._pubsub_lock.acquire(blocking=False):
+            self._lock_depth.value += 1
             try:
                 while self._pending_unsubscribe:
                     key = self._pending_unsubscribe.pop()
@@ -319,15 +341,32 @@ class ResultConsumer(BaseResultConsumer):
                             with self.reconnect_on_error():
                                 self._pubsub.unsubscribe(key)
             finally:
+                self._lock_depth.value -= 1
                 self._pubsub_lock.release()
 
     @contextmanager
     def _locked(self):
+        # Every pubsub operation runs in here, one at a time: the lock keeps
+        # other threads out, and the depth makes cancel_for() calls from this
+        # thread (e.g. AsyncResult.__del__ run by the garbage collector)
+        # wait until the outermost block is done with the connection.
+        depth = self._lock_depth
         try:
             with self._pubsub_lock:
-                yield
-        finally:
-            self._flush_pending_unsubscribe()
+                depth.value += 1
+                try:
+                    yield
+                finally:
+                    depth.value -= 1
+        except BaseException:
+            # The pending keys may belong to other results, so failing to
+            # unsubscribe them must not replace this operation's own error.
+            try:
+                self._flush_pending_unsubscribe()
+            except Exception:
+                logger.exception('Failed to unsubscribe pending results')
+            raise
+        self._flush_pending_unsubscribe()
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
