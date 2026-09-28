@@ -1524,7 +1524,7 @@ class test_BeatPidbox:
             pb._error_handler(ConnectionResetError('gone'), 5)
         error.assert_called_once()
 
-    def test_loop_does_not_retry_when_retry_disabled(self):
+    def test_loop_does_not_retry_a_failed_connect_when_retry_disabled(self):
         pb, _ = self.get_pidbox()
         pb.retry_interval = 0
         self.app.conf.broker_connection_retry = False
@@ -1542,6 +1542,34 @@ class test_BeatPidbox:
                 pb._loop()
         assert cfr.call_count == 1
         # the consumer is gone for good, so say so out loud
+        warning.assert_called_once()
+
+    def test_loop_does_not_reconnect_a_dropped_link_when_retry_disabled(self):
+        # broker_connection_retry governs reconnecting to a broker that
+        # went away, not only the first attempt.  The connect path and
+        # the dropped-connection path are separate branches, so this
+        # needs its own test: mocking connection_for_read to raise only
+        # ever exercises the former.
+        pb, _ = self.get_pidbox()
+        pb.retry_interval = 0
+        pb.node.listen = Mock(name='listen')
+        self.app.conf.broker_connection_retry = False
+
+        def dropped(*args, **kwargs):
+            # Safety net: fail the assertion below rather than spinning
+            # here forever if the guard regresses again.
+            if cfr.call_count > 3:
+                pb._shutdown.set()
+            connection = MagicMock()
+            connection.__enter__.return_value.drain_events.side_effect = (
+                ConnectionResetError('broker gone'))
+            return connection
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=dropped) as cfr:
+            with patch('celery.beat.warning') as warning:
+                pb._loop()
+        assert cfr.call_count == 1
         warning.assert_called_once()
 
     def test_loop_is_quiet_when_stopped_deliberately(self):

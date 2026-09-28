@@ -874,10 +874,14 @@ class BeatPidbox:
                 except Exception as exc:  # pylint: disable=broad-except
                     if shutdown.is_set():
                         break
-                    # A connection that was up and dropped is worth
-                    # re-establishing, with a fresh budget of its own.
                     error('beat pidbox connection error: %r', exc,
                           exc_info=True)
+                    if not self.app.conf.broker_connection_retry:
+                        # The setting governs reconnecting to a broker
+                        # that went away, not just the first attempt.
+                        break
+                    # A connection that was up and dropped is worth
+                    # re-establishing, with a fresh budget of its own.
                     shutdown.wait(self.retry_interval)
         finally:
             if not shutdown.is_set():
