@@ -419,8 +419,38 @@ class test_RedisResultConsumer:
         consumer.backend.client.pubsub = Mock(return_value=fresh)
         consumer._reconnect_pubsub()
         fresh.subscribe.assert_called_once_with(b'celery-task-meta-initial')
+        # never subscribed on the new connection, so nothing to unsubscribe
+        fresh.unsubscribe.assert_not_called()
         assert consumer.subscribed_to == {b'celery-task-meta-initial'}
         assert not consumer._pending_unsubscribe
+
+    def test_resubscribe_after_reconnect_before_flush(self):
+        # A task that finished while disconnected is subscribed again before
+        # the queued cancels are flushed: it must really be subscribed on
+        # the new connection, or its result never arrives.
+        meta = {'task_id': 'again', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('again')
+        consumer.backend._set_with_state(
+            b'celery-task-meta-again', json.dumps(meta), states.SUCCESS)
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        with consumer._locked():
+            consumer._reconnect_pubsub()
+            consumer.backend._set_with_state(
+                b'celery-task-meta-again', json.dumps(
+                    {'task_id': 'again', 'status': states.PENDING}),
+                states.PENDING)
+            consumer.consume_from('again')
+        assert fresh.subscribe.call_args_list == [
+            call(b'celery-task-meta-initial'),
+            call(b'celery-task-meta-again'),
+        ]
+        fresh.unsubscribe.assert_not_called()
+        assert b'celery-task-meta-again' in fresh._subscribed_to
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-again'}
 
     @patch('celery.backends.redis.logger')
     def test_locked_error_is_not_replaced_by_failing_unsubscribe(self, logger):

@@ -160,11 +160,15 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
-            # on_state_change may have queued cancels, which are only sent
-            # when the lock is released: don't subscribe to those again.
-            channels = self.subscribed_to - self._pending_unsubscribe
-            if channels:
-                self._pubsub.subscribe(*channels)
+            # Cancels queued so far (e.g. by on_state_change above) are only
+            # sent when the lock is released.  The new connection never
+            # subscribed to those channels, so just forget them: left in
+            # subscribed_to, a later consume_from() of the same task would
+            # think it is subscribed and never get its result.
+            self.subscribed_to -= self._pending_unsubscribe
+            self._pending_unsubscribe.clear()
+            if self.subscribed_to:
+                self._pubsub.subscribe(*self.subscribed_to)
             else:
                 # redis-py < 5.3.0 requires ``command_name`` as a positional
                 # argument to ``ConnectionPool.get_connection``. The argument was
