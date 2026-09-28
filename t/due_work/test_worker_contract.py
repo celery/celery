@@ -20,7 +20,7 @@ test. The harness fails it at each of Celery's own stages:
 Recovery is the worker starting again. Each history must end where normal
 operation does: SUCCESS, the message sent once, the link announcing it once,
 no error callback. What diverges is declared as one gap, a strict xfail, and
-``test_what_each_failure_costs`` pins what every history leaves.
+``FINDINGS`` pins what every history leaves, in the same run as the verdict.
 
 This directory is not part of the integration suite, which shares one session
 worker: its tests start their own workers. Run it (Python 3.12 or later, and a
@@ -33,9 +33,8 @@ Redis on localhost)::
 import redis
 
 from celery.result import AsyncResult
-from due_work_harness import due_work_contract_suite
+from due_work_harness import Findings, due_work_contract_suite
 from due_work_harness.integrations.celery_worker import worker_contract, worker_history
-from due_work_harness.process_histories import assert_pinned_process_outcomes
 
 from . import app as due_work
 
@@ -66,6 +65,28 @@ def settled(task_id):
     return AsyncResult(task_id, app=due_work.app).ready()
 
 
+SENT = f'sent {MESSAGE!r}'
+
+# What each failure leaves after the worker starts again, pinned in the same run as the
+# verdict; every history not listed reaches normal operation. A change in the worker moves
+# an entry, and the case names it.
+FINDINGS = {
+    # The child died as the task started: the message is never sent, the error callback fires, and
+    # nothing runs the task again (task_reject_on_worker_lost is off by default).
+    'died at task_prerun': ('FAILURE', 0, ('failed: WorkerLostError',)),
+    # FINDING: the message was sent and the link announced it; the task is recorded FAILURE and the
+    # error callback announces a failure too.
+    'died at mark_as_done': ('FAILURE', 1, ('failed: WorkerLostError', SENT)),
+    # FINDING: SUCCESS was stored; the parent, told the child was lost, fires the error callback anyway.
+    'died at task_postrun': ('SUCCESS', 1, ('failed: WorkerLostError', SENT)),
+    # FINDING: SUCCESS was stored; the raising hook sends the task down the failure path.
+    "the task's on_success hook raised": ('SUCCESS', 1, ('failed: ReceiverFailed', SENT)),
+    # FINDING: the message was sent; the refused link records FAILURE, and the message is acknowledged,
+    # so the link is never published again.
+    "the broker refused the task's link": ('FAILURE', 1, ('failed: OperationalError',)),
+}
+
+
 SEND_MESSAGE = worker_history(
     name='a worker runs send_message',
     app='t.due_work.app:app',
@@ -74,6 +95,7 @@ SEND_MESSAGE = worker_history(
     observe=what_happened,
     initial=('PENDING', 0, ()),
     settled=settled,
+    findings=Findings(('SUCCESS', 1, (SENT,)), FINDINGS),
 )
 
 CONTRACT = worker_contract(
@@ -85,7 +107,7 @@ CONTRACT = worker_contract(
         'link; a child lost after the link, before the store, records FAILURE for a task whose effect and link '
         'happened; and a link the broker refuses records FAILURE and acknowledges the message, so the link is '
         'never sent (https://github.com/celery/celery/issues/10724, https://github.com/celery/celery/issues/10725). '
-        'test_what_each_failure_costs pins each history'
+        'FINDINGS pins each history'
     ),
 )
 
@@ -104,28 +126,3 @@ CONTRACT = worker_contract(
 @due_work_contract_suite(CONTRACT)
 class test_WorkerContract:
     """Every case in this class is generated from CONTRACT; see the comment above."""
-
-
-SENT = f'sent {MESSAGE!r}'
-
-# What each failure leaves after the worker starts again, pinned; every history not listed
-# reaches normal operation. A change in the worker moves an entry, and the test names it.
-FINDINGS = {
-    # The child died as the task started: the message is never sent, the error callback fires, and
-    # nothing runs the task again (task_reject_on_worker_lost is off by default).
-    'died at task_prerun': ('FAILURE', 0, ('failed: WorkerLostError',)),
-    # FINDING: the message was sent and the link announced it; the task is recorded FAILURE and the
-    # error callback announces a failure too.
-    'died at mark_as_done': ('FAILURE', 1, ('failed: WorkerLostError', SENT)),
-    # FINDING: SUCCESS was stored; the parent, told the child was lost, fires the error callback anyway.
-    'died at task_postrun': ('SUCCESS', 1, ('failed: WorkerLostError', SENT)),
-    # FINDING: SUCCESS was stored; the raising hook sends the task down the failure path.
-    "the task's on_success hook raised": ('SUCCESS', 1, ('failed: ReceiverFailed', SENT)),
-    # FINDING: the message was sent; the refused link records FAILURE, and the message is acknowledged,
-    # so the link is never published again.
-    "the broker refused the task's link": ('FAILURE', 1, ('failed: OperationalError',)),
-}
-
-
-def test_what_each_failure_costs():
-    assert_pinned_process_outcomes(SEND_MESSAGE, delivered=('SUCCESS', 1, (SENT,)), outcomes=FINDINGS)
