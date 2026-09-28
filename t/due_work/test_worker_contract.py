@@ -31,11 +31,11 @@ Redis on localhost)::
 """
 
 import redis
-
-from celery.result import AsyncResult
 from due_work_harness import due_work_contract_suite
 from due_work_harness.integrations.celery_worker import worker_contract, worker_history
 from due_work_harness.process_histories import assert_pinned_process_outcomes
+
+from celery.result import AsyncResult
 
 from . import app as due_work
 
