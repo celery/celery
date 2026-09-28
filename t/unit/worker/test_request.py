@@ -963,7 +963,7 @@ class test_Request(RequestCase):
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
     # A pool child lost after the task's SUCCESS was stored did not fail the task.
-    @pytest.mark.xfail(strict=True, reason='the error callback fires for a task whose SUCCESS was stored')
+    @pytest.mark.xfail(strict=True, reason='the error callback fires for a task whose SUCCESS was stored (#10724)')
     def test_on_failure_WorkerLostError_after_success_was_stored(self):
         errbacks = []
 

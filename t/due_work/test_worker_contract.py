@@ -84,7 +84,8 @@ CONTRACT = worker_contract(
         'lost after SUCCESS is stored, or an on_success hook that raises, fires the error callback beside the '
         'link; a child lost after the link, before the store, records FAILURE for a task whose effect and link '
         'happened; and a link the broker refuses records FAILURE and acknowledges the message, so the link is '
-        'never sent. test_what_each_failure_costs pins each history'
+        'never sent (https://github.com/celery/celery/issues/10724, https://github.com/celery/celery/issues/10725). '
+        'test_what_each_failure_costs pins each history'
     ),
 )
 
