@@ -84,7 +84,9 @@ class DjangoFixup:
         if not self.app._custom_task_cls_used:
             self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
 
-        signals.import_modules.connect(self.on_import_modules)
+        # Only react to this app: other Django-enabled apps in the same
+        # process install their own fixup.
+        signals.import_modules.connect(self.on_import_modules, sender=self.app)
         signals.worker_init.connect(self.on_worker_init)
         return self
 
@@ -105,6 +107,9 @@ class DjangoFixup:
     def on_worker_init(self, **kwargs: Any) -> None:
         worker: Optional["WorkController"] = kwargs.get("sender")
         if worker:
+            if worker.app is not self.app:
+                # The worker belongs to another app; its own fixup handles it.
+                return
             self.worker_fixup.worker = worker
         else:
             warnings.warn(
