@@ -187,6 +187,25 @@ class test_AzureBlockBlobBackend:
         mock_client.get_blob_client.return_value \
             .delete_blob.assert_called_once()
 
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
+    def test_forget_missing_task_is_noop(self, mock_client, base_path):
+        self.backend.base_path = base_path
+        mock_client.get_blob_client.return_value \
+            .delete_blob.side_effect = azureblockblob.ResourceNotFoundError
+
+        # forget() on a result that was expired, already forgotten or never
+        # stored must not raise ResourceNotFoundError
+        self.backend.delete(b"mykey")
+
+    @patch(MODULE_TO_MOCK + ".AzureBlockBlobBackend._blob_service_client")
+    def test_forget_twice_is_noop(self, mock_client, base_path):
+        self.backend.base_path = base_path
+        mock_client.get_blob_client.return_value \
+            .delete_blob.side_effect = [None, azureblockblob.ResourceNotFoundError]
+
+        self.backend.delete(b"mykey")
+        self.backend.delete(b"mykey")
+
     def test_base_path_conf(self, base_path):
         self.app.conf.azureblockblob_base_path = base_path
         backend = AzureBlockBlobBackend(
