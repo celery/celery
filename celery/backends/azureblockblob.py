@@ -40,7 +40,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         if azurestorage is None or azurestorage.__version__ < '12':
             raise ImproperlyConfigured(
-                "You need to install the azure-storage-blob v12 library to"
+                "You need to install the azure-storage-blob v12 library to "
                 "use the AzureBlockBlob backend")
 
         conf = self.app.conf
@@ -174,7 +174,12 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             blob=f'{self.base_path}{key}',
         )
 
-        blob_client.delete_blob()
+        try:
+            blob_client.delete_blob()
+        except ResourceNotFoundError:
+            # deleting an already-expired, already-forgotten or never-stored
+            # result must keep forget() idempotent, like the other KV backends
+            pass
 
     def as_uri(self, include_password=False):
         if include_password:
