@@ -277,6 +277,249 @@ class test_RedisResultConsumer:
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
 
+    def _reenter_on(self, pubsub, method, consumer, *task_ids, error=None):
+        # Make the next call to pubsub.<method> behave like the garbage
+        # collector running AsyncResult.__del__ -> cancel_for(task_id)
+        # while that command is still in flight.  Records, per call, how
+        # many UNSUBSCRIBEs had been sent before it returned.
+        real = getattr(pubsub, method)
+        calls = []
+
+        def reentrant(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                for task_id in task_ids:
+                    consumer.cancel_for(task_id)
+                if error is not None:
+                    raise error
+            return real(*args)
+
+        setattr(pubsub, method, reentrant)
+        return calls
+
+    def test_cancel_for_reentry_during_subscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        unsubscribes_in_flight = []
+
+        def subscribe(*args):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(pubsub.unsubscribe.call_count)
+            pubsub._subscribed_to.update(args)
+
+        pubsub.subscribe = subscribe
+        consumer.consume_from('outer')
+
+        # one pubsub operation at a time (redis-py < 6.4 deadlocks
+        # otherwise): no UNSUBSCRIBE while the SUBSCRIBE is in flight.
+        assert unsubscribes_in_flight == [0]
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-outer'}
+        assert not consumer._pending_unsubscribe
+        assert consumer._lock_depth.value == 0
+
+    def test_cancel_for_reentry_during_unsubscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('outer')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        calls = self._reenter_on(pubsub, 'unsubscribe', consumer, 'inner')
+        in_flight = []
+        real = pubsub.unsubscribe
+
+        def unsubscribe(*args):
+            assert not in_flight, 'nested UNSUBSCRIBE'
+            in_flight.append(args)
+            try:
+                return real(*args)
+            finally:
+                in_flight.pop()
+
+        pubsub.unsubscribe = unsubscribe
+        consumer.cancel_for('outer')
+
+        assert calls == [
+            (b'celery-task-meta-outer',), (b'celery-task-meta-inner',)]
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_reentry_during_reconnect_subscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        fresh = consumer.backend.client.pubsub()
+        unsubscribes_in_flight = []
+
+        def subscribe(*args):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(fresh.unsubscribe.call_count)
+            fresh._subscribed_to.update(args)
+
+        fresh.subscribe = subscribe
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        consumer._reconnect_pubsub()
+
+        assert unsubscribes_in_flight == [0]
+        fresh.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_reentry_during_drain_is_deferred(self):
+        # redis-py can reconnect and re-subscribe from inside can_read() or
+        # get_message(), so a finalizer running there must not unsubscribe.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        unsubscribes_in_flight = []
+
+        def get_message(timeout=None):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(pubsub.unsubscribe.call_count)
+
+        pubsub.get_message = get_message
+        consumer.drain_events(timeout=0)
+
+        assert unsubscribes_in_flight == [0]
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_in_nested_locked_is_sent_by_outermost(self):
+        # an inner _locked() exiting inside an outer one (e.g.
+        # _reconnect_pubsub() during _drain_one()) must not unsubscribe
+        # while the outer operation is still using the connection.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        with consumer._locked():
+            with consumer._locked():
+                consumer.cancel_for('inner')
+            pubsub.unsubscribe.assert_not_called()
+            assert consumer._pending_unsubscribe == {
+                b'celery-task-meta-inner'}
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_reconnect_does_not_resubscribe_ready_tasks(self):
+        meta = {'task_id': 'done', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('done')
+        consumer.backend._set_with_state(
+            b'celery-task-meta-done', json.dumps(meta), states.SUCCESS)
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        consumer._reconnect_pubsub()
+        fresh.subscribe.assert_called_once_with(b'celery-task-meta-initial')
+        # never subscribed on the new connection, so nothing to unsubscribe
+        fresh.unsubscribe.assert_not_called()
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_resubscribe_after_reconnect_before_flush(self):
+        # A task that finished while disconnected is subscribed again before
+        # the queued cancels are flushed: it must really be subscribed on
+        # the new connection, or its result never arrives.
+        meta = {'task_id': 'again', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('again')
+        consumer.backend._set_with_state(
+            b'celery-task-meta-again', json.dumps(meta), states.SUCCESS)
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        with consumer._locked():
+            consumer._reconnect_pubsub()
+            consumer.backend._set_with_state(
+                b'celery-task-meta-again', json.dumps(
+                    {'task_id': 'again', 'status': states.PENDING}),
+                states.PENDING)
+            consumer.consume_from('again')
+        assert fresh.subscribe.call_args_list == [
+            call(b'celery-task-meta-initial'),
+            call(b'celery-task-meta-again'),
+        ]
+        fresh.unsubscribe.assert_not_called()
+        assert b'celery-task-meta-again' in fresh._subscribed_to
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-again'}
+
+    @patch('celery.backends.redis.logger')
+    def test_locked_error_is_not_replaced_by_failing_unsubscribe(self, logger):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(ValueError, match='outer'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+                raise ValueError('outer')
+        logger.exception.assert_called_once_with(
+            'Failed to unsubscribe pending results')
+        assert consumer._lock_depth.value == 0
+
+    def test_locked_failing_unsubscribe_propagates_on_success(self):
+        # e.g. the retry limit was exceeded and Celery must be restarted.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(RuntimeError, match='dead'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+        assert consumer._lock_depth.value == 0
+
+    def test_lock_depth_is_reset_when_subscribe_fails(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        self._reenter_on(consumer._pubsub, 'subscribe', consumer, 'inner',
+                         error=ValueError('boom'))
+
+        with pytest.raises(ValueError, match='boom'):
+            consumer.consume_from('outer')
+        assert consumer._lock_depth.value == 0
+        # the cancel deferred during the failed SUBSCRIBE is not lost.
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_from_other_thread_is_not_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('other')
+        # this thread holding the lock must not make other threads defer:
+        # they only defer when the lock is busy.
+        consumer._lock_depth.value = 1
+        try:
+            thread = threading.Thread(
+                target=consumer.cancel_for, args=('other',))
+            thread.start()
+            thread.join()
+        finally:
+            consumer._lock_depth.value = 0
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-other')
+        assert not consumer._pending_unsubscribe
+
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork_resets_lock_depth(self, parent_method):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._lock_depth.value = 1
+        consumer.on_after_fork()
+        assert consumer._lock_depth.value == 0
+
     def test_cancel_for_never_subscribed_is_noop(self):
         consumer = self.get_consumer()
         consumer.start('initial')
