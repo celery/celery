@@ -1,7 +1,10 @@
 """Redis result store backend."""
+import select
+import selectors
 import threading
 import time
 import warnings
+from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -80,6 +83,29 @@ E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
 logger = get_logger(__name__)
 
+_NO_SOCKET = object()
+
+
+class _LockDepth(threading.local):
+    #: how many ``_locked()`` blocks this thread is inside.
+    value = 0
+
+
+def _socket_readable(sock, timeout):
+    try:
+        # looked up per call so gevent/eventlet patching after import applies
+        poll = getattr(select, 'poll', None)
+        if poll is not None:
+            poller = poll()
+            poller.register(sock, select.POLLIN)
+            return bool(poller.poll(None if timeout is None else timeout * 1000))
+        with selectors.DefaultSelector() as selector:
+            selector.register(sock, selectors.EVENT_READ)
+            return bool(selector.select(timeout))
+    except (OSError, ValueError):
+        # closed or replaced while we were not holding the lock
+        return True
+
 
 class ResultConsumer(BaseResultConsumer):
     _pubsub = None
@@ -95,15 +121,25 @@ class ResultConsumer(BaseResultConsumer):
         # unsubscribe can be called from any thread or greenlet (e.g. from
         # AsyncResult.__del__ during garbage collection) while the drainer
         # is polling the same socket.  Serialize all pubsub operations.
+        self._reset_sync()
+
+    def _reset_sync(self):
         self._pubsub_lock = threading.RLock()
+        # keys whose unsubscribe is left to the current lock holder, see
+        # cancel_for().
+        self._pending_unsubscribe = set()
+        # only one thread waits on the socket, the others wait for it here.
+        self._pubsub_read = threading.Condition(self._pubsub_lock)
+        self._socket_waiter = False
+        self._lock_depth = _LockDepth()
 
     def on_after_fork(self):
         # the lock may have been held by a thread that did not survive
         # the fork, so the child starts with a fresh one.
-        self._pubsub_lock = threading.RLock()
+        self._reset_sync()
         try:
             self.backend.client.connection_pool.reset()
-            with self._pubsub_lock:
+            with self._locked():
                 if self._pubsub is not None:
                     self._pubsub.close()
         except KeyError as e:
@@ -111,7 +147,7 @@ class ResultConsumer(BaseResultConsumer):
         super().on_after_fork()
 
     def _reconnect_pubsub(self):
-        with self._pubsub_lock:
+        with self._locked():
             self._pubsub = None
             self.backend.client.connection_pool.reset()
             # task state might have changed when the connection was down so we
@@ -124,7 +160,13 @@ class ResultConsumer(BaseResultConsumer):
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
-            # subscribed_to maybe empty after on_state_change
+            # Cancels queued so far (e.g. by on_state_change above) are only
+            # sent when the lock is released.  The new connection never
+            # subscribed to those channels, so just forget them: left in
+            # subscribed_to, a later consume_from() of the same task would
+            # think it is subscribed and never get its result.
+            self.subscribed_to -= self._pending_unsubscribe
+            self._pending_unsubscribe.clear()
             if self.subscribed_to:
                 self._pubsub.subscribe(*self.subscribed_to)
             else:
@@ -158,7 +200,7 @@ class ResultConsumer(BaseResultConsumer):
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
-        with self._pubsub_lock:
+        with self._locked():
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
@@ -187,43 +229,144 @@ class ResultConsumer(BaseResultConsumer):
                         pending_messages.total -= len(buf)
 
     def stop(self):
-        with self._pubsub_lock:
+        with self._locked():
             if self._pubsub is not None:
                 self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        with self._pubsub_lock:
-            if self._pubsub:
-                with self.reconnect_on_error():
-                    message = self._pubsub.get_message(timeout=timeout)
-                    if message and message['type'] == 'message':
-                        self.on_state_change(
-                            self._decode_result(message['data']), message)
-                return
-        if timeout:
-            time.sleep(timeout)
+        # Only hold the lock to read.  Waiting for the socket under it would
+        # starve subscribe/unsubscribe callers for the whole poll interval,
+        # and forever under gevent, whose lock does not hand off on release.
+        with self._locked():
+            pubsub = self._pubsub
+            if pubsub is not None:
+                if self._socket_waiter:
+                    # a message it reads may be ours, and then the socket
+                    # would stay quiet for us until the timeout.
+                    self._pubsub_read.wait(1.0 if timeout is None else timeout)
+                    return
+                if self._drain_one(pubsub, timeout):
+                    return
+                self._socket_waiter = True
+        if pubsub is None:
+            if timeout:
+                time.sleep(timeout)
+            return
+        readable = False
+        try:
+            readable = self._wait_for_pubsub(pubsub, timeout)
+        finally:
+            with self._locked():
+                self._socket_waiter = False
+                try:
+                    if readable and self._pubsub is pubsub:
+                        self._drain_one(pubsub, timeout)
+                finally:
+                    self._pubsub_read.notify_all()
+
+    def _drain_one(self, pubsub, timeout):
+        with self.reconnect_on_error():
+            connection = pubsub.connection
+            # checked before waiting on the raw socket: data already in the
+            # parser buffer, or decrypted by TLS, is invisible to poll().
+            if not (pubsub.subscribed and connection is not None and
+                    connection.can_read(timeout=0)):
+                return False
+            message = pubsub.get_message(timeout=timeout)
+            if message and message['type'] == 'message':
+                self.on_state_change(
+                    self._decode_result(message['data']), message)
+        return True
+
+    def _wait_for_pubsub(self, pubsub, timeout):
+        # Runs without the lock, so it must not touch the connection's
+        # parser or buffer; it only waits on the raw socket.
+        # Capped: poll() is not woken when a reconnect closes this socket.
+        wait = 1.0 if timeout is None else min(timeout, 1.0)
+        if not pubsub.subscribed:
+            return pubsub.subscribed_event.wait(wait)
+        # _sock is private redis-py API.  None means disconnected, so report
+        # readable and let the locked can_read() reconnect.  Should it ever
+        # go away, fall back to checking once per interval.
+        sock = getattr(pubsub.connection, '_sock', _NO_SOCKET)
+        if sock is _NO_SOCKET:
+            time.sleep(wait)
+            return True
+        if sock is None:
+            return True
+        return _socket_readable(sock, wait)
 
     def consume_from(self, task_id):
-        with self._pubsub_lock:
+        with self._locked():
             if self._pubsub is None:
                 return self.start(task_id)
             self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
+        self._pending_unsubscribe.discard(key)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
             with self.reconnect_on_error():
                 self._pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
-        key = self._get_key_for_task(task_id)
-        with self._pubsub_lock:
-            if key in self.subscribed_to:
-                self.subscribed_to.discard(key)
-                if self._pubsub:
-                    with self.reconnect_on_error():
-                        self._pubsub.unsubscribe(key)
+        # Never blocks: this runs from AsyncResult.__del__, where a gevent
+        # greenlet cannot switch away.  If the lock is busy, or this thread
+        # already holds it, the holder unsubscribes on the way out.
+        self._pending_unsubscribe.add(self._get_key_for_task(task_id))
+        self._flush_pending_unsubscribe()
+
+    def _flush_pending_unsubscribe(self):
+        if self._lock_depth.value:
+            # This thread is inside a pubsub operation, e.g. the garbage
+            # collector ran AsyncResult.__del__ in the middle of a subscribe
+            # or get_message().  The lock is reentrant and would let us in,
+            # but the connection must only see one operation at a time (and
+            # before 6.4 redis-py's own pubsub lock is not reentrant, so a
+            # nested command deadlocks).  The outermost _locked() flushes on
+            # exit.
+            return
+        # Re-check after every release: a key added while we held the lock
+        # may have missed its own acquire attempt.
+        while self._pending_unsubscribe and \
+                self._pubsub_lock.acquire(blocking=False):
+            self._lock_depth.value += 1
+            try:
+                while self._pending_unsubscribe:
+                    key = self._pending_unsubscribe.pop()
+                    if key in self.subscribed_to:
+                        self.subscribed_to.discard(key)
+                        if self._pubsub:
+                            with self.reconnect_on_error():
+                                self._pubsub.unsubscribe(key)
+            finally:
+                self._lock_depth.value -= 1
+                self._pubsub_lock.release()
+
+    @contextmanager
+    def _locked(self):
+        # Every pubsub operation runs in here, one at a time: the lock keeps
+        # other threads out, and the depth makes cancel_for() calls from this
+        # thread (e.g. AsyncResult.__del__ run by the garbage collector)
+        # wait until the outermost block is done with the connection.
+        depth = self._lock_depth
+        try:
+            with self._pubsub_lock:
+                depth.value += 1
+                try:
+                    yield
+                finally:
+                    depth.value -= 1
+        except BaseException:
+            # The pending keys may belong to other results, so failing to
+            # unsubscribe them must not replace this operation's own error.
+            try:
+                self._flush_pending_unsubscribe()
+            except Exception:
+                logger.exception('Failed to unsubscribe pending results')
+            raise
+        self._flush_pending_unsubscribe()
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
