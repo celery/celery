@@ -807,7 +807,22 @@ Sequence.register(Messagebuffer)
 
 
 class BufferMap(OrderedDict, Evictable):
-    """Map of buffers."""
+    """Map of buffers.
+
+    Used by ``celery.backends.base.BaseBackend._pending_messages`` to
+    hold result messages not yet consumed by the async result poller.
+
+    Two eviction levels apply:
+
+    - ``maxsize``: total number of buffered messages across all keys
+      (``total`` is kept in sync by ``put``/``extend``/``take``). When
+      exceeded, the least recently used keys are evicted.
+    - ``bufmaxsize``: each key's buffer drops its oldest messages
+      beyond this cap. ``put`` always enforces it; ``extend`` (also
+      used for constructor seeding) performs a single eviction pass of
+      at most 100 items per call, so one very large ``it`` can leave a
+      buffer above the cap.
+    """
 
     Buffer = Messagebuffer
     Empty = Empty
