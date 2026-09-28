@@ -365,7 +365,7 @@ Transports and Backends
 :``celery[sqs]``:
     for using Amazon SQS as a message transport.
 
-:``celery[tblib``]:
+:``celery[tblib]``:
     for using the ``task_remote_tracebacks`` feature.
 
 :``celery[memcache]``:

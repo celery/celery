@@ -130,3 +130,78 @@ def test_pubsub_subscribe_churn_while_draining(app):
         channel for channel in get_active_redis_channels()
         if channel.startswith(b'celery-task-meta-')]
     assert meta_channels == []
+
+
+@pytest.mark.celery(
+    result_serializer='json',
+    accept_content=['json'],
+)
+def test_pubsub_reentrant_cancel_from_finalizer(app):
+    # The garbage collector can run AsyncResult.__del__ -> cancel_for while
+    # this thread is still inside a SUBSCRIBE or UNSUBSCRIBE on the shared
+    # pubsub connection.  The nested command must wait until the outer one
+    # has returned, and every channel must still be released on the server.
+    url = app.conf.result_backend
+    if not url.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    consumer = app.backend.result_consumer
+    initial = uuid()
+    consumer.start(initial)
+    pubsub = consumer._pubsub
+    finalized = [uuid() for _ in range(6)]
+    for task_id in finalized:
+        consumer.consume_from(task_id)
+
+    in_flight = []
+    nested = []
+    pending = list(finalized)
+
+    def reentrant(command):
+        def wrapper(*args):
+            if in_flight:
+                nested.append((command, args))
+            in_flight.append(command)
+            try:
+                result = command(*args)
+                # "finalize" another result while the command is in flight
+                if pending:
+                    consumer.cancel_for(pending.pop())
+                return result
+            finally:
+                in_flight.pop()
+        return wrapper
+
+    pubsub.subscribe = reentrant(pubsub.subscribe)
+    pubsub.unsubscribe = reentrant(pubsub.unsubscribe)
+
+    errors = []
+
+    def run():
+        try:
+            outer = uuid()
+            consumer.consume_from(outer)
+            consumer.cancel_for(outer)
+        except Exception as exc:
+            errors.append(exc)
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    thread.join(timeout=30)
+
+    try:
+        assert not thread.is_alive(), 'pub/sub connection deadlocked'
+        assert not errors
+        assert not nested
+        assert not pending
+        assert consumer.subscribed_to == {
+            consumer._get_key_for_task(initial)}
+    finally:
+        del pubsub.subscribe, pubsub.unsubscribe
+        consumer.cancel_for(initial)
+        consumer.stop()
+
+    meta_channels = [
+        channel for channel in get_active_redis_channels()
+        if channel.startswith(b'celery-task-meta-')]
+    assert meta_channels == []
