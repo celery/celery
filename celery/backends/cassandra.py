@@ -173,6 +173,15 @@ class CassandraBackend(BaseBackend):
             session = self._session
             write_stmt = self._write_stmt
             read_stmt = self._read_stmt
+            # Whether *this* call is the one building the Cluster, as
+            # opposed to reusing one a previous call already published.
+            # Only a Cluster we create here, and for which we never obtain
+            # a usable session, is ours to tear down on failure: a session
+            # published earlier (or one we manage to connect further down)
+            # may already be in use by other threads through the lock-free
+            # fast path in _is_ready(), so resetting it here would pull it
+            # out from under them.
+            created_here = session is None
 
             if session is None:
                 # using either 'servers' or 'bundle_path' here:
@@ -223,6 +232,27 @@ class CassandraBackend(BaseBackend):
                     session.execute(make_stmt)
                 except cassandra.AlreadyExists:
                     pass
+                except Exception:
+                    # CREATE failed for some other reason: a timeout, or
+                    # (a real production setup) a worker role that can
+                    # read/write but was never granted CREATE, which raises
+                    # Unauthorized on every write. We haven't verified how
+                    # Cassandra's Unauthorized for a missing CREATE grant
+                    # differs from other authorization failures, so we
+                    # don't gamble on treating it like AlreadyExists.
+                    # Instead we publish the session and statements we
+                    # already hold a good connection for -- readers, and
+                    # writers that skip CREATE next time, keep working --
+                    # and leave _table_created False so the next writer
+                    # retries CREATE instead of assuming it succeeded. This
+                    # also means a Cluster we just built is no longer
+                    # "created_here" as far as the outer handler is
+                    # concerned: it's been published, not discarded.
+                    self._write_stmt = write_stmt
+                    self._read_stmt = read_stmt
+                    self._session = session
+                    self._table_created = False
+                    raise
                 table_created = True
 
             # Other threads check _session and _table_created without
@@ -233,15 +263,18 @@ class CassandraBackend(BaseBackend):
             self._session = session
             self._table_created = table_created
 
-        except cassandra.OperationTimedOut:
-            # a heavily loaded or gone Cassandra cluster failed to respond.
-            # leave this class in a consistent state
-            if self._cluster is not None:
+        except Exception:
+            # A Cluster we created in this call, and for which we never
+            # published a usable session (e.g. Cluster.connect() itself
+            # timed out or otherwise failed), has nothing worth keeping:
+            # shut it down so the next call builds a fresh one instead of
+            # leaking this one. A Cluster whose session we did publish
+            # above, or one that was already published by an earlier
+            # call, is left alone.
+            if created_here and self._session is None and \
+                    self._cluster is not None:
                 self._cluster.shutdown()     # also shuts down _session
-
-            self._cluster = None
-            self._session = None
-            self._table_created = False
+                self._cluster = None
             raise   # we did fail after all - reraise
         finally:
             self._lock.release()
