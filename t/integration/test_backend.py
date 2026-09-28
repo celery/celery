@@ -40,18 +40,3 @@ class test_AzureBlockBlobBackend:
         assert backend.get(b"doesNotExist") is None
 
 
-class test_pending_message_buffer:
-    """The async result poller parks per-task metas in
-    ``backend._pending_messages`` (a ``BufferMap``) between poll iterations,
-    and the poller consumes them via ``take()``. Result delivery through the
-    poller is covered end-to-end by the canvas integration suite."""
-
-    def test_high_volume_single_key_does_not_evict_other_keys(self, manager):
-        # Regression for the BufferMap.total accounting fixed in #10705:
-        # on main, 1500 puts to one key pushed `total` to 1500 while the
-        # buffer held 1000, evicting other keys' pending messages early.
-        backend = manager.app.backend
-        for i in range(1500):
-            backend._pending_messages.put('test-busy-key', {'seq': i})
-        backend._pending_messages.put('test-other-key', {'keep': True})
-        assert backend._pending_messages.take('test-other-key') is not None

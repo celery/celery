@@ -637,6 +637,18 @@ class test_BufferMap:
         b = BufferMap(4, {'a': list(range(1000))})
         self.assert_size_and_first(b, 4, 996)
 
+    def test_high_volume_single_key_keeps_total_and_other_keys(self):
+        # Regression for the total accounting fixed in #10705: on main, 1500
+        # puts to one key pushed `total` to 1500 while the buffer held 1000,
+        # evicting other keys' pending messages early.
+        b = BufferMap(8192, bufmaxsize=1000)
+        for i in range(1500):
+            b.put('test-busy-key', i)
+        b.put('test-other-key', 'keep')
+        assert b.total == 1001
+        assert len(b['test-busy-key']) == 1000
+        assert b.take('test-other-key') == 'keep'
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
