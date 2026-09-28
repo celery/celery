@@ -43,11 +43,8 @@ class test_AzureBlockBlobBackend:
 class test_pending_message_buffer:
     """The async result poller parks per-task metas in
     ``backend._pending_messages`` (a ``BufferMap``) between poll iterations,
-    and ``AsyncResult.get()`` consumes them via ``take()``."""
-
-    def test_get_delivers_result_landing_between_polls(self, manager):
-        result = manager.app.signature('tasks.add', args=[4, 40]).apply_async()
-        assert result.get(timeout=60) == 44
+    and the poller consumes them via ``take()``. Result delivery through the
+    poller is covered end-to-end by the canvas integration suite."""
 
     def test_high_volume_single_key_does_not_evict_other_keys(self, manager):
         # Regression for the BufferMap.total accounting fixed in #10705:
