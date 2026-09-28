@@ -558,9 +558,13 @@ control node to have connected, or the first probe kills a healthy pod:
       periodSeconds: 60
       failureThreshold: 5
 
-With those numbers a wedged beat is restarted after about five
-minutes, while a broker restart has to last that long before it costs
-you anything.
+With those numbers a wedged beat is restarted about fifteen minutes
+after its last tick: ten waiting for
+:setting:`beat_remote_control_max_tick_age` to elapse, which defaults
+to twice the default scheduler's five minute loop interval, then five
+more for the probe to fail often enough. Lower the setting if that is
+slower than you want to find out. A broker outage, by contrast, only
+costs you a restart if it outlasts those last five minutes.
 
 Add a readiness probe as well if you want the state surfaced in
 ``kubectl`` and rollouts gated on beat coming up:
