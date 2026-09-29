@@ -620,6 +620,37 @@ class test_task_retries(TasksCase):
         self.autoretry_task.apply((1, 0))
         assert self.autoretry_task.iterations == 6
 
+    def test_autoretry_coroutine_task(self):
+        """A synchronous wrapper would never see the exception (#6552)."""
+        # Eager, so there is no pool with a loop: let the tracer fall back.
+        self.app.conf.worker_resolve_coroutines = True
+
+        @self.app.task(bind=True, shared=False,
+                       autoretry_for=(ZeroDivisionError,),
+                       retry_backoff=False, retry_jitter=False, max_retries=2)
+        async def autoretry_async_task(self_, x, y):
+            self_.iterations += 1
+            return x / y
+
+        autoretry_async_task.iterations = 0
+        autoretry_async_task.apply((1, 0))
+        assert autoretry_async_task.iterations == 3
+
+    def test_autoretry_coroutine_task_succeeds_after_retrying(self):
+        self.app.conf.worker_resolve_coroutines = True
+
+        @self.app.task(bind=True, shared=False,
+                       autoretry_for=(ZeroDivisionError,),
+                       retry_backoff=False, retry_jitter=False, max_retries=3)
+        async def autoretry_async_task(self_, divisors):
+            self_.iterations += 1
+            return 1 / divisors[self_.request.retries]
+
+        autoretry_async_task.iterations = 0
+        result = autoretry_async_task.apply(([0, 0, 4],))
+        assert autoretry_async_task.iterations == 3
+        assert result.get() == 0.25
+
     def test_autoretry_arith(self):
         self.autoretry_arith_task.max_retries = 3
         self.autoretry_arith_task.iterations = 0

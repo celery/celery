@@ -166,6 +166,7 @@ class test_get_available_pool_names:
             'eventlet',
             'gevent',
             'solo',
+            'asyncio',
             'processes',
             'custom',
         )
@@ -179,6 +180,7 @@ class test_get_available_pool_names:
             'eventlet',
             'gevent',
             'solo',
+            'asyncio',
             'processes',
             'threads',
             'custom',

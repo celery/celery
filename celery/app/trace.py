@@ -8,6 +8,7 @@ import os
 import sys
 import time
 from collections import namedtuple
+from inspect import iscoroutine
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
@@ -22,6 +23,7 @@ from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
+from celery.utils.coroutines import resolve_coroutine
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import mro_lookup
@@ -383,6 +385,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
 
     hostname = hostname or gethostname()
     inherit_parent_priority = app.conf.task_inherit_parent_priority
+    # Eager execution always resolves: there is no worker, so no pool can
+    # ever own a loop for it, and refusing would break every test suite that
+    # runs a coroutine task under task_always_eager.
+    resolve_coroutines = eager or app.conf.worker_resolve_coroutines
 
     loader_task_init = loader.on_task_init
     loader_cleanup = loader.on_process_cleanup
@@ -583,6 +589,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         task_before_start(uuid, args, kwargs)
 
                     R = retval = fun(*args, **kwargs)
+                    if iscoroutine(R):
+                        # ``async def`` task body: the call above only built
+                        # the coroutine, the execution pool owns the event
+                        # loop that runs it.  Resolved inside this ``try`` so
+                        # that Retry/Reject/Ignore raised by the coroutine are
+                        # handled exactly like their synchronous counterparts.
+                        R = retval = resolve_coroutine(R, resolve_coroutines)
                     state = SUCCESS
                 except Reject as exc:
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)

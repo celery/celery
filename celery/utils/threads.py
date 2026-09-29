@@ -6,28 +6,98 @@ import threading
 import traceback
 import types
 from contextlib import contextmanager
+from contextvars import ContextVar
 from threading import TIMEOUT_MAX as THREAD_TIMEOUT_MAX
 
 from celery.local import Proxy
 
 try:
-    from greenlet import getcurrent as get_ident
+    from greenlet import getcurrent as _get_current_ident
 except ImportError:
     try:
-        from _thread import get_ident
+        from _thread import get_ident as _get_current_ident
     except ImportError:
         try:
-            from thread import get_ident
+            from thread import get_ident as _get_current_ident
         except ImportError:
             try:
-                from _dummy_thread import get_ident
+                from _dummy_thread import get_ident as _get_current_ident
             except ImportError:
-                from dummy_thread import get_ident
+                from dummy_thread import get_ident as _get_current_ident
+
+#: Overrides the identity below when set.  A :class:`~contextvars.ContextVar`
+#: rather than anything thread-based on purpose: asyncio copies the context
+#: into every task it creates, so a value set inside one coroutine is invisible
+#: to the others sharing its thread, which is exactly the isolation
+#: :class:`Local` needs there.
+_local_ident = ContextVar('celery_local_ident', default=None)
+#: Bound once: this is called on every ``self.request`` access and every
+#: LocalStack operation, so the attribute lookup is worth saving.
+_get_local_ident = _local_ident.get
+
+
+def get_ident():
+    """Return the identity of the current unit of execution.
+
+    Usually the current thread -- or the current greenlet, when eventlet or
+    gevent has been imported, because there many units of execution share one
+    thread and each still needs its own :class:`Local` storage.
+
+    Coroutines on an event loop are the same situation, and an execution pool
+    that runs them (see :mod:`celery.concurrency.asyncio`) gives each one its
+    own identity with :func:`use_local_ident`.
+    """
+    ident = _get_local_ident()
+    if ident is not None:
+        return ident
+    return _get_current_ident()
+
+
+def use_local_ident(ident):
+    """Give the current context its own :class:`Local` storage.
+
+    Returns a token to hand back to :func:`reset_local_ident`.
+    """
+    return _local_ident.set(ident)
+
+
+def reset_local_ident(token):
+    """Undo :func:`use_local_ident`.
+
+    Tolerates a token from another context: an abandoned coroutine's
+    ``finally`` runs when the interpreter collects its frame, which is
+    outside any context it ever ran in -- and the context it set the value
+    in is gone by then anyway.
+    """
+    try:
+        _local_ident.reset(token)
+    except ValueError:
+        pass
+
+
+def release_local_ident(ident, *stacks):
+    """Drop whatever storage ``ident`` accumulated in these stacks.
+
+    Normally a :class:`_LocalStack` releases an identity's storage when the
+    last item is popped, which is all the cleanup anything needs.  This is
+    for the one case where that pop can never happen: a coroutine abandoned
+    mid-flight, whose ``finally`` will not run.
+    """
+    for stack in stacks:
+        local = getattr(stack, '_local', None)
+        if local is None:
+            continue
+        try:
+            local.__storage__.pop(ident, None)
+        except AttributeError:  # pragma: no cover
+            pass
 
 
 __all__ = (
     'bgThread', 'Local', 'LocalStack', 'LocalManager',
-    'get_ident', 'default_socket_timeout', 'bound_open_broker_sockets',
+    'get_ident', 'use_local_ident', 'reset_local_ident',
+    'release_local_ident',
+    'default_socket_timeout', 'bound_open_broker_sockets',
 )
 
 USE_FAST_LOCALS = os.environ.get('USE_FAST_LOCALS')

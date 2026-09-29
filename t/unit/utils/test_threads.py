@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from celery.utils import threads
 from celery.utils.threads import (Local, LocalManager, _FastLocalStack, _LocalStack, bgThread,
                                   bound_open_broker_sockets, default_socket_timeout)
 from t.unit import conftest
@@ -243,3 +244,41 @@ class test_LocalManager:
             release.assert_called_with(loc)
 
         assert repr(x)
+
+
+class test_local_ident:
+    """`get_ident` can be overridden per context, not just per thread."""
+
+    def test_plain_thread_is_unaffected(self):
+        assert threads.get_ident() == threads._get_current_ident()
+
+    def test_override_and_reset(self):
+        marker = object()
+        token = threads.use_local_ident(marker)
+        try:
+            assert threads.get_ident() is marker
+        finally:
+            threads.reset_local_ident(token)
+        assert threads.get_ident() == threads._get_current_ident()
+
+    def test_each_coroutine_gets_its_own(self):
+        import asyncio
+
+        idents = []
+
+        async def probe():
+            token = threads.use_local_ident(object())
+            try:
+                await asyncio.sleep(0)
+                idents.append(threads.get_ident())
+            finally:
+                threads.reset_local_ident(token)
+
+        async def main():
+            await asyncio.gather(probe(), probe(), probe())
+            # The overrides stayed inside their tasks.
+            return threads.get_ident()
+
+        outer = asyncio.run(main())
+        assert len({id(ident) for ident in idents}) == 3
+        assert outer == threads._get_current_ident()

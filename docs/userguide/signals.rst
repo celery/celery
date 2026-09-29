@@ -615,6 +615,9 @@ Provides arguments:
 
 Dispatched in all pool child processes when they start.
 
+The ``solo`` and ``asyncio`` pools have no child processes and send it once,
+in the worker process itself, when the pool starts.
+
 Note that handlers attached to this signal mustn't be blocking
 for more than 4 seconds, or the process will be killed assuming
 it failed to start.
@@ -625,6 +628,11 @@ it failed to start.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Dispatched in all pool child processes just before they exit.
+
+The ``asyncio`` pool sends it once when the pool stops, while its event loop
+is still running, so that a handler can close resources it opened in
+:signal:`worker_process_init`.  ``exitcode`` is :const:`None` there, as no
+child process is exiting.
 
 Note: There's no guarantee that this signal will be dispatched,
 similarly to :keyword:`finally` blocks it's impossible to guarantee that

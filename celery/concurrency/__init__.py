@@ -13,6 +13,7 @@ ALIASES = {
     'eventlet': 'celery.concurrency.eventlet:TaskPool',
     'gevent': 'celery.concurrency.gevent:TaskPool',
     'solo': 'celery.concurrency.solo:TaskPool',
+    'asyncio': 'celery.concurrency.asyncio:TaskPool',
     'processes': 'celery.concurrency.prefork:TaskPool',  # XXX compat alias
 }
 
