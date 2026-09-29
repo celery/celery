@@ -1224,7 +1224,8 @@ class test_BeatPidbox:
         # consumer loop, not the guard, so keep it out of their
         # connection sequence -- otherwise it silently eats the first
         # one and the test stops exercising what it claims to.
-        return patch.object(pb, 'supports_fanout', return_value=True)
+        return patch.object(pb, 'fanout_support',
+                            return_value=(True, 'memory'))
 
     def _message(self):
         # handle_message reads headers['clock'] before it does anything
@@ -1270,6 +1271,19 @@ class test_BeatPidbox:
             pb.node.reply.assert_not_called()
             warning.assert_not_called()
             error.assert_not_called()   # not "passed because it threw"
+
+    def test_declines_a_destination_less_broadcast_when_stale(self):
+        # A plain `celery inspect ping` carries no destination, and
+        # kombu dispatches those to every node, so this is the shape the
+        # settings docs describe as logging a warning per probe.
+        pb = self._stale_pidbox()
+        with patch('celery.beat.warning') as warning:
+            pb.on_message({'method': 'ping', 'arguments': {},
+                           'reply_to': {'exchange': 'r',
+                                        'routing_key': 'r'}},
+                          self._message())
+        pb.node.reply.assert_not_called()
+        warning.assert_called_once()
 
     def test_replies_to_a_broadcast_addressed_to_it(self):
         pb, service = self.get_pidbox()
@@ -1345,23 +1359,38 @@ class test_BeatPidbox:
         # loop cannot tell that apart from a dropped connection, so it
         # would log an error every retry_interval forever.
         pb, _ = self.get_pidbox()
-        with patch.object(pb, 'supports_fanout', return_value=False):
+        with patch.object(pb, 'fanout_support',
+                          return_value=(False, 'sqs')):
             with patch('celery.beat.warning') as warning:
                 pb.start()
         assert pb.thread is None
         warning.assert_called_once()
+        assert warning.call_args[0][1] == 'sqs'
 
-    def test_supports_fanout_asks_the_transport(self):
+    def test_fanout_support_asks_the_transport(self):
         pb, _ = self.get_pidbox()
         with patch.object(self.app, 'connection_for_read') as cfr:
             cfr.return_value.supports_exchange_type.return_value = False
-            assert pb.supports_fanout() is False
+            cfr.return_value.transport_cls = 'sqs'
+            assert pb.fanout_support() == (False, 'sqs')
         cfr.return_value.supports_exchange_type.assert_called_once_with(
             'fanout')
 
-    def test_supports_fanout_on_a_real_transport(self):
+    def test_fanout_support_opens_only_one_connection(self):
+        # The transport name used in the warning comes back with the
+        # answer, rather than from a second throwaway Connection.
         pb, _ = self.get_pidbox()
-        assert pb.supports_fanout() is True   # memory:// has fanout
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.supports_exchange_type.return_value = False
+            pb.start()
+        assert cfr.call_count == 1
+        cfr.return_value.release.assert_called_once_with()
+
+    def test_fanout_support_on_a_real_transport(self):
+        pb, _ = self.get_pidbox()
+        supported, transport = pb.fanout_support()
+        assert supported is True          # memory:// has fanout
+        assert transport == 'memory'
 
     def test_start_is_idempotent_while_running(self):
         pb, _ = self.get_pidbox()
@@ -1467,13 +1496,127 @@ class test_BeatPidbox:
         assert cfr.call_count >= 2
         assert pb.thread is None
 
+    def test_first_connect_uses_the_startup_retry_setting(self):
+        # The worker fails fast at startup when asked to; beat's control
+        # thread should not quietly retry instead.
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_retry_on_startup = False
+        self.app.conf.broker_connection_retry = True
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 0, callback=pb._abort_if_stopping)
+
+    def test_first_connect_falls_back_when_startup_setting_unset(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_retry_on_startup = None
+        self.app.conf.broker_connection_retry = True
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()
+        cfr.return_value.ensure_connection.assert_called_once_with(
+            pb._error_handler, 7, callback=pb._abort_if_stopping)
+
+    def test_only_the_first_connect_is_a_startup_connect(self):
+        pb, _ = self.get_pidbox()
+        self.app.conf.broker_connection_retry_on_startup = False
+        self.app.conf.broker_connection_retry = True
+        self.app.conf.broker_connection_max_retries = 7
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            pb._connect()   # startup, so no retries
+            pb._connect()   # a reconnect, so the other setting applies
+        assert [c.args[1] for c
+                in cfr.return_value.ensure_connection.call_args_list] == [0, 7]
+
+    def test_start_makes_the_next_connect_a_startup_connect_again(self):
+        # A restarted consumer connects from scratch, so its first
+        # attempt is governed by the startup setting once more.  _loop
+        # is stubbed out so the thread doesn't consume the flag first.
+        pb, _ = self.get_pidbox()
+        pb.first_connection_attempt = False
+        with self._fanout(pb):
+            with patch.object(pb, '_loop'):
+                pb.start()
+                assert pb.first_connection_attempt is True
+                pb.stop()
+
     def test_connect_honours_broker_connection_max_retries(self):
         pb, _ = self.get_pidbox()
         self.app.conf.broker_connection_max_retries = 7
         with patch.object(self.app, 'connection_for_read') as cfr:
             pb._connect()
         cfr.return_value.ensure_connection.assert_called_once_with(
-            pb._error_handler, 7)
+            pb._error_handler, 7, callback=pb._abort_if_stopping)
+
+    def _give_up_message(self, **conf):
+        pb, _ = self.get_pidbox()
+        for key, value in conf.items():
+            setattr(self.app.conf, key, value)
+
+        def fail(*args, **kwargs):
+            # Safety net: fail the assertion below rather than spinning
+            # here forever if the give-up path ever regresses.
+            if cfr.call_count > 3:
+                pb._shutdown.set()
+            raise ConnectionResetError('down')
+
+        with patch.object(self.app, 'connection_for_read',
+                          side_effect=fail) as cfr:
+            with patch('celery.beat.error') as error:
+                pb._loop()
+        assert cfr.call_count == 1
+        return error.call_args[0][0]
+
+    def test_giving_up_says_the_same_thing_however_it_failed(self):
+        # There were three messages here, guessing from a retry counter
+        # whether a policy had run out, been disabled, or never applied.
+        # Two of the three guesses were wrong in cases nobody had tested
+        # (a bad broker URL, and max_retries=0 with retrying enabled),
+        # so the message no longer guesses and names the settings that
+        # could be responsible instead.
+        for conf in (
+            {'broker_connection_retry_on_startup': False},
+            {'broker_connection_retry_on_startup': None,
+             'broker_connection_retry': False},
+            {'broker_connection_retry_on_startup': None,
+             'broker_connection_retry': True},
+            {'broker_connection_retry': True,
+             'broker_connection_max_retries': 0},
+        ):
+            fmt = self._give_up_message(**conf)
+            assert 'could not connect to the broker' in fmt
+            for setting in ('broker_connection_retry',
+                            'broker_connection_retry_on_startup',
+                            'broker_connection_max_retries'):
+                assert setting in fmt
+
+    def test_stop_interrupts_a_connect_that_is_backing_off(self):
+        # kombu sleeps its whole backoff unless it is given a callback,
+        # so without one a stop() during an outage waited out the full
+        # join timeout and then warned that the thread would not die.
+        pb, _ = self.get_pidbox()
+        pb.join_timeout = 0.3
+
+        def backing_off(errback, max_retries, callback=None, **kwargs):
+            # Tolerate a missing callback instead of raising TypeError,
+            # so dropping it from _connect() shows up here as a thread
+            # that will not stop rather than an unrelated crash.
+            for _ in range(200):
+                if callback is not None:
+                    callback()      # kombu calls this once a second
+                sleep(0.01)
+            raise ConnectionResetError('never got there')
+
+        with patch.object(self.app, 'connection_for_read') as cfr:
+            cfr.return_value.ensure_connection.side_effect = backing_off
+            with self._fanout(pb):
+                pb.start()
+                sleep(0.1)
+                with patch('celery.beat.warning') as warning:
+                    pb.stop()
+        assert pb.thread is None        # it really did stop
+        warning.assert_not_called()     # so nothing to warn about
 
     def test_loop_stops_once_connect_retries_are_exhausted(self):
         # ensure_connection() applies the retry policy itself, so once it
@@ -1507,7 +1650,7 @@ class test_BeatPidbox:
         with patch.object(self.app, 'connection_for_read') as cfr:
             pb._connect()
         cfr.return_value.ensure_connection.assert_called_once_with(
-            pb._error_handler, 0)
+            pb._error_handler, 0, callback=pb._abort_if_stopping)
 
     def test_connect_releases_connection_it_could_not_establish(self):
         pb, _ = self.get_pidbox()

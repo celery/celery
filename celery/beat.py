@@ -649,6 +649,10 @@ def beat_nodename(hostname=None):
     return host_format(default_nodename(hostname, NODENAME_DEFAULT))
 
 
+class _PidboxStopping(Exception):
+    """Raised to unwind a connect retry once :meth:`stop` was called."""
+
+
 class _BeatNode(pidbox.Node):
     """Pidbox node that stays silent while the scheduler is stalled.
 
@@ -720,6 +724,10 @@ class BeatPidbox:
         )
         self.node.beat_pidbox = self
         self.thread = None
+        #: mirrors the worker: the first attempt is governed by
+        #: broker_connection_retry_on_startup, later ones by
+        #: broker_connection_retry.
+        self.first_connection_attempt = True
         self._shutdown = Event()
 
     @property
@@ -772,27 +780,35 @@ class BeatPidbox:
         except Exception as exc:  # pylint: disable=broad-except
             error('beat pidbox command error: %r', exc, exc_info=True)
 
-    def supports_fanout(self):
-        # Reads the transport's declared capabilities; no connection is
-        # opened, so this is safe to call before starting the thread.
+    def fanout_support(self):
+        """Return ``(supported, transport_name)`` for the read transport.
+
+        Reads the transport's declared capabilities, so no connection is
+        opened and this is safe to call before starting the thread.  The
+        name comes back with the answer rather than from a second
+        throwaway connection built to format the warning.
+        """
         connection = self.app.connection_for_read()
         try:
-            return connection.supports_exchange_type('fanout')
+            return (connection.supports_exchange_type('fanout'),
+                    connection.transport_cls)
         finally:
             ignore_errors(connection, connection.release)
 
     def start(self):
         if self.thread is not None and self.thread.is_alive():
             return
-        if not self.supports_fanout():
+        supported, transport = self.fanout_support()
+        if not supported:
             # Without fanout, node.listen() fails on every attempt.  The
             # reconnect loop cannot tell that apart from a connection
             # that dropped, so it would retry forever, once per
             # retry_interval, for the life of the process.
             warning('beat pidbox: the %s transport has no fanout '
                     'exchanges, so remote control is unavailable.',
-                    self.app.connection_for_read().transport_cls)
+                    transport)
             return
+        self.first_connection_attempt = True
         self._shutdown.clear()
         self.thread = Thread(
             target=self._loop, name='BeatPidbox', daemon=True)
@@ -812,7 +828,10 @@ class BeatPidbox:
             self.thread.join(timeout=self.join_timeout)
             if self.thread.is_alive():
                 warning('beat pidbox: consumer thread did not stop '
-                        'within %s seconds.', self.join_timeout)
+                        'within %s seconds, most likely waiting on a '
+                        'broker connection that is not answering. It '
+                        'is a daemon thread and will not hold up exit.',
+                        self.join_timeout)
             else:
                 self.thread = None
 
@@ -820,16 +839,43 @@ class BeatPidbox:
         error('beat pidbox: Connection error: %s. '
               'Trying again in %s seconds...', exc, interval)
 
+    def _abort_if_stopping(self):
+        # kombu calls this once a second while it backs off, which is
+        # the only chance to notice a stop() during a long retry.
+        # Without it a shutdown waits out the whole backoff and then
+        # warns that the thread would not die.
+        if self._shutdown.is_set():
+            raise _PidboxStopping()
+
+    def _connection_retry_setting(self):
+        """Name of the setting governing the attempt about to be made.
+
+        The worker governs its first connection with
+        :setting:`broker_connection_retry_on_startup` and everything
+        after it with :setting:`broker_connection_retry`, falling back
+        to the latter when the startup setting is unset.  Beat's control
+        thread follows the same rule, so that someone who asked to fail
+        fast at startup gets that here too.
+        """
+        conf = self.app.conf
+        if (self.first_connection_attempt
+                and conf.broker_connection_retry_on_startup is not None):
+            return 'broker_connection_retry_on_startup'
+        return 'broker_connection_retry'
+
     def _connect(self):
         # A dedicated connection: broker connections must not be
         # shared with the scheduler thread.
         conf = self.app.conf
+        retry_setting = self._connection_retry_setting()
+        self.first_connection_attempt = False
         connection = self.app.connection_for_read()
         try:
             connection.ensure_connection(
                 self._error_handler,
                 conf.broker_connection_max_retries
-                if conf.broker_connection_retry else 0,
+                if conf[retry_setting] else 0,
+                callback=self._abort_if_stopping,
             )
         except Exception:
             # never entered the context manager, so release it here
@@ -860,13 +906,23 @@ class BeatPidbox:
                 except Exception as exc:  # pylint: disable=broad-except
                     if shutdown.is_set():
                         break
-                    # ensure_connection() has already applied the
-                    # configured retry policy.  Looping back here would
+                    # ensure_connection() has already applied whatever
+                    # policy was configured.  Looping back here would
                     # hand it a fresh budget and make
-                    # broker_connection_max_retries meaningless, so stop.
-                    error('beat pidbox: giving up after exhausting the '
-                          'broker connection retry policy: %r', exc,
-                          exc_info=True)
+                    # broker_connection_max_retries meaningless, so stop
+                    # either way, but say which of the two it was.
+                    # Deliberately one message for every cause. How
+                    # far the attempt got depends on the error, on
+                    # whether retrying was enabled, and on the size of
+                    # the budget, and guessing between those produced a
+                    # message that was wrong more often than it helped.
+                    error('beat pidbox: could not connect to the '
+                          'broker, so beat will not answer remote '
+                          'control commands for the life of this '
+                          'process. See broker_connection_retry, '
+                          'broker_connection_retry_on_startup and '
+                          'broker_connection_max_retries: %r',
+                          exc, exc_info=True)
                     break
                 try:
                     with established as connection:
