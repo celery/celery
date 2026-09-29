@@ -33,6 +33,12 @@ Unreleased
 Celery v5.7.0 Alpha 1 is now available for testing.
 Please help us test this version and report any issues.
 
+Backward Incompatible Changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- App-local tasks now take precedence over same-named shared and built-in tasks
+  when finalizing an app, regardless of definition order (#10579).
+
 Features
 ~~~~~~~~
 
@@ -48,6 +54,13 @@ Features
 
 Bug Fixes
 ~~~~~~~~~
+
+Task registration
+-----------------
+
+- Re-registering the same bound method no longer emits a duplicate-task-name
+  warning, and ``Celery.register_task()`` accepts an unevaluated task proxy
+  (#10579).
 
 Canvas / chains / chords / groups
 ----------------------------------
