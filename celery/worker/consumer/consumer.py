@@ -8,7 +8,7 @@ import errno
 import logging
 import os
 import warnings
-from collections import defaultdict
+from collections import defaultdict, deque
 from time import sleep
 
 from billiard.common import restart_state
@@ -246,7 +246,7 @@ class Consumer:
             # connect again.
             self.app.conf.broker_connection_timeout = None
 
-        self._pending_operations = []
+        self._pending_operations = deque()
 
         self.steps = []
         self.blueprint = self.Blueprint(
@@ -256,6 +256,10 @@ class Consumer:
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
     def call_soon(self, p, *args, **kwargs):
+        """Schedule a callback.
+
+        Callback ordering is not guaranteed across pool implementations.
+        """
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
@@ -290,7 +294,7 @@ class Consumer:
         if not self.hub:
             while self._pending_operations:
                 try:
-                    self._pending_operations.pop()()
+                    self._pending_operations.popleft()()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Pending callback raised: %r', exc)
 
