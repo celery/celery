@@ -3341,7 +3341,9 @@ exceeded.
 ``broker_connection_retry_on_startup``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: Enabled.
+Default: :const:`None`, which falls back to
+:setting:`broker_connection_retry` and so is enabled unless you have
+disabled that.
 
 Automatically try to establish the connection to the AMQP broker on Celery startup if it is unavailable.
 
@@ -4561,6 +4563,29 @@ embedded in a worker (:option:`-B <celery worker -B>`) never starts a
 remote-control node, since the worker already answers for that
 process.
 
+The control node connects on its own, separately from the scheduler,
+under the same settings the worker uses:
+:setting:`broker_connection_retry_on_startup` for its first attempt
+when that is set, :setting:`broker_connection_retry` otherwise -- which
+is the default, since the startup setting defaults to :const:`None` --
+and :setting:`broker_connection_max_retries` for how long it keeps
+trying.
+
+**Once it gives up, it stays given up.** The scheduler carries on
+running and firing tasks, but beat answers no remote control commands
+for the rest of the process's life and logs an error saying so. A
+connection that drops after it was established gets one further attempt
+under the same settings; if that one also gives up, it is likewise
+final. Nothing here requires you to have disabled anything: on stock
+settings, a broker unreachable for longer than
+:setting:`broker_connection_max_retries` allows reaches the same place.
+
+That matters if you use :program:`celery inspect ping` as a liveness
+probe. The probe keeps failing, so a supervisor restarts beat and the
+connection is attempted afresh, which is the recovery. Without such a
+probe nothing notices, so check beat's log if remote control stops
+answering while the scheduler seems fine.
+
 Availability: RabbitMQ (AMQP) and Redis transports (the same
 transports that support worker remote control).
 
@@ -4595,7 +4620,9 @@ forever.
 
 Beat declines by staying silent, because :program:`celery inspect`
 exits non-zero only when no node replies at all; an error reply would
-leave the exit status at zero. Each refusal is logged as a warning.
+leave the exit status at zero. Each refusal is logged as a warning, so
+a probe running once a minute against a stalled beat produces a warning
+a minute.
 
 Set to ``0`` to answer regardless of how long ago the last tick was.
 

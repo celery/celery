@@ -621,6 +621,10 @@ Interactions worth knowing
   RabbitMQ (AMQP) and Redis transports. On a transport without them
   beat logs one warning at startup and carries on without a control
   node.
+* If the control node gives up on the broker, it does not come back,
+  so the probe fails until beat is restarted. That applies to the
+  connection it makes at startup and to re-establishing one that
+  dropped. See :setting:`beat_enable_remote_control`.
 
 .. _beat-custom-schedulers:
 
