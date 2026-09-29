@@ -84,9 +84,20 @@ class DjangoFixup:
         if not self.app._custom_task_cls_used:
             self.app.task_cls = 'celery.contrib.django.task:DjangoTask'
 
-        signals.import_modules.connect(self.on_import_modules)
-        signals.worker_init.connect(self.on_worker_init)
+        # Several Django-enabled apps can live in one process, each with its
+        # own fixup, so every fixup only reacts to its own app's signals.
+        signals.import_modules.connect(self.on_import_modules, sender=self.app)
+        # worker_init is sent by the worker, so it can't be filtered by
+        # sender: give each fixup its own dispatch_uid so they don't share
+        # one receiver, and skip other apps' workers in on_worker_init.
+        signals.worker_init.connect(
+            self.on_worker_init, dispatch_uid=self._worker_init_uid,
+        )
         return self
+
+    @property
+    def _worker_init_uid(self) -> tuple:
+        return ('celery.fixups.django.DjangoFixup.on_worker_init', id(self))
 
     @property
     def worker_fixup(self) -> "DjangoWorkerFixup":
@@ -105,6 +116,9 @@ class DjangoFixup:
     def on_worker_init(self, **kwargs: Any) -> None:
         worker: Optional["WorkController"] = kwargs.get("sender")
         if worker:
+            if worker.app is not self.app:
+                # The worker belongs to another app; its own fixup handles it.
+                return
             self.worker_fixup.worker = worker
         else:
             warnings.warn(
