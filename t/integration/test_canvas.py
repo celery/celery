@@ -1233,10 +1233,10 @@ class test_chain:
             group(
                 delayed_sum.si([1],10),
                 chain(
-                    delayed_sum.si([-2],1),
+                    tsum.si([-2]),
                     group(
-                        delayed_sum.si([3],1),
-                        delayed_sum.si([4],1),
+                        tsum.si([3]),
+                        tsum.si([4]),
                     ),
                 ),
             ),
@@ -1264,12 +1264,12 @@ class test_chain:
             group(
                 delayed_sum.si([1],10),
                 chain(
-                    delayed_sum.si([-2],1),
+                    tsum.si([-2]),
                     group(
-                        delayed_sum.si([3],1),
-                        delayed_sum.si([4],1),
+                        tsum.si([3]),
+                        tsum.si([4]),
                     ),
-                   delayed_sum.si([-3],1),
+                   tsum.si([-3]),
                 ),
             ),
             full_args_return.s(5),
