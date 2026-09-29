@@ -853,18 +853,16 @@ class Signature(dict):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
 
-        # Issue #8182:
         # Mark this signature as originating from a serialization
-        dic = dict(self)
-        dic["_from_serialized"] = True
-        return signature, (dic,)
+        d = dict(self)
+        d["_from_serialized"] = True
+        return signature, (d,)
 
     def __json__(self):
-        # Issue #8182:
         # Mark this signature as originating from a serialization
-        dic = dict(self)
-        dic["_from_serialized"] = True
-        return dic
+        d = dict(self)
+        d["_from_serialized"] = True
+        return d
 
     def __repr__(self):
         return self.reprcall()
@@ -1887,7 +1885,6 @@ class group(Signature):
                 # size in the backend and the chord can be sensible completed.
                 chord_size += _chord._descend(sig)
 
-                # Issue 8182:
                 # Set chord size not in ForkedWorker via "_from_serialized"
                 # marker check
                 if (

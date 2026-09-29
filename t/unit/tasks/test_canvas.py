@@ -186,7 +186,7 @@ class test_Signature(CanvasCase):
     def test_json(self):
         x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
         y = x.__json__()
-        # Issue #8182: reduce adds marker
+        # Check that serialization marker is present, and remove for comparision 
         assert y['_from_serialized']
         del y['_from_serialized']
         assert y == dict(x)
@@ -196,7 +196,7 @@ class test_Signature(CanvasCase):
         x = Signature('TASK', (2, 4), app=self.app)
         fun, args = x.__reduce__()
         y = fun(*args)
-        # Issue #8182: reduce adds marker
+        # Check that serialization marker is present, and remove for comparision 
         assert y['_from_serialized']
         del y['_from_serialized']
         assert y == x

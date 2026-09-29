@@ -1220,7 +1220,6 @@ class test_chain:
 
     def test_chain_group_chain_sync(self, manager):
         """
-        Test for issue 8182:
         Out of ordering for chain-group-chain-group with
         last element in last chain a group
         """
@@ -1250,7 +1249,6 @@ class test_chain:
 
     def test_chain_group_chain_to_chord_sync(self, manager):
         """
-        Test for issue 8182:
         Out of ordering for chain-group-chain-group with
         last element in last chain not a group
         -> chord conversion
