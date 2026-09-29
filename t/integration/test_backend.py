@@ -39,4 +39,3 @@ class test_AzureBlockBlobBackend:
 
         assert backend.get(b"doesNotExist") is None
 
-
