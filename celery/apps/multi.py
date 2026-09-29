@@ -174,7 +174,12 @@ class Node:
                 '-C', '--no-color',
                 '-q', '--quiet',
             ):
-                cmd.insert(i, format_opt(opt, self.expander(value)))
+                value = self.expander(value)
+                if opt == '--workdir':
+                    # The executing shell does not expand ~ in the
+                    # spawned worker command, so expand it here.
+                    value = os.path.expanduser(value)
+                cmd.insert(i, format_opt(opt, value))
 
                 options.pop(opt)
 

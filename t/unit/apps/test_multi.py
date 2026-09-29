@@ -304,6 +304,16 @@ class test_Node:
             '',
         ])
 
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=True)
+    def test_workdir_tilde_is_expanded(self, mock_exists, mock_dirs):
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                workdir='~/mydir',
+            )
+        assert f'--workdir={os.path.expanduser("~/mydir")}' in ' '.join(n.argv)
+
     @patch('os.kill')
     def test_send(self, kill):
         assert self.node.send(9)
