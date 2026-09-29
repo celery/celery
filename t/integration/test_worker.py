@@ -90,6 +90,41 @@ def test_django_fixup_installs_django_task_for_celery_subclass(monkeypatch):
     assert hasattr(app.Task, 'apply_async_on_commit')
 
 
+def test_django_fixup_signals_only_handled_by_own_app(monkeypatch):
+    """With two Django-enabled apps, each fixup only handles its own app."""
+    import django
+
+    from celery.fixups.django import DjangoFixup
+
+    monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.django_settings')
+    monkeypatch.setenv('CELERY_SKIP_CHECKS', '1')
+    django.setup()
+
+    def django_fixup(app):
+        return next(f for f in app._fixups if isinstance(f, DjangoFixup))
+
+    app1 = Celery('test_django_multi_app1')
+    app2 = Celery('test_django_multi_app2')
+    for app in (app1, app2):
+        app.config_from_object('django.conf:settings', namespace='CELERY')
+    fixup1, fixup2 = django_fixup(app1), django_fixup(app2)
+
+    # import_modules for app2 must only reach app2's fixup.
+    app2.loader.import_default_modules()
+    assert fixup2._worker_fixup is not None
+    assert fixup1._worker_fixup is None
+
+    # worker_init for app2's worker must only reach app2's fixup.
+    worker2 = app2.Worker(pool='solo', concurrency=1)
+    assert fixup2.worker_fixup.worker is worker2
+    assert fixup1._worker_fixup is None
+
+    # And app1's worker is picked up by app1's fixup, not app2's.
+    worker1 = app1.Worker(pool='solo', concurrency=1)
+    assert fixup1.worker_fixup.worker is worker1
+    assert fixup2.worker_fixup.worker is worker2
+
+
 @flaky
 def test_pidbox_reset_after_repeated_control_errors(manager):
     def assert_ping():
