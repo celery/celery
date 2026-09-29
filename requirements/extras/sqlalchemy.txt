@@ -1,1 +1,2 @@
 kombu[sqlalchemy]
+sqlalchemy>=1.4.54,<2.2
