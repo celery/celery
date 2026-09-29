@@ -606,6 +606,49 @@ class test_BufferMap:
         b.extend(1, list(range(20)))
         self.assert_size_and_first(b, 20, 0)
 
+    def test_bufmaxsize_parameter_is_honored(self):
+        b = BufferMap(None, bufmaxsize=3)
+        b.extend(1, list(range(10)))
+        self.assert_size_and_first(b, 3, 7)
+
+    def test_total_tracks_bufmaxsize_eviction(self):
+        b = BufferMap(None, bufmaxsize=3)
+        for i in range(5):
+            b.put(1, i)
+        self.assert_size_and_first(b, 3, 2)
+
+    def test_init_from_iterable(self):
+        b = BufferMap(None, {'a': [1, 2, 3], 'b': [4, 5]})
+        self.assert_size_and_first(b, 5, 1)
+
+    def test_init_from_iterable_wraps_values_in_buffers(self):
+        b = BufferMap(None, {'a': [1, 2, 3]})
+        assert isinstance(b['a'], Messagebuffer)
+        assert b.take('a') == 1
+
+    def test_init_from_iterable_enforces_maxsize(self):
+        b = BufferMap(4, {'a': list(range(50))})
+        self.assert_size_and_first(b, 4, 46)
+
+    def test_init_from_iterable_enforces_maxsize_beyond_evict_limit(self):
+        # _evict() removes at most 100 items per call, so seeding more than
+        # 100 items over maxsize must rely on the unlimited evict() to keep
+        # the constructor's guarantee.
+        b = BufferMap(4, {'a': list(range(1000))})
+        self.assert_size_and_first(b, 4, 996)
+
+    def test_high_volume_single_key_keeps_total_and_other_keys(self):
+        # Regression for the total accounting fixed in #10705: on main, 1500
+        # puts to one key pushed `total` to 1500 while the buffer held 1000,
+        # evicting other keys' pending messages early.
+        b = BufferMap(8192, bufmaxsize=1000)
+        for i in range(1500):
+            b.put('test-busy-key', i)
+        b.put('test-other-key', 'keep')
+        assert b.total == 1001
+        assert len(b['test-busy-key']) == 1000
+        assert b.take('test-other-key') == 'keep'
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
