@@ -1569,12 +1569,10 @@ class test_BeatPidbox:
         return error.call_args[0][0]
 
     def test_giving_up_says_the_same_thing_however_it_failed(self):
-        # There were three messages here, guessing from a retry counter
-        # whether a policy had run out, been disabled, or never applied.
-        # Two of the three guesses were wrong in cases nobody had tested
-        # (a bad broker URL, and max_retries=0 with retrying enabled),
-        # so the message no longer guesses and names the settings that
-        # could be responsible instead.
+        # The message names the settings instead of diagnosing which
+        # one applied, so it has to hold for every way a connect can
+        # fail: retrying off, budget spent, a zero budget, and an error
+        # retrying would never have fixed.
         for conf in (
             {'broker_connection_retry_on_startup': False},
             {'broker_connection_retry_on_startup': None,

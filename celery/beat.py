@@ -649,8 +649,15 @@ def beat_nodename(hostname=None):
     return host_format(default_nodename(hostname, NODENAME_DEFAULT))
 
 
-class _PidboxStopping(Exception):
-    """Raised to unwind a connect retry once :meth:`stop` was called."""
+class _PidboxStopping(BaseException):
+    """Signals the consumer thread to abandon a connection attempt.
+
+    A control-flow signal rather than an error, so it subclasses
+    :exc:`BaseException`: a broad ``except Exception`` in kombu or in a
+    transport would otherwise swallow it and keep the thread retrying
+    through a shutdown.  :exc:`~celery.exceptions.WorkerShutdown` is a
+    :exc:`SystemExit` for the same reason.
+    """
 
 
 class _BeatNode(pidbox.Node):
@@ -877,8 +884,10 @@ class BeatPidbox:
                 if conf[retry_setting] else 0,
                 callback=self._abort_if_stopping,
             )
-        except Exception:
-            # never entered the context manager, so release it here
+        except BaseException:
+            # Broad on purpose: _PidboxStopping is not an Exception,
+            # and the connection never entered the context manager, so
+            # it has to be released here however the attempt failed.
             ignore_errors(connection, connection.release)
             raise
         return connection
@@ -903,19 +912,20 @@ class BeatPidbox:
             while not shutdown.is_set():
                 try:
                     established = self._connect()
+                except _PidboxStopping:
+                    break
                 except Exception as exc:  # pylint: disable=broad-except
                     if shutdown.is_set():
                         break
-                    # ensure_connection() has already applied whatever
-                    # policy was configured.  Looping back here would
-                    # hand it a fresh budget and make
-                    # broker_connection_max_retries meaningless, so stop
-                    # either way, but say which of the two it was.
-                    # Deliberately one message for every cause. How
+                    # ensure_connection() has already applied
+                    # whatever policy was configured.  Looping back
+                    # would hand it a fresh budget and make
+                    # broker_connection_max_retries meaningless, so
+                    # stop here.  One message whatever the cause: how
                     # far the attempt got depends on the error, on
-                    # whether retrying was enabled, and on the size of
-                    # the budget, and guessing between those produced a
-                    # message that was wrong more often than it helped.
+                    # whether retrying was enabled and on the size of
+                    # the budget, so name the settings and leave the
+                    # traceback to say the rest.
                     error('beat pidbox: could not connect to the '
                           'broker, so beat will not answer remote '
                           'control commands for the life of this '
