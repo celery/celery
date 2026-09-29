@@ -336,6 +336,7 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
+
             # Set the shutdown flag first and unconditionally: this is the
             # actual mechanism that stops the worker from accepting new
             # work, and it must not be contingent on the callback/logging/
