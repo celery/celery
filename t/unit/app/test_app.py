@@ -517,6 +517,21 @@ class test_App:
 
             assert app.tasks[name].run() == 'local'
 
+    def test_app_task_precedes_builtin_task_on_finalize(self):
+        with self.Celery('foozibari', autofinalize=False) as app:
+            name = 'celery.chain'
+
+            def local():
+                return 'local'
+
+            task = app.task(name=name, shared=False)(local)
+
+            with pytest.warns(DuplicateTaskNameWarning):
+                app.finalize()
+
+            assert app.tasks[name] is task._get_current_object()
+            assert app.tasks[name].run() == 'local'
+
     def test_task_too_many_args(self):
         with pytest.raises(TypeError):
             self.app.task(Mock(name='fun'), True)
