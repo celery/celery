@@ -905,6 +905,11 @@ Chords
 A chord is a task that only executes after all of the tasks in a group have
 finished executing.
 
+``countdown`` and ``eta`` passed to :meth:`~celery.chord.apply_async` (or set
+on the chord / on a ``group | task`` signature) delay the **header** tasks.
+They do not delay the body callback, and they do not change the
+``chord_unlock`` retry interval (that remains the ``countdown`` argument of
+:meth:`~celery.chord.run`).
 
 Let's calculate the sum of the expression
 :math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.
