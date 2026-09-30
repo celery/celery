@@ -2270,7 +2270,7 @@ class _chord(Signature):
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
                 header_delay[key] = options.pop(key)
-        body = body.clone(**options)
+        body = body.clone(**self._body_options(options))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
@@ -2341,6 +2341,11 @@ class _chord(Signature):
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
+    @staticmethod
+    def _body_options(options):
+        """Options passed on to the body: the header task that fires the body is its parent."""
+        return {k: v for k, v in options.items() if k != 'parent_id'}
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, header_delay=None, **options):
@@ -2378,7 +2383,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
-            body.options.update(options)
+            body.options.update(self._body_options(options))
 
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)

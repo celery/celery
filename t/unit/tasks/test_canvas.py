@@ -2677,6 +2677,15 @@ class test_chord(CanvasCase):
             assert body_task_id != group_id  # Should be different from group_id
             assert passed_group_id == group_id  # But should know its group
 
+    def test_chord_run_does_not_pass_parent_id_to_body(self):
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = self.add.s(10)
+
+        chord(header, body).run(header, body, (), parent_id="caller-id", root_id="root-id")
+
+        assert "parent_id" not in body.options
+        assert body.options["root_id"] == "root-id"
+
     def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
         """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
 
