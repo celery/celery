@@ -74,10 +74,16 @@ def nodesplit(name: str) -> tuple[None, str] | list[str]:
     return parts
 
 
-def default_nodename(hostname: str) -> str:
-    """Return the default nodename for this process."""
+def default_nodename(hostname: str,
+                     default_name: str = NODENAME_DEFAULT) -> str:
+    """Return the default nodename for this process.
+
+    ``default_name`` supplies the name half for a ``hostname`` that only
+    carries a host, so processes other than workers (beat, say) can
+    share this resolution instead of reimplementing it.
+    """
     name, host = nodesplit(hostname or '')
-    return nodename(name or NODENAME_DEFAULT, host or gethostname())
+    return nodename(name or default_name, host or gethostname())
 
 
 def node_format(s: str, name: str, **extra: dict) -> str:
