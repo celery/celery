@@ -394,6 +394,12 @@ def return_priority(self, *_args):
 
 
 @shared_task(bind=True)
+def return_request_eta(self):
+    """Return this task's ETA so countdown/eta forwarding can be asserted."""
+    return self.request.eta
+
+
+@shared_task(bind=True)
 def return_properties(self):
     return self.request.properties
 
