@@ -698,12 +698,9 @@ class test_chain(CanvasCase):
         assert tasks[-1].args[0] == 5
         assert isinstance(tasks[-2], chord)
         assert len(tasks[-2].tasks) == 5
-
-        body = tasks[-2].body
-        assert len(body.tasks) == 3
-        assert body.tasks[0].args[0] == 10
-        assert body.tasks[1].args[0] == 20
-        assert body.tasks[2].args[0] == 30
+        assert tasks[-2].body.args[0] == 10
+        assert tasks[-3].args[0] == 20
+        assert tasks[-4].args[0] == 30
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True
@@ -828,6 +825,30 @@ class test_chain(CanvasCase):
         assert max(sizes) == min(sizes), (
             f"Chord sizes not constant across chain: {sizes}"
         )
+
+    def test_chain_of_implicit_chords_serialized_size_linear(self):
+        def first_message_size(n_groups):
+            steps = [self.add.s(0, 0)]
+            for i in range(n_groups):
+                steps.append(group([self.add.s(i, j) for j in range(2)], app=self.app))
+                steps.append(self.add.s(i, i))
+            c = chain(*steps)
+            tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+            return len(json.dumps([task.__json__() for task in tasks]))
+
+        sizes = [first_message_size(n) for n in range(2, 6)]
+        increments = [b - a for a, b in zip(sizes, sizes[1:])]
+        assert max(increments) == min(increments), (
+            f"First message grows geometrically with the number of groups: {sizes}"
+        )
+
+    def test_chord_body_chain_led_by_group_stays_whole(self):
+        body = chain([group(self.add.s(1, 1), self.add.s(2, 2), app=self.app), self.add.s(10)], app=self.app)
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert isinstance(tasks[0], chord)
+        assert isinstance(tasks[0].body, _chain)
+        assert len(tasks) == 2
 
     def test_chord_or_task_still_nests(self):
         c = chord([signature('h1')], signature('b1'), app=self.app)

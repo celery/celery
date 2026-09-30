@@ -73,6 +73,19 @@ def _is_empty_group(task):
     )
 
 
+def _is_chain_led_by_task(body):
+    """Return True if the body is a chain whose first step is not a group.
+
+    A group followed by chain steps runs them once per member, so such a
+    chain must stay a single chord body.
+    """
+    return (
+        isinstance(body, _chain) and
+        bool(body.tasks) and
+        not isinstance(body.tasks[0], group)
+    )
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1256,6 +1269,18 @@ class _chain(Signature):
                 task = maybe_unroll_group(task)
                 if _is_empty_group(task) and (steps or prev_task):
                     continue
+
+            if isinstance(task, chord) and _is_chain_led_by_task(task.body):
+                # chord(header, chain(a, b, c)) -> chord(header, a), b, c
+                # Every header task carries a copy of the body, so a body
+                # holding the rest of the chain is copied once per header
+                # task, at every chord.
+                if clone:
+                    task = task.clone()
+                body_tasks = task.body.unchain_tasks()
+                task.body = body_tasks[0]
+                steps_extend([task, *body_tasks[1:]])
+                continue
 
             # first task gets partial args from chain
             if clone:
