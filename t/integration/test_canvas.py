@@ -22,7 +22,8 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
                     replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
                     replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
+                    return_priority, return_request_eta, second_order_replace1, tsum, write_to_file_and_return_int,
+                    xsum)
 
 TIMEOUT = 60
 
@@ -1820,6 +1821,25 @@ class test_chord:
         c = chord((identity.si(i) for i in inputs), identity.s())
         result = c()
         assert result.get() == inputs
+
+    def test_group_or_task_countdown_delays_header(self, manager):
+        """countdown on group|task must delay header tasks (#7851)."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        countdown = 2
+        started = monotonic()
+        result = (
+            group(return_request_eta.s(), return_request_eta.s())
+            | identity.s()
+        ).apply_async(countdown=countdown)
+        header_etas = result.get(timeout=TIMEOUT)
+        elapsed = monotonic() - started
+
+        assert elapsed >= countdown * 0.9
+        assert all(eta is not None for eta in header_etas)
 
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):

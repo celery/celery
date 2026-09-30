@@ -21,11 +21,14 @@ Unreleased
 - The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
   and used to publish ``task-sent`` events is now always a dictionary containing
   the merged configured and per-call retry options, never ``None`` (#10708).
+- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
+  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
 - Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
   prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
   code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
   numeric string such as ``"4"``; the worker converts it at startup.
+
 
 .. _version-5.7.0a1:
 
