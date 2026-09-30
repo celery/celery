@@ -10,6 +10,7 @@ import pytest
 from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
+from kombu.asynchronous import Hub
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -341,7 +342,19 @@ class test_Consumer(ConsumerTestCase):
         c.on_send_event_buffered()
         c.hub = Mock(name='hub')
         c.on_send_event_buffered()
-        c.hub._ready.add.assert_called_with(c._flush_events)
+        c.hub.call_soon.assert_called_with(c._flush_events_promise)
+
+    def test_on_send_event_buffered_schedules_one_flush(self):
+        c = self.get_consumer()
+        c.event_dispatcher = Mock(name='evd')
+        c.hub = Hub()
+        try:
+            c.on_send_event_buffered()
+            c.on_send_event_buffered()
+            next(c.hub.loop)
+        finally:
+            c.hub.close()
+        c.event_dispatcher.flush.assert_called_once_with()
 
     def test_schedule_bucket_request(self):
         c = self.get_consumer()
