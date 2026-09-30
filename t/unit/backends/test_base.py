@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import re
 from contextlib import contextmanager
@@ -413,6 +414,19 @@ class test_prepare_exception:
         assert isinstance(x, KeyError)
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
+
+    @pytest.mark.parametrize('exc', [BaseException('boom'), asyncio.CancelledError()])
+    def test_encode_result_json_base_exception(self, exc):
+        self.b.serializer = 'json'
+        x = self.b.encode_result(exc, states.FAILURE)
+        assert x == {
+            'exc_message': exc.args,
+            'exc_type': type(exc).__name__,
+            'exc_module': type(exc).__module__}
+        self.b.encode({'result': x})
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, type(exc))
+        assert y.args == exc.args
 
     def test_unicode_message(self):
         message = '\u03ac'
@@ -1176,6 +1190,20 @@ class test_BaseBackend_dict:
         assert backend.fail_from_current_stack.call_count == 2
         backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
         backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
+
+    def test_handle_group_chord_error_stores_failures_before_revoke(self):
+        # The revoke handler keeps a result that is already ready, so every
+        # failure has to be in the backend before the revoke goes out.
+        task_ids = ["task-id-1", "task-id-2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+        calls = []
+        backend.fail_from_current_stack.side_effect = lambda task_id, exc=None: calls.append(task_id)
+        backend.mark_as_failure.side_effect = lambda task_id, exc: calls.append(task_id)
+        frozen_group.revoke.side_effect = lambda: calls.append("revoke")
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert calls == ["task-id-1", "task-id-2", "group-id", "revoke"]
 
     def test_handle_group_chord_error_with_errbacks(self):
         """Test _handle_group_chord_error calls error callbacks for each task."""

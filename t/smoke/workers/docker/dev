@@ -24,6 +24,7 @@ ARG CELERY_LOG_LEVEL=INFO
 ARG CELERY_WORKER_NAME=celery_dev_worker
 ARG CELERY_WORKER_QUEUE=celery
 ARG PYTEST_CELERY_PKG="pytest-celery"
+ARG CELERY_DEV_REQUIREMENTS=""
 ENV LOG_LEVEL=$CELERY_LOG_LEVEL
 ENV WORKER_NAME=$CELERY_WORKER_NAME
 ENV WORKER_QUEUE=$CELERY_WORKER_QUEUE
@@ -41,6 +42,12 @@ RUN pip install --no-cache-dir --upgrade \
     pip \
     -e /celery[redis,pymemcache,pydantic,sqs] \
     "${PYTEST_CELERY_PKG}"
+# --force-reinstall: pip keeps the PyPI copy when the Git checkout reports
+# the same version string.
+RUN if [ -n "${CELERY_DEV_REQUIREMENTS}" ]; then \
+        pip install --no-cache-dir --upgrade --force-reinstall \
+            -r /celery/requirements/dev.txt; \
+    fi
 
 # The workdir must be /app
 WORKDIR /app

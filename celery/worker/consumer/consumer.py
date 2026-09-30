@@ -237,6 +237,10 @@ class Consumer:
         else:
             self.amqheartbeat = 0
 
+        # Reused for every buffered event, so that the hub's ready set
+        # holds at most one pending flush.
+        self._flush_events_promise = promise(self._flush_events)
+
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
 
@@ -650,7 +654,7 @@ class Consumer:
 
     def on_send_event_buffered(self):
         if self.hub:
-            self.hub._ready.add(self._flush_events)
+            self.hub.call_soon(self._flush_events_promise)
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
                        routing_key=None, **options):
@@ -676,8 +680,9 @@ class Consumer:
 
     def cancel_task_queue(self, queue):
         info('Canceling queue %s', queue)
-        self.app.amqp.queues.deselect(queue)
-        self.task_consumer.cancel_by_queue(queue)
+        queues = self.app.amqp.queues
+        queues.deselect(queue)
+        self.task_consumer.cancel_by_queue(queues.aliases.get(queue, queue))
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an ETA/countdown."""
