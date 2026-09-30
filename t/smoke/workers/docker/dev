@@ -40,7 +40,7 @@ WORKDIR /celery
 COPY --chown=test_user:test_user . /celery
 RUN pip install --no-cache-dir --upgrade \
     pip \
-    -e /celery[redis,pymemcache,pydantic,sqs] \
+    -e /celery[gevent,redis,pymemcache,pydantic,sqs] \
     "${PYTEST_CELERY_PKG}"
 # --force-reinstall: pip keeps the PyPI copy when the Git checkout reports
 # the same version string.
