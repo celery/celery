@@ -2028,6 +2028,55 @@ class test_chord(CanvasCase):
         z = y.clone()
         assert z.kwargs.get('body') is None
 
+    def _assert_header_received_delay(self, canvas, header_size, **delay):
+        with patch.object(
+            self.app.backend, "apply_chord",
+        ) as mock_apply_chord, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            canvas.apply_async(**delay)
+        assert mock_apply_async.call_count == header_size
+        for apply_call in mock_apply_async.call_args_list:
+            for key, value in delay.items():
+                assert apply_call.kwargs.get(key) == value
+        # chord.unlock retries keep their own default countdown
+        assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
+    def test_group_or_task_apply_async_countdown_delays_header(self):
+        """countdown on group|task must delay the header, not only the body.
+
+        Regression for #7851: group | task is a chord, and apply_async(countdown=)
+        was bound to chord.run's unlock-retry argument, so the header ran
+        immediately and only the callback was delayed.
+        """
+        canvas = (
+            group(self.add.si(1, 2), self.add.si(3, 4), app=self.app)
+            | self.add.si(5, 6)
+            | self.add.si(7, 8)
+            | self.add.si(9, 10)
+        )
+        assert isinstance(canvas, chord)
+        self._assert_header_received_delay(canvas, 2, countdown=10)
+
+    def test_group_or_task_apply_async_eta_delays_header(self):
+        eta = sentinel.eta
+        canvas = group(self.add.si(1, 2), self.add.si(3, 4), app=self.app) | self.add.si(5, 6)
+        self._assert_header_received_delay(canvas, 2, eta=eta)
+
+    def test_group_or_task_set_countdown_delays_header(self):
+        canvas = group(self.add.si(1, 2), self.add.si(3, 4), app=self.app) | self.add.si(5, 6)
+        canvas.set(countdown=10)
+        with patch.object(
+            self.app.backend, "apply_chord",
+        ) as mock_apply_chord, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            canvas.apply_async()
+        assert mock_apply_async.call_count == 2
+        for apply_call in mock_apply_async.call_args_list:
+            assert apply_call.kwargs.get("countdown") == 10
+        assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
     def test_argument_is_group(self):
         x = chord(group(self.add.s(2, 2), self.add.s(4, 4), app=self.app))
         assert x.tasks
