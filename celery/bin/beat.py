@@ -35,6 +35,21 @@ from celery.platforms import detached, maybe_drop_privileges
               type=int,
               help_group="Beat Options",
               help="Max seconds to sleep between schedule iterations.")
+@click.option('--enable-remote-control/--no-enable-remote-control',
+              'remote_control',
+              cls=CeleryOption,
+              default=None,
+              help_group="Beat Options",
+              help="Answer `celery inspect ping`, so that beat can be "
+                   "health-checked. Overrides the "
+                   "beat_enable_remote_control setting.")
+@click.option('-n',
+              '--hostname',
+              cls=CeleryOption,
+              default=None,
+              help_group="Beat Options",
+              help="Node name to answer remote control commands on. "
+                   "Defaults to celerybeat@%h.")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
