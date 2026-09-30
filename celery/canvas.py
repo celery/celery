@@ -852,10 +852,17 @@ class Signature(dict):
     def __reduce__(self):
         # for serialization, the task type is lazily loaded,
         # and not stored in the dict itself.
-        return signature, (dict(self),)
+
+        # Mark this signature as originating from a serialization
+        d = dict(self)
+        d["_from_serialized"] = True
+        return signature, (d,)
 
     def __json__(self):
-        return dict(self)
+        # Mark this signature as originating from a serialization
+        d = dict(self)
+        d["_from_serialized"] = True
+        return d
 
     def __repr__(self):
         return self.reprcall()
@@ -1877,8 +1884,14 @@ class group(Signature):
                 # that when we get to the final one, we can correctly set the
                 # size in the backend and the chord can be sensible completed.
                 chord_size += _chord._descend(sig)
-                if chord_obj is not None and next_task is None:
-                    # Per above, sanity check that we only saw one group
+
+                # Set chord size not in ForkedWorker via "_from_serialized"
+                # marker check
+                if (
+                    isinstance(chord_obj, Signature)
+                    and "_from_serialized" not in chord_obj
+                    and next_task is None
+                ):
                     app.backend.set_chord_size(group_id, chord_size)
                 sig.apply_async(producer=producer, add_to_parent=False,
                                 chord=chord_obj, args=args, kwargs=kwargs,
