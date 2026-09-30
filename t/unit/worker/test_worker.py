@@ -19,6 +19,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery import signals
 from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
@@ -1089,20 +1090,31 @@ class test_WorkController(ConsumerCase):
         )
 
     @patch('celery.worker.worker.cpu_budget')
-    def test_concurrency_auto_resolves_pool_cls_once(self, mock_budget):
-        # The auto branch resolves the alias to a class; the later
-        # ``get_implementation`` call is then a no-op on the class object.
+    def test_concurrency_auto_resolved_after_worker_init(self, mock_budget):
+        # worker_init handlers may monkey-patch (gevent/eventlet), so the pool
+        # class must not be imported before the signal is sent.
         mock_budget.return_value = CpuBudget(2, 8, 2.0)
         from celery.concurrency.prefork import TaskPool as PreforkPool
-        with patch(
-            'celery.worker.worker._concurrency.get_implementation',
-            wraps=worker_module._concurrency.get_implementation,
-        ) as gi:
-            worker = self.app.WorkController(
-                concurrency='auto', pool_cls='prefork', loglevel=0,
-            )
+        seen = []
+
+        def on_worker_init(sender, **kwargs):
+            seen.append((sender.pool_cls, sender.concurrency))
+
+        signals.worker_init.connect(on_worker_init, weak=False)
+        try:
+            with patch(
+                'celery.worker.worker._concurrency.get_implementation',
+                wraps=worker_module._concurrency.get_implementation,
+            ) as gi:
+                worker = self.app.WorkController(
+                    concurrency='auto', pool_cls='prefork', loglevel=0,
+                )
+        finally:
+            signals.worker_init.disconnect(on_worker_init)
+        assert seen == [('prefork', 'auto')]
+        gi.assert_called_once_with('prefork')
         assert worker.pool_cls is PreforkPool
-        assert [type(c.args[0]) for c in gi.call_args_list] == [str, type]
+        assert worker.concurrency == 2
 
     @patch('celery.worker.worker.cpu_budget')
     def test_concurrency_auto_gevent_no_cap(self, mock_budget):

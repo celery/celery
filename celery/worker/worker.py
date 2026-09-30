@@ -129,47 +129,8 @@ class WorkController:
                 )
                 self.concurrency = None
 
-        # Set default concurrency
-        if is_auto_concurrency(self.concurrency):
-            # Only prefork is CPU-bound, so only prefork is capped to the
-            # cgroup quota. Resolve the class here so ``issubclass`` sees it;
-            # the later ``get_implementation`` is a no-op on a class.
-            from celery.concurrency.prefork import TaskPool as PreforkPool
-            self.pool_cls = _concurrency.get_implementation(self.pool_cls)
-            # The CLI hands over a class, so map it back to its alias.
-            target = f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
-            pool_name = next(
-                (alias for alias, path in _concurrency.ALIASES.items()
-                 if path == target),
-                target,
-            )
-            is_cpu_bound = (
-                isinstance(self.pool_cls, type)
-                and issubclass(self.pool_cls, PreforkPool)
-            )
-            budget = cpu_budget(use_cgroup_quota=is_cpu_bound)
-            self.concurrency = budget.count
-            if not is_cpu_bound:
-                self._pending_concurrency_log = (
-                    'info',
-                    "worker_concurrency='auto' only sizes the prefork pool; "
-                    "using available cpus=%d for pool=%s. For IO-bound "
-                    "workloads set --concurrency=<N> explicitly (typical "
-                    "values: 100-1000 for gevent/eventlet).",
-                    (self.concurrency, pool_name),
-                )
-            else:
-                quota = (
-                    'no cgroup cpu quota found' if budget.quota is None
-                    else f'cgroup cpu quota={budget.quota:.2f}'
-                )
-                self._pending_concurrency_log = (
-                    'info',
-                    "worker_concurrency='auto' resolved to %d "
-                    "(pool=%s, %s, available cpus=%d).",
-                    (self.concurrency, pool_name, quota, budget.available),
-                )
-        elif not self.concurrency:
+        # Set default concurrency. ``auto`` is resolved after ``worker_init``.
+        if not self.concurrency:
             try:
                 self.concurrency = cpu_count()
             except NotImplementedError:
@@ -191,6 +152,8 @@ class WorkController:
 
         # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+        if is_auto_concurrency(self.concurrency):
+            self._resolve_auto_concurrency()
         self.steps = []
         self.on_init_blueprint()
         self.blueprint = self.Blueprint(
@@ -200,6 +163,46 @@ class WorkController:
             on_stopped=self.on_stopped,
         )
         self.blueprint.apply(self, **kwargs)
+
+    def _resolve_auto_concurrency(self):
+        # Runs after ``worker_init`` so handlers that monkey-patch there do so
+        # before the pool module is imported. Only prefork is CPU-bound, so
+        # only prefork is capped to the cgroup quota.
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+
+        # The CLI hands over a class, so map it back to its alias.
+        target = f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
+        pool_name = next(
+            (alias for alias, path in _concurrency.ALIASES.items()
+             if path == target),
+            target,
+        )
+        is_cpu_bound = (
+            isinstance(self.pool_cls, type)
+            and issubclass(self.pool_cls, PreforkPool)
+        )
+        budget = cpu_budget(use_cgroup_quota=is_cpu_bound)
+        self.concurrency = budget.count
+        if not is_cpu_bound:
+            self._pending_concurrency_log = (
+                'info',
+                "worker_concurrency='auto' only sizes the prefork pool; "
+                "using available cpus=%d for pool=%s. For IO-bound "
+                "workloads set --concurrency=<N> explicitly (typical "
+                "values: 100-1000 for gevent/eventlet).",
+                (self.concurrency, pool_name),
+            )
+        else:
+            quota = (
+                'no cgroup cpu quota found' if budget.quota is None
+                else f'cgroup cpu quota={budget.quota:.2f}'
+            )
+            self._pending_concurrency_log = (
+                'info',
+                "worker_concurrency='auto' resolved to %d "
+                "(pool=%s, %s, available cpus=%d).",
+                (self.concurrency, pool_name, quota, budget.available),
+            )
 
     def on_init_blueprint(self):
         pass
