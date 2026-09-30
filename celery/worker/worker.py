@@ -187,9 +187,7 @@ class WorkController:
             self._pending_concurrency_log = (
                 'info',
                 "worker_concurrency='auto' only sizes the prefork pool; "
-                "using available cpus=%d for pool=%s. For IO-bound "
-                "workloads set --concurrency=<N> explicitly (typical "
-                "values: 100-1000 for gevent/eventlet).",
+                "using available cpus=%d for pool=%s.",
                 (self.concurrency, pool_name),
             )
         else:

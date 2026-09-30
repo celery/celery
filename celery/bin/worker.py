@@ -26,16 +26,14 @@ def _concurrency_value(ctx, _param, value):
     Falls through to ``ctx.obj.app.conf.worker_concurrency`` when the CLI
     value is empty or zero, matching the existing behavior.
     """
-    if value is None or value == '':
+    if not value:
         return ctx.obj.app.conf.worker_concurrency
     if is_auto_concurrency(value):
         return AUTO_CONCURRENCY
     try:
         parsed = int(value)
     except (TypeError, ValueError):
-        raise click.BadParameter(
-            f"must be a non-negative integer or 'auto', got {value!r}"
-        )
+        parsed = -1
     if parsed < 0:
         raise click.BadParameter(
             f"must be a non-negative integer or 'auto', got {value!r}"

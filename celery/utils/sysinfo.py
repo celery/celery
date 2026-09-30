@@ -68,8 +68,6 @@ def _parse_quota(quota_us: str, period_us: str) -> float | None:
     cgroup v2 reports ``max`` and cgroup v1 reports ``-1`` for an
     unlimited quota; both resolve to None.
     """
-    if quota_us == 'max':
-        return None
     try:
         quota = int(quota_us)
         period = int(period_us)
@@ -149,20 +147,11 @@ def _min_quota(base: str, cgroup_path: str, read) -> float | None:
 
 
 def cgroup_cpu_quota() -> float | None:
-    """Return the effective CFS CPU quota (in CPUs) for this process.
+    """Return the CFS CPU quota (in CPUs) that applies to this process.
 
-    Resolves the process's own cgroup from ``/proc/self/cgroup``, then
-    walks up to the hierarchy root and returns the **minimum** quota
-    found along the way, so a limit set on a pod-level or systemd
-    slice-level ancestor is honored. Tries cgroup v2 (``cpu.max``) first
-    and cgroup v1 (``cpu.cfs_quota_us`` / ``cpu.cfs_period_us``) second.
-
-    When ``/proc/self/cgroup`` is unavailable (older kernels, restricted
-    ``/proc``), only the mount root is inspected, which is the process's
-    own cgroup inside a private cgroup namespace.
-
-    Returns None when no quota is set anywhere in the chain, when no
-    cgroup CPU controller is mounted, or on non-Linux platforms.
+    Walks from the process's own cgroup (``/proc/self/cgroup``, or the
+    mount root when unreadable) up to the root and returns the minimum
+    quota, trying cgroup v2 then v1. None when no quota applies.
     """
     v2_path, v1_path, v1_mount = _cgroup_paths()
     if v2_path is None and v1_path is None:
@@ -200,8 +189,6 @@ def cpu_budget(use_cgroup_quota: bool = True) -> CpuBudget:
     True (CPU-bound pools), caps it to ``ceil(quota)`` of any cgroup CFS
     quota, clamped to ``[1, available]``. ``ceil`` follows joblib/loky so a
     fractional quota is fully used; see :setting:`worker_concurrency`.
-
-    ``quota`` is None when it was not consulted or no quota applies.
     """
     available = available_cpu_count()
     if not use_cgroup_quota:
