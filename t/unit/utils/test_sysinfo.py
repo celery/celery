@@ -205,6 +205,16 @@ class test_cgroup_cpu_quota:
         with _fake_fs(files):
             assert cgroup_cpu_quota() == 2.0
 
+    def test_v1_mount_without_cpu_symlink(self):
+        # Only /sys/fs/cgroup/cpu,cpuacct is mounted, with no cpu symlink.
+        files = {
+            PROC_SELF_CGROUP: PROC_V1,
+            '/sys/fs/cgroup/cpu,cpuacct/docker/abc/cpu.cfs_quota_us': '200000\n',
+            '/sys/fs/cgroup/cpu,cpuacct/docker/abc/cpu.cfs_period_us': '100000\n',
+        }
+        with _fake_fs(files):
+            assert cgroup_cpu_quota() == 2.0
+
     def test_v1_root_when_proc_unavailable(self):
         with _fake_fs({V1_QUOTA: '200000\n', V1_PERIOD: '100000\n'}):
             assert cgroup_cpu_quota() == 2.0

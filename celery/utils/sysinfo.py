@@ -80,17 +80,19 @@ def _parse_quota(quota_us: str, period_us: str) -> float | None:
     return quota / period
 
 
-def _cgroup_paths() -> tuple[str | None, str | None]:
-    """Return this process's (v2 path, v1 cpu-controller path).
+def _cgroup_paths() -> tuple[str | None, str | None, str]:
+    """Return this process's (v2 path, v1 cpu-controller path, v1 mount).
 
-    Parsed from ``/proc/self/cgroup``. Either entry is None when the
+    Parsed from ``/proc/self/cgroup``. Either path is None when the
     corresponding hierarchy is absent. Paths are relative to the cgroup
-    mount and always start with ``/``.
+    mount and always start with ``/``. The v1 mount is the controller list
+    of the cpu hierarchy (``cpu,cpuacct``), ``cpu`` when not found.
     """
     content = _read_text(PROC_SELF_CGROUP)
     if content is None:
-        return None, None
+        return None, None, 'cpu'
     v2_path = v1_path = None
+    v1_mount = 'cpu'
     for line in content.splitlines():
         parts = line.split(':', 2)
         if len(parts) != 3:
@@ -99,8 +101,8 @@ def _cgroup_paths() -> tuple[str | None, str | None]:
         if hierarchy == '0' and controllers == '':
             v2_path = path
         elif 'cpu' in controllers.split(','):
-            v1_path = path
-    return v2_path, v1_path
+            v1_path, v1_mount = path, controllers
+    return v2_path, v1_path, v1_mount
 
 
 def _ancestors(path: str) -> list[str]:
@@ -162,7 +164,7 @@ def cgroup_cpu_quota() -> float | None:
     Returns None when no quota is set anywhere in the chain, when no
     cgroup CPU controller is mounted, or on non-Linux platforms.
     """
-    v2_path, v1_path = _cgroup_paths()
+    v2_path, v1_path, v1_mount = _cgroup_paths()
     if v2_path is None and v1_path is None:
         v2_path = v1_path = '/'
     if v2_path is not None:
@@ -170,9 +172,12 @@ def cgroup_cpu_quota() -> float | None:
         if cpus is not None:
             return cpus
     if v1_path is not None:
-        cpus = _min_quota(posixpath.join(CGROUP_ROOT, 'cpu'), v1_path, _read_v1_quota)
-        if cpus is not None:
-            return cpus
+        # Try the mount named after the hierarchy (``cpu,cpuacct``) first,
+        # then the usual ``cpu`` symlink, which some hosts do not create.
+        for mount in dict.fromkeys((v1_mount, 'cpu')):
+            cpus = _min_quota(posixpath.join(CGROUP_ROOT, mount), v1_path, _read_v1_quota)
+            if cpus is not None:
+                return cpus
     return None
 
 
