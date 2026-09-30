@@ -38,4 +38,3 @@ class test_AzureBlockBlobBackend:
             url=os.environ["AZUREBLOCKBLOB_URL"])
 
         assert backend.get(b"doesNotExist") is None
-
