@@ -1270,13 +1270,13 @@ class _chain(Signature):
                 if _is_empty_group(task) and (steps or prev_task):
                     continue
 
-            if isinstance(task, chord) and _is_chain_led_by_task(task.body):
+            if clone and isinstance(task, chord) and _is_chain_led_by_task(task.body):
                 # chord(header, chain(a, b, c)) -> chord(header, a), b, c
                 # Every header task carries a copy of the body, so a body
                 # holding the rest of the chain is copied once per header
-                # task, at every chord.
-                if clone:
-                    task = task.clone()
+                # task, at every chord. Freezing (clone=False) assigns ids
+                # to the tasks in place and keeps the chain as written.
+                task = task.clone()
                 body_tasks = task.body.unchain_tasks()
                 task.body = body_tasks[0]
                 steps_extend([task, *body_tasks[1:]])

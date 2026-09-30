@@ -842,6 +842,18 @@ class test_chain(CanvasCase):
             f"First message grows geometrically with the number of groups: {sizes}"
         )
 
+    def test_frozen_chain_of_implicit_chords_keeps_its_result_id(self):
+        c = chain(
+            self.add.s(1, 1),
+            group(self.add.s(1), self.add.s(2), app=self.app),
+            self.add.s(10),
+            self.add.s(100),
+        )
+        frozen = c.freeze()
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert tasks[0].args[0] == 100
+        assert results[0].id == frozen.id
+
     def test_chord_body_chain_led_by_group_stays_whole(self):
         body = chain([group(self.add.s(1, 1), self.add.s(2, 2), app=self.app), self.add.s(10)], app=self.app)
         c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
