@@ -2239,7 +2239,8 @@ class _chord(Signature):
         # apply_async(countdown=/eta=) must delay the header. Those keys collide
         # with chord.run(countdown=), which is the chord.unlock retry interval,
         # and cloning them onto the body delays only the callback after the
-        # header already ran (issue #7851).
+        # header already ran (issue #7851). Explicit apply_async values go in
+        # header_delay; .set(countdown=/eta=) on the chord is picked up in run().
         header_delay = {}
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
@@ -2254,9 +2255,9 @@ class _chord(Signature):
                                   body=body, task_id=task_id, **options)
 
         merged_options = dict(self.options, **options)
+        # Keep countdown/eta off run()'s kwargs so they don't replace the unlock
+        # retry interval; run() still sees .set() values via self.options.
         for key in ('countdown', 'eta'):
-            if key not in header_delay and merged_options.get(key) is not None:
-                header_delay[key] = merged_options[key]
             merged_options.pop(key, None)
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
@@ -2374,6 +2375,8 @@ class _chord(Signature):
                 max_retries=max_retries,
             )
             header_apply_options = dict(options)
+            # When both countdown and eta are set, both are forwarded; the
+            # task layer prefers countdown, same as a single task.
             header_apply_options.update(header_delay)
             header_result = header.apply_async(
                 partial_args, kwargs, task_id=group_id, **header_apply_options)

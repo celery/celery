@@ -21,6 +21,8 @@ Unreleased
 - The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
   and used to publish ``task-sent`` events is now always a dictionary containing
   the merged configured and per-call retry options, never ``None`` (#10708).
+- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
+  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
 
 .. _version-5.7.0a1:
 
