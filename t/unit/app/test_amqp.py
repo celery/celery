@@ -337,6 +337,16 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_accepts_expiration_string(self):
+        expires = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', expires=expires)
+        assert message.body['expires'] == expires
+
+    def test_accepts_eta_string(self):
+        eta = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', eta=eta)
+        assert message.body['eta'] == eta
+
 
 class test_AMQP_Base:
     def setup_method(self):
