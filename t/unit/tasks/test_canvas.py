@@ -558,6 +558,16 @@ class test_chain(CanvasCase):
         from celery._state import current_app
         assert chain().app is current_app
 
+    def test_app_when_first_task_is_chord(self):
+        # A chord has no app of its own: it resolves one through its tasks.
+        c = chain(
+            chord(group(self.add.s(1, 1), self.add.s(2, 2)), self.xsum.s()),
+            self.add.s(1),
+        )
+        assert isinstance(c, _chain)
+        assert c.tasks[0]._app is None
+        assert c.app is self.app
+
     def test_handles_dicts(self):
         c = chain(
             self.add.s(5, 5), dict(self.add.s(8)), app=self.app,
