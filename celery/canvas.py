@@ -1722,7 +1722,11 @@ class group(Signature):
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
         options, group_id, root_id = self._freeze_gid(options)
-        tasks = self._prepared(self.tasks, [], group_id, root_id, app)
+        # Freezing a chain that ends in a group builds a GroupResult that
+        # subscribes to the result backend, which eager apply never uses.
+        tasks = self._prepared(
+            self.tasks, [], group_id, root_id, app, freeze=False,
+        )
         return app.GroupResult(group_id, [
             sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
         ])
@@ -1778,6 +1782,7 @@ class group(Signature):
         return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
+                  freeze=True,
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
                   isinstance=isinstance, tuple=tuple):
@@ -1797,6 +1802,8 @@ class group(Signature):
             group_id (str): The group id of the group.
             root_id (str): The root id of the group.
             app (Celery): The Celery app instance.
+            freeze (bool): Freeze each task to get its result.  When false,
+                the generator yields ``None`` in place of the result.
             CallableSignature (class): The signature class of the group's tasks.
             from_dict (fun): Function to create a signature from a dict.
             isinstance (fun): Function to check if an object is an instance
@@ -1818,7 +1825,7 @@ class group(Signature):
             if isinstance(task, group):
                 # needs yield_from :(
                 unroll = task._prepared(
-                    task.tasks, partial_args, group_id, root_id, app,
+                    task.tasks, partial_args, group_id, root_id, app, freeze,
                 )
                 yield from unroll
             elif isinstance(task, _chain) and not task.tasks:
@@ -1829,7 +1836,10 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
+                result = task.freeze(
+                    group_id=group_id, root_id=root_id, group_index=index,
+                ) if freeze else None
+                yield task, result, group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
