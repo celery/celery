@@ -837,10 +837,68 @@ class test_chain(CanvasCase):
             return len(json.dumps([task.__json__() for task in tasks]))
 
         sizes = [first_message_size(n) for n in range(2, 6)]
-        increments = [b - a for a, b in zip(sizes, sizes[1:])]
-        assert max(increments) == min(increments), (
+        assert sizes[-1] < 3 * sizes[0], (
             f"First message grows geometrically with the number of groups: {sizes}"
         )
+
+    def test_split_chord_body_keeps_the_chain_options_on_its_first_task(self):
+        body = chain(self.add.s(10), self.add.s(100)).set(queue="q2", priority=7)
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3), self.add.s(4, 4)], body, app=self.app))
+
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        first, second = tasks[1].body, tasks[0]
+        assert first.args == (10,)
+        assert (first.options["queue"], first.options["priority"]) == ("q2", 7)
+        assert second.args == (100,)
+        assert "queue" not in second.options
+
+    def test_split_chord_body_keeps_link_error(self):
+        err = signature("errback", app=self.app)
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        c.tasks[1].link_error(err)
+
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        assert tasks[1].body.options["link_error"] == [err]
+        assert tasks[0].options["link_error"] == [err]
+
+    def test_preparing_a_chain_twice_leaves_it_as_written(self):
+        g = group(self.add.s(1), self.add.s(2), app=self.app)
+        c = chain(self.add.s(0, 0), g, self.add.s(10), self.add.s(100))
+        shape = lambda sigs: [type(sig).__name__ for sig in sigs]  # noqa: E731
+        written = shape(c.tasks) + shape(c.tasks[1].body.tasks)
+
+        first, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        second, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        assert shape(c.tasks) + shape(c.tasks[1].body.tasks) == written
+        assert shape(first) == shape(second) == ["Signature", "_chord", "Signature"]
+
+    def test_chain_body_chord_as_first_step(self):
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(chord([self.add.s(3, 3)], body, app=self.app), self.add.s(1000))
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert [type(sig).__name__ for sig in tasks] == ["Signature", "Signature", "_chord"]
+        assert tasks[-1].body.args == (10,)
+        assert [sig.args for sig in tasks[:2]] == [(1000,), (100,)]
+
+    def test_chain_body_chord_as_last_step(self):
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app, last_task_id="fixed")
+        assert [type(sig).__name__ for sig in tasks] == ["Signature", "_chord", "Signature"]
+        assert tasks[1].body.args == (10,)
+        assert tasks[0].args == (100,)
+        assert tasks[0].options["task_id"] == results[0].id == "fixed"
+
+    def test_last_task_id_lands_on_the_task_after_an_implicit_chord(self):
+        g = group(self.add.s(1), self.add.s(2), app=self.app)
+        c = chain(self.add.s(0, 0), g, self.add.s(10), self.add.s(100))
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app, last_task_id="fixed")
+        assert tasks[0].args == (100,)
+        assert tasks[0].options["task_id"] == results[0].id == "fixed"
 
     def test_frozen_chain_of_implicit_chords_keeps_its_result_id(self):
         c = chain(

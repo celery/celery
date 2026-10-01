@@ -86,6 +86,19 @@ def _is_chain_led_by_task(body):
     )
 
 
+# options of a chain that _chain.run consumes itself instead of passing
+# them on to the chain's first task
+_CHAIN_RUN_OPTIONS = frozenset({
+    'chord', 'group_id', 'group_index', 'link', 'link_error',
+    'parent_id', 'root_id', 'task_id',
+})
+
+
+def _first_task_options(chain_):
+    """Return the options a chain passes on to its first task when run."""
+    return {k: v for k, v in chain_.options.items() if k not in _CHAIN_RUN_OPTIONS}
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1278,7 +1291,7 @@ class _chain(Signature):
                 # to the tasks in place and keeps the chain as written.
                 task = task.clone()
                 body_tasks = task.body.unchain_tasks()
-                task.body = body_tasks[0]
+                task.body = body_tasks[0].clone(**_first_task_options(task.body))
                 steps_extend([task, *body_tasks[1:]])
                 continue
 

@@ -2098,6 +2098,23 @@ class test_chord:
         self.assert_parentids_chord(g(), expected_root_id)
 
     @flaky
+    def test_parent_ids__plain_task_body(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        root = ids.si(i=1)
+        expected_root_id = root.freeze().id
+        g = chain(
+            root, ids.si(i=2),
+            chord(group(ids.si(i=i) for i in range(3, 50)), collect_ids.s(i=50)),
+        )
+        res = g()
+        prev, (root_id, parent_id, value) = res.get(timeout=TIMEOUT)
+        assert value == 50
+        assert root_id == expected_root_id
+        # started by one of the chord header tasks.
+        assert parent_id in res.parent.results
+
+    @flaky
     def test_parent_ids__OR(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
