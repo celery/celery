@@ -1191,6 +1191,20 @@ class test_BaseBackend_dict:
         backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
         backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
 
+    def test_handle_group_chord_error_stores_failures_before_revoke(self):
+        # The revoke handler keeps a result that is already ready, so every
+        # failure has to be in the backend before the revoke goes out.
+        task_ids = ["task-id-1", "task-id-2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+        calls = []
+        backend.fail_from_current_stack.side_effect = lambda task_id, exc=None: calls.append(task_id)
+        backend.mark_as_failure.side_effect = lambda task_id, exc: calls.append(task_id)
+        frozen_group.revoke.side_effect = lambda: calls.append("revoke")
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert calls == ["task-id-1", "task-id-2", "group-id", "revoke"]
+
     def test_handle_group_chord_error_with_errbacks(self):
         """Test _handle_group_chord_error calls error callbacks for each task."""
         errbacks = ["errback1", "errback2"]

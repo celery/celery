@@ -56,6 +56,8 @@ class test_task_termination(SuiteOperations):
             filters={"name": "celery"},
         )
 
+        pids_before = {item["pid"] for item in pinfo_before}
+
         with pytest.raises(expected_error):
             self.apply_self_termination_task(celery_setup.worker, method).get()
 
@@ -65,23 +67,19 @@ class test_task_termination(SuiteOperations):
             wait=wait_fixed(0.1),
             reraise=True,
         )
-        def wait_for_two_celery_processes():
+        def wait_for_new_child_process():
             pinfo_current = celery_setup.worker.get_running_processes_info(
                 ["pid", "name"],
                 filters={"name": "celery"},
             )
-            if len(pinfo_current) != 2:
+            pids_current = {item["pid"] for item in pinfo_current}
+            # The old child can still be alive when the count is back to
+            # two, so wait for a pid that was not there before the task.
+            if len(pids_current) != 2 or not pids_current - pids_before:
                 assert False, f"Child process did not respawn with method: {method.name}"
+            return pids_current
 
-        wait_for_two_celery_processes()
-
-        pinfo_after = celery_setup.worker.get_running_processes_info(
-            ["pid", "name"],
-            filters={"name": "celery"},
-        )
-
-        pids_before = {item["pid"] for item in pinfo_before}
-        pids_after = {item["pid"] for item in pinfo_after}
+        pids_after = wait_for_new_child_process()
         assert len(pids_before | pids_after) == 3
 
     @pytest.mark.parametrize(

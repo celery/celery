@@ -341,6 +341,42 @@ class test_LimitedSet:
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
 
+    def test_add_orders_items_within_the_clock_resolution(self):
+        s = LimitedSet(maxlen=10)
+        s.add('b', now=1.0)
+        s.add(1, now=1.0)  # no comparison between the items themselves
+        s.add('a', now=1.0)
+        assert list(s) == ['b', 1, 'a']
+        assert s.pop() == 'b'
+
+    def test_add_at_time_zero(self):
+        s = LimitedSet(maxlen=10, expires=1)
+        s.add('foo', now=0)
+        assert s.as_dict()['foo'] == 0
+        assert pickle.loads(pickle.dumps(s)) == s
+        s.purge(now=2)
+        assert 'foo' not in s
+
+    def test_update_from_another_clock(self):
+        # The stamps of a set built on another host are not comparable
+        # with ours; merging its items stamps them with the local clock,
+        # merging the set or its dict keeps the stamps.
+        other = LimitedSet(maxlen=10)
+        other.add('foo', now=monotonic() + 10 ** 6)
+        s = LimitedSet(maxlen=10)
+        s.update(list(other))
+        assert s.as_dict()['foo'] <= monotonic()
+        s = LimitedSet(maxlen=10)
+        s.update(other)
+        assert s.as_dict()['foo'] == other.as_dict()['foo']
+
+    def test_eq(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        assert s == pickle.loads(pickle.dumps(s))
+        assert s != LimitedSet(maxlen=2)
+        assert s != {'foo'}
+
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
@@ -570,6 +606,49 @@ class test_BufferMap:
         b.extend(1, list(range(20)))
         self.assert_size_and_first(b, 20, 0)
 
+    def test_bufmaxsize_parameter_is_honored(self):
+        b = BufferMap(None, bufmaxsize=3)
+        b.extend(1, list(range(10)))
+        self.assert_size_and_first(b, 3, 7)
+
+    def test_total_tracks_bufmaxsize_eviction(self):
+        b = BufferMap(None, bufmaxsize=3)
+        for i in range(5):
+            b.put(1, i)
+        self.assert_size_and_first(b, 3, 2)
+
+    def test_init_from_iterable(self):
+        b = BufferMap(None, {'a': [1, 2, 3], 'b': [4, 5]})
+        self.assert_size_and_first(b, 5, 1)
+
+    def test_init_from_iterable_wraps_values_in_buffers(self):
+        b = BufferMap(None, {'a': [1, 2, 3]})
+        assert isinstance(b['a'], Messagebuffer)
+        assert b.take('a') == 1
+
+    def test_init_from_iterable_enforces_maxsize(self):
+        b = BufferMap(4, {'a': list(range(50))})
+        self.assert_size_and_first(b, 4, 46)
+
+    def test_init_from_iterable_enforces_maxsize_beyond_evict_limit(self):
+        # _evict() removes at most 100 items per call, so seeding more than
+        # 100 items over maxsize must rely on the unlimited evict() to keep
+        # the constructor's guarantee.
+        b = BufferMap(4, {'a': list(range(1000))})
+        self.assert_size_and_first(b, 4, 996)
+
+    def test_high_volume_single_key_keeps_total_and_other_keys(self):
+        # Regression for the total accounting fixed in #10705: on main, 1500
+        # puts to one key pushed `total` to 1500 while the buffer held 1000,
+        # evicting other keys' pending messages early.
+        b = BufferMap(8192, bufmaxsize=1000)
+        for i in range(1500):
+            b.put('test-busy-key', i)
+        b.put('test-other-key', 'keep')
+        assert b.total == 1001
+        assert len(b['test-busy-key']) == 1000
+        assert b.take('test-other-key') == 'keep'
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
@@ -595,6 +674,23 @@ class test_ChainMap:
         callback.assert_not_called()
         a.update(x=1)
         callback.assert_called_once_with(x=1)
+
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'foo': 1, 'bar': 2}, id='mapping'),
+        pytest.param([('foo', 1), ('bar', 2)], id='list-of-pairs'),
+        pytest.param((('foo', 1), ('bar', 2)), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('foo', 1), ('bar', 2)]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_with_positional_argument_notifies_observer(self, updates):
+        a = ChainMap()
+        observed = {}
+        a.bind_to(observed.update)
+
+        a.update(updates)
+        assert a.changes == observed == {'foo': 1, 'bar': 2}
 
     def test_pop_applies_key_t(self):
         cm = ChainMap(key_t=lambda key: key + '!')

@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from kombu import Exchange, Queue
 
-from celery import uuid
+from celery import signals, uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.utils.time import to_utc
 
@@ -81,6 +81,13 @@ class test_Queues:
         assert isinstance(q['foo'], Queue)
         assert q['foo'].routing_key == 'rk'
 
+    def test_add_preserves_exchange_without_default(self):
+        exchange = Exchange('')
+        queues = Queues()
+        queues.add(Queue('foo', exchange=exchange))
+
+        assert queues['foo'].exchange is exchange
+
     def test_setitem_adds_default_exchange(self):
         q = Queues(default_exchange=Exchange('bar'))
         assert q.default_exchange
@@ -88,6 +95,18 @@ class test_Queues:
         queue.exchange = None
         q['foo'] = queue
         assert q['foo'].exchange == q.default_exchange
+
+    def test_setitem_adds_default_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo')
+
+        assert queues['foo'].routing_key == 'default-key'
+
+    def test_setitem_preserves_routing_key(self):
+        queues = Queues(default_routing_key='default-key')
+        queues['foo'] = Queue('foo', routing_key='explicit-key')
+
+        assert queues['foo'].routing_key == 'explicit-key'
 
     def test_setitem_adds_max_priority(self):
         queues = Queues(max_priority=10)
@@ -230,6 +249,17 @@ class test_Queues:
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
 
+    def test_missing_queue_invalid_type_raises_error(self):
+        queues = Queues(create_missing_queue_type="invalid")
+
+        with pytest.raises(ValueError) as exc_info:
+            queues['foo']
+
+        assert str(exc_info.value) == (
+            "Invalid queue type 'invalid'. "
+            "Valid types are 'classic' and 'quorum'."
+        )
+
 
 class test_default_queues:
 
@@ -306,6 +336,16 @@ class test_AMQP_proto1:
     def test_as_task_message_without_utc(self):
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
+
+    def test_accepts_expiration_string(self):
+        expires = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', expires=expires)
+        assert message.body['expires'] == expires
+
+    def test_accepts_eta_string(self):
+        eta = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', eta=eta)
+        assert message.body['eta'] == eta
 
 
 class test_AMQP_Base:
@@ -469,6 +509,29 @@ class test_AMQP(test_AMQP_Base):
         assert event['routing_key'] == 'xyb'
         assert event['exchange'] == 'xyz'
 
+    def test_send_task_sent_event_uses_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message,
+            retry_policy={'interval_start': 1}, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 1,
+        }
+
+    def test_send_task_sent_event_uses_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
@@ -498,10 +561,128 @@ class test_AMQP(test_AMQP_Base):
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
 
+    def test_before_task_publish_receives_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+                retry_policy={'max_retries': 5},
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 5, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_receives_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_can_modify_retry_policy_without_changing_defaults(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        producer = Mock(name='producer')
+
+        def receiver(retry_policy, **kwargs):
+            retry_policy['max_retries'] = 7
+
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                producer, 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert producer.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 7, 'interval_start': 0,
+        }
+        assert self.app.conf.task_publish_retry_policy == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
     def test_routes(self):
         r1 = self.app.amqp.routes
         r2 = self.app.amqp.routes
         assert r1 is r2
+
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'task_routes': {}}, id='mapping'),
+        pytest.param([('task_routes', {})], id='list-of-pairs'),
+        pytest.param((('task_routes', {}),), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('task_routes', {})]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_task_routes_from_positional_argument_rebuilds_router(self, updates):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(updates)
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_from_keyword_argument_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(task_routes={})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_legacy_key_rebuilds_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update({'CELERY_ROUTES': {}})
+
+        flush_routes.assert_called_once_with()
+        assert self.app.amqp.router is not previous_router
+
+    def test_update_task_routes_with_namespace_rebuilds_router(self):
+        with self.Celery(namespace='CELERY', set_as_current=False) as app:
+            previous_router = app.amqp.router
+
+            with patch.object(
+                    app.amqp, 'flush_routes',
+                    wraps=app.amqp.flush_routes) as flush_routes:
+                app.conf.update({'CELERY_TASK_ROUTES': {}})
+
+            flush_routes.assert_called_once_with()
+            assert app.amqp.router is not previous_router
+
+    def test_update_unrelated_setting_does_not_rebuild_router(self):
+        previous_router = self.app.amqp.router
+
+        with patch.object(
+                self.app.amqp, 'flush_routes',
+                wraps=self.app.amqp.flush_routes) as flush_routes:
+            self.app.conf.update(worker_prefetch_multiplier=1)
+
+        flush_routes.assert_not_called()
+        assert self.app.amqp.router is previous_router
 
     def update_conf_runtime_for_tasks_queues(self):
         self.app.conf.update(task_routes={'task.create_pr': 'queue.qwerty'})

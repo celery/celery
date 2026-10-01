@@ -213,6 +213,13 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
         LOGGER.debug("Deleting CosmosDB document %s/%s/%s",
                      self._database_name, self._collection_name, key)
 
-        self._client.DeleteDocument(
-            self._get_document_link(key),
-            self._get_partition_key(key))
+        try:
+            self._client.DeleteDocument(
+                self._get_document_link(key),
+                self._get_partition_key(key))
+        except HTTPFailure as ex:
+            if ex.status_code != ERROR_NOT_FOUND:
+                raise
+            # deleting an already-expired, already-forgotten or never-stored
+            # result must keep forget() idempotent, like the other KV backends
+            return
