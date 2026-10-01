@@ -12,6 +12,8 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``abbr`` and ``abbrtask`` stay within the requested length. ``abbr("ABCDEFGHI", 2)``
+  used a negative slice and returned ``"ABCDEFGH..."``, which is longer than the input.
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted

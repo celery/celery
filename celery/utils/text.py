@@ -64,21 +64,31 @@ def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
     """Abbreviate word."""
     if S is None:
         return '???'
-    if len(S) > max:
-        return isinstance(ellipsis, str) and (
-            S[: max - len(ellipsis)] + ellipsis) or S[: max]
-    return S
+    # A negative end index keeps almost the whole string. "ABCDEFGHI"
+    # abbreviated to 2 became "ABCDEFGH...", longer than the input.
+    if max < 0:
+        max = 0
+    if len(S) <= max:
+        return S
+    if isinstance(ellipsis, str) and len(ellipsis) <= max:
+        return S[: max - len(ellipsis)] + ellipsis
+    return S[:max]
 
 
 def abbrtask(S: str, max: int) -> str:
     """Abbreviate task name."""
     if S is None:
         return '???'
-    if len(S) > max:
-        module, _, cls = S.rpartition('.')
-        module = abbr(module, max - len(cls) - 3, False)
-        return module + '[.]' + cls
-    return S
+    if len(S) <= max:
+        return S
+    module, _, cls = S.rpartition('.')
+    glue = '[.]'
+    # The class name can be longer than max. That budget used to go
+    # negative and abbr kept almost the whole module.
+    if not module or len(glue) + len(cls) > max:
+        return abbr(S, max, False)
+    module = abbr(module, max - len(cls) - len(glue), False)
+    return module + glue + cls
 
 
 def indent(t: str, indent: int = 0, sep: str = '\n') -> str:

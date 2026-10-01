@@ -63,6 +63,8 @@ def test_truncate_text(s, maxsize, expected):
     (('ABCDEFGHI', 6), 'ABC...'),
     (('ABCDEFGHI', 20), 'ABCDEFGHI'),
     (('ABCDEFGHI', 6, None), 'ABCDEF'),
+    (('ABCDEFGHI', 2), 'AB'),
+    (('ABCDEFGHI', 0), ''),
 ])
 def test_abbr(args, expected):
     assert abbr(*args) == expected
@@ -72,6 +74,7 @@ def test_abbr(args, expected):
     (None, 3, '???'),
     ('feeds.tasks.refresh', 10, '[.]refresh'),
     ('feeds.tasks.refresh', 30, 'feeds.tasks.refresh'),
+    ('feeds.tasks.refresh', 5, 'feeds'),
 ])
 def test_abbrtask(s, maxsize, expected):
     assert abbrtask(s, maxsize) == expected
