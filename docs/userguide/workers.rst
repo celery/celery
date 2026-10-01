@@ -1271,9 +1271,9 @@ There are two types of remote control commands:
     Performs side effects, like adding a new queue to consume from.
 
 Remote control commands are registered in the control panel and
-they take a single argument: the current
-:class:`!celery.worker.control.ControlDispatch` instance.
-From there you have access to the active
+they take a ``state`` object as their first argument, followed by
+any arguments sent with the command.
+From ``state`` you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:
