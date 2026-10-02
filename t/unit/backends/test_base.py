@@ -800,6 +800,19 @@ class test_BaseBackend_dict:
         failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
         assert failed == {'after-id': states.FAILURE}
 
+    def test_fail_chain_returns_the_part_of_a_chained_chord_member(self):
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+        bodiless = chord([signature('h')], None)
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, 'on_chord_part_return') as part_return:
+            self.b._fail_chain([member, bodiless], ValueError('header failed'))
+
+        part_return.assert_called_once()
+        assert part_return.call_args[0][0].id == 'member-id'
+        assert [call_[0][0] for call_ in store_result.call_args_list] == ['member-id']
+
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
