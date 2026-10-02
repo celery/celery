@@ -585,7 +585,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -871,7 +871,10 @@ class ResultSet(ResultBase):
             if isinstance(meta, list):
                 value = []
                 for children_result in meta:
-                    value.append(children_result.get())
+                    value.append(children_result.get(
+                        propagate=propagate,
+                        disable_sync_subtasks=disable_sync_subtasks,
+                    ))
             else:
                 value = meta['result']
                 if propagate and meta['status'] in states.PROPAGATE_STATES:

@@ -81,6 +81,42 @@ class test_Pool:
 
         assert comp.instantiate.call_args[1]['max_memory_per_child'] == 32
 
+    @t.skip.if_win32
+    def test_create_forking_enable_fork(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'fork'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is True
+
+    def test_create_forking_enable_spawn(self):
+        w = Mock()
+        w.use_eventloop = False
+        w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'spawn'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is False
+
+    @t.skip.if_win32
+    def test_create_spawn_with_async_pool(self):
+        w = Mock()
+        w.use_eventloop = w.pool_putlocks = w.pool_cls.uses_semaphore = True
+        w.pool_start_method = 'spawn'
+        comp = Pool(w)
+        comp.instantiate = Mock()
+
+        comp.create(w)
+
+        assert comp.instantiate.call_args[1]['forking_enable'] is False
+
 
 class test_Beat:
 

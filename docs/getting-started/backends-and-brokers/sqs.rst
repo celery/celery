@@ -319,11 +319,10 @@ Caveats
 
   .. code-block:: python
 
-    message_properties = {
-        'MessageGroupId': '<YourMessageGroupId>',
-        'MessageDeduplicationId': '<YourMessageDeduplicationId>'
-    }
-    task.apply_async(**message_properties)
+    task.apply_async(
+        MessageGroupId='<YourMessageGroupId>',
+        MessageDeduplicationId='<YourMessageDeduplicationId>',
+    )
 
 - During :ref:`shutdown <worker-stopping>`, the worker will attempt to re-queue any unacknowledged messages
   with :setting:`task_acks_late` enabled. However, if the worker is terminated forcefully

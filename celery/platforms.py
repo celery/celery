@@ -15,7 +15,8 @@ import sys
 import warnings
 from contextlib import contextmanager
 
-from billiard.compat import close_open_fds, get_fdmax
+from billiard.compat import close_open_fds as _billiard_close_open_fds
+from billiard.compat import get_fdmax
 from billiard.util import set_pdeathsig as _set_pdeathsig
 # fileno used to be in this module
 from kombu.utils.compat import maybe_fileno
@@ -55,6 +56,14 @@ EX_CANTCREAT = getattr(os, 'EX_CANTCREAT', 73)
 SYSTEM = _platform.system()
 IS_macOS = SYSTEM == 'Darwin'
 IS_WINDOWS = SYSTEM == 'Windows'
+
+# Directory listing the descriptors open in the calling process.  Follows
+# CPython's FD_DIR (Modules/_posixsubprocess.c): /dev/fd on macOS, and on
+# FreeBSD and DragonFly when fdescfs is mounted; /proc/self/fd everywhere else.
+if IS_macOS or SYSTEM in {'DragonFly', 'FreeBSD'}:
+    _FD_DIR = '/dev/fd'
+else:
+    _FD_DIR = '/proc/self/fd'
 
 DAEMON_WORKDIR = '/'
 
@@ -304,7 +313,62 @@ def fd_by_path(paths):
         except OSError:
             return False
 
-    return [_fd for _fd in range(get_fdmax(2048)) if fd_in_stats(_fd)]
+    fds = _open_fds()
+    if fds is None:
+        # No fd directory on this platform.  Scan the numeric range, as
+        # before: fdmax is only unreasonably large (~1e9) in containers, and
+        # those run Linux, where /proc/self/fd is listed above (issue #9886).
+        fds = range(get_fdmax(2048))
+    return [_fd for _fd in fds if fd_in_stats(_fd)]
+
+
+def _dev_fd_is_fdescfs():
+    # devfs alone creates only /dev/fd/0-2, while fdescfs creates entries for
+    # every descriptor the process has open.  Same check as CPython's
+    # _is_fdescfs_mounted_on_dev_fd().
+    try:
+        return os.stat('/dev').st_dev != os.stat(_FD_DIR).st_dev
+    except OSError:
+        return False
+
+
+def _open_fds():
+    """List the descriptors open in this process, or :const:`None`.
+
+    :const:`None` means this platform has no directory listing them, and the
+    caller has to scan a numeric range instead.
+    """
+    if SYSTEM in {'DragonFly', 'FreeBSD'} and not _dev_fd_is_fdescfs():
+        return None
+    try:
+        names = os.listdir(_FD_DIR)
+    except OSError:
+        return None
+    return sorted(int(name) for name in names if name.isdigit())
+
+
+def close_open_fds(keep=None):
+    """Close every open descriptor except those in *keep*.
+
+    Only the descriptors listed by the fd directory are touched, so the cost
+    does not grow with ``RLIMIT_NOFILE`` (issue #9886).  billiard's
+    implementation is still used as the fallback where no fd directory exists.
+    """
+    fds = _open_fds()
+    if fds is None:
+        # billiard walks range(get_fdmax()) in Python, which is what stalls
+        # in containers; only reachable without an fd directory.
+        _billiard_close_open_fds(keep)
+        return
+    keep = {fd for fd in map(maybe_fileno, keep or []) if fd is not None}
+    for fd in fds:
+        if fd in keep:
+            continue
+        try:
+            os.close(fd)
+        except OSError as exc:
+            if exc.errno != errno.EBADF:
+                raise
 
 
 class DaemonContext:

@@ -954,6 +954,12 @@ Result serialization format.
 See :ref:`calling-serializers` for information about supported
 serialization formats.
 
+.. versionchanged:: 5.7
+
+    The database backend now honors this setting; see the note under
+    :ref:`conf-database-result-backend` for details on what changes for
+    existing deployments.
+
 .. setting:: result_compression
 
 ``result_compression``
@@ -979,6 +985,9 @@ Google Cloud Storage and file-system backends. On any other backend the
 setting is ignored, a warning is emitted when the backend is created, and
 results are stored uncompressed.
 
+For Redis configured with ``decode_responses=True``, this setting is also
+ignored, a warning is emitted, and results are stored uncompressed.
+
 Each compressed result records which method compressed it, so a worker or
 client reads a compressed result correctly whether or not it has this
 setting turned on itself, and results written before the setting was turned
@@ -994,7 +1003,18 @@ and client first and turn the setting on afterwards.
 Default: ``False``
 
 Enables extended task result attributes (name, args, kwargs, worker,
-retries, queue) to be written to backend.
+retries, queue, stamps) to be written to backend.
+
+.. versionadded:: 5.7
+    Added storing task stamping metadata (``stamps``) in the database backend.
+
+.. note::
+
+    When using the database backend with :setting:`result_extended` set to ``True``,
+    task stamping metadata is stored in a ``stamps`` column. For existing database deployments
+    upgrading with an already-created ``celery_taskmeta`` table, operators must execute the
+    appropriate DDL migration to add the column before upgrading (e.g., ``ALTER TABLE celery_taskmeta ADD COLUMN stamps BLOB;``
+    or ``BYTEA`` on PostgreSQL); this migration is required as result writes will otherwise fail.
 
 .. setting:: result_expires
 
@@ -1067,7 +1087,7 @@ Default: Disabled by default.
 
 Path to class that implements backend.
 
-Allows to override backend implementation.
+Allows overriding the backend implementation.
 This can be useful if you need to store additional metadata about executed tasks,
 override retry policies, etc.
 
@@ -1109,6 +1129,24 @@ Database backend settings
 
         result_backend_always_retry = True
         result_backend_max_retries = 10
+
+.. note::
+
+    **Database backend now honors** :setting:`result_serializer`
+
+    Prior to Celery 5.7, the database backend always stored the ``result``
+    column of the ``celery_taskmeta`` and ``celery_tasksetmeta`` tables as a
+    Python pickle, regardless of the configured :setting:`result_serializer`
+    (see `celery/celery#3025 <https://github.com/celery/celery/issues/3025>`_).
+    As of 5.7, the column holds the bytes produced by whatever serializer you
+    configure, exactly like every other result backend.
+
+    No schema change or migration is required: the column type on the
+    database side is unchanged, only what gets written into it. Rows written
+    by an earlier Celery version are always a pickle blob no matter what
+    :setting:`result_serializer` says, and are still read back correctly
+    after upgrading — the backend detects and unpickles them automatically.
+    Only newly written results use the configured serializer.
 
 Database URL Examples
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1270,6 +1308,19 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. note::
+
+    Starting in Celery 5.7, the database result backend supports storing task
+    children in the ``children`` column of ``celery_taskmeta``.
+    Celery automatically attempts to add this missing column to existing tables
+    at startup. If your database user does not have DDL / ``ALTER TABLE`` permissions,
+    you can execute the migration manually:
+
+    .. code-block:: sql
+
+        ALTER TABLE celery_taskmeta ADD COLUMN children BLOB;  -- SQLite / MySQL
+        ALTER TABLE celery_taskmeta ADD COLUMN children BYTEA; -- PostgreSQL
 
 .. setting:: database_engine_callback
 
@@ -2207,7 +2258,7 @@ For example to auto remove results after 24 hours::
 Default: 10.
 
 Threadpool size for GCS operations. Same value defines the connection pool size.
-Allows to control the number of concurrent operations. For example::
+Allows controlling the number of concurrent operations. For example::
 
     gcs_threadpool_maxsize = 20
 
@@ -3170,8 +3221,8 @@ a connection was closed.
 If the heartbeat value is 10 seconds, then
 the heartbeat will be monitored at the interval specified
 by the :setting:`broker_heartbeat_checkrate` setting (by default
-this is set to double the rate of the heartbeat value,
-so for the 10 seconds, the heartbeat is checked every 5 seconds).
+this is set to triple the rate of the heartbeat value,
+so for the 10 seconds, the heartbeat is checked about every 3.33 seconds).
 
 .. setting:: broker_heartbeat_checkrate
 
@@ -3179,14 +3230,13 @@ so for the 10 seconds, the heartbeat is checked every 5 seconds).
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :transports supported: ``pyamqp``
 
-Default: 2.0.
+Default: 3.0.
 
 At intervals the worker will monitor that the broker hasn't missed
 too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
-so if the heartbeat is 10.0 and the rate is the default 2.0, the check
-will be performed every 5 seconds (twice the heartbeat sending rate).
-
+so if the heartbeat is 10.0 and the rate is the default 3.0, the check
+will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``
@@ -3330,7 +3380,9 @@ exceeded.
 ``broker_connection_retry_on_startup``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: Enabled.
+Default: :const:`None`, which falls back to
+:setting:`broker_connection_retry` and so is enabled unless you have
+disabled that.
 
 Automatically try to establish the connection to the AMQP broker on Celery startup if it is unavailable.
 
@@ -3499,6 +3551,40 @@ but if mostly CPU-bound, try to keep it close to the
 number of CPUs on your machine. If not set, the number of CPUs/cores
 on the host will be used.
 
+The command-line equivalent is the
+:option:`--concurrency <celery worker --concurrency>` argument.
+
+.. versionadded:: 5.7
+   The ``"auto"`` value.
+
+Accepts an integer or the string ``"auto"``. Setting it to ``"auto"``
+(equivalent to passing ``--concurrency=auto``) sizes the ``prefork``
+pool from the CPU resources available to the worker process on Linux:
+
+* the scheduler affinity mask (``taskset``, cpusets,
+  ``docker run --cpuset-cpus``), read via :func:`os.process_cpu_count`
+  or :func:`os.sched_getaffinity`, and
+* the cgroup CFS bandwidth quota (``cpu.max`` on cgroup v2,
+  ``cpu.cfs_quota_us`` / ``cpu.cfs_period_us`` on cgroup v1). The
+  worker's own cgroup is resolved from ``/proc/self/cgroup`` and every
+  ancestor up to the root is inspected; the smallest quota found wins,
+  so a limit set on a Kubernetes pod, a Docker container or a systemd
+  slice (``CPUQuota=``) is honored.
+
+The result is ``ceil(quota)``, clamped to at least 1 and at most the
+affinity CPU count. A fractional quota of 1.5 CPUs therefore yields 2
+processes, so the whole quota can be consumed at the cost of some CFS
+throttling; integer quotas are unaffected. When no quota is set the
+affinity CPU count is used and the worker logs at INFO level that no
+quota was found.
+
+For greenlet pools (``gevent``, ``eventlet``), the thread pool and the
+``solo`` pool, ``"auto"`` is a no-op and resolves to the affinity CPU
+count: concurrency for the IO pools is bound by memory and file
+descriptors, not CPU, and ``solo`` always runs one task at a time. On
+non-Linux platforms or when no cgroup CPU controller is mounted,
+``"auto"`` resolves to the affinity CPU count as well.
+
 .. setting:: worker_prefetch_multiplier
 
 ``worker_prefetch_multiplier``
@@ -3517,6 +3603,9 @@ to the workers.
 To limit the broker to only deliver one message per process at a time,
 set :setting:`worker_prefetch_multiplier` to 1. Changing that setting to 0
 will allow the worker to keep consuming as many messages as it wants.
+
+The command-line equivalent is the
+:option:`--prefetch-multiplier <celery worker --prefetch-multiplier>` argument.
 
 If you need to completely disable broker prefetching while still using
 early acknowledgments, enable :setting:`worker_disable_prefetch`.
@@ -4287,6 +4376,31 @@ Default: Disabled by default.
 If enabled the worker pool can be restarted using the
 :control:`pool_restart` remote control command.
 
+.. setting:: worker_pool_start_method
+
+``worker_pool_start_method``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: ``"fork"``.
+
+Start method used to create the child processes of the prefork pool. Only
+meaningful for the prefork pool; ignored by the eventlet/gevent/solo pools.
+
+- ``"fork"`` (default): children are created with ``fork()``. This is fast,
+  and shares the parent's already-imported modules and memory copy-on-write,
+  but is **unsafe** when the parent process has started threads or uses
+  C-extensions that are not fork-safe (for example gRPC, ``psycopg`` or
+  CUDA), and can deadlock or corrupt state in the children.
+- ``"spawn"``: each child is started in a fresh Python interpreter. This is
+  safe in the presence of threads and fork-unsafe C-extensions, at the cost
+  of slower start-up, higher memory usage, and the requirement that the app
+  and task arguments are picklable and that your entry point is guarded by
+  ``if __name__ == '__main__':``. A replacement child has to finish importing
+  your application within :setting:`worker_proc_alive_timeout`, so raise that
+  setting for applications that take longer to import.
+
 .. setting:: worker_autoscaler
 
 ``worker_autoscaler``
@@ -4475,6 +4589,112 @@ that are past due will always run immediately.
 .. warning::
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
+
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends, and stops
+replying once the scheduler falls behind -- see
+:setting:`beat_remote_control_max_tick_age`.
+
+The node name defaults to ``celerybeat@hostname`` and can be set with
+:option:`--hostname <celery beat --hostname>`. The setting itself can be
+overridden per process with
+:option:`--enable-remote-control <celery beat --enable-remote-control>`.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+The control node connects on its own, separately from the scheduler,
+under the same settings the worker uses:
+:setting:`broker_connection_retry_on_startup` for its first attempt
+when that is set, :setting:`broker_connection_retry` otherwise -- which
+is the default, since the startup setting defaults to :const:`None` --
+and :setting:`broker_connection_max_retries` for how long it keeps
+trying.
+
+**Once it gives up, it stays given up.** The scheduler carries on
+running and firing tasks, but beat answers no remote control commands
+for the rest of the process's life and logs an error saying so. A
+connection that drops after it was established gets one further attempt
+under the same settings; if that one also gives up, it is likewise
+final. Nothing here requires you to have disabled anything: on stock
+settings, a broker unreachable for longer than
+:setting:`broker_connection_max_retries` allows reaches the same place.
+
+That matters if you use :program:`celery inspect ping` as a liveness
+probe. The probe keeps failing, so a supervisor restarts beat and the
+connection is attempted afresh, which is the recovery. Without such a
+probe nothing notices, so check beat's log if remote control stops
+answering while the scheduler seems fine.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
+.. setting:: beat_remote_control_max_tick_age
+
+``beat_remote_control_max_tick_age``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (twice the scheduler's loop interval).
+
+Only has an effect when :setting:`beat_enable_remote_control` is
+enabled.
+
+Seconds the scheduler may go without completing a pass before beat
+stops answering :program:`celery inspect ping`. The control node runs
+in a thread of its own, so without this a ping would be answered even
+by a beat whose scheduler loop had wedged -- the exact failure a health
+check exists to catch.
+
+The default tolerates exactly one missed pass, measured against the
+interval the scheduler actually settled on -- a scheduler class may
+choose its own when :setting:`beat_max_loop_interval` is unset, as
+``django-celery-beat`` does -- and never drops below a floor of sixty
+seconds, so that a single slow pass on a short-interval scheduler is
+not mistaken for a stall.
+
+Beat records a tick when it starts, so a process that wedges before its
+first tick goes stale on the same schedule rather than looking healthy
+forever.
+
+Beat declines by staying silent, because :program:`celery inspect`
+exits non-zero only when no node replies at all; an error reply would
+leave the exit status at zero. Each refusal is logged as a warning, so
+a probe running once a minute against a stalled beat produces a warning
+a minute.
+
+Set to ``0`` to answer regardless of how long ago the last tick was.
 
 .. setting:: beat_logfile
 

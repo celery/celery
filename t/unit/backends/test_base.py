@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import re
 from contextlib import contextmanager
@@ -285,6 +286,72 @@ class test_BaseBackend_interface:
             called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
             assert called_kwargs['queue'] == 'test_queue_three'
 
+    def test_chord_unlock_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(
+            queue='my_queue',
+            exchange='my_exchange',
+            exchange_type='headers',
+            routing_key='my_routing_key',
+            headers={'my_header': 'my_value'},
+        )
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_args[1]['_chord_unlock_exchange_type'] == 'headers'
+        assert called_kwargs['queue'] == 'my_queue'
+        assert called_kwargs['exchange'] == 'my_exchange'
+        assert called_kwargs['exchange_type'] == 'headers'
+        assert called_kwargs['routing_key'] == 'my_routing_key'
+        assert called_kwargs['headers'] == {'my_header': 'my_value'}
+
+    def test_chord_unlock_with_unknown_queue(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        self.app.amqp.queues.create_missing = False
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='missing_queue')
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
+    def test_chord_unlock_with_queue_without_exchange(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        queue = Mock(spec=[])
+        body = self.callback.s().set(queue=queue)
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_kwargs['queue'] is queue
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
+    def test_chord_unlock_stamped_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='my_queue')
+        body.stamp(headers='my_stamp')
+
+        self.b.apply_chord(header_result_args, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'my_queue'
+        assert 'headers' not in called_kwargs
+
 
 class test_exception_pickle:
     def test_BaseException(self):
@@ -347,6 +414,19 @@ class test_prepare_exception:
         assert isinstance(x, KeyError)
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
+
+    @pytest.mark.parametrize('exc', [BaseException('boom'), asyncio.CancelledError()])
+    def test_encode_result_json_base_exception(self, exc):
+        self.b.serializer = 'json'
+        x = self.b.encode_result(exc, states.FAILURE)
+        assert x == {
+            'exc_message': exc.args,
+            'exc_type': type(exc).__name__,
+            'exc_module': type(exc).__module__}
+        self.b.encode({'result': x})
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, type(exc))
+        assert y.args == exc.args
 
     def test_unicode_message(self):
         message = '\u03ac'
@@ -1111,6 +1191,20 @@ class test_BaseBackend_dict:
         backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
         backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
 
+    def test_handle_group_chord_error_stores_failures_before_revoke(self):
+        # The revoke handler keeps a result that is already ready, so every
+        # failure has to be in the backend before the revoke goes out.
+        task_ids = ["task-id-1", "task-id-2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+        calls = []
+        backend.fail_from_current_stack.side_effect = lambda task_id, exc=None: calls.append(task_id)
+        backend.mark_as_failure.side_effect = lambda task_id, exc: calls.append(task_id)
+        frozen_group.revoke.side_effect = lambda: calls.append("revoke")
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert calls == ["task-id-1", "task-id-2", "group-id", "revoke"]
+
     def test_handle_group_chord_error_with_errbacks(self):
         """Test _handle_group_chord_error calls error callbacks for each task."""
         errbacks = ["errback1", "errback2"]
@@ -1335,6 +1429,67 @@ class test_KeyValueStoreBackend:
         self.b._cache[tasks[1]] = {'status': 'PENDING'}
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.01, interval=0.01))
+
+    def test_get_many__timeout_zero_does_not_wait_forever(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        # max_iterations keeps this test terminating if the deadline is
+        # skipped again, so the regression shows up as a failure not a hang.
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(
+                tasks, timeout=0, interval=0.01, max_iterations=3))
+        # timeout=0 means do not block, so it must not sleep either.
+        sleep.assert_not_called()
+
+    def test_get_many__does_not_sleep_past_the_timeout(self):
+        """A timeout below the poll interval must not be overshot."""
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
+        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+
+    def test_get_many__timeout_zero_returns_results_that_are_ready(self):
+        """A timeout of 0 still gets to return work that is already done."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        for id, i in ids.items():
+            self.b.mark_as_done(id, i)
+        # the ids are served by the first mget, not out of the cache, so the
+        # poll loop is entered and the deadline check is reached.
+        self.b._cache.clear()
+
+        got = dict(self.b.get_many(list(ids), timeout=0, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        sleep.assert_not_called()
+
+    def test_get_many__ids_completing_on_the_deadline_is_not_a_timeout(self):
+        """Satisfying the last id as the budget runs out is a success."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        polls = []
+
+        def mget(keys):
+            # nothing is stored until the second poll, which lands exactly
+            # when the one interval of budget has been spent.
+            polls.append(keys)
+            if len(polls) > 1:
+                for id, i in ids.items():
+                    self.b.mark_as_done(id, i)
+            return [self.b.get(k) for k in keys]
+
+        self.b.mget = mget
+
+        got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        assert sleep.call_args_list == [call(0.5)]
 
     def test_get_many_passes_ready_states(self):
         tasks_length = 10

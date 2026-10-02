@@ -808,7 +808,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.dont_autoretry_for
 
     A list/tuple of exception classes.  These exceptions won't be autoretried.
-	This allows to exclude some exceptions that match `autoretry_for
+	This allows excluding some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
 .. _task-pydantic:
@@ -1033,6 +1033,12 @@ General
     rate limit. To enforce a global rate limit (e.g., for an API with a
     maximum number of  requests per second), you must restrict to a given
     queue.
+
+    If a task is called with ``countdown`` or ``eta``, the ETA takes
+    precedence: the task will not start before its ETA, and the rate
+    limit is enforced afterwards, once the ETA has passed. In other
+    words, the task starts at the later of the two: its ETA, or the
+    next slot allowed by the rate limit.
 
 .. warning::
 
@@ -2013,16 +2019,17 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
+    @app.task
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @app.task()
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @app.task()
+    @app.task
     def parse_page(page):
         return myparser.parse_document(page)
 

@@ -137,9 +137,10 @@ task that adds 16 to the previous result, forming the expression
 
 
 You can also cause a callback to be applied if task raises an exception
-(*errback*). The worker won't actually call the errback as a task, but will
+(*errback*). In most cases the worker won't call the errback as a task, but will
 instead call the errback function directly so that the raw request, exception
-and traceback objects can be passed to it.
+and traceback objects can be passed to it. (See the note below for when the
+errback is instead applied as a task.)
 
 This is an example error callback:
 
@@ -156,6 +157,34 @@ option:
 .. code-block:: python
 
     add.apply_async((2, 2), link_error=error_handler.s())
+
+.. note::
+
+    The direct call above, passing ``(request, exc, traceback)``, is only used when
+    the errback is a registered ``@app.task`` function task, is not a ``bind=True`` task,
+    and accepts more than one argument. If the errback takes a single argument, is a
+    ``bind=True`` task, or is not registered in the worker that handles the failure,
+    Celery instead applies the errback **as a task**, passing the failed task's id as
+    the only argument.
+
+    The single-argument form is the one to use when the failing task was submitted
+    with :meth:`~@send_task`, since that task is referenced by name and the errback is
+    typically not resolvable for a direct call. Write such an errback to look up the
+    failure by id, using ``allow_join_result`` so the result can be retrieved from
+    inside the task:
+
+    .. code-block:: python
+
+        from celery.result import allow_join_result
+
+        @app.task
+        def on_error(task_id):
+            with allow_join_result():
+                result = app.AsyncResult(task_id)
+                exc = result.get(propagate=False)
+                print('Task {0} raised exception: {1!r}'.format(task_id, exc))
+
+        app.send_task('proj.tasks.add', (2, 2), link_error=on_error.s())
 
 
 In addition, both the ``link`` and ``link_error`` options can be expressed
@@ -245,6 +274,10 @@ in the queue, or heavy network latency. To make sure your tasks
 are executed in a timely manner you should monitor the queue for congestion. Use
 Munin, or similar tools, to receive alerts, so appropriate action can be
 taken to ease the workload. See :ref:`monitoring-munin`.
+
+If the task has a :attr:`~@Task.rate_limit` configured, the rate limit
+is enforced once the ETA has passed: the task starts no earlier than its
+ETA, and rate limiting may delay it further beyond that point.
 
 While `countdown` is an integer, `eta` must be a :class:`~datetime.datetime`
 object, specifying an exact date and time (including millisecond precision,
@@ -374,12 +407,13 @@ and can contain the following keys:
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries. Default is 0.2.
+    retries. Default is 1.
 
 - `retry_errors`
 
     `retry_errors` is a tuple of exception classes that should be retried.
-    It will be ignored if not specified. Default is None (ignored).
+    It will be ignored if not specified. Default is None (ignored). These configuration
+    keys are passed through to `kombu.Connection.ensure`, where retry_errors is defined and handled.
 
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
@@ -403,11 +437,11 @@ For example, the default policy correlates to:
         'max_retries': 3,
         'interval_start': 0,
         'interval_step': 0.2,
-        'interval_max': 0.2,
+        'interval_max': 1,
         'retry_errors': None,
     })
 
-the maximum time spent retrying will be 0.4 seconds. It's set relatively
+the maximum time spent retrying will be 0.6 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down -- For example, many web server processes waiting
 to retry, blocking other incoming requests.
