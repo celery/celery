@@ -633,7 +633,18 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
                         if task_on_success:
-                            task_on_success(retval, uuid, args, kwargs)
+                            try:
+                                task_on_success(retval, uuid, args, kwargs)
+                            except Exception as exc:
+                                # SUCCESS is already stored: recording a
+                                # failure now would fire the errbacks for a
+                                # task that succeeded.
+                                logger.exception(
+                                    'Task %s[%s] on_success handler raised: %r',
+                                    get_task_name(task_request, name),
+                                    uuid, exc,
+                                )
+                                traceback_clear(exc)
                         if success_receivers:
                             send_success(sender=task, result=retval, runtime=T)
                         if _does_info:

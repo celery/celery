@@ -74,6 +74,32 @@ class test_trace(TraceCase):
         self.trace(add_with_success, (2, 2), {})
         add_with_success.on_success.assert_called()
 
+    def test_trace_on_success_raises_after_success_was_stored(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=RuntimeError('hook failed')),
+                       after_return=Mock())
+        def add_with_failing_success(x, y):
+            return x + y
+
+        on_task_success = Mock()
+        signals.task_success.connect(on_task_success)
+        try:
+            with patch('celery.app.trace.TraceInfo.handle_failure') as handle_failure:
+                retval, info, _ = self.trace(
+                    add_with_failing_success, (2, 2), {}, eager=False,
+                )
+        finally:
+            signals.task_success.receivers[:] = []
+
+        assert info is None
+        assert retval == 4
+        handle_failure.assert_not_called()
+        assert add_with_failing_success.backend.get_state('id-1') == states.SUCCESS
+        on_task_success.assert_called()
+        add_with_failing_success.after_return.assert_called_with(
+            states.SUCCESS, 4, 'id-1', (2, 2), {}, None,
+        )
+
     def test_get_log_policy(self):
         einfo = Mock(name='einfo')
         einfo.internal = False
