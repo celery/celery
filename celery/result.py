@@ -1050,7 +1050,7 @@ class EagerResult(AsyncResult):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return (self.id, self._result, self._state, self._traceback)
+        return (self.id, self._result, self._state, self._traceback, self._name)
 
     def __copy__(self):
         cls, args = self.__reduce__()
