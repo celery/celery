@@ -1346,10 +1346,33 @@ E.g.
 Cache backend settings
 ----------------------
 
+.. versionchanged:: 5.7
+
+    The Memcached cache backend now uses :pypi:`pymemcache` exclusively.
+    Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
+    has been removed.
+
 .. note::
 
-    The cache backend supports the :pypi:`pylibmc` and :pypi:`python-memcached`
-    libraries. The latter is used only if :pypi:`pylibmc` isn't installed.
+    The cache backend requires the :pypi:`pymemcache` library, which can be
+    installed with ``pip install celery[memcache]`` (or
+    ``celery[pymemcache]``).
+
+    When upgrading from an earlier version, keep the following in mind:
+
+    * Install :pypi:`pymemcache`: :pypi:`pylibmc` and
+      :pypi:`python-memcached` are no longer used, even if installed.
+    * The ``pylibmc://`` URL scheme is still accepted as an alias of
+      ``memcache://`` for backward compatibility.
+    * The ``behaviors`` key of :setting:`cache_backend_options` is specific
+      to :pypi:`pylibmc` and is now silently ignored. Other options are
+      passed to the :pypi:`pymemcache` client, so remove any option it
+      doesn't support.
+    * When several servers are configured, a
+      :class:`pymemcache.client.hash.HashClient` is used to distribute keys
+      across them, which may lead to a different key distribution than with
+      :pypi:`pylibmc`. Results stored before the upgrade may not be found
+      afterwards.
 
 Using a single Memcached server:
 
@@ -1379,14 +1402,30 @@ The "memory" backend stores the cache in memory only:
 
 Default: ``{}`` (empty mapping).
 
-You can set :pypi:`pylibmc` options using the :setting:`cache_backend_options`
-setting:
+You can set :pypi:`pymemcache` client options using the
+:setting:`cache_backend_options` setting:
 
 .. code-block:: python
 
     cache_backend_options = {
-        'binary': True,
-        'behaviors': {'tcp_nodelay': True},
+        'connect_timeout': 5,
+        'timeout': 5,
+        'no_delay': True,
+    }
+
+The following extra options enable retries by wrapping the client in a
+:class:`pymemcache.client.retrying.RetryingClient`:
+
+* ``retry_attempts``: number of attempts (enables retries when set).
+* ``retry_delay``: delay in seconds between attempts.
+* ``retry_for``: list of exceptions to retry for.
+* ``do_not_retry_for``: list of exceptions to not retry for.
+
+.. code-block:: python
+
+    cache_backend_options = {
+        'retry_attempts': 3,
+        'retry_delay': 0.5,
     }
 
 .. setting:: cache_backend

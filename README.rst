@@ -369,7 +369,7 @@ Transports and Backends
     for using the ``task_remote_tracebacks`` feature.
 
 :``celery[memcache]``:
-    for using Memcached as a result backend (using ``pylibmc``)
+    for using Memcached as a result backend (using ``pymemcache``)
 
 :``celery[pymemcache]``:
     for using Memcached as a result backend (pure-Python implementation).

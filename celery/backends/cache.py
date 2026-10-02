@@ -10,8 +10,8 @@ from .base import KeyValueStoreBackend
 __all__ = ('CacheBackend',)
 
 REQUIRES_BACKEND = """\
-The Memcached backend requires the 'pymemcache' library and no longer \
-supports 'pylibmc' or 'python-memcached'.\
+The Memcached backend requires the 'pymemcache' library. \
+The 'pylibmc' and 'python-memcached' libraries are no longer used.\
 """
 
 UNKNOWN_BACKEND = """\

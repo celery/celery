@@ -194,6 +194,10 @@ class MockPyMemcacheMixin:
         pymemcache_client_hash = types.ModuleType('pymemcache.client.hash')
         pymemcache_client_retrying = types.ModuleType('pymemcache.client.retrying')
 
+        # Parent modules must be packages for submodule imports to work
+        pymemcache.__path__ = []
+        pymemcache_client.__path__ = []
+
         pymemcache_client_base.Client = PyMemcacheClient
         pymemcache_client_hash.HashClient = PyMemcacheHashClient
         pymemcache_client_retrying.RetryingClient = PyMemcacheRetryingClient
@@ -374,3 +378,15 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 client = b.client
                 # Should use pymemcache under the hood
                 assert client.__module__ == 'pymemcache.client.base'
+
+    def test_regression_worker_startup_info(self):
+        """Test that worker startup info works with multiple servers."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                self.app.conf.result_backend = (
+                    'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
+                )
+                worker = self.app.Worker()
+                with conftest.stdouts():
+                    worker.on_start()
+                    assert worker.startup_info()
