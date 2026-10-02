@@ -34,7 +34,7 @@ __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
-    'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
+    'add_seconds_to_datetime', 'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
@@ -331,6 +331,14 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
 def is_naive(dt: datetime) -> bool:
     """Return True if :class:`~datetime.datetime` is naive, meaning it doesn't have timezone info set."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def add_seconds_to_datetime(dt: datetime, seconds: float) -> datetime:
+    """Add elapsed seconds, preserving naive datetime behavior."""
+    delta = timedelta(seconds=seconds)
+    if is_naive(dt):
+        return dt + delta
+    return (dt.astimezone(datetime_timezone.utc) + delta).astimezone(dt.tzinfo)
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:

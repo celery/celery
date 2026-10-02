@@ -12,7 +12,7 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
+from celery.utils.time import (LocalTimezone, _is_imaginary, add_seconds_to_datetime, delta_resolution, ffwd,
                                get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
                                maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
                                utcoffset)
@@ -468,3 +468,23 @@ class test_get_exponential_backoff_interval:
         get_exponential_backoff_interval(
             factor=40, retries=10, maximum=maximum, full_jitter=True)
         rr.assert_called_once_with(maximum + 1)
+
+
+class test_add_seconds_to_datetime:
+
+    def test_across_spring_forward(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York'))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert result.isoformat() == '2026-03-08T04:00:00-04:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_naive_datetime(self):
+        now = datetime(2026, 3, 8, 1, 30)
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        assert result == datetime(2026, 3, 8, 3, 0)
