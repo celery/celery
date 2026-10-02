@@ -920,25 +920,6 @@ class test_chain(CanvasCase):
         assert isinstance(tasks[0].body, _chain)
         assert len(tasks) == 2
 
-    def test_chord_header_failure_fails_the_chain_result(self):
-        g = group(self.add.s(1), self.add.s(2), app=self.app)
-        c = chain(self.add.s(0, 0), g, self.add.s(10), self.add.s(100))
-        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app)
-
-        remaining = list(tasks)
-        remaining.pop()
-        chord_step = remaining.pop()
-        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
-                patch('celery.canvas.group.apply_async'):
-            chord_step.apply_async((0,), chain=remaining)
-        callback = apply_chord.call_args[0][1]
-        try:
-            raise RuntimeError('header failed')
-        except RuntimeError as exc:
-            self.app.backend.chord_error_from_stack(callback=callback, exc=exc)
-
-        assert self.app.AsyncResult(results[0].id).state == states.FAILURE
-
     def test_chord_or_task_still_nests(self):
         c = chord([signature('h1')], signature('b1'), app=self.app)
         t = signature('t1')

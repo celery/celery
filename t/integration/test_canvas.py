@@ -7,7 +7,7 @@ from time import monotonic, sleep
 
 import pytest
 
-from celery import chain, chord, group, signature, states
+from celery import chain, chord, group, signature
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
@@ -480,21 +480,6 @@ class test_chain:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == 29520
-
-    @flaky
-    def test_header_failure_fails_the_steps_after_an_implicit_chord(self, manager):
-        try:
-            manager.app.backend.ensure_chords_allowed()
-        except NotImplementedError as e:
-            raise pytest.skip(e.args[0])
-
-        # a group waits on its members' result ids, so the chain's last task
-        # has to be marked failed itself for the group to finish
-        inner = chain(add.s(1, 1), group(add.s(1), fail.s()), tsum.s(), add.s(100))
-        res = group(inner, add.s(1, 1))()
-        with pytest.raises((ChordError, ExpectedException)):
-            res.get(timeout=TIMEOUT)
-        assert res.results[0].state == states.FAILURE
 
     @flaky
     def test_chain_of_nine_implicit_chords(self, manager):

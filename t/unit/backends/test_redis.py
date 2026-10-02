@@ -2295,7 +2295,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__callback_raises__unordered(self):
@@ -2308,7 +2308,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__callback_raises__ordered(self):
@@ -2321,7 +2321,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__ChordError(self):
@@ -2333,7 +2333,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__ChordError__unordered(self):
@@ -2349,7 +2349,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__ChordError__ordered(self):
@@ -2365,7 +2365,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__other_error(self):
@@ -2377,7 +2377,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__other_error__unordered(self):
@@ -2393,7 +2393,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
     def test_on_chord_part_return__other_error__ordered(self):
@@ -2409,7 +2409,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
-                callback.id, exc=ANY, request=ANY,
+                callback.id, exc=ANY,
             )
 
 

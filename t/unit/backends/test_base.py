@@ -768,7 +768,7 @@ class test_BaseBackend_dict:
         ) as mock_call_errbacks:
             b.chord_error_from_stack(callback, exc=ValueError())
         task.backend.fail_from_current_stack.assert_called_with(
-            callback.id, exc=mock_call_errbacks.side_effect, request=ANY,
+            callback.id, exc=mock_call_errbacks.side_effect,
         )
 
     def test_exception_to_python_when_None(self):
