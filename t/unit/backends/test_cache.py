@@ -298,6 +298,45 @@ class test_pymemcache_client(MockPyMemcacheMixin):
                 client = Client(['127.0.0.1:11211'], behaviors={'foo': 'bar'})
                 assert client.__module__ == 'pymemcache.client.base'
 
+    @pytest.mark.parametrize('servers', [None, [], [''], ('', '')])
+    def test_no_servers_raises_error(self, servers):
+        """Test that missing or empty servers raise ImproperlyConfigured."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                with pytest.raises(ImproperlyConfigured):
+                    Client(servers)
+
+    def test_empty_server_entries_are_filtered(self):
+        """Test that empty entries (e.g. trailing ';') are ignored."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(['127.0.0.1:11211', ''])
+                assert client.__module__ == 'pymemcache.client.base'
+
+    @pytest.mark.parametrize('servers', ['127.0.0.1:11211', ('127.0.0.1', 11211)])
+    def test_single_server_address_is_accepted(self, servers):
+        """Test that a single string or (host, port) address is accepted."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(servers)
+                assert client.__module__ == 'pymemcache.client.base'
+
+    @pytest.mark.parametrize('servers', [11211, [11211]])
+    def test_invalid_servers_raises_error(self, servers):
+        """Test that invalid server values raise ImproperlyConfigured."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                with pytest.raises(ImproperlyConfigured):
+                    Client(servers)
+
     @pytest.mark.masked_modules('pymemcache')
     def test_no_pymemcache_raises_error(self, mask_modules):
         """Test that missing pymemcache raises ImproperlyConfigured."""
@@ -378,6 +417,15 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 client = b.client
                 # Should use pymemcache under the hood
                 assert client.__module__ == 'pymemcache.client.base'
+
+    def test_cache_backend_without_servers(self):
+        """Test that a URL without servers raises a clear error."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                b = cache.CacheBackend(backend='memcache://', app=self.app)
+                with pytest.raises(ImproperlyConfigured):
+                    b.client
 
     def test_regression_worker_startup_info(self):
         """Test that worker startup info works with multiple servers."""
