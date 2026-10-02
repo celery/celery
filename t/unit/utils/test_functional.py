@@ -265,6 +265,19 @@ class test_regen:
         # Just for sanity, check against a specific `bool` here
         assert getattr(g, "_regen__done") is True
 
+    def test_iter_survives_len_during_iteration(self, g):
+        # `len()` concretises the rest of the generator midway through the
+        # loop, which must not cut the in-progress iteration short.
+        assert [(x, len(g)) for x in g] == [(i, 10) for i in range(10)]
+
+    def test_iter_survives_getitem_during_iteration(self, g):
+        assert [(x, g[-1]) for x in g] == [(i, 9) for i in range(10)]
+
+    def test_nested_iter(self, g):
+        assert [(a, b) for a in g for b in g] == [
+            (a, b) for a in range(10) for b in range(10)
+        ]
+
     def test_lookahead_consume(self, subtests):
         """
         Confirm that regen looks ahead by a single item as expected.
