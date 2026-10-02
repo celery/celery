@@ -425,12 +425,14 @@ class Backend:
             errbacks=callback.options.get("link_error", []),
             **callback
         )
+        # the steps chained after the body wait on their own ids
+        chain_request = Context(chain=callback.options.get("chain"))
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
+            return backend.fail_from_current_stack(callback_id, exc=eb_exc, request=chain_request)
         else:
-            return backend.fail_from_current_stack(callback_id, exc=exc)
+            return backend.fail_from_current_stack(callback_id, exc=exc, request=chain_request)
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.
@@ -501,12 +503,12 @@ class Backend:
             # Fallback to original error handling
             return backend.fail_from_current_stack(group_callback.id, exc=exc)
 
-    def fail_from_current_stack(self, task_id, exc=None):
+    def fail_from_current_stack(self, task_id, exc=None, request=None):
         type_, real_exc, tb = sys.exc_info()
         try:
             exc = real_exc if exc is None else exc
             exception_info = ExceptionInfo((type_, exc, tb))
-            self.mark_as_failure(task_id, exc, exception_info.traceback)
+            self.mark_as_failure(task_id, exc, exception_info.traceback, request=request)
             return exception_info
         finally:
             while tb is not None:
