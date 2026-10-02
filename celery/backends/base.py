@@ -275,56 +275,53 @@ class Backend:
             # It might also have chained tasks which need to be propagated to,
             # this is most likely to be exclusive with being a direct part of a
             # chord but we'll handle both cases separately.
-            #
-            # The `chain_data` try block here is a bit tortured since we might
-            # have non-iterable objects here in tests and it's easier this way.
-            try:
-                chain_data = iter(request.chain)
-            except (AttributeError, TypeError):
-                chain_data = tuple()
-            chain_elems = deque(chain_data)
-            while chain_elems:
-                chain_elem = chain_elems.popleft()
-                # Reconstruct a `Context` object for the chained task which has
-                # enough information to for backends to work with
-                chain_elem_ctx = Context(chain_elem)
-                chain_elem_ctx.update(chain_elem_ctx.options)
-                chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
-                chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
-                # If the state should be propagated, we'll do so for all
-                # elements of the chain. This is only truly important so
-                # that the last chain element which controls completion of
-                # the chain itself is marked as completed to avoid stalls.
-                #
-                # Some chained elements may be complex signatures and have no
-                # task ID of their own, so we skip them hoping that not
-                # descending through them is OK. If the last chain element is
-                # complex, we assume it must have been uplifted to a chord by
-                # the canvas code and therefore the condition below will ensure
-                # that we mark something as being complete as avoid stalling.
-                if (
-                    store_result and state in states.PROPAGATE_STATES and
-                    chain_elem_ctx.id is not None
-                ):
-                    self.store_result(
-                        chain_elem_ctx.id, exc, state,
-                        traceback=traceback, request=chain_elem_ctx,
-                    )
-                # If the chain element is a member of a chord, we also need
-                # to call `on_chord_part_return()` as well to avoid stalls.
-                if 'chord' in chain_elem_ctx.options:
-                    self.on_chord_part_return(chain_elem_ctx, state, exc)
-                # A chord step completes only when its body does, so the
-                # result that later steps and any enclosing chord wait on is
-                # the chord body, not the chord's own id. Descend into it so
-                # the failure reaches that result (see issue #9674).
-                if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
-                    chord_body = (chain_elem_ctx.kwargs or {}).get('body')
-                    if chord_body is not None:
-                        chain_elems.append(chord_body)
+            self._fail_chain(getattr(request, 'chain', None), exc, traceback,
+                             store_result=store_result, state=state)
             # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
+
+    def _fail_chain(self, chain, exc, traceback=None,
+                    store_result=True, state=states.FAILURE):
+        """Propagate a failure to the tasks chained after a failed one."""
+        # a request's chain may be None or a non-iterable placeholder
+        try:
+            chain_data = iter(chain)
+        except TypeError:
+            chain_data = tuple()
+        chain_elems = deque(chain_data)
+        while chain_elems:
+            chain_elem = chain_elems.popleft()
+            # Reconstruct a `Context` object for the chained task which has
+            # enough information for backends to work with
+            chain_elem_ctx = Context(chain_elem)
+            chain_elem_ctx.update(chain_elem_ctx.options)
+            chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
+            chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            # If the state should be propagated, we'll do so for all
+            # elements of the chain. This is only truly important so
+            # that the last chain element which controls completion of
+            # the chain itself is marked as completed to avoid stalls.
+            if (
+                store_result and state in states.PROPAGATE_STATES and
+                chain_elem_ctx.id is not None
+            ):
+                self.store_result(
+                    chain_elem_ctx.id, exc, state,
+                    traceback=traceback, request=chain_elem_ctx,
+                )
+            # If the chain element is a member of a chord, we also need
+            # to call `on_chord_part_return()` as well to avoid stalls.
+            if 'chord' in chain_elem_ctx.options:
+                self.on_chord_part_return(chain_elem_ctx, state, exc)
+            # A chord step completes only when its body does, so the
+            # result that later steps and any enclosing chord wait on is
+            # the chord body, not the chord's own id. Descend into it so
+            # the failure reaches that result.
+            if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
+                chord_body = (chain_elem_ctx.kwargs or {}).get('body')
+                if chord_body is not None:
+                    chain_elems.append(chord_body)
 
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
@@ -407,7 +404,9 @@ class Backend:
 
         # Handle group callbacks specially to prevent hanging body tasks
         if isinstance(callback, group):
-            return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            exception_info = self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            backend._fail_chain(callback.options.get("chain"), exc)
+            return exception_info
 
         # Generate an ID if missing so the error can be stored.
         callback_id = callback.id
@@ -428,9 +427,11 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
+            exception_info = backend.fail_from_current_stack(callback_id, exc=eb_exc)
         else:
-            return backend.fail_from_current_stack(callback_id, exc=exc)
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
+        backend._fail_chain(callback.options.get("chain"), exc)
+        return exception_info
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.

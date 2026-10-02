@@ -771,6 +771,35 @@ class test_BaseBackend_dict:
             callback.id, exc=mock_call_errbacks.side_effect,
         )
 
+    def test_chord_error_from_stack_fails_the_chain_after_the_body(self):
+        header = [signature('h', options={'task_id': 'h-id'})]
+        after = chord(header, signature('after', options={'task_id': 'after-id'}))
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result:
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
+        assert failed == {'body-id': states.FAILURE, 'after-id': states.FAILURE}
+
+    def test_chord_error_from_stack_fails_the_chain_after_a_group_body(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = group([signature('x1', options={'task_id': 'x1-id'})], options={'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, '_handle_group_chord_error') as handle_group:
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        handle_group.assert_called_once()
+        failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
+        assert failed == {'after-id': states.FAILURE}
+
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
