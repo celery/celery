@@ -20,7 +20,8 @@ Unreleased
   killed (#9505). With ``task_acks_late`` the acks of tasks that finish
   while the pool is being joined are now sent during the join rather than
   at ``hub.close()``, so a long-running task outliving the shutdown no
-  longer causes every task finished during the drain to run twice (#3802).
+  longer causes every task finished during the drain to run twice
+  (#3802, #10768).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
