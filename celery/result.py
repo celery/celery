@@ -14,7 +14,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -1077,6 +1077,17 @@ class EagerResult(AsyncResult):
         pass
 
     def revoke(self, *args, **kwargs):
+        """Mark this result as revoked.
+
+        After revocation, :meth:`get` raises
+        :exc:`~celery.exceptions.TaskRevokedError`, or returns it when
+        ``propagate=False``.
+
+        .. versionchanged:: 5.7
+
+            Replace the previous result with a task revocation error.
+        """
+        self._result = TaskRevokedError('revoked')
         self._state = states.REVOKED
 
     def __repr__(self):

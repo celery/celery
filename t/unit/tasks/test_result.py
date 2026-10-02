@@ -10,7 +10,7 @@ import pytest
 from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
-from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from celery.exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
                            denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
@@ -1092,6 +1092,19 @@ class test_EagerResult:
     def test_revoke(self):
         res = self.raising.apply(args=[3, 3])
         assert not res.revoke()
+        assert res.state == states.REVOKED
+        with pytest.raises(TaskRevokedError, match='revoked'):
+            res.get()
+        assert isinstance(res.get(propagate=False), TaskRevokedError)
+
+    @pytest.mark.parametrize('value', [4, None])
+    def test_revoke_successful_result(self, value):
+        res = EagerResult(uuid(), value, states.SUCCESS)
+        assert not res.revoke()
+        assert res.state == states.REVOKED
+        with pytest.raises(TaskRevokedError, match='revoked'):
+            res.get()
+        assert isinstance(res.get(propagate=False), TaskRevokedError)
 
     @patch('celery.result.task_join_will_block')
     def test_get_sync_subtask_option(self, task_join_will_block):
