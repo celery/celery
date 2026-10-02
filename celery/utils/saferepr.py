@@ -161,6 +161,12 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
             yield ', ...'
+            if isinstance(token, _literal) and token.direction < 0:
+                # This token was already consumed by reprstream, so it won't
+                # be part of the remaining iterator pushed onto the stack.
+                # Preserve its closing delimiter before collecting any outer
+                # dangling delimiters below.
+                yield token.value[1:] if token is LIT_TUPLE_END_SV else token.value
             # move rest back to stack, so that we can include
             # dangling parens.
             stack.append(it)

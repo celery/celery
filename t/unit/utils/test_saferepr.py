@@ -138,6 +138,15 @@ class test_saferepr:
     def test_text_maxlen(self):
         assert saferepr(D_D_TEXT, 100).endswith("...', ...}}")
 
+    @pytest.mark.parametrize(('value', 'expected'), [
+        (['v' * 100], f"['{'v' * 29}...', ...]"),
+        ({'a': ['v' * 100]}, f"{{'a': ['{'v' * 23}...', ...]}}"),
+        (('v' * 100,), f"('{'v' * 29}...', ...)"),
+    ])
+    def test_truncated_last_container_item_keeps_closing_delimiters(
+            self, value, expected):
+        assert saferepr(value, maxlen=30) == expected
+
     def test_maxlevels(self):
         saferepr(D_ALL, maxlevels=1)
 
