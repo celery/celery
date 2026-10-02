@@ -246,6 +246,11 @@ class _regen(UserList, list):
         # midway through don't cut this iteration short.
         it = iter(self.__it)
         index = 0
+        # Items already concretised are yielded without looking ahead, only
+        # once we pull from the underlying iterator ourselves do we look
+        # ahead, so a lazy generator isn't consumed any earlier than needed
+        # (see #3021).
+        pulling = False
         while True:
             if index >= len(self.__consumed):
                 if self.__done:
@@ -255,7 +260,9 @@ class _regen(UserList, list):
                 except StopIteration:
                     self.__done = True
                     return
-            if self.__done or index + 1 < len(self.__consumed):
+                pulling = True
+            if (not pulling or self.__done or
+                    index + 1 < len(self.__consumed)):
                 yield self.__consumed[index]
             else:
                 # Maintain a single look-ahead to ensure we set `__done` when

@@ -265,6 +265,26 @@ class test_regen:
         # Just for sanity, check against a specific `bool` here
         assert getattr(g, "_regen__done") is True
 
+    def test_iter_does_not_look_ahead_over_concretised_items(self):
+        pulled = []
+
+        def build_generator():
+            for i in range(5):
+                pulled.append(i)
+                yield i
+
+        g = regen(build_generator())
+        assert g[0] == 0
+        assert pulled == [0, 1]
+        it = iter(g)
+        assert next(it) == 0
+        assert next(it) == 1
+        # Yielding what's already concretised must not pull any further from
+        # the generator, chord headers rely on this being lazy (#3021).
+        assert pulled == [0, 1]
+        assert next(it) == 2
+        assert pulled == [0, 1, 2, 3]
+
     def test_iter_survives_len_during_iteration(self, g):
         # `len()` concretises the rest of the generator midway through the
         # loop, which must not cut the in-progress iteration short.
