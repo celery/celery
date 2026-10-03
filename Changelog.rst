@@ -12,6 +12,16 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- Prefork warm shutdown no longer hangs when the worker stops while the
+  event loop has only partly read a child's result: the pool join now
+  resumes the half-read message instead of calling a blocking ``recv()``
+  on the rest of it, so tasks that finished after the shutdown signal no
+  longer hit their time limits and get redelivered when the process is
+  killed (#9505). With ``task_acks_late`` the acks of tasks that finish
+  while the pool is being joined are now sent during the join rather than
+  at ``hub.close()``, so a long-running task outliving the shutdown no
+  longer causes every task finished during the drain to run twice
+  (#3802, #10768).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
