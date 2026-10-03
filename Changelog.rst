@@ -32,6 +32,9 @@ Unreleased
 - A chord body's ``parent_id`` is the header task that fires it, for every
   body shape. A single-task body previously reported the task before the
   chord as its parent while a chain body reported the header task (#10743).
+- In a chain of chords, a header failure now fails the chords after it. The
+  chain is kept flat since 5.6.3 (#10171), and a failing header left the
+  following chords pending, so joining the chain's result hung.
 - Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
   prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
