@@ -23,6 +23,13 @@ Unreleased
   the merged configured and per-call retry options, never ``None`` (#10708).
 - ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
   header tasks, not the callback body or ``chord_unlock`` retries (#7851).
+- ``chord.link_error()`` now links the errback to chords nested in the header
+  after the chord has been frozen, as it does before (#9580). This includes
+  every chain with ``on_error()`` / ``link_error``, which freezes each step
+  first. An inner chord header failure in such a chain called no errback.
+  With ``task_allow_error_cb_on_chord_header`` enabled, a nested chord's body
+  no longer gets the errback twice. ``chord.set_immutable()`` no longer raises
+  ``AttributeError`` after ``freeze()`` (#10783).
 - A chain in which groups are followed by tasks, ``chain(task, group, task,
   group, task, ...)``, no longer nests the rest of the chain into each chord
   body when it is run. The first message grew by (header size + 2) per group;
@@ -40,13 +47,6 @@ Unreleased
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
   code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
   numeric string such as ``"4"``; the worker converts it at startup.
-- ``chord.link_error()`` now links the errback to chords nested in the header
-  after the chord has been frozen, as it does before (#9580). This includes
-  every chain with ``on_error()`` / ``link_error``, which freezes each step
-  first. An inner chord header failure in such a chain called no errback.
-  With ``task_allow_error_cb_on_chord_header`` enabled, a nested chord's body
-  no longer gets the errback twice. ``chord.set_immutable()`` no longer raises
-  ``AttributeError`` after ``freeze()``.
 
 
 .. _version-5.7.0a1:
