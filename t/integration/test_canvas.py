@@ -7,7 +7,7 @@ from time import monotonic, sleep
 
 import pytest
 
-from celery import chain, chord, group, signature
+from celery import chain, chord, group, signature, states
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
@@ -461,6 +461,42 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 178
 
     @flaky
+    @pytest.mark.parametrize('failing_headers', [1, 2])
+    def test_header_failure_fails_the_chords_after_it(self, manager, failing_headers):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # a group waits on its members' result ids, so the chain's last task
+        # has to be marked failed itself for the group to finish
+        header = [add.s(1, 1), fail.s()] if failing_headers == 1 else [fail.s(), fail.s()]
+        inner = chain(
+            chord(header, tsum.s()),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
+
+    @flaky
+    def test_header_failure_fails_the_chords_after_a_group_body(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inner = chain(
+            chord([add.s(1, 1), fail.s()], group(add.s(1), add.s(2))),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
+
+    @flaky
     def test_chain_of_nine_chords(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -477,6 +513,27 @@ class test_chain:
             chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
             chord(group(add.s(1), add.s(1), add.s(1)), tsum.s()),
             chord(group(add.s(0), add.s(0), add.s(0)), tsum.s()),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 29520
+
+    @flaky
+    def test_chain_of_nine_implicit_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(add.si(1, 0), add.si(1, 0), add.si(1, 0)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(0), add.s(0), add.s(0)), tsum.s(),
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == 29520
@@ -2088,6 +2145,23 @@ class test_chord:
             ),
         )
         self.assert_parentids_chord(g(), expected_root_id)
+
+    @flaky
+    def test_parent_ids__plain_task_body(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        root = ids.si(i=1)
+        expected_root_id = root.freeze().id
+        g = chain(
+            root, ids.si(i=2),
+            chord(group(ids.si(i=i) for i in range(3, 50)), collect_ids.s(i=50)),
+        )
+        res = g()
+        prev, (root_id, parent_id, value) = res.get(timeout=TIMEOUT)
+        assert value == 50
+        assert root_id == expected_root_id
+        # started by one of the chord header tasks.
+        assert parent_id in res.parent.results
 
     @flaky
     def test_parent_ids__OR(self, manager):

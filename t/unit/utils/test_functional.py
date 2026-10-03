@@ -49,6 +49,15 @@ class test_firstmethod:
         assert 'four' == firstmethod('m')([
             A(), A(), A(), lazy(lambda: A('four')), A('five')])
 
+    def test_propagates_method_attribute_error(self):
+        class A:
+
+            def m(self):
+                return self.missing_attribute
+
+        with pytest.raises(AttributeError, match='missing_attribute'):
+            firstmethod('m')([A()])
+
 
 def test_first():
     iterations = [0]
