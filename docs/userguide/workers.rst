@@ -74,6 +74,11 @@ paths needs ``%%%%`` when passed through ``multi``. For example,
 The process-index placeholders ``%i`` and ``%I`` are preserved by
 ``multi`` for the worker to expand.
 
+.. versionadded:: 5.7
+
+    Leading ``~`` in path options (such as ``--workdir``, ``--pidfile``, and ``--logfile``)
+    is expanded for the user running ``celery multi`` (not the user specified by ``--uid``).
+
 .. admonition:: Note for :pypi:`supervisor` users
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
