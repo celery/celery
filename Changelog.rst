@@ -40,6 +40,11 @@ Unreleased
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
   code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
   numeric string such as ``"4"``; the worker converts it at startup.
+- ``task.map()`` / ``task.starmap()`` signatures now apply the options stored on
+  them when called directly, as other signatures do. Options set with
+  ``.set()`` (such as ``queue`` and ``countdown``), callbacks added with
+  ``.link()`` / ``.on_error()``, and the task id from ``freeze()`` were silently
+  ignored, so the result from ``freeze()`` never resolved.
 
 
 .. _version-5.7.0a1:
