@@ -1306,7 +1306,7 @@ FAILURE
 
 Task execution resulted in failure.
 
-:meta-data: `result` contains the exception occurred, and `traceback`
+:meta-data: `result` contains the exception that occurred, and `traceback`
             contains the backtrace of the stack at the point when the
             exception was raised.
 :propagates: Yes
