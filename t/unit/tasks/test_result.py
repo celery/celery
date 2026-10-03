@@ -1109,6 +1109,15 @@ class test_EagerResult:
         res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
         assert res.name == 'test_task_named_argument'
 
+    def test_reduce_keeps_name(self):
+        res = EagerResult('x', 'y', states.SUCCESS, 'tb', 'test_task')
+        for restored in (copy.copy(res), pickle.loads(pickle.dumps(res))):
+            assert restored.name == 'test_task'
+            assert restored.id == 'x'
+            assert restored.result == 'y'
+            assert restored.state == states.SUCCESS
+            assert restored.traceback == 'tb'
+
 
 class test_tuples:
 
