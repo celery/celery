@@ -518,6 +518,27 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 29520
 
     @flaky
+    def test_chain_of_nine_implicit_chords(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        c = chain(
+            group(add.si(1, 0), add.si(1, 0), add.si(1, 0)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(1), add.s(1), add.s(1)), tsum.s(),
+            group(add.s(0), add.s(0), add.s(0)), tsum.s(),
+        )
+        res = c()
+        assert res.get(timeout=TIMEOUT) == 29520
+
+    @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -2124,6 +2145,23 @@ class test_chord:
             ),
         )
         self.assert_parentids_chord(g(), expected_root_id)
+
+    @flaky
+    def test_parent_ids__plain_task_body(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        root = ids.si(i=1)
+        expected_root_id = root.freeze().id
+        g = chain(
+            root, ids.si(i=2),
+            chord(group(ids.si(i=i) for i in range(3, 50)), collect_ids.s(i=50)),
+        )
+        res = g()
+        prev, (root_id, parent_id, value) = res.get(timeout=TIMEOUT)
+        assert value == 50
+        assert root_id == expected_root_id
+        # started by one of the chord header tasks.
+        assert parent_id in res.parent.results
 
     @flaky
     def test_parent_ids__OR(self, manager):
