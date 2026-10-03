@@ -74,6 +74,11 @@ paths needs ``%%%%`` when passed through ``multi``. For example,
 The process-index placeholders ``%i`` and ``%I`` are preserved by
 ``multi`` for the worker to expand.
 
+.. versionadded:: 5.7
+
+    Leading ``~`` in path options (such as ``--workdir``, ``--pidfile``, and ``--logfile``)
+    is expanded for the user running ``celery multi`` (not the user specified by ``--uid``).
+
 .. admonition:: Note for :pypi:`supervisor` users
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
@@ -1271,9 +1276,10 @@ There are two types of remote control commands:
     Performs side effects, like adding a new queue to consume from.
 
 Remote control commands are registered in the control panel and
-they take a single argument: the current
-:class:`!celery.worker.control.ControlDispatch` instance.
-From there you have access to the active
+they take a ``state`` object as their first argument, followed by
+any arguments sent with the command.
+``state`` holds the worker's ``app``, ``hostname`` and ``consumer``,
+so from it you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:

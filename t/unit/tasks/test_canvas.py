@@ -829,6 +829,28 @@ class test_chain(CanvasCase):
             f"Chord sizes not constant across chain: {sizes}"
         )
 
+    @pytest.mark.parametrize('body', ['task', 'group'])
+    def test_chord_header_failure_fails_the_chain_of_chords(self, body):
+        bodies = {'task': self.add.s(10), 'group': group(self.add.s(10), self.add.s(20), app=self.app)}
+        c = chain(
+            chord([self.add.s(1, 1), self.add.s(2, 2)], bodies[body], app=self.app),
+            chord([self.add.s(3, 3)], self.add.s(100), app=self.app),
+        )
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        remaining = list(tasks)
+        first_chord = remaining.pop()
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.group.apply_async'):
+            first_chord.apply_async((), chain=remaining)
+        callback = apply_chord.call_args[0][1]
+        try:
+            raise RuntimeError('header failed')
+        except RuntimeError as exc:
+            self.app.backend.chord_error_from_stack(callback=callback, exc=exc)
+
+        assert self.app.AsyncResult(results[0].id).state == states.FAILURE
+
     def test_chord_or_task_still_nests(self):
         c = chord([signature('h1')], signature('b1'), app=self.app)
         t = signature('t1')
