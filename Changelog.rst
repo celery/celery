@@ -12,6 +12,11 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``task.map()`` / ``task.starmap()`` signatures now apply the options stored on
+  them when called directly, as other signatures do. Options set with
+  ``.set()`` (such as ``queue`` and ``countdown``), callbacks added with
+  ``.link()`` / ``.on_error()``, and the task id from ``freeze()`` were silently
+  ignored, so the result from ``freeze()`` never resolved (#10782).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
