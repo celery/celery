@@ -74,6 +74,11 @@ paths needs ``%%%%`` when passed through ``multi``. For example,
 The process-index placeholders ``%i`` and ``%I`` are preserved by
 ``multi`` for the worker to expand.
 
+.. versionadded:: 5.7
+
+    Leading ``~`` in path options (such as ``--workdir``, ``--pidfile``, and ``--logfile``)
+    is expanded for the user running ``celery multi`` (not the user specified by ``--uid``).
+
 .. admonition:: Note for :pypi:`supervisor` users
 
    The ``%`` sign must be escaped by adding a second one: `%%h`.
@@ -447,6 +452,15 @@ but you can also use :ref:`Eventlet <concurrency-eventlet>`. The number
 of worker processes/threads can be changed using the
 :option:`--concurrency <celery worker --concurrency>` argument and defaults
 to the number of CPUs available on the machine.
+
+.. versionadded:: 5.7
+   ``--concurrency=auto``.
+
+Inside a container or a systemd unit with a CPU limit the host CPU count
+overstates what the worker may use. Passing ``--concurrency=auto`` sizes
+the prefork pool from the cgroup CPU quota and the CPU affinity mask
+instead (Linux only); for the threads, gevent, eventlet and solo pools it
+is a no-op. See :setting:`worker_concurrency` for details.
 
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 

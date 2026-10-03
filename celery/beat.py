@@ -6,6 +6,7 @@ import errno
 import heapq
 import os
 import shelve
+import socket
 import sys
 import time
 import traceback
@@ -18,20 +19,25 @@ from threading import Event, Thread
 from billiard import ensure_multiprocessing
 from billiard.common import reset_signals
 from billiard.context import Process
+from kombu import pidbox
+from kombu.common import ignore_errors
+from kombu.utils.encoding import safe_str
 from kombu.utils.functional import maybe_evaluate, reprcall
 from kombu.utils.objects import cached_property
 
 from . import __version__, platforms, signals
 from .exceptions import reraise
 from .schedules import crontab, maybe_schedule
+from .utils.collections import AttributeDict
 from .utils.functional import is_numeric_value
 from .utils.imports import load_extension_class_names, symbol_by_name
 from .utils.log import get_logger, iter_open_logger_fds
+from .utils.nodenames import default_nodename, host_format
 from .utils.time import humanize_seconds, maybe_make_aware
 
 __all__ = (
     'SchedulingError', 'ScheduleEntry', 'Scheduler',
-    'PersistentScheduler', 'Service', 'EmbeddedService',
+    'PersistentScheduler', 'Service', 'BeatPidbox', 'EmbeddedService',
 )
 
 event_t = namedtuple('event_t', ('time', 'priority', 'entry'))
@@ -629,26 +635,358 @@ class PersistentScheduler(Scheduler):
         return f'    . db -> {self.schedule_filename}'
 
 
+#: name half of beat's remote-control node name.
+NODENAME_DEFAULT = 'celerybeat'
+
+
+def beat_nodename(hostname=None):
+    """Return the node name beat answers remote control commands on.
+
+    The worker's own resolution with a different default name, so the
+    two cannot drift: a bare host gains the ``celerybeat`` name, and
+    ``%h``/``%n``/``%d`` expand as they do for ``celery worker -n``.
+    """
+    return host_format(default_nodename(hostname, NODENAME_DEFAULT))
+
+
+class _PidboxStopping(BaseException):
+    """Signals the consumer thread to abandon a connection attempt.
+
+    A control-flow signal rather than an error, so it subclasses
+    :exc:`BaseException`: a broad ``except Exception`` in kombu or in a
+    transport would otherwise swallow it and keep the thread retrying
+    through a shutdown.  :exc:`~celery.exceptions.WorkerShutdown` is a
+    :exc:`SystemExit` for the same reason.
+    """
+
+
+class _BeatNode(pidbox.Node):
+    """Pidbox node that stays silent while the scheduler is stalled.
+
+    The staleness check lives here rather than in the consumer callback
+    because :meth:`kombu.pidbox.Node.handle_message` only reaches
+    :meth:`dispatch` for messages actually addressed to this node.
+    Checking earlier would make beat log about every broadcast aimed at
+    a worker.
+    """
+
+    #: owning :class:`BeatPidbox`, set once it has built this node.
+    beat_pidbox = None
+
+    def dispatch(self, method, arguments=None, reply_to=None,
+                 ticket=None, **kwargs):
+        owner = self.beat_pidbox
+        if owner is not None and owner.is_stale():
+            warning('beat pidbox: not answering %s, the scheduler has '
+                    'not ticked for %.1fs (over the %ss limit).',
+                    method, owner.tick_age(), owner.max_tick_age)
+            return None
+        return super().dispatch(method, arguments, reply_to, ticket,
+                                **kwargs)
+
+
+class BeatPidbox:
+    """Remote-control mailbox node for beat.
+
+    Binds a ``celerybeat@hostname`` node to the same ``celery.pidbox``
+    fanout exchange the workers use, so that ``celery inspect ping``
+    (optionally with ``--destination``) also reaches beat.
+
+    Only the ``ping`` command is implemented; any other broadcast
+    command is ignored silently, since replying with an error would
+    pollute the output of worker-only commands like ``inspect active``.
+
+    The node stops answering once the scheduler has not ticked for
+    :attr:`max_tick_age` seconds.  Staying silent is the only signal a
+    probe can act on: :program:`celery inspect` exits non-zero when no
+    node replies, but an error *reply* still counts as a reply and
+    leaves the exit status at zero.
+    """
+
+    #: seconds to pause before reconnecting after an established
+    #: connection is lost.  Establishing a connection is governed by
+    #: :setting:`broker_connection_retry` and
+    #: :setting:`broker_connection_max_retries` instead.
+    retry_interval = 5.0
+
+    #: seconds to wait for the thread to terminate in :meth:`stop`.
+    join_timeout = 3.0
+
+    #: floor for the derived :attr:`max_tick_age`.  A scheduler with a
+    #: short loop interval (django-celery-beat's is five seconds) would
+    #: otherwise get a window so tight that one slow pass looks like a
+    #: stall, and on a liveness probe that means restart loops.
+    min_tick_age = 60.0
+
+    def __init__(self, service):
+        self.service = service
+        self.app = service.app
+        self.hostname = beat_nodename(service.hostname)
+        self.state = AttributeDict(app=self.app, service=service)
+        self.node = _BeatNode(
+            safe_str(self.hostname),
+            state=self.state,
+            handlers={'ping': self._ping},
+            mailbox=self.app.control.mailbox,
+        )
+        self.node.beat_pidbox = self
+        self.thread = None
+        #: mirrors the worker: the first attempt is governed by
+        #: broker_connection_retry_on_startup, later ones by
+        #: broker_connection_retry.
+        self.first_connection_attempt = True
+        self._shutdown = Event()
+
+    @property
+    def max_tick_age(self):
+        """Seconds a tick may be overdue before beat stops replying.
+
+        Falls back to twice the interval the scheduler actually settled
+        on -- which a scheduler class may choose itself, so it is not
+        always :setting:`beat_max_loop_interval` -- with
+        :attr:`min_tick_age` as a floor.  ``0`` disables the check.
+
+        The service records that interval on the main thread once the
+        scheduler exists, because the scheduler is a lazy attribute and
+        this runs on the consumer thread, which must not build it.
+        """
+        configured = self.app.conf.beat_remote_control_max_tick_age
+        if configured is not None:
+            return configured
+        interval = (self.service.effective_max_interval or
+                    self.service.max_interval or DEFAULT_MAX_INTERVAL)
+        return max(interval * 2, self.min_tick_age)
+
+    def tick_age(self):
+        # Read of a single float attribute written by the scheduler
+        # thread.  That is atomic under CPython, so no lock is needed --
+        # but keep it a plain attribute for that reason: splitting it
+        # into two fields would need one.
+        last_tick = self.service._last_tick
+        if last_tick is None:
+            return None
+        return time.monotonic() - last_tick
+
+    def is_stale(self):
+        max_tick_age = self.max_tick_age
+        if not max_tick_age:
+            return False
+        tick_age = self.tick_age()
+        return tick_age is not None and tick_age > max_tick_age
+
+    def _ping(self, state, **_kwargs):
+        return {'ok': 'pong'}
+
+    def on_message(self, body, message):
+        try:
+            if not isinstance(body, dict):
+                return
+            if body.get('method') not in self.node.handlers:
+                return
+            self.node.handle_message(body, message)
+        except Exception as exc:  # pylint: disable=broad-except
+            error('beat pidbox command error: %r', exc, exc_info=True)
+
+    def fanout_support(self):
+        """Return ``(supported, transport_name)`` for the read transport.
+
+        Reads the transport's declared capabilities, so no connection is
+        opened and this is safe to call before starting the thread.  The
+        name comes back with the answer rather than from a second
+        throwaway connection built to format the warning.
+        """
+        connection = self.app.connection_for_read()
+        try:
+            return (connection.supports_exchange_type('fanout'),
+                    connection.transport_cls)
+        finally:
+            ignore_errors(connection, connection.release)
+
+    def start(self):
+        if self.thread is not None and self.thread.is_alive():
+            return
+        supported, transport = self.fanout_support()
+        if not supported:
+            # Without fanout, node.listen() fails on every attempt.  The
+            # reconnect loop cannot tell that apart from a connection
+            # that dropped, so it would retry forever, once per
+            # retry_interval, for the life of the process.
+            warning('beat pidbox: the %s transport has no fanout '
+                    'exchanges, so remote control is unavailable.',
+                    transport)
+            return
+        self.first_connection_attempt = True
+        self._shutdown.clear()
+        self.thread = Thread(
+            target=self._loop, name='BeatPidbox', daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        # If the join times out the thread is left running while beat
+        # finishes shutting down.  That is survivable: the thread is a
+        # daemon, so it never holds up interpreter exit, and it owns the
+        # connection it is draining -- the scheduler's own connection is
+        # separate, so closing that cannot pull the socket out from
+        # under it.  Worst case it wakes from drain_events into a
+        # half-torn-down interpreter, where the broad except in _loop
+        # catches whatever comes back.
+        self._shutdown.set()
+        if self.thread is not None:
+            self.thread.join(timeout=self.join_timeout)
+            if self.thread.is_alive():
+                warning('beat pidbox: consumer thread did not stop '
+                        'within %s seconds, most likely waiting on a '
+                        'broker connection that is not answering. It '
+                        'is a daemon thread and will not hold up exit.',
+                        self.join_timeout)
+            else:
+                self.thread = None
+
+    def _error_handler(self, exc, interval):
+        error('beat pidbox: Connection error: %s. '
+              'Trying again in %s seconds...', exc, interval)
+
+    def _abort_if_stopping(self):
+        # kombu calls this once a second while it backs off, which is
+        # the only chance to notice a stop() during a long retry.
+        # Without it a shutdown waits out the whole backoff and then
+        # warns that the thread would not die.
+        if self._shutdown.is_set():
+            raise _PidboxStopping()
+
+    def _connection_retry_setting(self):
+        """Name of the setting governing the attempt about to be made.
+
+        The worker governs its first connection with
+        :setting:`broker_connection_retry_on_startup` and everything
+        after it with :setting:`broker_connection_retry`, falling back
+        to the latter when the startup setting is unset.  Beat's control
+        thread follows the same rule, so that someone who asked to fail
+        fast at startup gets that here too.
+        """
+        conf = self.app.conf
+        if (self.first_connection_attempt
+                and conf.broker_connection_retry_on_startup is not None):
+            return 'broker_connection_retry_on_startup'
+        return 'broker_connection_retry'
+
+    def _connect(self):
+        # A dedicated connection: broker connections must not be
+        # shared with the scheduler thread.
+        conf = self.app.conf
+        retry_setting = self._connection_retry_setting()
+        self.first_connection_attempt = False
+        connection = self.app.connection_for_read()
+        try:
+            connection.ensure_connection(
+                self._error_handler,
+                conf.broker_connection_max_retries
+                if conf[retry_setting] else 0,
+                callback=self._abort_if_stopping,
+            )
+        except BaseException:
+            # Broad on purpose: _PidboxStopping is not an Exception,
+            # and the connection never entered the context manager, so
+            # it has to be released here however the attempt failed.
+            ignore_errors(connection, connection.release)
+            raise
+        return connection
+
+    def _consume_from(self, connection):
+        shutdown = self._shutdown
+        info('beat pidbox: Connected to %s.', connection.as_uri())
+        self.node.channel = connection.channel()
+        consumer = self.node.listen(callback=self.on_message)
+        try:
+            while not shutdown.is_set():
+                try:
+                    connection.drain_events(timeout=1.0)
+                except socket.timeout:
+                    pass
+        finally:
+            ignore_errors(connection, consumer.cancel)
+
+    def _loop(self):
+        shutdown = self._shutdown
+        try:
+            while not shutdown.is_set():
+                try:
+                    established = self._connect()
+                except _PidboxStopping:
+                    break
+                except Exception as exc:  # pylint: disable=broad-except
+                    if shutdown.is_set():
+                        break
+                    # ensure_connection() has already applied
+                    # whatever policy was configured.  Looping back
+                    # would hand it a fresh budget and make
+                    # broker_connection_max_retries meaningless, so
+                    # stop here.  One message whatever the cause: how
+                    # far the attempt got depends on the error, on
+                    # whether retrying was enabled and on the size of
+                    # the budget, so name the settings and leave the
+                    # traceback to say the rest.
+                    error('beat pidbox: could not connect to the '
+                          'broker, so beat will not answer remote '
+                          'control commands for the life of this '
+                          'process. See broker_connection_retry, '
+                          'broker_connection_retry_on_startup and '
+                          'broker_connection_max_retries: %r',
+                          exc, exc_info=True)
+                    break
+                try:
+                    with established as connection:
+                        self._consume_from(connection)
+                except Exception as exc:  # pylint: disable=broad-except
+                    if shutdown.is_set():
+                        break
+                    error('beat pidbox connection error: %r', exc,
+                          exc_info=True)
+                    if not self.app.conf.broker_connection_retry:
+                        # The setting governs reconnecting to a broker
+                        # that went away, not just the first attempt.
+                        break
+                    # A connection that was up and dropped is worth
+                    # re-establishing, with a fresh budget of its own.
+                    shutdown.wait(self.retry_interval)
+        finally:
+            if not shutdown.is_set():
+                warning('beat pidbox: Consumer stopped, beat will no '
+                        'longer answer remote control commands.')
+
+
 class Service:
     """Celery periodic task service."""
 
     scheduler_cls = PersistentScheduler
 
     def __init__(self, app, max_interval=None, schedule_filename=None,
-                 scheduler_cls=None):
+                 scheduler_cls=None, remote_control=None, hostname=None):
         self.app = app
         self.max_interval = (max_interval or
                              app.conf.beat_max_loop_interval)
         self.scheduler_cls = scheduler_cls or self.scheduler_cls
         self.schedule_filename = (
             schedule_filename or app.conf.beat_schedule_filename)
+        self.remote_control = (
+            app.conf.beat_enable_remote_control
+            if remote_control is None else remote_control)
+        self.hostname = hostname
 
+        #: interval the scheduler settled on, recorded once it exists so
+        #: the pidbox thread never has to build the lazy attribute.
+        self.effective_max_interval = None
+        self._pidbox = None
+        #: monotonic timestamp of the last scheduler pass, read by the
+        #: pidbox thread to decide whether beat is still ticking.
+        self._last_tick = None
         self._is_shutdown = Event()
         self._is_stopped = Event()
 
     def __reduce__(self):
         return self.__class__, (self.app, self.max_interval,
-                                self.schedule_filename, self.scheduler_cls)
+                                self.schedule_filename, self.scheduler_cls,
+                                self.remote_control, self.hostname)
 
     def start(self, embedded_process=False):
         info('beat: Starting...')
@@ -660,9 +998,20 @@ class Service:
             signals.beat_embedded_init.send(sender=self)
             platforms.set_process_title('celery beat')
 
+        self.effective_max_interval = self.scheduler.max_interval
+
+        if self.remote_control:
+            self._pidbox = BeatPidbox(self)
+            self._pidbox.start()
+
+        # Stamp before the first pass, so a beat that wedges before it
+        # ever ticks goes stale rather than looking perpetually healthy.
+        self._last_tick = time.monotonic()
+
         try:
             while not self._is_shutdown.is_set():
                 interval = self.scheduler.tick()
+                self._last_tick = time.monotonic()
                 if interval and interval > 0.0:
                     debug('beat: Waking up %s.',
                           humanize_seconds(interval, prefix='in '))
@@ -672,7 +1021,12 @@ class Service:
         except (KeyboardInterrupt, SystemExit):
             self._is_shutdown.set()
         finally:
+            # Persist the schedule before spending time joining the
+            # pidbox thread: a supervisor may follow SIGTERM with
+            # SIGKILL, and the schedule is the state worth keeping.
             self.sync()
+            if self._pidbox is not None:
+                self._pidbox.stop()
 
     def sync(self):
         self.scheduler.close()
@@ -751,6 +1105,9 @@ def EmbeddedService(app, max_interval=None, **kwargs):
         thread (bool): Run threaded instead of as a separate process.
             Uses :mod:`multiprocessing` by default, if available.
     """
+    # Off by default: the surrounding worker already has a
+    # remote-control node answering for this process.
+    kwargs.setdefault('remote_control', False)
     if kwargs.pop('thread', False) or _Process is None:
         # Need short max interval to be able to stop thread
         # in reasonable time.
