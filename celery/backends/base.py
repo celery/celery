@@ -306,6 +306,13 @@ class Backend:
             # elements of the chain. This is only truly important so
             # that the last chain element which controls completion of
             # the chain itself is marked as completed to avoid stalls.
+            #
+            # Some chained elements may be complex signatures and have no
+            # task ID of their own, so we skip them hoping that not
+            # descending through them is OK. If the last chain element is
+            # complex, we assume it must have been uplifted to a chord by
+            # the canvas code and therefore the condition below will ensure
+            # that we mark something as being complete as avoid stalling.
             if (
                 store_result and state in states.PROPAGATE_STATES and
                 chain_elem_ctx.id is not None
