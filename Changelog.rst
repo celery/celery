@@ -12,6 +12,13 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
+  worker is now logged at ``ERROR`` level instead of being recorded as a task
+  failure. The task's errbacks no longer run for a task that succeeded, and a
+  failed task is no longer recorded a second time. Broken hooks therefore no
+  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
+  execution still propagates the exception (#10724).
+
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted

@@ -84,7 +84,8 @@ class test_trace(TraceCase):
         on_task_success = Mock()
         signals.task_success.connect(on_task_success)
         try:
-            with patch('celery.app.trace.TraceInfo.handle_failure') as handle_failure:
+            with patch('celery.app.trace.TraceInfo.handle_failure') as handle_failure, \
+                    patch('celery.app.trace.logger') as mock_logger:
                 retval, info, _ = self.trace(
                     add_with_failing_success, (2, 2), {}, eager=False,
                 )
@@ -93,12 +94,64 @@ class test_trace(TraceCase):
 
         assert info is None
         assert retval == 4
-        handle_failure.assert_not_called()
+        # The cache backend keeps a stored SUCCESS even on main, so the state
+        # check alone doesn't pin the fix: handle_failure, the task_success
+        # receiver and after_return do.
         assert add_with_failing_success.backend.get_state('id-1') == states.SUCCESS
+        handle_failure.assert_not_called()
         on_task_success.assert_called()
         add_with_failing_success.after_return.assert_called_with(
             states.SUCCESS, 4, 'id-1', (2, 2), {}, None,
         )
+        mock_logger.exception.assert_called_once()
+        assert 'on_success handler raised' in mock_logger.exception.call_args[0][0]
+
+    def test_trace_on_success_raises_eager_propagates(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=RuntimeError('hook failed')))
+        def add_with_failing_success(x, y):
+            return x + y
+
+        with pytest.raises(RuntimeError, match='hook failed'):
+            self.trace(add_with_failing_success, (2, 2), {}, eager=True)
+
+    def test_trace_on_success_raises_reject_is_not_swallowed(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=Reject('no', requeue=False)))
+        def add_with_rejecting_success(x, y):
+            return x + y
+
+        with pytest.raises(Reject):
+            self.trace(add_with_rejecting_success, (2, 2), {}, eager=False)
+
+    @pytest.mark.parametrize('fails', [False, True])
+    def test_trace_after_return_raises(self, fails):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=RuntimeError('hook failed')))
+        def task_with_failing_after_return(x, y):
+            if fails:
+                raise KeyError('task failed')
+            return x + y
+
+        with patch('celery.app.trace.TraceInfo.handle_failure',
+                   return_value=ExceptionInfo) as handle_failure, \
+                patch('celery.app.trace.logger') as mock_logger:
+            self.trace(task_with_failing_after_return, (2, 2), {}, eager=False)
+
+        # A failed task is recorded once, by its own exception; a successful
+        # one is not recorded as failed at all.
+        assert handle_failure.call_count == (1 if fails else 0)
+        mock_logger.exception.assert_called_once()
+        assert 'after_return handler raised' in mock_logger.exception.call_args[0][0]
+
+    def test_trace_after_return_raises_eager_propagates(self):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=RuntimeError('hook failed')))
+        def add_with_failing_after_return(x, y):
+            return x + y
+
+        with pytest.raises(RuntimeError, match='hook failed'):
+            self.trace(add_with_failing_after_return, (2, 2), {}, eager=True)
 
     def test_get_log_policy(self):
         einfo = Mock(name='einfo')
