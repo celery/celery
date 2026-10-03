@@ -30,6 +30,7 @@ from celery.utils.imports import reload_from_cwd
 from celery.utils.log import mlevel
 from celery.utils.log import worker_logger as logger
 from celery.utils.nodenames import default_nodename, worker_direct
+from celery.utils.sysinfo import cpu_budget, is_auto_concurrency
 from celery.utils.text import str_to_list
 from celery.utils.threads import bound_open_broker_sockets, default_socket_timeout
 
@@ -70,6 +71,12 @@ class WorkController:
     pool = None
     semaphore = None
 
+    #: (level, format, args) for a concurrency-resolution message produced in
+    #: :meth:`setup_instance`, which runs before logging is configured (via
+    #: :meth:`on_init_blueprint`). Emitted in :meth:`on_start` instead, where
+    #: handlers are attached and the message actually reaches the operator.
+    _pending_concurrency_log = None
+
     #: contains the exit code if a :exc:`SystemExit` event is handled.
     exitcode = None
 
@@ -105,7 +112,24 @@ class WorkController:
         self.setup_queues(queues, exclude_queues)
         self.setup_includes(str_to_list(include))
 
-        # Set default concurrency
+        # ``worker_concurrency`` uses ``type='any'`` so the ``"auto"`` sentinel
+        # is preserved through config load. Coerce any other string form
+        # (env vars, direct ``app.conf.worker_concurrency = "4"``) back to int
+        # here; invalid strings fall through to the cpu_count default below.
+        if (isinstance(self.concurrency, str)
+                and not is_auto_concurrency(self.concurrency)):
+            try:
+                self.concurrency = int(self.concurrency)
+            except ValueError:
+                self._pending_concurrency_log = (
+                    'warning',
+                    "worker_concurrency=%r is not a valid integer or "
+                    "'auto'; falling back to billiard.cpu_count().",
+                    (self.concurrency,),
+                )
+                self.concurrency = None
+
+        # Set default concurrency. ``auto`` is resolved after ``worker_init``.
         if not self.concurrency:
             try:
                 self.concurrency = cpu_count()
@@ -128,6 +152,8 @@ class WorkController:
 
         # Initialize bootsteps
         self.pool_cls = _concurrency.get_implementation(self.pool_cls)
+        if is_auto_concurrency(self.concurrency):
+            self._resolve_auto_concurrency()
         self.steps = []
         self.on_init_blueprint()
         self.blueprint = self.Blueprint(
@@ -137,6 +163,44 @@ class WorkController:
             on_stopped=self.on_stopped,
         )
         self.blueprint.apply(self, **kwargs)
+
+    def _resolve_auto_concurrency(self):
+        # Runs after ``worker_init`` so handlers that monkey-patch there do so
+        # before the pool module is imported. Only prefork is CPU-bound, so
+        # only prefork is capped to the cgroup quota.
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+
+        # The CLI hands over a class, so map it back to its alias.
+        target = f'{self.pool_cls.__module__}:{self.pool_cls.__qualname__}'
+        pool_name = next(
+            (alias for alias, path in _concurrency.ALIASES.items()
+             if path == target),
+            target,
+        )
+        is_cpu_bound = (
+            isinstance(self.pool_cls, type)
+            and issubclass(self.pool_cls, PreforkPool)
+        )
+        budget = cpu_budget(use_cgroup_quota=is_cpu_bound)
+        self.concurrency = budget.count
+        if not is_cpu_bound:
+            self._pending_concurrency_log = (
+                'info',
+                "worker_concurrency='auto' only sizes the prefork pool; "
+                "using available cpus=%d for pool=%s.",
+                (self.concurrency, pool_name),
+            )
+        else:
+            quota = (
+                'no cgroup cpu quota found' if budget.quota is None
+                else f'cgroup cpu quota={budget.quota:.2f}'
+            )
+            self._pending_concurrency_log = (
+                'info',
+                "worker_concurrency='auto' resolved to %d "
+                "(pool=%s, %s, available cpus=%d).",
+                (self.concurrency, pool_name, quota, budget.available),
+            )
 
     def on_init_blueprint(self):
         pass
@@ -148,6 +212,10 @@ class WorkController:
         pass
 
     def on_start(self):
+        if self._pending_concurrency_log is not None:
+            level, fmt, args = self._pending_concurrency_log
+            getattr(logger, level)(fmt, *args)
+            self._pending_concurrency_log = None
         if self.pidfile:
             self.pidlock = create_pidlock(self.pidfile)
 

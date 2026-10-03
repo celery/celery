@@ -7,7 +7,7 @@ from time import monotonic, sleep
 
 import pytest
 
-from celery import chain, chord, group, signature
+from celery import chain, chord, group, signature, states
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
@@ -22,7 +22,8 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
                     replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
                     replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, second_order_replace1, tsum, write_to_file_and_return_int, xsum)
+                    return_priority, return_request_eta, second_order_replace1, tsum, write_to_file_and_return_int,
+                    xsum)
 
 TIMEOUT = 60
 
@@ -458,6 +459,42 @@ class test_chain:
         c = c1 | c2
         res = c()
         assert res.get(timeout=TIMEOUT) == 178
+
+    @flaky
+    @pytest.mark.parametrize('failing_headers', [1, 2])
+    def test_header_failure_fails_the_chords_after_it(self, manager, failing_headers):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # a group waits on its members' result ids, so the chain's last task
+        # has to be marked failed itself for the group to finish
+        header = [add.s(1, 1), fail.s()] if failing_headers == 1 else [fail.s(), fail.s()]
+        inner = chain(
+            chord(header, tsum.s()),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
+
+    @flaky
+    def test_header_failure_fails_the_chords_after_a_group_body(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inner = chain(
+            chord([add.s(1, 1), fail.s()], group(add.s(1), add.s(2))),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
 
     @flaky
     def test_chain_of_nine_chords(self, manager):
@@ -1350,6 +1387,19 @@ class test_group:
             assert value == i + 2
 
     @flaky
+    def test_generator_group_iterated_while_calling_len(self, manager):
+        assert_ping(manager)
+
+        g = group(add.s(i, i) for i in range(4))
+        # len() concretises the rest of the generator midway through the
+        # loop, which used to end the iteration after the first task.
+        # (Issue #10755)
+        seen = [(task.args, len(g.tasks)) for task in g.tasks]
+        assert seen == [((i, i), 4) for i in range(4)]
+
+        assert g.apply_async().get(timeout=TIMEOUT) == [0, 2, 4, 6]
+
+    @flaky
     def test_nested_group(self, manager):
         assert_ping(manager)
 
@@ -1820,6 +1870,25 @@ class test_chord:
         c = chord((identity.si(i) for i in inputs), identity.s())
         result = c()
         assert result.get() == inputs
+
+    def test_group_or_task_countdown_delays_header(self, manager):
+        """countdown on group|task must delay header tasks (#7851)."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        countdown = 2
+        started = monotonic()
+        result = (
+            group(return_request_eta.s(), return_request_eta.s())
+            | identity.s()
+        ).apply_async(countdown=countdown)
+        header_etas = result.get(timeout=TIMEOUT)
+        elapsed = monotonic() - started
+
+        assert elapsed >= countdown * 0.9
+        assert all(eta is not None for eta in header_etas)
 
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
