@@ -73,6 +73,32 @@ def _is_empty_group(task):
     )
 
 
+def _is_chain_led_by_task(body):
+    """Return True if the body is a chain whose first step is not a group.
+
+    A group followed by chain steps runs them once per member, so such a
+    chain must stay a single chord body.
+    """
+    return (
+        isinstance(body, _chain) and
+        bool(body.tasks) and
+        not isinstance(body.tasks[0], group)
+    )
+
+
+# options of a chain that _chain.run consumes itself instead of passing
+# them on to the chain's first task
+_CHAIN_RUN_OPTIONS = frozenset({
+    'chord', 'group_id', 'group_index', 'link', 'link_error',
+    'parent_id', 'root_id', 'task_id',
+})
+
+
+def _first_task_options(chain_):
+    """Return the options a chain passes on to its first task when run."""
+    return {k: v for k, v in chain_.options.items() if k not in _CHAIN_RUN_OPTIONS}
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1257,6 +1283,18 @@ class _chain(Signature):
                 if _is_empty_group(task) and (steps or prev_task):
                     continue
 
+            if clone and isinstance(task, chord) and _is_chain_led_by_task(task.body):
+                # chord(header, chain(a, b, c)) -> chord(header, a), b, c
+                # Every header task carries a copy of the body, so a body
+                # holding the rest of the chain is copied once per header
+                # task, at every chord. Freezing (clone=False) assigns ids
+                # to the tasks in place and keeps the chain as written.
+                task = task.clone()
+                body_tasks = task.body.unchain_tasks()
+                task.body = body_tasks[0].clone(**_first_task_options(task.body))
+                steps_extend([task, *body_tasks[1:]])
+                continue
+
             # first task gets partial args from chain
             if clone:
                 if is_first_task:
@@ -2255,7 +2293,7 @@ class _chord(Signature):
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
                 header_delay[key] = options.pop(key)
-        body = body.clone(**options)
+        body = body.clone(**self._body_options(options))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
@@ -2326,6 +2364,11 @@ class _chord(Signature):
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
+    @staticmethod
+    def _body_options(options):
+        """Options passed on to the body: the header task that fires the body is its parent."""
+        return {k: v for k, v in options.items() if k != 'parent_id'}
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, header_delay=None, **options):
@@ -2363,7 +2406,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
-            body.options.update(options)
+            body.options.update(self._body_options(options))
 
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)

@@ -98,15 +98,16 @@ def firstmethod(method, on_call=None):
 
     def _matcher(it, *args, **kwargs):
         for obj in it:
+            obj = maybe_evaluate(obj)
             try:
-                meth = getattr(maybe_evaluate(obj), method)
-                reply = (on_call(meth, *args, **kwargs) if on_call
-                         else meth(*args, **kwargs))
+                meth = getattr(obj, method)
             except AttributeError:
-                pass
-            else:
-                if reply is not None:
-                    return reply
+                continue
+
+            reply = (on_call(meth, *args, **kwargs) if on_call
+                     else meth(*args, **kwargs))
+            if reply is not None:
+                return reply
 
     return _matcher
 
@@ -240,8 +241,40 @@ class _regen(UserList, list):
                         break
 
     def __iter__(self):
-        yield from self.__consumed
-        yield from self.__lookahead_consume()
+        # Track our own position in `__consumed` rather than relying on the
+        # shared look-ahead generator, so that other consumers (``len()``,
+        # indexing or a nested loop) exhausting the underlying iterator
+        # midway through don't cut this iteration short.
+        it = iter(self.__it)
+        index = 0
+        # Items already concretised are yielded without looking ahead, only
+        # once we pull from the underlying iterator ourselves do we look
+        # ahead, so a lazy generator isn't consumed any earlier than needed
+        # (see #3021).
+        pulling = False
+        while True:
+            if index >= len(self.__consumed):
+                if self.__done:
+                    return
+                try:
+                    self.__consumed.append(next(it))
+                except StopIteration:
+                    self.__done = True
+                    return
+                pulling = True
+            if (not pulling or self.__done or
+                    index + 1 < len(self.__consumed)):
+                yield self.__consumed[index]
+            else:
+                # Maintain a single look-ahead to ensure we set `__done` when
+                # the underlying iterator gets exhausted
+                try:
+                    self.__consumed.append(next(it))
+                except StopIteration:
+                    self.__done = True
+                finally:
+                    yield self.__consumed[index]
+            index += 1
 
     def __getitem__(self, index):
         if isinstance(index, slice):
