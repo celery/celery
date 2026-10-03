@@ -497,6 +497,32 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    def test_readd_resets_expiry(self):
+        s = LimitedSet(expires=10)
+        for i in range(100):
+            s.add(i, now=i * 0.01)
+        # The outdated heap entry for 0 must not expire the re-added item.
+        s.add(0, now=100)
+        s.purge(now=50)
+        assert list(s) == [0]
+
+    def test_readd_is_not_evicted_as_oldest(self):
+        s = LimitedSet(maxlen=100)
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)
+        s.add(100, now=1001)
+        assert 0 in s
+        assert 1 not in s
+
+    def test_pop_skips_outdated_entry_of_readded_item(self):
+        s = LimitedSet()
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)
+        assert s.pop() == 1
+        assert list(s)[-1] == 0
+
 
 class test_AttributeDict:
 
