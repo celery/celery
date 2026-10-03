@@ -1,6 +1,7 @@
 """File-system result store backend."""
 import locale
 import os
+import stat
 from datetime import datetime
 
 from kombu.utils.encoding import ensure_bytes
@@ -88,8 +89,33 @@ class FilesystemBackend(KeyValueStoreBackend):
             pass
 
     def set(self, key, value):
-        with self.open(self._filename(key), 'wb') as outfile:
-            outfile.write(ensure_bytes(value))
+        filename = self._filename(key)
+        # Write to a temporary file in the same directory and rename it into
+        # place so concurrent readers (e.g. get/get_many polling the same
+        # key) never observe a truncated file. The temp file is created with
+        # the umask-derived default mode and an existing result file's mode
+        # is preserved across overwrites, matching plain open('wb').
+        hexsuffix = uuid()
+        if isinstance(filename, bytes):
+            tmp_name = os.path.join(
+                os.path.dirname(filename), b'celery-result-' + hexsuffix.encode() + b'.tmp')
+        else:
+            tmp_name = os.path.join(
+                os.path.dirname(filename), f'celery-result-{hexsuffix}.tmp')
+        try:
+            with self.open(tmp_name, 'wb') as outfile:
+                outfile.write(ensure_bytes(value))
+            try:
+                os.chmod(tmp_name, stat.S_IMODE(os.stat(filename).st_mode))
+            except FileNotFoundError:
+                pass  # new file: keep the umask-derived default mode
+            os.replace(tmp_name, filename)
+        except BaseException:
+            try:
+                os.unlink(tmp_name)
+            except FileNotFoundError:
+                pass
+            raise
 
     def mget(self, keys):
         for key in keys:
