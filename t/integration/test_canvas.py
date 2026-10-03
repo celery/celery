@@ -461,7 +461,8 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 178
 
     @flaky
-    def test_header_failure_fails_the_chords_after_it(self, manager):
+    @pytest.mark.parametrize('failing_headers', [1, 2])
+    def test_header_failure_fails_the_chords_after_it(self, manager, failing_headers):
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
@@ -469,8 +470,9 @@ class test_chain:
 
         # a group waits on its members' result ids, so the chain's last task
         # has to be marked failed itself for the group to finish
+        header = [add.s(1, 1), fail.s()] if failing_headers == 1 else [fail.s(), fail.s()]
         inner = chain(
-            chord([add.s(1, 1), fail.s()], tsum.s()),
+            chord(header, tsum.s()),
             chord([add.s(1), add.s(2)], tsum.s()),
         )
         res = group(inner, add.s(1, 1))()

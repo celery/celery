@@ -298,6 +298,10 @@ class Backend:
             chain_elem_ctx.update(chain_elem_ctx.options)
             chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
             chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            already_failed = (
+                chain_elem_ctx.id is not None and
+                self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
+            )
             # If the state should be propagated, we'll do so for all
             # elements of the chain. This is only truly important so
             # that the last chain element which controls completion of
@@ -312,12 +316,13 @@ class Backend:
                 )
             # If the chain element is a member of a chord, we also need
             # to call `on_chord_part_return()` as well to avoid stalls.
-            if 'chord' in chain_elem_ctx.options:
+            # An element that already failed has returned its part.
+            if 'chord' in chain_elem_ctx.options and not already_failed:
                 self.on_chord_part_return(chain_elem_ctx, state, exc)
             # A chord step completes only when its body does, so the
             # result that later steps and any enclosing chord wait on is
             # the chord body, not the chord's own id. Descend into it so
-            # the failure reaches that result.
+            # the failure reaches that result (see issue #9674).
             if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
                 chord_body = (chain_elem_ctx.kwargs or {}).get('body')
                 if chord_body is not None:
@@ -396,6 +401,8 @@ class Backend:
 
     def chord_error_from_stack(self, callback, exc=None):
         app = self.app
+        if exc is None:
+            exc = sys.exc_info()[1]
 
         try:
             backend = app._tasks[callback.task].backend
@@ -427,7 +434,8 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            exception_info = backend.fail_from_current_stack(callback_id, exc=eb_exc)
+            exc = eb_exc
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
         else:
             exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
         backend._fail_chain(callback.options.get("chain"), exc)

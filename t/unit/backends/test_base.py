@@ -476,6 +476,7 @@ class DictBackend(BaseBackend):
     def _get_task_meta_for(self, task_id):
         if task_id == 'task-exists':
             return {'result': 'task'}
+        return {'status': states.PENDING, 'result': None}
 
     def _delete_group(self, group_id):
         self._data.pop(group_id, None)
@@ -725,6 +726,7 @@ class test_BaseBackend_dict:
     def test_mark_as_failure__chained_chord_propagates_to_body(self):
         b = BaseBackend(app=self.app)
         b.store_result = Mock()
+        b.get_state = Mock(return_value=states.PENDING)
         b.on_chord_part_return = Mock()
 
         inner_chord = chord(
@@ -800,18 +802,62 @@ class test_BaseBackend_dict:
         failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
         assert failed == {'after-id': states.FAILURE}
 
-    def test_fail_chain_returns_the_part_of_a_chained_chord_member(self):
+    def test_fail_chain_returns_the_chord_part_of_a_chained_member(self):
         options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
         member = signature('member', options=options)
-        bodiless = chord([signature('h')], None)
 
         with patch.object(self.b, 'store_result') as store_result, \
                 patch.object(self.b, 'on_chord_part_return') as part_return:
-            self.b._fail_chain([member, bodiless], ValueError('header failed'))
+            self.b._fail_chain([member], ValueError('header failed'))
 
         part_return.assert_called_once()
         assert part_return.call_args[0][0].id == 'member-id'
         assert [call_[0][0] for call_ in store_result.call_args_list] == ['member-id']
+
+    def test_fail_chain_returns_a_chord_part_once_per_member(self):
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state', side_effect=[states.PENDING, states.FAILURE]), \
+                patch.object(self.b, 'on_chord_part_return') as part_return:
+            self.b._fail_chain([member], ValueError('header failed'))
+            self.b._fail_chain([member], ValueError('header failed'))
+
+        part_return.assert_called_once()
+
+    def test_fail_chain_skips_a_chord_without_a_body(self):
+        with patch.object(self.b, 'store_result') as store_result:
+            self.b._fail_chain([chord([signature('h')], None)], ValueError('header failed'))
+
+        store_result.assert_not_called()
+
+    def test_chord_error_from_stack_resolves_the_current_exception_for_the_chain(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result:
+            try:
+                raise ValueError('header failed')
+            except ValueError:
+                self.b.chord_error_from_stack(callback)
+
+        stored = {call_[0][0]: call_[0][1] for call_ in store_result.call_args_list}
+        assert isinstance(stored['after-id'], ValueError)
+
+    def test_chord_error_from_stack_fails_the_chain_with_the_errback_error(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, '_call_task_errbacks', side_effect=KeyError('errback crashed')):
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        stored = {call_[0][0]: type(call_[0][1]) for call_ in store_result.call_args_list}
+        assert stored == {'body-id': KeyError, 'after-id': KeyError}
 
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
