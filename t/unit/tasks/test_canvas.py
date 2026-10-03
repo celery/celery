@@ -1,11 +1,13 @@
 import json
 import math
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
-from celery import states
+from celery import _state, states
 from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
@@ -54,6 +56,26 @@ def _group_result_sizes_on_spine(result):
             sizes.append(len(node.results))
         node = node.parent
     return sizes
+
+
+@contextmanager
+def current_app_in_this_thread(app, default):
+    """Make ``app`` the current app of this thread only, and ``default`` the default app.
+
+    current_app is thread-local: a thread other than the one that made an app
+    current falls back to the default app, in production one without a result
+    backend (#6197). The unit tests replace the thread-local with a trap that
+    is the same in every thread, so it is swapped for a real one here.
+    """
+    prev_tls, prev_default_app = _state._tls, _state.default_app
+    _state._tls = _state._TLS()
+    try:
+        app.set_current()
+        default.set_default()
+        yield
+    finally:
+        _state._tls = prev_tls
+        _state.set_default_app(prev_default_app)
 
 
 class test_maybe_unroll_group:
@@ -567,6 +589,22 @@ class test_chain(CanvasCase):
         assert isinstance(c, _chain)
         assert c.tasks[0]._app is None
         assert c.app is self.app
+
+    def test_apply_async_in_another_thread_when_first_task_is_chord(self):
+        # #6197: in a thread other than the one that made the app current, the
+        # chain fell back to the default app, which has no result backend, and
+        # could not start its chord.
+        def apply():
+            return chain(
+                chord(group(self.add.s(1, 1), self.add.s(2, 2)), self.xsum.s()),
+                self.add.s(1),
+            ).apply_async()
+
+        with self.Celery(backend='disabled') as default_app, \
+                current_app_in_this_thread(self.app, default=default_app), \
+                ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(apply).result()
+        assert isinstance(result.parent.parent, GroupResult)
 
     def test_handles_dicts(self):
         c = chain(
