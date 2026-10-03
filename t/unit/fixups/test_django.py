@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from celery import Celery, signals
 from celery.concurrency.thread import TaskPool as ThreadTaskPool
 from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
 from t.unit import conftest
@@ -104,7 +105,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, _, _):
             self.cw.return_value = '/opt/vandelay'
             f.install()
-            self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
+            self.sigs.import_modules.connect.assert_called_with(
+                f.on_import_modules, sender=self.app,
+            )
+            self.sigs.worker_init.connect.assert_called_with(
+                f.on_worker_init, dispatch_uid=f._worker_init_uid,
+            )
             assert self.app.loader.now == f.now
 
             # Specialized DjangoTask class is used
@@ -198,13 +204,62 @@ class test_DjangoFixup(FixupCase):
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
-                mock_worker = Mock(name="worker")
+                mock_worker = Mock(name="worker", app=f.app)
                 f.on_worker_init(sender=mock_worker)
                 assert DWF.return_value.worker == mock_worker
 
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
                 assert f._worker_fixup is DWF.return_value
+
+    def test_on_worker_init_ignores_worker_of_other_app(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                other_worker = Mock(name="worker", app=Mock(name="other_app"))
+                f.on_worker_init(sender=other_worker)
+                DWF.assert_not_called()
+                assert f._worker_fixup is None
+
+    def _install_real_fixups(self, *apps):
+        with patch('celery.fixups.django.symbol_by_name'), \
+                patch('sys.path'):
+            fixups = [DjangoFixup(app).install() for app in apps]
+        for f in fixups:
+            f.worker_fixup = Mock(name='worker_fixup')
+        return fixups
+
+    def _uninstall_real_fixups(self, *fixups):
+        for f in fixups:
+            signals.import_modules.disconnect(
+                f.on_import_modules, sender=f.app,
+            )
+            signals.worker_init.disconnect(dispatch_uid=f._worker_init_uid)
+
+    def test_on_import_modules_only_for_own_app(self):
+        other_app = Celery(set_as_current=False)
+        f1, f2 = self._install_real_fixups(self.app, other_app)
+        try:
+            signals.import_modules.send(sender=other_app)
+            f1.worker_fixup.validate_models.assert_not_called()
+            f2.worker_fixup.validate_models.assert_called_once_with()
+
+            signals.import_modules.send(sender=self.app)
+            f1.worker_fixup.validate_models.assert_called_once_with()
+            f2.worker_fixup.validate_models.assert_called_once_with()
+        finally:
+            self._uninstall_real_fixups(f1, f2)
+
+    def test_worker_init_only_for_own_app(self):
+        other_app = Celery(set_as_current=False)
+        f1, f2 = self._install_real_fixups(self.app, other_app)
+        try:
+            worker = Mock(name='worker', app=other_app)
+            signals.worker_init.send(sender=worker)
+            f1.worker_fixup.install.assert_not_called()
+            f2.worker_fixup.install.assert_called_once_with()
+            assert f2.worker_fixup.worker is worker
+        finally:
+            self._uninstall_real_fixups(f1, f2)
 
     def test_on_worker_init_warns_without_sender(self):
         with self.fixup_context(self.app) as (f, _, _):
