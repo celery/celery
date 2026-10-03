@@ -83,6 +83,9 @@ Worker / broker / connection handling
 - Fix revoked tasks running anyway after mingle merged revoke stamps from
   another host (#10668)
 - Bound already-open broker sockets before connection teardown (#10570)
+- Fix explicit exchange or routing key arguments being ignored when the other
+  argument is omitted. Take the missing value from the queue or application
+  defaults (#10704).
 
 Results / backends
 --------------------
