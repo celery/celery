@@ -45,7 +45,7 @@ Unreleased
   ``chord.link()`` does. They were passed on to the header group as well, which
   raised ``TypeError: Cannot add link to group``. This also broke a chain
   ending in a chord with a callback: the worker marked the task before the
-  chord as failed and never ran the chord.
+  chord as failed and never ran the chord (#10781).
 
 
 .. _version-5.7.0a1:
