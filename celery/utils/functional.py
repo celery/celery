@@ -98,15 +98,16 @@ def firstmethod(method, on_call=None):
 
     def _matcher(it, *args, **kwargs):
         for obj in it:
+            obj = maybe_evaluate(obj)
             try:
-                meth = getattr(maybe_evaluate(obj), method)
-                reply = (on_call(meth, *args, **kwargs) if on_call
-                         else meth(*args, **kwargs))
+                meth = getattr(obj, method)
             except AttributeError:
-                pass
-            else:
-                if reply is not None:
-                    return reply
+                continue
+
+            reply = (on_call(meth, *args, **kwargs) if on_call
+                     else meth(*args, **kwargs))
+            if reply is not None:
+                return reply
 
     return _matcher
 
