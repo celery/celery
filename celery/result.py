@@ -14,7 +14,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -1078,6 +1078,10 @@ class EagerResult(AsyncResult):
 
     def revoke(self, *args, **kwargs):
         self._state = states.REVOKED
+        # Same as what the backend stores for a revoked task
+        # (see ``Backend.mark_as_revoked``), so that get() raises it.
+        self._result = TaskRevokedError('revoked')
+        self._traceback = None
 
     def __repr__(self):
         return f'<EagerResult: {self.id}>'
