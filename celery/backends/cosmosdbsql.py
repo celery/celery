@@ -191,6 +191,8 @@ class CosmosDBSQLBackend(KeyValueStoreBackend):
         # A task writes its key again for every state change (STARTED,
         # RETRY, update_state(), then the final state), so the document has
         # to be replaced; CreateDocument fails with 409 once the id exists.
+        # The SUCCESS check in _store_result() is a separate read, so a late
+        # state that races the final write can still replace it, as on redis.
         self._client.UpsertDocument(
             self._collection_link,
             {"id": key, "value": value},

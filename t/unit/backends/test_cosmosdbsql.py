@@ -12,6 +12,29 @@ MODULE_TO_MOCK = "celery.backends.cosmosdbsql"
 pytest.importorskip('pydocumentdb')
 
 
+def fake_document_store(mock_client):
+    # Like CosmosDB, refuse to create a document whose id is taken.
+    documents = {}
+
+    def create_document(collection_link, document, options):
+        if document["id"] in documents:
+            raise cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_EXISTS)
+        documents[document["id"]] = document
+
+    def upsert_document(collection_link, document, options):
+        documents[document["id"]] = document
+
+    def read_document(document_link, options):
+        try:
+            return documents[options["partitionKey"]]
+        except KeyError:
+            raise cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_NOT_FOUND)
+
+    mock_client.CreateDocument.side_effect = create_document
+    mock_client.UpsertDocument.side_effect = upsert_document
+    mock_client.ReadDocument.side_effect = read_document
+
+
 class test_DocumentDBBackend:
     def setup_method(self):
         self.url = "cosmosdbsql://:key@endpoint"
@@ -118,26 +141,7 @@ class test_DocumentDBBackend:
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_store_result_overwrites_earlier_state(self, mock_client):
-        # Like CosmosDB, refuse to create a document whose id is taken.
-        documents = {}
-
-        def create_document(collection_link, document, options):
-            if document["id"] in documents:
-                raise cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_EXISTS)
-            documents[document["id"]] = document
-
-        def upsert_document(collection_link, document, options):
-            documents[document["id"]] = document
-
-        def read_document(document_link, options):
-            try:
-                return documents[options["partitionKey"]]
-            except KeyError:
-                raise cosmosdbsql.HTTPFailure(cosmosdbsql.ERROR_NOT_FOUND)
-
-        mock_client.CreateDocument.side_effect = create_document
-        mock_client.UpsertDocument.side_effect = upsert_document
-        mock_client.ReadDocument.side_effect = read_document
+        fake_document_store(mock_client)
 
         # A task stores STARTED (task_track_started), RETRY or a custom
         # update_state() before its final state, all under the same key.
@@ -148,6 +152,21 @@ class test_DocumentDBBackend:
         meta = self.backend.get_task_meta(task_id, cache=False)
         assert meta["status"] == states.SUCCESS
         assert meta["result"] == 42
+
+    @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
+    def test_store_result_keeps_success(self, mock_client):
+        fake_document_store(mock_client)
+
+        # Once SUCCESS is stored, _store_result() skips later states, such
+        # as STARTED from a redelivered task.
+        task_id = uuid()
+        self.backend.mark_as_done(task_id, 42)
+        self.backend.mark_as_started(task_id)
+
+        meta = self.backend.get_task_meta(task_id, cache=False)
+        assert meta["status"] == states.SUCCESS
+        assert meta["result"] == 42
+        mock_client.UpsertDocument.assert_called_once()
 
     @patch(MODULE_TO_MOCK + ".CosmosDBSQLBackend._client")
     def test_mget(self, mock_client):
