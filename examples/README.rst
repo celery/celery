@@ -3,13 +3,13 @@
 =================
 
 
-* pythonproject
+* app
 
-Example Python project using celery.
+Minimal Celery application example.
 
-* httpexample
+* next-steps
 
-Example project using remote tasks (webhook tasks)
+Walkthrough example covering tasks, routing and monitoring.
 
 * celery_http_gateway
 
