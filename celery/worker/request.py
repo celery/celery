@@ -705,6 +705,17 @@ class Request:
         # (acks_late) acknowledge after result stored.
         requeue = False
         is_worker_lost = isinstance(exc, WorkerLostError)
+        if is_worker_lost and self._success_was_stored():
+            # The pool child stored SUCCESS and was lost afterwards, e.g. in
+            # on_success, a task_postrun receiver or process_cleanup.
+            # Recording a failure here would fire the errbacks and count a
+            # chord header twice, and requeueing would run the task again.
+            warn('Task %s[%s] succeeded before the worker was lost: %r',
+                 self.name, self.id, exc)
+            if self.task.acks_late:
+                self.acknowledge()
+            return
+
         if self.task.acks_late:
             is_timeout = isinstance(exc, TimeLimitExceeded)
             ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
@@ -760,6 +771,13 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _success_was_stored(self):
+        try:
+            return self.task.backend.get_state(self.id) == states.SUCCESS
+        except Exception:  # pylint: disable=broad-except
+            # No backend, or it can't be reached: keep the failure handling.
+            return False
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):
