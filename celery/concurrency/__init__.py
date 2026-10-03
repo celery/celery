@@ -22,6 +22,15 @@ except ImportError:
     pass
 else:
     ALIASES['threads'] = 'celery.concurrency.thread:TaskPool'
+
+
+try:
+    import concurrent.futures.interpreter  # noqa
+except ImportError:
+    pass
+else:
+    ALIASES['subinterpreter'] = 'celery.concurrency.subinterpretor:TaskPool'
+
 #
 # Allow for an out-of-tree worker pool implementation. This is used as follows:
 #
