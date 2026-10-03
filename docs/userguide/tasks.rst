@@ -1731,6 +1731,12 @@ Available handlers
 
     The return value of this handler is ignored.
 
+    If this handler raises, the worker logs the exception at ``ERROR`` level
+    and the task stays ``SUCCESS``: errbacks don't run and the
+    :signal:`task_failure` and :signal:`task_internal_error` signals aren't
+    sent. When the task runs eagerly (``apply()``, :setting:`task_always_eager`)
+    the exception propagates to the caller.
+
 .. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
 
     Retry handler.
@@ -1789,6 +1795,10 @@ Available handlers
     :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
 
     The return value of this handler is ignored.
+
+    If this handler raises, the worker logs the exception at ``ERROR`` level
+    and the outcome that was already recorded stands. When the task runs
+    eagerly the exception propagates to the caller.
 
 Example usage
 ~~~~~~~~~~~~~
