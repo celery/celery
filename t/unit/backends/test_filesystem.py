@@ -156,6 +156,20 @@ class test_FilesystemBackend:
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
 
+    def test_forget_missing_task_is_noop(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        # other KV backends tolerate deleting an absent key; forget()
+        # on a result that was expired, already forgotten or never stored
+        # must not raise FileNotFoundError
+        tb.forget(uuid())
+
+    def test_forget_twice_is_noop(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, 42)
+        tb.forget(tid)
+        tb.forget(tid)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
@@ -163,6 +177,27 @@ class test_FilesystemBackend:
 
     @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
                         'Windows/FAT due to low granularity of st_mtime')
+    def test_cleanup_skips_files_removed_concurrently(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tids = [uuid() for _ in range(4)]
+        for tid in tids:
+            tb.mark_as_done(tid, 42)
+        # remove one file behind cleanup()'s back, between listdir and stat
+        victim = os.path.join(tb.path, tb.get_key_for_task(tids[1]))
+        original_stat = os.stat
+
+        def racy_stat(path, *args, **kwargs):
+            result = original_stat(path, *args, **kwargs)
+            if os.path.abspath(path) == os.path.abspath(victim):
+                os.unlink(victim)
+            return result
+
+        with patch.object(tb, 'expires', 10), patch('os.stat', side_effect=racy_stat):
+            tb.cleanup()  # must not raise FileNotFoundError
+        assert not os.path.exists(victim)
+        for tid in tids[2:]:
+            assert os.path.exists(os.path.join(tb.path, tb.get_key_for_task(tid)))
+
     def test_cleanup(self):
         tb = FilesystemBackend(app=self.app, url=self.url)
         yesterday_task_ids = [uuid() for i in range(10)]
