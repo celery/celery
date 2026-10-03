@@ -2239,6 +2239,53 @@ class test_chord(CanvasCase):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
 
+    def test_app_when_header_has_no_app(self):
+        x = chord([signature('h1')], self.add.s(4, 4))
+        assert x.app is self.app
+
+    @pytest.mark.parametrize('body', [chain, group, chord])
+    def test_app_when_header_has_no_app_and_body_is_canvas(self, body):
+        x = chord([signature('h1')], body(self.xsum.s(), self.add.s(1)))
+        assert x.body._app is None
+        assert x.app is self.app
+
+    @pytest.mark.parametrize('header', [chain, group, chord])
+    @pytest.mark.parametrize('body', [None, chain, group, chord])
+    def test_app_when_header_and_body_are_canvases(self, header, body):
+        # A chain, group or chord built from task signatures has no app of its
+        # own but resolves one through its tasks.
+        header = header(self.add.s(1, 1), self.add.s(2, 2))
+        body = body(self.xsum.s(), self.add.s(1)) if body else None
+        x = chord([header], body)
+        assert x.tasks[0]._app is None
+        assert body is None or x.body._app is None
+        assert x.app is self.app
+
+    def test_app_when_header_canvas_has_dict(self):
+        # A chain built with options keeps a dict as a task until it is frozen
+        # (without them chain() turns it into a signature) and cannot resolve
+        # an app through it, so the chord falls back to the body's app.
+        x = chord(
+            [group([chain(dict(self.add.s(1, 1)), self.add.s(1), task_id='x')])],
+            self.xsum.s(),
+        )
+        assert x.app is self.app
+
+    def test_apply_async_in_another_thread_when_header_and_body_are_chains(self):
+        # #6197: a chord whose header starts with a chain and whose body is a
+        # chain fell back to the default app of the thread, which has no
+        # result backend.
+        def apply():
+            return chord(
+                [chain(self.add.s(1, 1), self.add.s(1))], chain(self.xsum.s(), self.add.s(1)),
+            ).apply_async()
+
+        with self.Celery(backend='disabled') as default_app, \
+                current_app_in_this_thread(self.app, default=default_app), \
+                ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(apply).result()
+        assert isinstance(result.parent, GroupResult)
+
     def test_freeze_empty_group_body_returns_result(self):
         """An empty group body still exists and should be frozen.
 
