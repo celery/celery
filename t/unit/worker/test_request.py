@@ -962,6 +962,27 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
+    # A pool child lost after the task's SUCCESS was stored did not fail the task.
+    @pytest.mark.xfail(strict=True, reason='the error callback fires for a task whose SUCCESS was stored (#10724)')
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:
             raise WorkerLostError()
