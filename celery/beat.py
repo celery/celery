@@ -462,7 +462,15 @@ class Scheduler:
         pass
 
     def close(self):
-        self.sync()
+        try:
+            self.sync()
+        finally:
+            # Inspect the cache so closing an unused scheduler cannot open
+            # a broker connection. Releasing it also closes its channels.
+            self.__dict__.pop('producer', None)
+            connection = self.__dict__.pop('connection', None)
+            if connection is not None:
+                ignore_errors(connection, connection.release)
 
     def add(self, **kwargs):
         entry = self.Entry(app=self.app, **kwargs)
@@ -627,8 +635,11 @@ class PersistentScheduler(Scheduler):
             self._store.sync()
 
     def close(self):
-        self.sync()
-        self._store.close()
+        try:
+            super().close()
+        finally:
+            if self._store is not None:
+                self._store.close()
 
     @property
     def info(self):
