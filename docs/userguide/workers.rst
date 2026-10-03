@@ -1278,7 +1278,8 @@ There are two types of remote control commands:
 Remote control commands are registered in the control panel and
 they take a ``state`` object as their first argument, followed by
 any arguments sent with the command.
-From ``state`` you have access to the active
+``state`` holds the worker's ``app``, ``hostname`` and ``consumer``,
+so from it you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:
