@@ -488,3 +488,23 @@ class test_add_seconds_to_datetime:
         result = add_seconds_to_datetime(now, 90 * 60)
 
         assert result == datetime(2026, 3, 8, 3, 0)
+
+    def test_across_fall_back(self):
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert result.isoformat() == '2026-11-01T02:00:00-05:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_second_occurrence_of_repeated_hour(self):
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 15 * 60)
+
+        assert result.isoformat() == '2026-11-01T01:45:00-05:00'
+        assert result.fold == 1
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=15)

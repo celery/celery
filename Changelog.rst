@@ -12,6 +12,9 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``countdown`` and numeric ``expires`` now use elapsed seconds across DST
+  transitions instead of wall-clock arithmetic in task protocols 1 and 2
+  (#10769).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
