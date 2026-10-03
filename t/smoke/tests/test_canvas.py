@@ -67,6 +67,30 @@ class test_chain:
         assert actual.count(b"b") == 1
         redis_connection.delete(redis_key)
 
+    def test_chain_of_implicit_chords_runs_each_step_once_in_order(self, celery_setup: CeleryTestSetup):
+        redis_key = str(uuid.uuid4())
+        queue = celery_setup.worker.worker_queue
+
+        def echo(label):
+            return redis_echo.si(label, redis_key).set(queue=queue)
+
+        steps = [echo("start")]
+        for stage in range(4):
+            steps.append(group(echo(f"branch{stage}a"), echo(f"branch{stage}b")))
+            steps.append(echo(f"rejoin{stage}"))
+        chain(*steps).apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
+
+        redis_connection = get_redis_connection()
+        actual = [item.decode() for item in redis_connection.lrange(redis_key, 0, -1)]
+        redis_connection.delete(redis_key)
+
+        assert len(actual) == 13
+        assert actual[0] == "start"
+        for stage in range(4):
+            branches = actual[1 + stage * 3:3 + stage * 3]
+            assert sorted(branches) == [f"branch{stage}a", f"branch{stage}b"]
+            assert actual[3 + stage * 3] == f"rejoin{stage}"
+
     def test_chain_skips_empty_group_on_worker(self, celery_setup: CeleryTestSetup):
         """Empty groups are no-ops: the worker runs the surrounding tasks."""
         queue = celery_setup.worker.worker_queue
