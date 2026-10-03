@@ -337,6 +337,16 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_accepts_expiration_string(self):
+        expires = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', expires=expires)
+        assert message.body['expires'] == expires
+
+    def test_accepts_eta_string(self):
+        eta = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', eta=eta)
+        assert message.body['eta'] == eta
+
 
 class test_AMQP_Base:
     def setup_method(self):
@@ -521,6 +531,21 @@ class test_AMQP(test_AMQP_Base):
         assert evd.publish.call_args[1]['retry_policy'] == {
             'max_retries': 3, 'interval_start': 0,
         }
+
+    def test_send_task_sent_event_after_dispatcher_close(self):
+        self.app.conf.task_send_sent_event = True
+        dispatcher = self.app.amqp._event_dispatcher
+        dispatcher.close()
+        producer = Mock(name='producer')
+
+        self.app.amqp.send_task_message(producer, 'foo', self.simple_message)
+
+        assert producer.publish.call_count == 2
+        event_call = producer.publish.call_args_list[1]
+        assert event_call.args[0]['type'] == 'task-sent'
+        assert event_call.args[0]['uuid'] == self.simple_message.headers['id']
+        assert event_call.kwargs['routing_key'] == 'task.sent'
+        assert dispatcher.producer is None
 
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')

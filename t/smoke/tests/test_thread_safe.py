@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from unittest.mock import Mock
 
 import pytest
@@ -71,3 +72,64 @@ class test_thread_safety:
                 executor.submit(thread_worker)
 
         assert signal_was_called.call_count == threads_count
+
+    def test_event_dispatcher_close_waits_for_in_flight_publish(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        """Close waits for sends while explicit producers remain usable."""
+        publish_started = Event()
+        finish_publish = Event()
+        close_started = Event()
+        close_finished = Event()
+        published_ids = []
+
+        with celery_setup.app.connection_for_write() as connection:
+            dispatcher = celery_setup.app.events.Dispatcher(
+                connection, buffer_while_offline=False,
+            )
+            producer = dispatcher.producer
+            original_publish = producer.publish
+
+            def blocking_publish(*args, **kwargs):
+                publish_started.set()
+                if not finish_publish.wait(10):
+                    raise TimeoutError("event publish was not allowed to finish")
+                result = original_publish(*args, **kwargs)
+                published_ids.append(args[0]["uuid"])
+                return result
+
+            def close_dispatcher():
+                close_started.set()
+                try:
+                    dispatcher.close()
+                finally:
+                    close_finished.set()
+
+            producer.publish = blocking_publish
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                publisher = pool.submit(
+                    dispatcher.send, "task-sent", uuid="in-flight-event",
+                )
+                try:
+                    assert publish_started.wait(10)
+                    closer = pool.submit(close_dispatcher)
+                    assert close_started.wait(10)
+                    assert not close_finished.wait(0.2), (
+                        "close() returned while publish() was still in progress"
+                    )
+                finally:
+                    finish_publish.set()
+
+                publisher.result(timeout=10)
+                closer.result(timeout=10)
+
+            assert dispatcher.producer is None
+            assert published_ids == ["in-flight-event"]
+
+            dispatcher.send("task-sent", uuid="closed-send")
+            # close() detaches the producer; explicit publication still works.
+            dispatcher.publish(
+                "task-sent", {"uuid": "explicit-event"}, producer,
+            )
+            assert published_ids == ["in-flight-event", "explicit-event"]

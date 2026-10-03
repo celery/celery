@@ -21,6 +21,26 @@ Unreleased
 - The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
   and used to publish ``task-sent`` events is now always a dictionary containing
   the merged configured and per-call retry options, never ``None`` (#10708).
+- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
+  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
+- A chain in which groups are followed by tasks, ``chain(task, group, task,
+  group, task, ...)``, no longer nests the rest of the chain into each chord
+  body when it is run. The first message grew by (header size + 2) per group;
+  it now grows linearly. ``prepare_steps()`` returns ``chord(header, a), b, c``
+  where it returned ``chord(header, chain(a, b, c))``, which code inspecting
+  prepared canvases may notice (#10743).
+- A chord body's ``parent_id`` is the header task that fires it, for every
+  body shape. A single-task body previously reported the task before the
+  chord as its parent while a chain body reported the header task (#10743).
+- In a chain of chords, a header failure now fails the chords after it. The
+  chain is kept flat since 5.6.3 (#10171), and a failing header left the
+  following chords pending, so joining the chain's result hung.
+- Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
+  prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
+  ``worker_concurrency`` is no longer coerced to an integer at config load, so
+  code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
+  numeric string such as ``"4"``; the worker converts it at startup.
+
 
 .. _version-5.7.0a1:
 

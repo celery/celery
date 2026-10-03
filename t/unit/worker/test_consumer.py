@@ -10,6 +10,7 @@ import pytest
 from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
+from kombu.asynchronous import Hub
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -341,7 +342,19 @@ class test_Consumer(ConsumerTestCase):
         c.on_send_event_buffered()
         c.hub = Mock(name='hub')
         c.on_send_event_buffered()
-        c.hub._ready.add.assert_called_with(c._flush_events)
+        c.hub.call_soon.assert_called_with(c._flush_events_promise)
+
+    def test_on_send_event_buffered_schedules_one_flush(self):
+        c = self.get_consumer()
+        c.event_dispatcher = Mock(name='evd')
+        c.hub = Hub()
+        try:
+            c.on_send_event_buffered()
+            c.on_send_event_buffered()
+            next(c.hub.loop)
+        finally:
+            c.hub.close()
+        c.event_dispatcher.flush.assert_called_once_with()
 
     def test_schedule_bucket_request(self):
         c = self.get_consumer()
@@ -1298,7 +1311,7 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_2 = Mock()
 
         # Add mock operations to _pending_operations
-        c._pending_operations = [mock_operation_1, mock_operation_2]
+        c._pending_operations = deque([mock_operation_1, mock_operation_2])
 
         # Call perform_pending_operations
         c.perform_pending_operations()
@@ -1308,6 +1321,18 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_2.assert_called_once()
 
         # Ensure all pending operations are cleared
+        assert len(c._pending_operations) == 0
+
+    def test_perform_pending_operations_in_scheduling_order(self):
+        c = self.get_consumer(no_hub=True)
+        operations = []
+
+        c.call_soon(operations.append, 'first')
+        c.call_soon(operations.append, 'second')
+
+        c.perform_pending_operations()
+
+        assert operations == ['first', 'second']
         assert len(c._pending_operations) == 0
 
     def test_perform_pending_operations_with_exception(self):
@@ -1322,7 +1347,7 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_success = Mock()
 
         # Add operations to _pending_operations
-        c._pending_operations = [mock_operation_fail, mock_operation_success]
+        c._pending_operations = deque([mock_operation_fail, mock_operation_success])
 
         # Patch logger to avoid logging during the test
         with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
@@ -1389,7 +1414,7 @@ class test_Consumer_CallSoonAck(ConsumerTestCase):
     def test_call_soon_ack_does_not_append_to_pending_ops(self):
         """Ack/reject callbacks must not be deferred to _pending_operations."""
         c = self.get_consumer(no_hub=True)
-        c._pending_operations = []
+        c._pending_operations = deque()
         callback = Mock()
 
         c.call_soon_ack(callback)

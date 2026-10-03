@@ -73,6 +73,32 @@ def _is_empty_group(task):
     )
 
 
+def _is_chain_led_by_task(body):
+    """Return True if the body is a chain whose first step is not a group.
+
+    A group followed by chain steps runs them once per member, so such a
+    chain must stay a single chord body.
+    """
+    return (
+        isinstance(body, _chain) and
+        bool(body.tasks) and
+        not isinstance(body.tasks[0], group)
+    )
+
+
+# options of a chain that _chain.run consumes itself instead of passing
+# them on to the chain's first task
+_CHAIN_RUN_OPTIONS = frozenset({
+    'chord', 'group_id', 'group_index', 'link', 'link_error',
+    'parent_id', 'root_id', 'task_id',
+})
+
+
+def _first_task_options(chain_):
+    """Return the options a chain passes on to its first task when run."""
+    return {k: v for k, v in chain_.options.items() if k not in _CHAIN_RUN_OPTIONS}
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1257,6 +1283,18 @@ class _chain(Signature):
                 if _is_empty_group(task) and (steps or prev_task):
                     continue
 
+            if clone and isinstance(task, chord) and _is_chain_led_by_task(task.body):
+                # chord(header, chain(a, b, c)) -> chord(header, a), b, c
+                # Every header task carries a copy of the body, so a body
+                # holding the rest of the chain is copied once per header
+                # task, at every chord. Freezing (clone=False) assigns ids
+                # to the tasks in place and keeps the chain as written.
+                task = task.clone()
+                body_tasks = task.body.unchain_tasks()
+                task.body = body_tasks[0].clone(**_first_task_options(task.body))
+                steps_extend([task, *body_tasks[1:]])
+                continue
+
             # first task gets partial args from chain
             if clone:
                 if is_first_task:
@@ -2236,7 +2274,16 @@ class _chord(Signature):
                 if args and not self.immutable else self.args)
         body = kwargs.pop('body', None) or self.kwargs['body']
         kwargs = dict(self.kwargs['kwargs'], **kwargs)
-        body = body.clone(**options)
+        # apply_async(countdown=/eta=) must delay the header. Those keys collide
+        # with chord.run(countdown=), which is the chord.unlock retry interval,
+        # and cloning them onto the body delays only the callback after the
+        # header already ran (issue #7851). Explicit apply_async values go in
+        # header_delay; .set(countdown=/eta=) on the chord is picked up in run().
+        header_delay = {}
+        for key in ('countdown', 'eta'):
+            if options.get(key) is not None:
+                header_delay[key] = options.pop(key)
+        body = body.clone(**self._body_options(options))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
@@ -2245,13 +2292,20 @@ class _chord(Signature):
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options, **options) if options else self.options
+        merged_options = dict(self.options, **options)
+        # Keep countdown/eta off run()'s kwargs so they don't replace the unlock
+        # retry interval; run() still sees .set() values via self.options.
+        for key in ('countdown', 'eta'):
+            merged_options.pop(key, None)
         option_task_id = merged_options.pop("task_id", None)
         if task_id is None:
             task_id = option_task_id
 
         # chord([A, B, ...], C)
-        return self.run(tasks, body, args, task_id=task_id, kwargs=kwargs, **merged_options)
+        run_kwargs = {'task_id': task_id, 'kwargs': kwargs, **merged_options}
+        if header_delay:
+            run_kwargs['header_delay'] = header_delay
+        return self.run(tasks, body, args, **run_kwargs)
 
     def apply(self, args=None, kwargs=None,
               propagate=True, body=None, **options):
@@ -2300,9 +2354,14 @@ class _chord(Signature):
         tasks = getattr(self.tasks, "tasks", self.tasks)
         return sum(self._descend(task) for task in tasks)
 
+    @staticmethod
+    def _body_options(options):
+        """Options passed on to the body: the header task that fires the body is its parent."""
+        return {k: v for k, v in options.items() if k != 'parent_id'}
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
-            task_id=None, kwargs=None, **options):
+            task_id=None, kwargs=None, header_delay=None, **options):
         """Execute the chord.
 
         Executing the chord means executing the header and sending the
@@ -2315,10 +2374,12 @@ class _chord(Signature):
             partial_args (tuple): Arguments to pass to the header.
             app (Celery): The Celery app instance.
             interval (float): The interval between retries.
-            countdown (int): The countdown between retries.
+            countdown (int): The countdown between chord.unlock retries.
             max_retries (int): The maximum number of retries.
             task_id (str): The task id to use for the body.
             kwargs (dict): Keyword arguments to pass to the header.
+            header_delay (dict): ``countdown``/``eta`` from apply_async, applied
+                to the header rather than to chord.unlock retries.
             options (dict): Options to pass to the header.
 
         Returns:
@@ -2327,10 +2388,15 @@ class _chord(Signature):
         app = app or self._get_app(body)
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
-        options = dict(self.options, **options) if options else self.options
+        options = dict(self.options, **options)
+        header_delay = dict(header_delay or {})
+        for key in ('countdown', 'eta'):
+            if key not in header_delay and options.get(key) is not None:
+                header_delay[key] = options[key]
+            options.pop(key, None)
         if options:
             options.pop('task_id', None)
-            body.options.update(options)
+            body.options.update(self._body_options(options))
 
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
@@ -2351,7 +2417,12 @@ class _chord(Signature):
                 countdown=countdown,
                 max_retries=max_retries,
             )
-            header_result = header.apply_async(partial_args, kwargs, task_id=group_id, **options)
+            header_apply_options = dict(options)
+            # When both countdown and eta are set, both are forwarded; the
+            # task layer prefers countdown, same as a single task.
+            header_apply_options.update(header_delay)
+            header_result = header.apply_async(
+                partial_args, kwargs, task_id=group_id, **header_apply_options)
         # The execution of a chord body is normally triggered by its header's
         # tasks completing. If the header is empty this will never happen, so
         # we execute the body manually here.

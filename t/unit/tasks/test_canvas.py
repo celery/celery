@@ -698,12 +698,9 @@ class test_chain(CanvasCase):
         assert tasks[-1].args[0] == 5
         assert isinstance(tasks[-2], chord)
         assert len(tasks[-2].tasks) == 5
-
-        body = tasks[-2].body
-        assert len(body.tasks) == 3
-        assert body.tasks[0].args[0] == 10
-        assert body.tasks[1].args[0] == 20
-        assert body.tasks[2].args[0] == 30
+        assert tasks[-2].body.args[0] == 10
+        assert tasks[-3].args[0] == 20
+        assert tasks[-4].args[0] == 30
 
         c2 = self.add.s(2, 2) | group(self.add.s(i, i) for i in range(10))
         c2._use_link = True
@@ -828,6 +825,122 @@ class test_chain(CanvasCase):
         assert max(sizes) == min(sizes), (
             f"Chord sizes not constant across chain: {sizes}"
         )
+
+    def test_chain_of_implicit_chords_serialized_size_linear(self):
+        def first_message_size(n_groups):
+            steps = [self.add.s(0, 0)]
+            for i in range(n_groups):
+                steps.append(group([self.add.s(i, j) for j in range(2)], app=self.app))
+                steps.append(self.add.s(i, i))
+            c = chain(*steps)
+            tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+            return len(json.dumps([task.__json__() for task in tasks]))
+
+        sizes = [first_message_size(n) for n in range(2, 6)]
+        assert sizes[-1] < 3 * sizes[0], (
+            f"First message grows geometrically with the number of groups: {sizes}"
+        )
+
+    def test_split_chord_body_keeps_the_chain_options_on_its_first_task(self):
+        body = chain(self.add.s(10), self.add.s(100)).set(queue="q2", priority=7)
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3), self.add.s(4, 4)], body, app=self.app))
+
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        first, second = tasks[1].body, tasks[0]
+        assert first.args == (10,)
+        assert (first.options["queue"], first.options["priority"]) == ("q2", 7)
+        assert second.args == (100,)
+        assert "queue" not in second.options
+
+    def test_split_chord_body_keeps_link_error(self):
+        err = signature("errback", app=self.app)
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        c.tasks[1].link_error(err)
+
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        assert tasks[1].body.options["link_error"] == [err]
+        assert tasks[0].options["link_error"] == [err]
+
+    def test_preparing_a_chain_twice_leaves_it_as_written(self):
+        g = group(self.add.s(1), self.add.s(2), app=self.app)
+        c = chain(self.add.s(0, 0), g, self.add.s(10), self.add.s(100))
+        shape = lambda sigs: [type(sig).__name__ for sig in sigs]  # noqa: E731
+        written = shape(c.tasks) + shape(c.tasks[1].body.tasks)
+
+        first, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        second, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        assert shape(c.tasks) + shape(c.tasks[1].body.tasks) == written
+        assert shape(first) == shape(second) == ["Signature", "_chord", "Signature"]
+
+    def test_chain_body_chord_as_first_step(self):
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(chord([self.add.s(3, 3)], body, app=self.app), self.add.s(1000))
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert [type(sig).__name__ for sig in tasks] == ["Signature", "Signature", "_chord"]
+        assert tasks[-1].body.args == (10,)
+        assert [sig.args for sig in tasks[:2]] == [(1000,), (100,)]
+
+    def test_chain_body_chord_as_last_step(self):
+        body = chain(self.add.s(10), self.add.s(100))
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app, last_task_id="fixed")
+        assert [type(sig).__name__ for sig in tasks] == ["Signature", "_chord", "Signature"]
+        assert tasks[1].body.args == (10,)
+        assert tasks[0].args == (100,)
+        assert tasks[0].options["task_id"] == results[0].id == "fixed"
+
+    def test_last_task_id_lands_on_the_task_after_an_implicit_chord(self):
+        g = group(self.add.s(1), self.add.s(2), app=self.app)
+        c = chain(self.add.s(0, 0), g, self.add.s(10), self.add.s(100))
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app, last_task_id="fixed")
+        assert tasks[0].args == (100,)
+        assert tasks[0].options["task_id"] == results[0].id == "fixed"
+
+    def test_frozen_chain_of_implicit_chords_keeps_its_result_id(self):
+        c = chain(
+            self.add.s(1, 1),
+            group(self.add.s(1), self.add.s(2), app=self.app),
+            self.add.s(10),
+            self.add.s(100),
+        )
+        frozen = c.freeze()
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert tasks[0].args[0] == 100
+        assert results[0].id == frozen.id
+
+    def test_chord_body_chain_led_by_group_stays_whole(self):
+        body = chain([group(self.add.s(1, 1), self.add.s(2, 2), app=self.app), self.add.s(10)], app=self.app)
+        c = chain(self.add.s(0, 0), chord([self.add.s(3, 3)], body, app=self.app))
+        tasks, _ = c.prepare_steps((), {}, c.tasks, app=self.app)
+        assert isinstance(tasks[0], chord)
+        assert isinstance(tasks[0].body, _chain)
+        assert len(tasks) == 2
+
+    @pytest.mark.parametrize('body', ['task', 'group'])
+    def test_chord_header_failure_fails_the_chain_of_chords(self, body):
+        bodies = {'task': self.add.s(10), 'group': group(self.add.s(10), self.add.s(20), app=self.app)}
+        c = chain(
+            chord([self.add.s(1, 1), self.add.s(2, 2)], bodies[body], app=self.app),
+            chord([self.add.s(3, 3)], self.add.s(100), app=self.app),
+        )
+        tasks, results = c.prepare_steps((), {}, c.tasks, app=self.app)
+
+        remaining = list(tasks)
+        first_chord = remaining.pop()
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.group.apply_async'):
+            first_chord.apply_async((), chain=remaining)
+        callback = apply_chord.call_args[0][1]
+        try:
+            raise RuntimeError('header failed')
+        except RuntimeError as exc:
+            self.app.backend.chord_error_from_stack(callback=callback, exc=exc)
+
+        assert self.app.AsyncResult(results[0].id).state == states.FAILURE
 
     def test_chord_or_task_still_nests(self):
         c = chord([signature('h1')], signature('b1'), app=self.app)
@@ -2007,6 +2120,55 @@ class test_chord(CanvasCase):
         z = y.clone()
         assert z.kwargs.get('body') is None
 
+    def _assert_header_received_delay(self, canvas, header_size, **delay):
+        with patch.object(
+            self.app.backend, "apply_chord",
+        ) as mock_apply_chord, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            canvas.apply_async(**delay)
+        assert mock_apply_async.call_count == header_size
+        for apply_call in mock_apply_async.call_args_list:
+            for key, value in delay.items():
+                assert apply_call.kwargs.get(key) == value
+        # chord.unlock retries keep their own default countdown
+        assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
+    def test_group_or_task_apply_async_countdown_delays_header(self):
+        """countdown on group|task must delay the header, not only the body.
+
+        Regression for #7851: group | task is a chord, and apply_async(countdown=)
+        was bound to chord.run's unlock-retry argument, so the header ran
+        immediately and only the callback was delayed.
+        """
+        canvas = (
+            group(self.add.si(1, 2), self.add.si(3, 4), app=self.app)
+            | self.add.si(5, 6)
+            | self.add.si(7, 8)
+            | self.add.si(9, 10)
+        )
+        assert isinstance(canvas, chord)
+        self._assert_header_received_delay(canvas, 2, countdown=10)
+
+    def test_group_or_task_apply_async_eta_delays_header(self):
+        eta = sentinel.eta
+        canvas = group(self.add.si(1, 2), self.add.si(3, 4), app=self.app) | self.add.si(5, 6)
+        self._assert_header_received_delay(canvas, 2, eta=eta)
+
+    def test_group_or_task_set_countdown_delays_header(self):
+        canvas = group(self.add.si(1, 2), self.add.si(3, 4), app=self.app) | self.add.si(5, 6)
+        canvas.set(countdown=10)
+        with patch.object(
+            self.app.backend, "apply_chord",
+        ) as mock_apply_chord, patch(
+            "celery.canvas.Signature.apply_async",
+        ) as mock_apply_async:
+            canvas.apply_async()
+        assert mock_apply_async.call_count == 2
+        for apply_call in mock_apply_async.call_args_list:
+            assert apply_call.kwargs.get("countdown") == 10
+        assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
     def test_argument_is_group(self):
         x = chord(group(self.add.s(2, 2), self.add.s(4, 4), app=self.app))
         assert x.tasks
@@ -2594,6 +2756,15 @@ class test_chord(CanvasCase):
             assert body_task_id is not None
             assert body_task_id != group_id  # Should be different from group_id
             assert passed_group_id == group_id  # But should know its group
+
+    def test_chord_run_does_not_pass_parent_id_to_body(self):
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = self.add.s(10)
+
+        chord(header, body).run(header, body, (), parent_id="caller-id", root_id="root-id")
+
+        assert "parent_id" not in body.options
+        assert body.options["root_id"] == "root-id"
 
     def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
         """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
