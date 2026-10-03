@@ -7,7 +7,7 @@ from time import monotonic, sleep
 
 import pytest
 
-from celery import chain, chord, group, signature
+from celery import chain, chord, group, signature, states
 from celery.backends.base import BaseKeyValueStoreBackend
 from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
@@ -459,6 +459,42 @@ class test_chain:
         c = c1 | c2
         res = c()
         assert res.get(timeout=TIMEOUT) == 178
+
+    @flaky
+    @pytest.mark.parametrize('failing_headers', [1, 2])
+    def test_header_failure_fails_the_chords_after_it(self, manager, failing_headers):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # a group waits on its members' result ids, so the chain's last task
+        # has to be marked failed itself for the group to finish
+        header = [add.s(1, 1), fail.s()] if failing_headers == 1 else [fail.s(), fail.s()]
+        inner = chain(
+            chord(header, tsum.s()),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
+
+    @flaky
+    def test_header_failure_fails_the_chords_after_a_group_body(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        inner = chain(
+            chord([add.s(1, 1), fail.s()], group(add.s(1), add.s(2))),
+            chord([add.s(1), add.s(2)], tsum.s()),
+        )
+        res = group(inner, add.s(1, 1))()
+        with pytest.raises((ChordError, ExpectedException)):
+            res.get(timeout=TIMEOUT)
+        assert res.results[0].state == states.FAILURE
 
     @flaky
     def test_chain_of_nine_chords(self, manager):
@@ -1349,6 +1385,19 @@ class test_group:
             assert root_id == expected_root_id
             assert parent_id == expected_parent_id
             assert value == i + 2
+
+    @flaky
+    def test_generator_group_iterated_while_calling_len(self, manager):
+        assert_ping(manager)
+
+        g = group(add.s(i, i) for i in range(4))
+        # len() concretises the rest of the generator midway through the
+        # loop, which used to end the iteration after the first task.
+        # (Issue #10755)
+        seen = [(task.args, len(g.tasks)) for task in g.tasks]
+        assert seen == [((i, i), 4) for i in range(4)]
+
+        assert g.apply_async().get(timeout=TIMEOUT) == [0, 2, 4, 6]
 
     @flaky
     def test_nested_group(self, manager):
