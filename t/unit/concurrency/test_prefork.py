@@ -1086,6 +1086,7 @@ class test_AsynPool:
         proc.outq._reader = PipeReader(r)
         proc._is_alive.return_value = True
         handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
         message = ('ready', 42)
         rest = start_partial_read(handler, hub, r, w, message)
         writer = threading.Timer(0.05, os.write, args=(w, rest))
@@ -1126,6 +1127,64 @@ class test_AsynPool:
 
         remove.assert_called_once_with(r)
         handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_on_eof_mid_message(self, result_pipe):
+        """The write end closes before the rest of the body arrives: the
+        resumed generator raises and the fd is dropped."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+        os.close(w)
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_poll_fails(self, result_pipe):
+        """The pipe can no longer be polled (e.g. closed under us): the fd
+        is dropped instead of retried."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        reader = PipeReader(r)
+        reader.poll = Mock(name='poll', side_effect=OSError(errno.EBADF, 'closed'))
+        proc.outq._reader = reader
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        reader.poll.assert_called_once_with(handler.partial_read_timeout)
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_finish_partial_read_fd_not_on_hub(self, result_pipe):
+        r, _ = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        handler = make_result_handler(r, proc)
+        handler.register_with_event_loop(hub)
+        try:
+            assert handler._finish_partial_read(r, proc) is False
+        finally:
+            hub.close()
+        proc.outq._reader.poll.assert_not_called()
 
     def test_finish_partial_read_no_generator_registered(self, result_pipe):
         r, _ = result_pipe
