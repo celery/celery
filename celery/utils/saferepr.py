@@ -160,6 +160,13 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
     stack = deque([iter([o])])
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
+            if isinstance(token, _literal) and token.direction < 0:
+                # the truncated value was the last one in its container:
+                # nothing is left out, so just close it.  Closing parens
+                # aren't counted against maxlen, same as the dangling
+                # parens below.
+                yield token.value
+                continue
             yield ', ...'
             # move rest back to stack, so that we can include
             # dangling parens.
