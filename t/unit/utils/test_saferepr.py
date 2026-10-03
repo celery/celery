@@ -210,3 +210,22 @@ class test_saferepr:
 
     def test_bytes_with_unicode_py2_and_3(self):
         assert saferepr([b'foo', 'a®rgs'.encode()])
+
+    @pytest.mark.parametrize('value,expected', [
+        (['v' * 100], "['V...']"),
+        (('v' * 100,), "('V...',)"),
+        ({'v' * 100}, "{'V...'}"),
+        ({'k': 'v' * 100}, "{'k': 'V...'}"),
+        ({'a': ['v' * 100]}, "{'a': ['V...']}"),
+        # more values follow the truncated one, so they're elided.
+        (['v' * 100, 1, 2], "['V...', ...]"),
+        ([['v' * 100], 1, 2], "[['V...'], ...]"),
+        ({'a': ['v' * 100], 'b': 2}, "{'a': ['V...'], ...}"),
+    ])
+    def test_maxlen_keeps_closing_parens(self, value, expected):
+        # the parens used to be dropped when the truncated value was the
+        # last one in its container (Issue #10760).
+        result = saferepr(value, maxlen=30)
+        # V stands for however many characters of the value were kept.
+        assert result == expected.replace('V', 'v' * result.count('v'))
+        assert result.count('v') < 100
