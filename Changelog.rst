@@ -40,6 +40,12 @@ Unreleased
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
   code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
   numeric string such as ``"4"``; the worker converts it at startup.
+- ``link`` / ``link_error`` given to a chord as options, such as
+  ``chord.apply_async(link=...)``, are now added to the chord body, like
+  ``chord.link()`` does. They were passed on to the header group as well, which
+  raised ``TypeError: Cannot add link to group``. This also broke a chain
+  ending in a chord with a callback: the worker marked the task before the
+  chord as failed and never ran the chord (#10781).
 
 
 .. _version-5.7.0a1:
