@@ -10,16 +10,18 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
+from celery.exceptions import DuplicateTaskNameWarning
 from celery.signals import task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
-                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
-                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+from .tasks import (TASK_REGISTRATION_COLLISION_NAME, ClassBasedAutoRetryTask, ExpectedException, add,
+                    add_ignore_result, add_not_typed, add_pydantic, add_pydantic_string_annotations, fail,
+                    fail_unpickleable, print_unicode, reject_then_succeed, reject_without_requeue, retry, retry_once,
+                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    return_request_time_limits, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -50,6 +52,24 @@ class test_class_based_tasks:
         celery_session_app.register_task(task)
         res = task.delay()
         assert res.get(timeout=TIMEOUT) == 1
+
+
+@pytest.mark.usefixtures('celery_session_worker')
+def test_task_registration_collision_dispatches_registered_callable(celery_session_app):
+    name = TASK_REGISTRATION_COLLISION_NAME
+
+    def replacement():
+        return 'replacement'
+
+    registered = celery_session_app.tasks[name]
+    try:
+        with pytest.warns(DuplicateTaskNameWarning):
+            celery_session_app.task(name=name, shared=False)(replacement)
+
+        assert celery_session_app.tasks[name] is registered
+        assert registered.delay().get(timeout=TIMEOUT) == 'original'
+    finally:
+        celery_session_app._duplicate_task_names_warned.discard(name)
 
 
 def _producer(j):
