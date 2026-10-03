@@ -2407,6 +2407,44 @@ class test_chord(CanvasCase):
         assert x.tasks
         assert x.body
 
+    @pytest.mark.parametrize('key', ['link', 'link_error'])
+    def test_link_option_goes_to_body_not_header(self, key):
+        callback = self.div.s(2)
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            # The header group used to get the option too, and raise TypeError
+            x.apply_async(**{key: callback})
+        body = apply_chord.call_args[0][1]
+        assert body.options[key] == [callback]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert key not in header_call.kwargs
+
+    def test_chain_link_to_chord_step_keeps_body_callbacks(self):
+        own_callback = self.div.s(2)
+        chain_callback = self.add.s(1)
+        body = self.xsum.s()
+        body.link(own_callback)
+        c = chain(self.add.s(1, 1),
+                  chord([self.add.s(10), self.add.s(20)], body))
+        with patch('celery.canvas.Signature.apply_async') as first_apply:
+            c.apply_async(link=chain_callback)
+        # The worker deserializes the next step of the chain and applies it
+        next_step = first_apply.call_args.kwargs['chain'][-1]
+        next_step = Signature.from_dict(json.loads(json.dumps(next_step)),
+                                        app=self.app)
+        assert isinstance(next_step, chord)
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            next_step.apply_async((2,))
+        body = apply_chord.call_args[0][1]
+        assert [cb['task'] for cb in body.options['link']] == [
+            own_callback.task, chain_callback.task]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert 'link' not in header_call.kwargs
+
     def test_repr(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         assert repr(x)

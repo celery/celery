@@ -2396,6 +2396,12 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
+            # Callbacks of the chord belong to its body, as with chord.link()
+            # and chord.link_error(). They must not reach the header: a group
+            # refuses link and link_error.
+            for key in ('link', 'link_error'):
+                for callback in maybe_list(options.pop(key, None)) or []:
+                    body.append_to_list_option(key, callback)
             body.options.update(self._body_options(options))
 
         body_task_id = task_id or uuid()
