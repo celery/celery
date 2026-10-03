@@ -1351,6 +1351,19 @@ class test_group:
             assert value == i + 2
 
     @flaky
+    def test_generator_group_iterated_while_calling_len(self, manager):
+        assert_ping(manager)
+
+        g = group(add.s(i, i) for i in range(4))
+        # len() concretises the rest of the generator midway through the
+        # loop, which used to end the iteration after the first task.
+        # (Issue #10755)
+        seen = [(task.args, len(g.tasks)) for task in g.tasks]
+        assert seen == [((i, i), 4) for i in range(4)]
+
+        assert g.apply_async().get(timeout=TIMEOUT) == [0, 2, 4, 6]
+
+    @flaky
     def test_nested_group(self, manager):
         assert_ping(manager)
 
