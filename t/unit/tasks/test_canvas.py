@@ -1821,6 +1821,18 @@ class test_group(CanvasCase):
         res = self.helper_test_get_delay(x.delay(x=1, y=1))
         assert res == [2, 2]
 
+    def test_apply_chain_ending_in_group_skips_result_backend(self):
+        # Issue #4405
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        )
+        with patch.object(self.app.backend, 'add_pending_result') as add_pending_result:
+            res = x.delay()
+        assert res.get() == [2, [6, 8]]
+        add_pending_result.assert_not_called()
+
     def test_kwargs_delay_partial(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(1), self.add.s(x=1)])
