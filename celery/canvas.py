@@ -1410,7 +1410,7 @@ class _chain(Signature):
         app = self._app
         if app is None:
             try:
-                app = self.tasks[0]._app
+                app = self.tasks[0].app
             except LookupError:
                 pass
         return app or current_app
@@ -2526,10 +2526,29 @@ class _chord(Signature):
             except AttributeError:
                 tasks = self.tasks
             if tasks:
-                app = tasks[0]._app
+                app = self._app_of(tasks[0])
             if app is None and body is not None:
-                app = body._app
+                app = self._app_of(body)
         return app if app is not None else current_app
+
+    @staticmethod
+    def _app_of(task):
+        """Return the app of a task, None if it would fall back to current_app.
+
+        A chain, group or chord built from task signatures has no app of its
+        own but resolves one through its tasks.
+        """
+        app = task._app
+        if app is None:
+            try:
+                app = task.app
+            except AttributeError:
+                # A nested chain or group whose first task is still a dict
+                # cannot resolve an app until it is frozen.
+                return None
+            if app is current_app:
+                app = None
+        return app
 
     tasks = getitem_property('kwargs.header', 'Tasks in chord header.')
     body = getitem_property('kwargs.body', 'Body task of chord.')
