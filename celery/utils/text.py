@@ -70,7 +70,7 @@ def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
         # An ellipsis that does not fit in max chars must not push the
         # slice into negative territory (which silently takes characters
         # from the END of the string instead of the beginning).
-        return S[: max]
+        return S[:max] if max >= 0 else ''
     return S
 
 
