@@ -96,3 +96,12 @@ def test_simple_format_percent_escape(value, expected):
 def test_simple_format_unknown_key():
     with pytest.raises(ValueError, match='Unknown format %x'):
         simple_format('%x', {})
+
+
+def test_truncate_leaves_fitting_text_unchanged():
+    # a string exactly at maxlen was needlessly truncated and GREW by the
+    # suffix: truncate("hello", maxlen=5) returned "hello..."
+    assert truncate("hello", maxlen=5) == "hello"
+    assert truncate("hello", maxlen=6) == "hello"
+    assert truncate("hello!", maxlen=5) == "hello..."  # prefix semantics kept
+    assert truncate("hello", maxlen=0) == "hello"  # 0 disables truncation
