@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from kombu import Exchange, Queue
 
-from celery import uuid
+from celery import signals, uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.utils.time import to_utc
 
@@ -337,6 +337,16 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_accepts_expiration_string(self):
+        expires = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', expires=expires)
+        assert message.body['expires'] == expires
+
+    def test_accepts_eta_string(self):
+        eta = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', eta=eta)
+        assert message.body['eta'] == eta
+
 
 class test_AMQP_Base:
     def setup_method(self):
@@ -499,6 +509,44 @@ class test_AMQP(test_AMQP_Base):
         assert event['routing_key'] == 'xyb'
         assert event['exchange'] == 'xyz'
 
+    def test_send_task_sent_event_uses_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message,
+            retry_policy={'interval_start': 1}, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 1,
+        }
+
+    def test_send_task_sent_event_uses_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
+    def test_send_task_sent_event_after_dispatcher_close(self):
+        self.app.conf.task_send_sent_event = True
+        dispatcher = self.app.amqp._event_dispatcher
+        dispatcher.close()
+        producer = Mock(name='producer')
+
+        self.app.amqp.send_task_message(producer, 'foo', self.simple_message)
+
+        assert producer.publish.call_count == 2
+        event_call = producer.publish.call_args_list[1]
+        assert event_call.args[0]['type'] == 'task-sent'
+        assert event_call.args[0]['uuid'] == self.simple_message.headers['id']
+        assert event_call.kwargs['routing_key'] == 'task.sent'
+        assert dispatcher.producer is None
+
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
@@ -527,6 +575,59 @@ class test_AMQP(test_AMQP_Base):
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
+
+    def test_before_task_publish_receives_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+                retry_policy={'max_retries': 5},
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 5, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_receives_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_can_modify_retry_policy_without_changing_defaults(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        producer = Mock(name='producer')
+
+        def receiver(retry_policy, **kwargs):
+            retry_policy['max_retries'] = 7
+
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                producer, 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert producer.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 7, 'interval_start': 0,
+        }
+        assert self.app.conf.task_publish_retry_policy == {
+            'max_retries': 3, 'interval_start': 0,
+        }
 
     def test_routes(self):
         r1 = self.app.amqp.routes

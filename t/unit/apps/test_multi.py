@@ -214,6 +214,56 @@ class test_multi_args:
         assert nodes[0].name == 'worker-1@'
         assert '-c 5' in nodes[0].argv
 
+    def test_parse__index_list_with_named_nodes(self, tmp_path):
+        p = NamespacedOptionParser([
+            'foo', 'bar', 'baz', '-c', '3', '-c:1,2', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        nodes = list(multi_args(p, cmd='celery multi', suffix='""'))
+        assert [n.options['-c'] for n in nodes] == ['10', '10', '3']
+
+    def test_parse__index_list_out_of_range_with_named_nodes(self, tmp_path):
+        p = NamespacedOptionParser([
+            'foo', 'bar', '-c', '3', '-c:1,5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError, match="5"):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
+    def test_parse__index_list_zero_with_named_nodes(self, tmp_path):
+        p = NamespacedOptionParser([
+            'foo', 'bar', '-c', '3', '-c:0,1', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError, match="0"):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
+    def test_parse__range_with_count_assigns_without_raising(self, tmp_path):
+        p = NamespacedOptionParser([
+            '3', '-c:1-5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        nodes = list(multi_args(p, cmd='celery multi', suffix='""'))
+        assert [n.options['-c'] for n in nodes] == ['10', '10', '10']
+
+    def test_parse__single_out_of_range_with_count_raises(self, tmp_path):
+        p = NamespacedOptionParser([
+            '3', '-c:5', '10',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        with pytest.raises(KeyError):
+            list(multi_args(p, cmd='celery multi', suffix='""'))
+
     def test_optmerge(self):
         p = NamespacedOptionParser(['foo', 'test'])
         p.parse()
@@ -253,6 +303,39 @@ class test_Node:
             '--pidfile={}'.format(os.path.normpath('/var/run/celery/foo.pid')),
             '',
         ])
+
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=True)
+    def test_workdir_tilde_is_expanded(self, mock_exists, mock_dirs):
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                workdir='~/mydir',
+            )
+        assert f'--workdir={os.path.expanduser("~/mydir")}' in ' '.join(n.argv)
+
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=False)
+    def test_pidfile_and_logfile_tilde_is_expanded(self, mock_exists, mock_dirs):
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                pidfile='~/run/%n.pid',
+                logfile='~/log/%n%I.log',
+            )
+        expected_pidfile = os.path.expanduser('~/run/foo.pid')
+        expected_logfile = os.path.expanduser('~/log/foo%I.log')
+        assert n.pidfile == expected_pidfile
+        assert n.logfile == expected_logfile
+        assert f'--pidfile={expected_pidfile}' in ' '.join(n.argv)
+        assert f'--logfile={expected_logfile}' in ' '.join(n.argv)
+
+        # Ensure directories were created with expanded paths, never literal ~
+        mock_dirs.assert_any_call(os.path.expanduser('~/run'))
+        mock_dirs.assert_any_call(os.path.expanduser('~/log'))
+        for c in mock_dirs.call_args_list:
+            arg = c[0][0]
+            assert not arg.startswith('~'), f'Unexpanded tilde passed to makedirs: {arg}'
 
     @patch('os.kill')
     def test_send(self, kill):
