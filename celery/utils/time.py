@@ -417,9 +417,10 @@ class ffwd:
             raise TypeError(
                 'ffwd() got unexpected keyword argument(s): '
                 f'{", ".join(sorted(kwargs))}. ffwd sets absolute fields '
-                '(year=, month=, day=, ...) and only supports relative '
-                'addition through weeks=; for relative months/years use '
-                'dateutil.relativedelta, for days/hours use timedelta.'
+                '(year=, month=, day=, ...) and supports relative '
+                'addition through weeks= and weekday=; for relative '
+                'months/years use dateutil.relativedelta, for days/hours use '
+                'timedelta.'
             )
         self.year = year
         self.month = month
