@@ -532,6 +532,21 @@ class test_AMQP(test_AMQP_Base):
             'max_retries': 3, 'interval_start': 0,
         }
 
+    def test_send_task_sent_event_after_dispatcher_close(self):
+        self.app.conf.task_send_sent_event = True
+        dispatcher = self.app.amqp._event_dispatcher
+        dispatcher.close()
+        producer = Mock(name='producer')
+
+        self.app.amqp.send_task_message(producer, 'foo', self.simple_message)
+
+        assert producer.publish.call_count == 2
+        event_call = producer.publish.call_args_list[1]
+        assert event_call.args[0]['type'] == 'task-sent'
+        assert event_call.args[0]['uuid'] == self.simple_message.headers['id']
+        assert event_call.kwargs['routing_key'] == 'task.sent'
+        assert dispatcher.producer is None
+
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
