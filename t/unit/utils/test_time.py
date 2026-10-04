@@ -230,6 +230,19 @@ def test_remaining():
     assert next_run_edt == next_actual_time
 
 
+def test_remaining_across_fall_back():
+    paris_tz = ZoneInfo('Europe/Paris')
+    start = datetime(2020, 10, 25, 2, 59, 55, tzinfo=paris_tz, fold=0)
+    now = datetime(2020, 10, 25, 2, 0, 5, tzinfo=paris_tz, fold=1)
+    assert start.isoformat() == '2020-10-25T02:59:55+02:00'
+
+    # DST changes the UTC offset from +02:00 to +01:00.
+    assert now.isoformat() == '2020-10-25T02:00:05+01:00'
+    assert now.astimezone(_timezone.utc) - start.astimezone(_timezone.utc) == timedelta(seconds=10)
+
+    assert remaining(start, timedelta(seconds=10), now) == timedelta(0)
+
+
 class test_timezone:
 
     def test_get_timezone_with_zoneinfo(self):

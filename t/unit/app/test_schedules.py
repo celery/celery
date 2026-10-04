@@ -124,6 +124,19 @@ class test_schedule:
         s2 = fun(*args)
         assert s1 == s2
 
+    def test_is_due_across_fall_back(self):
+        self.app.conf.timezone = 'Europe/Paris'
+        last_run_at = datetime(2020, 10, 25, 2, 59, 55, tzinfo=self.app.timezone, fold=0)
+        now = datetime(2020, 10, 25, 2, 0, 5, tzinfo=self.app.timezone, fold=1)
+        assert last_run_at.isoformat() == '2020-10-25T02:59:55+02:00'
+
+        # DST changes the UTC offset from +02:00 to +01:00.
+        assert now.isoformat() == '2020-10-25T02:00:05+01:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=10)
+
+        s = schedule(10, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (True, 10)
+
 
 # Module-level helper used as crontab(nowfun=...) in pickling tests.
 # Defined at top level so it is picklable/serializable.

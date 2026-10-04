@@ -216,7 +216,7 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
 
 
 def remaining(
-        start: datetime, ends_in: timedelta, now: datetime | None = None,
+        start: datetime, ends_in: timedelta | ffwd, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
@@ -224,7 +224,7 @@ def remaining(
 
     Arguments:
         start (~datetime.datetime): Starting date.
-        ends_in (~datetime.timedelta): The end delta.
+        ends_in (~datetime.timedelta, ~celery.utils.time.ffwd): The end delta.
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
@@ -235,7 +235,10 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    end_date = start + ends_in
+    if isinstance(ends_in, timedelta):
+        end_date = add_seconds_to_datetime(start, ends_in.total_seconds())
+    else:
+        end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
 
