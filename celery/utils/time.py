@@ -413,6 +413,14 @@ class ffwd:
                  **kwargs: Any):
         # pylint: disable=redefined-outer-name
         # weekday is also a function in outer scope.
+        if kwargs:
+            raise TypeError(
+                'ffwd() got unexpected keyword argument(s): '
+                f'{", ".join(sorted(kwargs))}. ffwd sets absolute fields '
+                '(year=, month=, day=, ...) and only supports relative '
+                'addition through weeks=; for relative months/years use '
+                'dateutil.relativedelta, for days/hours use timedelta.'
+            )
         self.year = year
         self.month = month
         self.weeks = weeks
