@@ -724,6 +724,58 @@ class test_AMQP(test_AMQP_Base):
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
 
+    def test_send_before_publish_works_after_receivers_disconnect_and_connect(self):
+        call_count = 0
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(**kwargs):
+            nonlocal call_count
+            call_count += 1
+
+        signal = signals.before_task_publish
+        signal.connect(temporary_receiver)
+        try:
+            send_task_message = self.app.amqp.send_task_message
+            signal.disconnect(temporary_receiver)
+            # Simulate the weak-reference callback after the receiver is collected.
+            signal._remove_receiver()
+
+            signal.connect(receiver)
+            send_task_message(Mock(), 'foo', self.simple_message_no_sent_event)
+        finally:
+            signal.disconnect(temporary_receiver)
+            signal.disconnect(receiver)
+
+        assert call_count == 1
+
+    def test_send_after_publish_works_after_receivers_disconnect_and_connect(self):
+        call_count = 0
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(**kwargs):
+            nonlocal call_count
+            call_count += 1
+
+        signal = signals.after_task_publish
+        signal.connect(temporary_receiver)
+        try:
+            send_task_message = self.app.amqp.send_task_message
+            signal.disconnect(temporary_receiver)
+            # Simulate the weak-reference callback after the receiver is collected.
+            signal._remove_receiver()
+
+            signal.connect(receiver)
+            send_task_message(Mock(), 'foo', self.simple_message_no_sent_event)
+        finally:
+            signal.disconnect(temporary_receiver)
+            signal.disconnect(receiver)
+
+        assert call_count == 1
+
 
 class test_as_task_v2(test_AMQP_Base):
 
