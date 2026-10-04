@@ -1145,6 +1145,32 @@ class test_AsynPool:
         remove.assert_called_once_with(r)
         handler.on_state_change.assert_not_called()
 
+    def test_flush_outqueue_drops_fd_when_a_live_child_stalls(self, result_pipe):
+        """A child that is alive but never finishes its write is given up
+        on once ``partial_read_deadline`` has passed."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        handler.partial_read_deadline = 0.05
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.logger') as logger:
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+        logger.warning.assert_called_once()
+
     def test_flush_outqueue_drops_fd_on_eof_mid_message(self, result_pipe):
         """The write end closes before the rest of the body arrives: the
         resumed generator raises and the fd is dropped."""
@@ -1399,6 +1425,33 @@ class test_TaskPool:
         # feed deliveries to the closed pool: it is put back for hub.close()
         socket_read.assert_not_called()
         mock_hub.call_soon.assert_called_once_with(socket_reader)
+
+    @patch('celery.concurrency.prefork.logger')
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    def test_on_stop_ready_callbacks_error_after_join_is_logged(
+        self, mock_thread, mock_get_event_loop, mock_logger,
+    ):
+        """A failure in the post-join drain (e.g. a hub without
+        ``_pop_ready``) is logged and does not escape ``on_stop``."""
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_hub._pop_ready.side_effect = AttributeError('_pop_ready')
+        mock_get_event_loop.return_value = mock_hub
+        timer_thread = Mock(name='timer_thread')
+        timer_thread.is_alive.return_value = False
+        mock_thread.return_value = timer_thread
+
+        pool.on_stop()
+
+        mock_pool.join.assert_called_once_with()
+        mock_hub._pop_ready.assert_called_once_with()
+        mock_logger.warning.assert_called_once()
+        assert mock_logger.warning.call_args[1]['exc_info'] is True
 
     @patch('celery.concurrency.prefork.get_event_loop')
     def test_on_stop_no_hub(self, mock_get_event_loop):

@@ -259,6 +259,11 @@ class ResultHandler(_pool.ResultHandler):
     #: down, before checking whether the child is still alive.
     partial_read_timeout = 1.0
 
+    #: Seconds to keep waiting in total for such a message before giving it
+    #: up and dropping the pipe.  A live child resumes its write as soon as
+    #: the pipe has room again, so only a stopped child takes longer.
+    partial_read_deadline = 10.0
+
     #: Set by :meth:`register_with_event_loop`.
     _hub = None
 
@@ -402,8 +407,10 @@ class ResultHandler(_pool.ResultHandler):
             proc (Process): The pool process owning ``fd``.
 
         Returns:
-            bool: True if the process is gone and the message can never
-                complete, in which case the caller must drop ``fd``.
+            bool: True if the message can no longer be completed (the
+                process is gone, or it did not finish writing within
+                :attr:`partial_read_deadline`), in which case the caller
+                must drop ``fd``.
         """
         hub = self._hub
         if hub is None:
@@ -415,6 +422,7 @@ class ResultHandler(_pool.ResultHandler):
         if not isgenerator(callback):
             return False
         reader = proc.outq._reader
+        deadline = time.monotonic() + self.partial_read_deadline
         while True:
             try:
                 next(callback)
@@ -426,7 +434,14 @@ class ResultHandler(_pool.ResultHandler):
                 readable = reader.poll(self.partial_read_timeout)
             except OSError:
                 return True
-            if not readable and not proc._is_alive():
+            if readable:
+                continue
+            if not proc._is_alive():
+                return True
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    '%r did not finish writing a result within %ss, '
+                    'dropping it', proc, self.partial_read_deadline)
                 return True
 
     def _flush_outqueue(self, fd, remove, process_index, on_state_change):
@@ -449,6 +464,11 @@ class ResultHandler(_pool.ResultHandler):
         result = None
         try:
             if reader.poll(0):
+                # A child that dies between this poll and the end of its
+                # write leaves a partial message that this recv() blocks on:
+                # the parent holds the pipe's write end, so no EOF arrives.
+                # Only a message the event loop had already started reading
+                # is recovered, by _finish_partial_read above.
                 task = reader.recv()
             else:
                 task = None

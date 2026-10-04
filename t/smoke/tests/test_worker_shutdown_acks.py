@@ -11,8 +11,6 @@ queue depth from its management API after the kill.
 
 from __future__ import annotations
 
-from time import sleep
-
 import pytest
 from pytest_celery import RABBITMQ_PORTS, RESULT_TIMEOUT, CeleryBrokerCluster, CeleryTestSetup, RabbitMQContainer
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -50,6 +48,15 @@ def celery_broker_cluster(celery_rabbitmq_broker: RabbitMQManagementBroker) -> C
 
 
 @retry(stop=stop_after_attempt(RESULT_TIMEOUT), wait=wait_fixed(1), reraise=True)
+def wait_for_ack(broker: RabbitMQManagementBroker, queue: str) -> dict:
+    """Poll until the broker has received the finished task's ack and only
+    the running task is left unacknowledged."""
+    counts = broker.get_queue_messages(queue)
+    assert counts["messages_unacknowledged"] == 1, counts
+    return counts
+
+
+@retry(stop=stop_after_attempt(RESULT_TIMEOUT), wait=wait_fixed(1), reraise=True)
 def wait_for_requeue(broker: RabbitMQManagementBroker, queue: str) -> dict:
     """Poll until the broker has noticed the dead connection and requeued
     what the worker never acked."""
@@ -82,8 +89,7 @@ class test_acks_during_warm_shutdown(SuiteOperations):
         worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
         worker.assert_log_exists(f"long_running_task[{short_task.id}] succeeded")
         assert short_task.get(RESULT_TIMEOUT)
-        # the shutdown timer thread runs the queued acks every 0.5 seconds
-        sleep(2)
+        wait_for_ack(broker, queue)
 
         self.kill_worker(worker, WorkerKill.Method.DOCKER_KILL)
 

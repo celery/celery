@@ -105,6 +105,10 @@ def process_destructor(pid, exitcode):
 
 
 def _is_ack_callback(callback):
+    # The consumer queues ``promise(message.ack_log_error)`` and
+    # ``promise(message.reject_log_error)``.  Match the bound method by owner
+    # type and name so a transport's Message subclass overriding them still
+    # counts; anything unrecognised is left for ``hub.close()``.
     fun = getattr(callback, 'fun', None)
     return (isinstance(getattr(fun, '__self__', None), Message) and
             getattr(fun, '__name__', None) in ('ack_log_error', 'reject_log_error'))
@@ -246,7 +250,13 @@ class TaskPool(BasePool):
                     else:
                         # The results the join waited for queued their acks
                         # after the thread's last pass.
-                        _run_ready_callbacks(hub)
+                        try:
+                            _run_ready_callbacks(hub)
+                        except Exception:
+                            logger.warning(
+                                "Exception running ready callbacks after prefork pool join",
+                                exc_info=True,
+                            )
             else:
                 self._pool.join()
 
