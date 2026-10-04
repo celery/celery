@@ -1,3 +1,4 @@
+import gc
 import logging
 import platform
 import time
@@ -11,7 +12,7 @@ import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
 from celery.exceptions import DuplicateTaskNameWarning
-from celery.signals import task_received
+from celery.signals import before_task_publish, task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
@@ -871,6 +872,80 @@ class test_task_replacement:
         redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
         expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
         assert redis_messages == expected_messages
+
+
+class _SignalRecorder:
+    """Records the task ids seen by bound-method signal receivers."""
+
+    def __init__(self):
+        self.published = []
+        self.received = []
+
+    def on_before_task_publish(self, headers=None, **kwargs):
+        self.published.append(headers['id'])
+
+    def on_task_received(self, request=None, **kwargs):
+        self.received.append(request.id)
+
+    def connect(self):
+        before_task_publish.connect(self.on_before_task_publish)
+        task_received.connect(self.on_task_received)
+
+    def disconnect(self):
+        before_task_publish.disconnect(self.on_before_task_publish)
+        task_received.disconnect(self.on_task_received)
+
+
+class test_signal_bound_method_receivers:
+    """Bound methods of different instances are separate signal receivers.
+
+    Covers both the publishing side (``before_task_publish``) and the worker
+    side (``task_received``) with a real broker and worker.
+    """
+
+    def _run_task(self):
+        res = add.delay(1, 2)
+        assert res.get(timeout=TIMEOUT) == 3
+        return res.id
+
+    def test_each_instance_receives(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        try:
+            task_id = self._run_task()
+        finally:
+            a.disconnect()
+            b.disconnect()
+        for recorder in (a, b):
+            assert task_id in recorder.published
+            assert task_id in recorder.received
+
+    def test_disconnect_leaves_other_instance_connected(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        b.disconnect()
+        try:
+            task_id = self._run_task()
+        finally:
+            a.disconnect()
+        assert task_id in a.published
+        assert task_id in a.received
+        assert b.published == b.received == []
+
+    def test_other_instance_receives_after_garbage_collection(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        del a
+        gc.collect()
+        try:
+            task_id = self._run_task()
+        finally:
+            b.disconnect()
+        assert task_id in b.published
+        assert task_id in b.received
 
 
 class test_pool_acquire_timeout:
