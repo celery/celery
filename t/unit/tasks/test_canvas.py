@@ -606,6 +606,30 @@ class test_chain(CanvasCase):
             result = executor.submit(apply).result()
         assert isinstance(result.parent.parent, GroupResult)
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('first', [
+        lambda add: group([dict(add.s(1, 1)), dict(add.s(2, 2))]),
+        lambda add: chain(dict(add.s(1, 1)), add.s(1), task_id='x'),
+    ], ids=['group', 'chain'])
+    def test_app_when_first_task_canvas_has_dict(self, first):
+        # A group, or a chain built with options, keeps a dict as a task until
+        # it is frozen and cannot resolve an app through it, so the chain falls
+        # back to the default app.
+        from celery._state import current_app
+        c = chain(first(self.add), self.add.s(1), task_id='y')
+        assert isinstance(c, _chain)
+        assert isinstance(c.tasks[0].tasks[0], dict)
+        assert c.app is current_app
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('first', [
+        lambda add: group([dict(add.s(1, 1)), dict(add.s(2, 2))]),
+        lambda add: chain(dict(add.s(1, 1)), add.s(1), task_id='x'),
+    ], ids=['group', 'chain'])
+    def test_apply_async_when_first_task_canvas_has_dict(self, first):
+        c = chain(first(self.add), self.add.s(1), task_id='y')
+        assert isinstance(c.apply_async(), AsyncResult)
+
     def test_handles_dicts(self):
         c = chain(
             self.add.s(5, 5), dict(self.add.s(8)), app=self.app,
