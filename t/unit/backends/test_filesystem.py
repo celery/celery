@@ -198,6 +198,35 @@ class test_FilesystemBackend:
         for tid in tids[2:]:
             assert os.path.exists(os.path.join(tb.path, tb.get_key_for_task(tid)))
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Test can fail on '
+                        'Windows/FAT due to low granularity of st_mtime')
+    def test_cleanup_skips_files_vanishing_before_unlink(self):
+        # the other interleaving: the file disappears between cleanup()'s
+        # stat() and unlink() — the unlink's own FileNotFoundError guard
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tids = [uuid() for _ in range(4)]
+        for tid in tids:
+            tb.mark_as_done(tid, 42)
+        victim = os.path.join(tb.path, tb.get_key_for_task(tids[1]))
+        # age only the victim past expires so cleanup() unlinks it while
+        # the other (fresh) files must survive untouched
+        stale = time.time() - 3600
+        os.utime(victim, (stale, stale))
+        original_unlink = os.unlink
+
+        def racy_unlink(path, *args, **kwargs):
+            if os.path.abspath(path) == os.path.abspath(victim):
+                os.unlink(victim)  # gone before the real unlink runs
+                raise FileNotFoundError(victim)
+            return original_unlink(path, *args, **kwargs)
+
+        with patch.object(tb, 'expires', 10), \
+                patch('os.unlink', side_effect=racy_unlink):
+            tb.cleanup()  # must not raise FileNotFoundError
+        assert not os.path.exists(victim)
+        for tid in tids[2:]:
+            assert os.path.exists(os.path.join(tb.path, tb.get_key_for_task(tid)))
+
     def test_cleanup(self):
         tb = FilesystemBackend(app=self.app, url=self.url)
         yesterday_task_ids = [uuid() for i in range(10)]
