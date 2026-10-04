@@ -1109,14 +1109,51 @@ class test_EagerResult:
         res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
         assert res.name == 'test_task_named_argument'
 
-    def test_reduce_keeps_name(self):
-        res = EagerResult('x', 'y', states.SUCCESS, 'tb', 'test_task')
-        for restored in (copy.copy(res), pickle.loads(pickle.dumps(res))):
-            assert restored.name == 'test_task'
-            assert restored.id == 'x'
-            assert restored.result == 'y'
-            assert restored.state == states.SUCCESS
-            assert restored.traceback == 'tb'
+    @pytest.mark.parametrize('kwargs', [{}, {'name': 'test_task'}])
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_attributes(self, kwargs, method):
+        res = EagerResult(uuid(), {'value': [1, 2]}, states.SUCCESS,
+                          PYTRACEBACK, **kwargs)
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed is not res
+        assert type(reconstructed) is EagerResult
+        assert reconstructed.id == res.id
+        assert reconstructed.result == res.result
+        assert reconstructed.state == res.state
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.name == res.name
+        assert reconstructed.ready()
+        assert reconstructed.successful()
+        assert reconstructed.get() == res.get()
+        if method == 'copy':
+            assert reconstructed.result is res.result
+
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_eager_task(self, method):
+        res = self.raising.apply(args=[3, 3])
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed.id == res.id
+        assert reconstructed.name == self.raising.name
+        assert reconstructed.state == res.state == states.FAILURE
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.ready()
+        assert reconstructed.failed()
+        assert isinstance(reconstructed.result, KeyError)
+        assert reconstructed.result.args == res.result.args == (3, 3)
+        with pytest.raises(KeyError) as exc_info:
+            reconstructed.get()
+        assert exc_info.value.args == (3, 3)
+        assert reconstructed.get(propagate=False) is reconstructed.result
 
 
 class test_tuples:
