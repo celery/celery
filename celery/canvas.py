@@ -1820,10 +1820,9 @@ class group(Signature):
         return tuple(child_task.link_error(sig.clone()) for child_task in self.tasks)
 
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
-                  freeze=True,
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
-                  isinstance=isinstance, tuple=tuple):
+                  isinstance=isinstance, tuple=tuple, *, freeze=True):
         """Recursively unroll the group into a generator of its tasks.
 
         This is used by :meth:`apply_async` and :meth:`apply` to
@@ -1840,13 +1839,13 @@ class group(Signature):
             group_id (str): The group id of the group.
             root_id (str): The root id of the group.
             app (Celery): The Celery app instance.
-            freeze (bool): Freeze each task to get its result.  When false,
-                the generator yields ``None`` in place of the result.
             CallableSignature (class): The signature class of the group's tasks.
             from_dict (fun): Function to create a signature from a dict.
             isinstance (fun): Function to check if an object is an instance
                 of a class.
             tuple (class): A tuple-like class.
+            freeze (bool): Freeze each task to get its result.  When false,
+                the generator yields ``None`` in place of the result.
 
         Returns:
             generator: A generator for the unrolled group tasks.
@@ -1863,7 +1862,8 @@ class group(Signature):
             if isinstance(task, group):
                 # needs yield_from :(
                 unroll = task._prepared(
-                    task.tasks, partial_args, group_id, root_id, app, freeze,
+                    task.tasks, partial_args, group_id, root_id, app,
+                    freeze=freeze,
                 )
                 yield from unroll
             elif isinstance(task, _chain) and not task.tasks:
