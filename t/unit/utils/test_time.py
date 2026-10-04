@@ -468,3 +468,13 @@ class test_get_exponential_backoff_interval:
         get_exponential_backoff_interval(
             factor=40, retries=10, maximum=maximum, full_jitter=True)
         rr.assert_called_once_with(maximum + 1)
+
+    def test_localize_converts_fixed_offset_utc(self):
+        # datetime.timezone.utc is just as much a UTC zone as ZoneInfo("UTC")
+        utc_dt = datetime(2017, 4, 23, 21, 36, 59, tzinfo=_timezone.utc)
+        local_tz = ZoneInfo('US/Eastern')
+        localized = localize(utc_dt, local_tz)
+        assert localized.tzinfo is local_tz
+        assert localized.utcoffset() == timedelta(hours=-4)
+        # absolute instant unchanged
+        assert localized.timestamp() == utc_dt.timestamp()
