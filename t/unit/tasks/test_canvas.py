@@ -442,6 +442,38 @@ class test_xmap_xstarmap(CanvasCase):
             assert type.from_dict(dict(s)) == s
             assert repr(s)
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_uses_signature_options(self, attr):
+        args = [(i, i) for i in range(3)]
+        s = getattr(self.add, attr)(args)
+        s.type = Mock()
+        callback = self.add.s(1)
+        s.set(queue='q1', countdown=3)
+        s.link(callback)
+        s.freeze()
+        task_id = s.options['task_id']
+
+        s.apply_async()
+        call_args, call_kwargs = s.type.apply_async.call_args
+        assert call_args == ((), {'task': self.add.s(), 'it': args})
+        assert call_kwargs['route_name'] == self.add.name
+        assert call_kwargs['queue'] == 'q1'
+        assert call_kwargs['countdown'] == 3
+        assert call_kwargs['link'] == [callback]
+        assert call_kwargs['task_id'] == task_id
+
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_call_options_override_signature_options(self, attr):
+        args = [(i, i) for i in range(3)]
+        s = getattr(self.add, attr)(args)
+        s.type = Mock()
+        s.set(queue='q1', countdown=3)
+
+        s.apply_async(queue='q2', countdown=None)
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['queue'] == 'q2'
+        assert call_kwargs['countdown'] == 3
+
 
 class test_chunks(CanvasCase):
 
