@@ -715,3 +715,39 @@ class test_ChainMap:
         cm = ChainMap({'foo': 1}, {'foo': 2, 'bar': 3})
         assert cm['foo'] == 1
         assert cm['bar'] == 3
+
+
+class test_LimitedSet_maxlen_shrink:
+
+    def test_shrinking_maxlen_evicts_oldest_immediately(self):
+        # the class documents maxlen as "enforced at all times", but
+        # assigning a smaller maxlen used to leave the excess items in
+        # place until several more items were added
+        s = LimitedSet(maxlen=5)
+        for i in range(5):
+            s.add(f"k{i}")
+        s.maxlen = 2
+        assert len(s) == 2
+        assert sorted(s) == ["k3", "k4"]
+
+    def test_growing_maxlen_is_untouched(self):
+        s = LimitedSet(maxlen=2)
+        s.add("k0")
+        s.add("k1")
+        s.maxlen = 10
+        assert len(s) == 2
+        s.add("k2")
+        assert len(s) == 3
+
+    def test_shrink_below_minlen_raises(self):
+        s = LimitedSet(maxlen=5, minlen=2)
+        with pytest.raises(ValueError):
+            s.maxlen = 1
+
+    def test_pickle_roundtrip_uses_maxlen(self):
+        import pickle
+        s = LimitedSet(maxlen=3)
+        s.add("a")
+        s2 = pickle.loads(pickle.dumps(s))
+        assert s2.maxlen == 3
+        assert "a" in s2

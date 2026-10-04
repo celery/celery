@@ -520,6 +520,25 @@ class LimitedSet:
 
     max_heap_percent_overload = 15
 
+    @property
+    def maxlen(self):
+        # type: () -> int
+        return self._maxlen
+
+    @maxlen.setter
+    def maxlen(self, value):
+        # type: (int) -> None
+        value = 0 if value is None else value
+        minlen = getattr(self, 'minlen', 0)
+        if value < minlen:
+            raise ValueError(
+                'minlen must be a positive number, less or equal to maxlen.')
+        self._maxlen = value
+        # The limit is documented as enforced at all times, so shrinking
+        # maxlen must evict the oldest items immediately, not at the next add.
+        if getattr(self, '_data', None):
+            self.purge()
+
     def __init__(self, maxlen=0, expires=0, data=None, minlen=0):
         # type: (int, float, Mapping, int) -> None
         self.maxlen = 0 if maxlen is None else maxlen
