@@ -1,3 +1,4 @@
+dill>=0.3.8
 billiard==4.3.0
 kombu>=5.7.0a1
 vine>=5.1.0,<6.0
