@@ -44,6 +44,15 @@ Unreleased
   ``worker_concurrency`` is no longer coerced to an integer at config load, so
   code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
   numeric string such as ``"4"``; the worker converts it at startup.
+- Prefork warm shutdown no longer hangs when the worker stops while the
+  event loop has only partly read a child's result: the pool join now
+  resumes the half-read message instead of calling a blocking ``recv()``
+  on the rest of it, so tasks that finished after the shutdown signal no
+  longer hit their time limits and get redelivered when the process is
+  killed. With ``task_acks_late`` the acks of tasks that finish while the
+  pool is being joined are now sent during the join rather than at
+  ``hub.close()``, so a long-running task outliving the shutdown no longer
+  causes every task finished during the drain to run twice (#3802, #10768).
 
 
 .. _version-5.7.0a1:

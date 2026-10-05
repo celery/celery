@@ -19,6 +19,7 @@ import os
 import select
 import time
 from collections import Counter, deque, namedtuple
+from inspect import isgenerator
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
@@ -253,6 +254,19 @@ class Worker(_pool.Worker):
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
 
+    #: Seconds to wait for a child to finish writing a result message that
+    #: the event loop had only partly read when the worker began shutting
+    #: down, before checking whether the child is still alive.
+    partial_read_timeout = 1.0
+
+    #: Seconds to keep waiting in total for such a message before giving it
+    #: up and dropping the pipe.  A live child resumes its write as soon as
+    #: the pipe has room again, so only a stopped child takes longer.
+    partial_read_deadline = 10.0
+
+    #: Set by :meth:`register_with_event_loop`.
+    _hub = None
+
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
         self.on_process_alive = kwargs.pop('on_process_alive')
@@ -342,6 +356,7 @@ class ResultHandler(_pool.ResultHandler):
         return on_result_readable
 
     def register_with_event_loop(self, hub):
+        self._hub = hub
         self.handle_event = self._make_process_result(hub)
 
     def handle_event(self, *args):
@@ -377,6 +392,58 @@ class ResultHandler(_pool.ResultHandler):
                     return
             outqueues.difference_update(pending_remove_fd)
 
+    def _finish_partial_read(self, fd, proc):
+        """Complete a result message the event loop had only partly read.
+
+        The event loop reads results with a resumable generator
+        (:meth:`_recv_message`).  When the worker shuts down while a
+        message is in flight the generator stays registered on the hub and
+        the pipe holds the rest of the body.  Reading the pipe afresh would
+        interpret those body bytes as a message header and block forever,
+        so resume the generator until the message completes.
+
+        Arguments:
+            fd (int): Descriptor of the process outqueue.
+            proc (Process): The pool process owning ``fd``.
+
+        Returns:
+            bool: True if the message can no longer be completed (the
+                process is gone, or it did not finish writing within
+                :attr:`partial_read_deadline`), in which case the caller
+                must drop ``fd``.
+        """
+        hub = self._hub
+        if hub is None:
+            return False
+        registered = hub.readers.get(fd)
+        if registered is None:
+            return False
+        callback, _ = registered
+        if not isgenerator(callback):
+            return False
+        reader = proc.outq._reader
+        deadline = time.monotonic() + self.partial_read_deadline
+        while True:
+            try:
+                next(callback)
+            except StopIteration:
+                return False
+            except (OSError, EOFError):
+                return True
+            try:
+                readable = reader.poll(self.partial_read_timeout)
+            except OSError:
+                return True
+            if readable:
+                continue
+            if not proc._is_alive():
+                return True
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    '%r did not finish writing a result within %ss, '
+                    'dropping it', proc, self.partial_read_deadline)
+                return True
+
     def _flush_outqueue(self, fd, remove, process_index, on_state_change):
         try:
             proc = process_index[fd]
@@ -384,6 +451,9 @@ class ResultHandler(_pool.ResultHandler):
             # process already found terminated
             # this means its outqueue has already been processed
             # by the worker lost handler.
+            return remove(fd)
+
+        if self._finish_partial_read(fd, proc):
             return remove(fd)
 
         reader = proc.outq._reader
@@ -394,6 +464,11 @@ class ResultHandler(_pool.ResultHandler):
         result = None
         try:
             if reader.poll(0):
+                # A child that dies between this poll and the end of its
+                # write leaves a partial message that this recv() blocks on:
+                # the parent holds the pipe's write end, so no EOF arrives.
+                # Only a message the event loop had already started reading
+                # is recovered, by _finish_partial_read above.
                 task = reader.recv()
             else:
                 task = None

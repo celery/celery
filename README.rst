@@ -369,10 +369,10 @@ Transports and Backends
     for using the ``task_remote_tracebacks`` feature.
 
 :``celery[memcache]``:
-    for using Memcached as a result backend (using ``pylibmc``)
+    for using Memcached as a result backend (using ``pymemcache``).
 
 :``celery[pymemcache]``:
-    for using Memcached as a result backend (pure-Python implementation).
+    alias of ``celery[memcache]``, kept for backward compatibility.
 
 :``celery[cassandra]``:
     for using Apache Cassandra/Astra DB as a result backend with the DataStax driver.
