@@ -1,4 +1,4 @@
-billiard==4.3.0
+billiard>=4.3.1
 kombu>=5.7.0a1
 vine>=5.1.0,<6.0
 click>=8.3.1,<9.0
