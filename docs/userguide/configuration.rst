@@ -4253,8 +4253,7 @@ Default:
 
 .. code-block:: text
 
-    "[%(asctime)s: %(levelname)s/%(processName)s]
-        %(task_name)s[%(task_id)s]: %(message)s"
+    "[%(asctime)s: %(levelname)s/%(processName)s] %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 
