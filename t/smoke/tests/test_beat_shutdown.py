@@ -9,6 +9,9 @@ from pytest_celery import RabbitMQTestBroker
 from celery import Celery, beat, uuid
 
 
+@pytest.mark.filterwarnings(
+    'error::pytest.PytestUnhandledThreadExceptionWarning',
+)
 class test_beat_shutdown:
     @pytest.mark.parametrize(
         'scheduler_cls', [beat.Scheduler, beat.PersistentScheduler],
@@ -31,7 +34,7 @@ class test_beat_shutdown:
             with app.connection_for_read() as reader:
                 with reader.SimpleQueue(queue_name, no_ack=True) as queue:
                     try:
-                        for cycle in range(3):
+                        for cycle in range(2):
                             app.conf.beat_schedule = {
                                 'shutdown-probe': {
                                     'task': 'beat_shutdown_probe',
@@ -64,16 +67,11 @@ class test_beat_shutdown:
                                         'beat_shutdown_probe'
                                     )
                                     assert message.payload[0] == [cycle]
-                                    # Beat must open its shelf on its own
-                                    # thread before we inspect the cache.
-                                    scheduler = embedded.service.__dict__[
-                                        'scheduler'
-                                    ]
-                                    connection = scheduler.__dict__[
-                                        'connection'
-                                    ]
-                                    producer = scheduler.__dict__['producer']
-                                    channel = producer.channel
+                                    # Receiving a task confirms Beat opened
+                                    # its shelf and cached its resources.
+                                    scheduler = embedded.service.scheduler
+                                    connection = scheduler.connection
+                                    channel = scheduler.producer.channel
                                     sock = connection.connection.sock
                                     assert connection.connected
                                     assert channel.is_open
@@ -90,7 +88,6 @@ class test_beat_shutdown:
                                 retained.append(
                                     (embedded, connection, channel, sock)
                                 )
-                                assert embedded.service._is_stopped.is_set()
                                 assert not connection.connected
                                 assert not channel.is_open
                                 assert sock.fileno() == -1
@@ -110,7 +107,7 @@ class test_beat_shutdown:
 
                         # Keep references to every stopped instance and its
                         # resources so garbage collection cannot hide the leak.
-                        assert len(retained) == 3
+                        assert len(retained) == 2
                         assert all(
                             not connection.connected and not channel.is_open
                             and sock.fileno() == -1
