@@ -383,7 +383,7 @@ def localize(dt: datetime, tz: tzinfo) -> datetime:
     """
     if is_naive(dt):  # Ensure timezone aware datetime
         dt = make_aware(dt, tz)
-    if dt.tzinfo == ZoneInfo("UTC"):
+    if dt.tzinfo == ZoneInfo("UTC") or dt.tzinfo == datetime_timezone.utc:
         dt = dt.astimezone(tz)  # Always safe to call astimezone on utc zones
     return dt
 
