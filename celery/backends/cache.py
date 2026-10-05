@@ -3,16 +3,16 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
+from celery.utils import deprecated
 from celery.utils.functional import LRUCache
 
 from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)
 
-_imp = [None]
-
 REQUIRES_BACKEND = """\
-The Memcached backend requires either pylibmc or python-memcached.\
+The Memcached backend requires the 'pymemcache' library. \
+The 'pylibmc' and 'python-memcached' libraries are no longer used.\
 """
 
 UNKNOWN_BACKEND = """\
@@ -20,38 +20,130 @@ The cache backend {0!r} is unknown,
 Please use one of the following backends instead: {1}\
 """
 
+# Options only supported by pylibmc, dropped before creating the client.
+PYLIBMC_ONLY_OPTIONS = ('behaviors', 'binary')
+
+# Defaults applied to the pymemcache client unless set in
+# cache_backend_options: wait for the server reply so that failed
+# writes raise, and don't block forever on an unresponsive server.
+DEFAULT_CLIENT_OPTIONS = {
+    'default_noreply': False,
+    'connect_timeout': 5.0,
+    'timeout': 5.0,
+}
+
 # Global shared in-memory cache for in-memory cache client
 # This is to share cache between threads
 _DUMMY_CLIENT_CACHE = LRUCache(limit=5000)
 
 
+def get_memcache_client():
+    """Get pymemcache client factory."""
+    try:
+        from pymemcache.client.base import Client
+        from pymemcache.client.hash import HashClient
+        from pymemcache.client.retrying import RetryingClient
+    except ImportError:
+        raise ImproperlyConfigured(REQUIRES_BACKEND)
+
+    def ClientFactory(servers=None, **kwargs):
+        """Create a pymemcache client with optional retry support.
+
+        Args:
+            servers: List of server addresses
+            **kwargs: Additional options including:
+                - retry_attempts: Number of retry attempts (enables RetryingClient)
+                - retry_delay: Delay between retries in seconds
+                - retry_for: List of exceptions to retry for
+                - do_not_retry_for: List of exceptions to not retry for
+                - behaviors, binary: Ignored for backward compatibility
+                  with pylibmc
+        """
+        # Remove pylibmc-specific options for backward compatibility
+        for option in PYLIBMC_ONLY_OPTIONS:
+            if option in kwargs:
+                kwargs.pop(option)
+                deprecated.warn(
+                    description=f'The {option!r} cache backend option',
+                    removal='6.0',
+                    alternative='It is only supported by pylibmc and is ignored.',
+                    stacklevel=3,
+                )
+        kwargs = {**DEFAULT_CLIENT_OPTIONS, **kwargs}
+
+        # Extract retry-related options
+        retry_attempts = kwargs.pop('retry_attempts', None)
+        retry_delay = kwargs.pop('retry_delay', None)
+        retry_for = kwargs.pop('retry_for', None)
+        do_not_retry_for = kwargs.pop('do_not_retry_for', None)
+
+        # Normalize/validate servers (CacheBackend passes a list, but guard other callers)
+        if servers is None:
+            servers = []
+        elif isinstance(servers, str):
+            servers = [servers]
+        elif (
+            isinstance(servers, tuple)
+            and len(servers) == 2
+            and isinstance(servers[0], str)
+            and isinstance(servers[1], int)
+        ):
+            # Allow passing a single server address as (host, port)
+            servers = [servers]
+        elif not isinstance(servers, (list, tuple)):
+            raise ImproperlyConfigured(
+                f"Memcache servers must be a sequence of server addresses, got {type(servers)}: {servers!r}"
+            )
+
+        # Filter out empty entries (e.g. memcache:// or trailing ';')
+        servers = [s for s in servers if s]
+        if not servers:
+            raise ImproperlyConfigured("No memcache servers provided")
+
+        # Use HashClient for multiple servers, base Client for single server
+        if len(servers) > 1:
+            base_client = HashClient(servers, **kwargs)
+        else:
+            server = servers[0]
+            if isinstance(server, (str, tuple)):
+                base_client = Client(server, **kwargs)
+            else:
+                raise ImproperlyConfigured(
+                    f"Memcache server address must be a string or tuple, got {type(server)}: {server!r}"
+                )
+
+        # Wrap with RetryingClient if retry options are specified
+        if retry_attempts is not None:
+            retry_kwargs = {'attempts': retry_attempts}
+            if retry_delay is not None:
+                retry_kwargs['retry_delay'] = retry_delay
+            if retry_for is not None:
+                retry_kwargs['retry_for'] = retry_for
+            if do_not_retry_for is not None:
+                retry_kwargs['do_not_retry_for'] = do_not_retry_for
+            return RetryingClient(base_client, **retry_kwargs)
+
+        return base_client
+
+    return ClientFactory, bytes_to_str
+
+
 def import_best_memcache():
-    if _imp[0] is None:
-        is_pylibmc, memcache_key_t = False, bytes_to_str
-        try:
-            import pylibmc as memcache
-            is_pylibmc = True
-        except ImportError:
-            try:
-                import memcache
-            except ImportError:
-                raise ImproperlyConfigured(REQUIRES_BACKEND)
-        _imp[0] = (is_pylibmc, memcache, memcache_key_t)
-    return _imp[0]
+    """Deprecated: use :func:`get_memcache_client` instead."""
+    deprecated.warn(description='import_best_memcache()', removal='6.0',
+                    alternative='Use get_memcache_client() instead.')
+    try:
+        import pymemcache
+    except ImportError:
+        raise ImproperlyConfigured(REQUIRES_BACKEND)
+    return False, pymemcache, bytes_to_str
 
 
 def get_best_memcache(*args, **kwargs):
-    # pylint: disable=unpacking-non-sequence
-    #   This is most definitely a sequence, but pylint thinks it's not.
-    is_pylibmc, memcache, key_t = import_best_memcache()
-    Client = _Client = memcache.Client
-
-    if not is_pylibmc:
-        def Client(*args, **kwargs):  # noqa: F811
-            kwargs.pop('behaviors', None)
-            return _Client(*args, **kwargs)
-
-    return Client, key_t
+    """Deprecated: use :func:`get_memcache_client` instead."""
+    deprecated.warn(description='get_best_memcache()', removal='6.0',
+                    alternative='Use get_memcache_client() instead.')
+    return get_memcache_client()
 
 
 class DummyClient:
@@ -80,9 +172,10 @@ class DummyClient:
 
 
 backends = {
-    'memcache': get_best_memcache,
-    'memcached': get_best_memcache,
-    'pylibmc': get_best_memcache,
+    'memcache': get_memcache_client,
+    'memcached': get_memcache_client,
+    'pylibmc': get_memcache_client,  # Backward compatibility
+    'pymemcache': get_memcache_client,
     'memory': lambda: (DummyClient, ensure_bytes),
 }
 
@@ -123,22 +216,22 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.get_multi(keys)
 
     def set(self, key, value):
-        return self.client.set(key, value, self.expires)
+        return self.client.set(key, value, self.expires or 0)
 
     def delete(self, key):
         return self.client.delete(key)
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])
-        self.client.set(chord_key, 0, time=self.expires)
+        self.client.set(chord_key, 0, self.expires or 0)
         return super()._apply_chord_incr(
             header_result_args, body, **kwargs)
 
     def incr(self, key):
-        return self.client.incr(key)
+        return self.client.incr(key, 1)
 
     def expire(self, key, value):
-        return self.client.touch(key, value)
+        return self.client.touch(key, value or 0)
 
     @cached_property
     def client(self):
