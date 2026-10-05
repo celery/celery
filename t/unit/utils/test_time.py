@@ -468,3 +468,26 @@ class test_get_exponential_backoff_interval:
         get_exponential_backoff_interval(
             factor=40, retries=10, maximum=maximum, full_jitter=True)
         rr.assert_called_once_with(maximum + 1)
+
+
+class test_ffwd_unknown_kwargs:
+
+    def test_months_is_rejected_not_ignored(self):
+        # dateutil.relativedelta users expect months=/years=/days= to be
+        # relative; ffwd only supports absolute fields and weeks=, and
+        # previously swallowed these kwargs as a silent no-op
+        with pytest.raises(TypeError, match="months"):
+            ffwd(months=1)
+        with pytest.raises(TypeError, match="days"):
+            ffwd(days=3)
+        with pytest.raises(TypeError, match="hours, years"):
+            ffwd(years=1, hours=2)
+
+    def test_named_fields_still_accepted(self):
+        x = datetime(2026, 1, 31) + ffwd(
+            month=3, day=15, hour=1, minute=2, second=3, microsecond=4,
+            year=2027,
+        )
+        assert (x.year, x.month, x.day, x.hour, x.minute) == (2027, 3, 15, 1, 2)
+        y = datetime(2026, 1, 31) + ffwd(weeks=2)
+        assert y == datetime(2026, 2, 14)
