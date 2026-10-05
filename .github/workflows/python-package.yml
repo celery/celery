@@ -78,7 +78,7 @@ jobs:
         tox --verbose --verbose
 
     - name: Upload coverage to Codecov
-      if: ${{ secrets.CODECOV_TOKEN != '' && !cancelled() }}
+      if: ${{ !cancelled() }}
       continue-on-error: true
       uses: codecov/codecov-action@v7
       with:
@@ -88,7 +88,7 @@ jobs:
         verbose: false
 
     - name: Upload test results to Codecov
-      if: ${{ secrets.CODECOV_TOKEN != '' && !cancelled() }}
+      if: ${{ !cancelled() }}
       continue-on-error: true
       uses: codecov/codecov-action@v7
       with:
