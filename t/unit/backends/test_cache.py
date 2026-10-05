@@ -4,11 +4,11 @@ from contextlib import contextmanager
 from unittest.mock import Mock, patch
 
 import pytest
-from kombu.utils.encoding import ensure_bytes, str_to_bytes
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CDeprecationWarning, ImproperlyConfigured
 from t.unit import conftest
 
 
@@ -143,44 +143,43 @@ class test_CacheBackend:
         assert b.as_uri() == backend
 
 
-class PyMemcacheClient(DummyClient):
-    """Mock pymemcache base Client."""
-    __module__ = 'pymemcache.client.base'
+def _check_expire(expire):
+    # pymemcache rejects anything but an integer expiry (e.g. None).
+    if not isinstance(expire, int):
+        raise TypeError(f'expire must be an integer, got {expire!r}')
 
 
-class PyMemcacheHashClient(DummyClient):
-    """Mock pymemcache HashClient."""
-    __module__ = 'pymemcache.client.hash'
+def make_pymemcache_clients():
+    """Build mock clients that keep the real pymemcache method signatures."""
+    utils = pytest.importorskip('pymemcache.test.utils')
+    retrying = pytest.importorskip('pymemcache.client.retrying')
 
+    class PyMemcacheClient(utils.MockMemcacheClient):
+        """Mock pymemcache base Client."""
+        __module__ = 'pymemcache.client.base'
 
-class PyMemcacheRetryingClient:
-    """Mock pymemcache RetryingClient."""
-    __module__ = 'pymemcache.client.retrying'
+        def __init__(self, server, **kwargs):
+            super().__init__(server, **kwargs)
+            self.server = server
+            self.options = kwargs
 
-    def __init__(self, client, attempts=2, retry_delay=0, retry_for=None, do_not_retry_for=None):
-        self.client = client
-        self.attempts = attempts
-        self.retry_delay = retry_delay
-        self.retry_for = retry_for
-        self.do_not_retry_for = do_not_retry_for
+        def set(self, key, value, expire=0, noreply=None, flags=None):
+            _check_expire(expire)
+            return super().set(key, value, expire, noreply, flags)
 
-    def get(self, key, *args, **kwargs):
-        return self.client.get(key, *args, **kwargs)
+        def touch(self, key, expire=0, noreply=None):
+            _check_expire(expire)
+            return super().touch(key, expire, noreply)
 
-    def get_multi(self, keys):
-        return self.client.get_multi(keys)
+    class PyMemcacheHashClient(PyMemcacheClient):
+        """Mock pymemcache HashClient."""
+        __module__ = 'pymemcache.client.hash'
 
-    def set(self, key, value, *args, **kwargs):
-        return self.client.set(key, value, *args, **kwargs)
+        def __init__(self, servers, **kwargs):
+            super().__init__(None, **kwargs)
+            self.servers = servers
 
-    def delete(self, key, *args, **kwargs):
-        return self.client.delete(key, *args, **kwargs)
-
-    def incr(self, key, delta=1):
-        return self.client.incr(key, delta)
-
-    def touch(self, key, expire):
-        return self.client.touch(key, expire)
+    return PyMemcacheClient, PyMemcacheHashClient, retrying.RetryingClient
 
 
 class MockPyMemcacheMixin:
@@ -188,6 +187,8 @@ class MockPyMemcacheMixin:
     @contextmanager
     def mock_pymemcache(self):
         """Mock pymemcache modules."""
+        Client, HashClient, RetryingClient = make_pymemcache_clients()
+
         pymemcache = types.ModuleType('pymemcache')
         pymemcache_client = types.ModuleType('pymemcache.client')
         pymemcache_client_base = types.ModuleType('pymemcache.client.base')
@@ -198,9 +199,10 @@ class MockPyMemcacheMixin:
         pymemcache.__path__ = []
         pymemcache_client.__path__ = []
 
-        pymemcache_client_base.Client = PyMemcacheClient
-        pymemcache_client_hash.HashClient = PyMemcacheHashClient
-        pymemcache_client_retrying.RetryingClient = PyMemcacheRetryingClient
+        pymemcache_client_base.Client = Client
+        pymemcache_client_hash.HashClient = HashClient
+        pymemcache_client_retrying.RetryingClient = RetryingClient
+        pymemcache.Client = Client
 
         pymemcache_client.base = pymemcache_client_base
         pymemcache_client.hash = pymemcache_client_hash
@@ -267,8 +269,8 @@ class test_pymemcache_client(MockPyMemcacheMixin):
                 Client, _ = cache.get_memcache_client()
                 client = Client(['127.0.0.1:11211'], retry_attempts=3, retry_delay=0.1)
                 assert client.__module__ == 'pymemcache.client.retrying'
-                assert client.attempts == 3
-                assert client.retry_delay == 0.1
+                assert client._attempts == 3
+                assert client._retry_delay == 0.1
 
     def test_retry_client_with_exceptions(self):
         """Test that retry options are properly passed."""
@@ -285,18 +287,71 @@ class test_pymemcache_client(MockPyMemcacheMixin):
                     do_not_retry_for=do_not_retry_for
                 )
                 assert client.__module__ == 'pymemcache.client.retrying'
-                assert client.retry_for == retry_for
-                assert client.do_not_retry_for == do_not_retry_for
+                assert client._retry_for == tuple(retry_for)
+                assert client._do_not_retry_for == tuple(do_not_retry_for)
 
-    def test_behaviors_ignored_for_compatibility(self):
-        """Test that behaviors parameter is ignored for pylibmc compatibility."""
+    @pytest.mark.parametrize('option, value', [
+        ('behaviors', {'tcp_nodelay': True}),
+        ('binary', True),
+    ])
+    def test_pylibmc_options_ignored_with_warning(self, option, value):
+        """Test that pylibmc only options are dropped with a warning."""
         with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
                 Client, _ = cache.get_memcache_client()
-                # Should not raise an error
-                client = Client(['127.0.0.1:11211'], behaviors={'foo': 'bar'})
+                with pytest.warns(CDeprecationWarning, match=option):
+                    client = Client(['127.0.0.1:11211'], **{option: value})
                 assert client.__module__ == 'pymemcache.client.base'
+                assert option not in client.options
+
+    @pytest.mark.parametrize('servers', [
+        ['127.0.0.1:11211'],
+        ['127.0.0.1:11211', '127.0.0.1:11212'],
+    ])
+    def test_default_client_options(self, servers):
+        """Test that replies are awaited and timeouts are set by default."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(servers)
+                assert client.options == cache.DEFAULT_CLIENT_OPTIONS
+
+    def test_default_client_options_can_be_overridden(self):
+        """Test that user options take precedence over the defaults."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(
+                    ['127.0.0.1:11211'], default_noreply=True, timeout=None,
+                )
+                assert client.options['default_noreply'] is True
+                assert client.options['timeout'] is None
+                assert client.options['connect_timeout'] == 5.0
+
+    def test_deprecated_get_best_memcache(self):
+        """Test that get_best_memcache() still works with a warning."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                with pytest.warns(CDeprecationWarning, match='get_best_memcache'):
+                    Client, key_t = cache.get_best_memcache()
+                client = Client(['127.0.0.1:11211'])
+                assert client.__module__ == 'pymemcache.client.base'
+                assert key_t is bytes_to_str
+
+    def test_deprecated_import_best_memcache(self):
+        """Test that import_best_memcache() still works with a warning."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                with pytest.warns(CDeprecationWarning, match='import_best_memcache'):
+                    is_pylibmc, memcache, key_t = cache.import_best_memcache()
+                assert is_pylibmc is False
+                assert memcache is sys.modules['pymemcache']
+                assert key_t is bytes_to_str
 
     @pytest.mark.parametrize('servers', [None, [], [''], ('', '')])
     def test_no_servers_raises_error(self, servers):
@@ -337,7 +392,12 @@ class test_pymemcache_client(MockPyMemcacheMixin):
                 with pytest.raises(ImproperlyConfigured):
                     Client(servers)
 
-    @pytest.mark.masked_modules('pymemcache')
+    @pytest.mark.masked_modules(
+        'pymemcache',
+        'pymemcache.client.base',
+        'pymemcache.client.hash',
+        'pymemcache.client.retrying',
+    )
     def test_no_pymemcache_raises_error(self, mask_modules):
         """Test that missing pymemcache raises ImproperlyConfigured."""
         with conftest.reset_modules('celery.backends.cache'):
@@ -392,8 +452,8 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 client = b.client
                 # Should be wrapped with RetryingClient
                 assert client.__module__ == 'pymemcache.client.retrying'
-                assert client.attempts == 3
-                assert client.retry_delay == 0.1
+                assert client._attempts == 3
+                assert client._retry_delay == 0.1
 
     def test_cache_backend_with_multiple_servers(self):
         """Test that multiple servers use HashClient."""
@@ -426,6 +486,49 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 b = cache.CacheBackend(backend='memcache://', app=self.app)
                 with pytest.raises(ImproperlyConfigured):
                     b.client
+
+    @patch('celery.result.GroupResult.restore')
+    def test_chord_with_pymemcache_signatures(self, restore):
+        """Test the chord counter with the real pymemcache signatures."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
+
+                deps = Mock()
+                deps.__len__ = Mock(return_value=2)
+                restore.return_value = deps
+                task = Mock()
+                task.name = 'foobarbaz'
+                self.app.tasks['foobarbaz'] = task
+                task.request.chord = signature(task)
+
+                result_args = (
+                    uuid(),
+                    [self.app.AsyncResult(uuid()) for _ in range(2)],
+                )
+                task.request.group = result_args[0]
+                b.apply_chord(result_args, None)
+
+                b.on_chord_part_return(task.request, 'SUCCESS', 10)
+                deps.join_native.assert_not_called()
+
+                b.on_chord_part_return(task.request, 'SUCCESS', 10)
+                deps.join_native.assert_called_with(propagate=True, timeout=3.0)
+                deps.delete.assert_called_with()
+
+    def test_cache_backend_without_expiry(self):
+        """Test that result_expires=None is sent as an integer to pymemcache."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                self.app.conf.result_expires = None
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
+                assert b.expires is None
+                task_id = uuid()
+                b.store_result(task_id, 42, state=states.SUCCESS)
+                assert b.get_result(task_id) == 42
+                b.expire(task_id, b.expires)
 
     def test_regression_worker_startup_info(self):
         """Test that worker startup info works with multiple servers."""

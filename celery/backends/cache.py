@@ -3,6 +3,7 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
+from celery.utils import deprecated
 from celery.utils.functional import LRUCache
 
 from .base import KeyValueStoreBackend
@@ -18,6 +19,18 @@ UNKNOWN_BACKEND = """\
 The cache backend {0!r} is unknown,
 Please use one of the following backends instead: {1}\
 """
+
+# Options only supported by pylibmc, dropped before creating the client.
+PYLIBMC_ONLY_OPTIONS = ('behaviors', 'binary')
+
+# Defaults applied to the pymemcache client unless set in
+# cache_backend_options: wait for the server reply so that failed
+# writes raise, and don't block forever on an unresponsive server.
+DEFAULT_CLIENT_OPTIONS = {
+    'default_noreply': False,
+    'connect_timeout': 5.0,
+    'timeout': 5.0,
+}
 
 # Global shared in-memory cache for in-memory cache client
 # This is to share cache between threads
@@ -43,10 +56,20 @@ def get_memcache_client():
                 - retry_delay: Delay between retries in seconds
                 - retry_for: List of exceptions to retry for
                 - do_not_retry_for: List of exceptions to not retry for
-                - behaviors: Ignored for backward compatibility with pylibmc
+                - behaviors, binary: Ignored for backward compatibility
+                  with pylibmc
         """
         # Remove pylibmc-specific options for backward compatibility
-        kwargs.pop('behaviors', None)
+        for option in PYLIBMC_ONLY_OPTIONS:
+            if option in kwargs:
+                kwargs.pop(option)
+                deprecated.warn(
+                    description=f'The {option!r} cache backend option',
+                    removal='6.0',
+                    alternative='It is only supported by pylibmc and is ignored.',
+                    stacklevel=3,
+                )
+        kwargs = {**DEFAULT_CLIENT_OPTIONS, **kwargs}
 
         # Extract retry-related options
         retry_attempts = kwargs.pop('retry_attempts', None)
@@ -103,6 +126,24 @@ def get_memcache_client():
         return base_client
 
     return ClientFactory, bytes_to_str
+
+
+def import_best_memcache():
+    """Deprecated: use :func:`get_memcache_client` instead."""
+    deprecated.warn(description='import_best_memcache()', removal='6.0',
+                    alternative='Use get_memcache_client() instead.')
+    try:
+        import pymemcache
+    except ImportError:
+        raise ImproperlyConfigured(REQUIRES_BACKEND)
+    return False, pymemcache, bytes_to_str
+
+
+def get_best_memcache(*args, **kwargs):
+    """Deprecated: use :func:`get_memcache_client` instead."""
+    deprecated.warn(description='get_best_memcache()', removal='6.0',
+                    alternative='Use get_memcache_client() instead.')
+    return get_memcache_client()
 
 
 class DummyClient:
@@ -175,22 +216,22 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.get_multi(keys)
 
     def set(self, key, value):
-        return self.client.set(key, value, self.expires)
+        return self.client.set(key, value, self.expires or 0)
 
     def delete(self, key):
         return self.client.delete(key)
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])
-        self.client.set(chord_key, 0, time=self.expires)
+        self.client.set(chord_key, 0, self.expires or 0)
         return super()._apply_chord_incr(
             header_result_args, body, **kwargs)
 
     def incr(self, key):
-        return self.client.incr(key)
+        return self.client.incr(key, 1)
 
     def expire(self, key, value):
-        return self.client.touch(key, value)
+        return self.client.touch(key, value or 0)
 
     @cached_property
     def client(self):

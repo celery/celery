@@ -1415,10 +1415,17 @@ Cache backend settings
       :pypi:`python-memcached` are no longer used, even if installed.
     * The ``pylibmc://`` URL scheme is still accepted as an alias of
       ``memcache://`` for backward compatibility.
-    * The ``behaviors`` key of :setting:`cache_backend_options` is specific
-      to :pypi:`pylibmc` and is now silently ignored. Other options are
-      passed to the :pypi:`pymemcache` client, so remove any option it
+    * The ``behaviors`` and ``binary`` keys of
+      :setting:`cache_backend_options` are specific to :pypi:`pylibmc`.
+      They are now ignored and emit a deprecation warning. Other options
+      are passed to the :pypi:`pymemcache` client, so remove any option it
       doesn't support.
+    * The client now waits for the server reply on every write and uses a
+      5 second connection and socket timeout by default. See
+      :setting:`cache_backend_options` to change these defaults.
+    * The ``get_best_memcache()`` and ``import_best_memcache()`` helpers of
+      :mod:`celery.backends.cache` are deprecated in favor of
+      ``get_memcache_client()``.
     * When several servers are configured, a
       :class:`pymemcache.client.hash.HashClient` is used to distribute keys
       across them, which may lead to a different key distribution than with
@@ -1459,10 +1466,21 @@ You can set :pypi:`pymemcache` client options using the
 .. code-block:: python
 
     cache_backend_options = {
-        'connect_timeout': 5,
-        'timeout': 5,
+        'connect_timeout': 2,
+        'timeout': 2,
         'no_delay': True,
     }
+
+Unless set in this setting, Celery passes the following options to the
+client:
+
+* ``default_noreply``: ``False``, so that the client reads the server reply
+  and raises an error when a result can't be stored (for example when it's
+  larger than the memcached item size limit). Setting it to ``True`` saves
+  one round trip per write, but failed writes are then silently ignored.
+* ``connect_timeout`` and ``timeout``: ``5.0`` seconds, so that an
+  unresponsive server doesn't block the worker forever. Set them to
+  ``None`` to wait indefinitely.
 
 The following extra options enable retries by wrapping the client in a
 :class:`pymemcache.client.retrying.RetryingClient`:
