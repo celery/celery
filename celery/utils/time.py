@@ -211,7 +211,8 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
     args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
     for res, predicate in resolutions:
         if predicate(delta) >= 1.0:
-            return datetime(*args[:res], tzinfo=dt.tzinfo)
+            # Keep the same occurrence when rounding a repeated local time.
+            return datetime(*args[:res], tzinfo=dt.tzinfo, fold=dt.fold)
     return dt
 
 

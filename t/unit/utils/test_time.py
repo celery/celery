@@ -5,6 +5,7 @@ from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
+from dateutil import tz as dateutil_tz
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
@@ -521,3 +522,43 @@ class test_add_seconds_to_datetime:
         assert result.isoformat() == '2026-11-01T01:45:00-05:00'
         assert result.fold == 1
         assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=15)
+
+    def test_local_timezone(self):
+        local_timezone = LocalTimezone()
+        now = datetime(2026, 6, 15, 1, 30, tzinfo=local_timezone)
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # Adding 90 minutes must keep the correct local offset and elapsed duration.
+        assert result.utcoffset() == local_timezone.utcoffset(result)
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_dateutil_timezone_across_spring_forward(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=dateutil_tz.gettz('America/New_York'))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST skips an hour, so 90 elapsed minutes from 01:30 end at 04:00.
+        assert result.isoformat() == '2026-03-08T04:00:00-04:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_fixed_offset_timezone(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=_timezone(timedelta(hours=-5)))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # A fixed UTC-05:00 offset stays the same even on a DST transition date.
+        assert result.isoformat() == '2026-03-08T03:00:00-05:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_utc_timezone(self):
+        now = datetime(2026, 3, 8, 6, 30, tzinfo=_timezone.utc)
+        assert now.isoformat() == '2026-03-08T06:30:00+00:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # UTC input stays in UTC after adding 90 minutes.
+        assert result.isoformat() == '2026-03-08T08:00:00+00:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
