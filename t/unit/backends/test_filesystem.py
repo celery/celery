@@ -251,3 +251,54 @@ class test_FilesystemBackend:
             tb.get_key_for_task(tid) in filenames
             for tid in today_task_ids
         )
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cleanup_removes_stale_temp_files(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        stale = os.path.join(self.directory, f'celery-result-{uuid()}.tmp')
+        fresh = os.path.join(self.directory, f'celery-result-{uuid()}.tmp')
+        for name in (stale, fresh):
+            with open(name, 'wb') as f:
+                f.write(b'partial')
+        old = time.time() - 3600
+        os.utime(stale, (old, old))
+        day_length = 0.2
+        with patch.object(tb, 'expires', day_length):
+            tb.cleanup()
+        assert not os.path.exists(stale)
+        assert os.path.exists(fresh)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_retries_replace_on_permission_error(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        real_replace = os.replace
+        failures = []
+
+        def flaky_replace(src, dst):
+            if len(failures) < 2:
+                failures.append(1)
+                raise PermissionError(dst)
+            return real_replace(src, dst)
+
+        key = tb.get_key_for_task(uuid())
+        with patch('celery.backends.filesystem.os.replace', flaky_replace):
+            tb.set(key, ensure_bytes('{"a": 1}'))
+        assert len(failures) == 2
+        assert tb.get(key) == ensure_bytes('{"a": 1}')
+        import glob
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_raises_after_replace_retries_exhausted(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+
+        def always_denied(src, dst):
+            raise PermissionError(dst)
+
+        key = tb.get_key_for_task(uuid())
+        with patch('celery.backends.filesystem.os.replace', always_denied):
+            with pytest.raises(PermissionError):
+                tb.set(key, ensure_bytes('{"a": 1}'))
+        # the temp file is cleaned up on the final failure
+        import glob
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []

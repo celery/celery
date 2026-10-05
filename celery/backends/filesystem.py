@@ -2,6 +2,7 @@
 import locale
 import os
 import stat
+import time
 from datetime import datetime
 
 from kombu.utils.encoding import ensure_bytes
@@ -94,7 +95,10 @@ class FilesystemBackend(KeyValueStoreBackend):
         # place so concurrent readers (e.g. get/get_many polling the same
         # key) never observe a truncated file. The temp file is created with
         # the umask-derived default mode and an existing result file's mode
-        # is preserved across overwrites, matching plain open('wb').
+        # is preserved across overwrites, matching plain open('wb'). The
+        # rename replaces the destination instead of writing through it: a
+        # symlink (or different ownership/ACLs) on the result path is not
+        # followed, and the link target is left untouched.
         hexsuffix = uuid()
         if isinstance(filename, bytes):
             tmp_name = os.path.join(
@@ -109,7 +113,18 @@ class FilesystemBackend(KeyValueStoreBackend):
                 os.chmod(tmp_name, stat.S_IMODE(os.stat(filename).st_mode))
             except FileNotFoundError:
                 pass  # new file: keep the umask-derived default mode
-            os.replace(tmp_name, filename)
+            # On Windows a reader holding the destination open can make
+            # os.replace() fail with PermissionError (CPython opens files
+            # without FILE_SHARE_DELETE); retry briefly so a concurrent
+            # read doesn't turn a harmless race into a failed store_result.
+            for attempt in range(5):
+                try:
+                    os.replace(tmp_name, filename)
+                    break
+                except PermissionError:
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.01)
         except BaseException:
             try:
                 os.unlink(tmp_name)
@@ -132,10 +147,23 @@ class FilesystemBackend(KeyValueStoreBackend):
         now_ts = (self.app.now() - epoch).total_seconds()
         cutoff_ts = now_ts - self.expires
         for filename in os.listdir(self.path):
+            path = os.path.join(self.path, filename)
+            # Orphaned temp files (a process killed between the write and
+            # the os.replace() in set()) carry no task key prefix, so they
+            # would survive cleanup() forever; drop them once stale too.
+            if filename.startswith(b'celery-result-') and filename.endswith(b'.tmp'):
+                try:
+                    if os.stat(path).st_mtime < cutoff_ts:
+                        self.unlink(path)
+                except FileNotFoundError:
+                    pass  # another worker removed it first
+                continue
             for prefix in (self.task_keyprefix, self.group_keyprefix,
                            self.chord_keyprefix):
                 if filename.startswith(prefix):
-                    path = os.path.join(self.path, filename)
-                    if os.stat(path).st_mtime < cutoff_ts:
-                        self.unlink(path)
+                    try:
+                        if os.stat(path).st_mtime < cutoff_ts:
+                            self.unlink(path)
+                    except FileNotFoundError:
+                        pass  # another worker removed it first
                     break
