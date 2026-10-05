@@ -77,15 +77,19 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v7
+    - name: Upload coverage to Codecov
+      if: ${{ secrets.CODECOV_TOKEN != '' && !cancelled() }}
+      continue-on-error: true
+      uses: codecov/codecov-action@v7
       with:
-        flags: unittests # optional
-        fail_ci_if_error: true # optional (default = false)
+        flags: unittests
+        fail_ci_if_error: false
         token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: true # optional (default = false)
+        verbose: false
 
     - name: Upload test results to Codecov
-      if: ${{ !cancelled() }}
+      if: ${{ secrets.CODECOV_TOKEN != '' && !cancelled() }}
+      continue-on-error: true
       uses: codecov/codecov-action@v7
       with:
         report_type: test_results
