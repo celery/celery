@@ -12,6 +12,8 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- Preserve closing brackets when ``saferepr`` truncates the final item in a
+  container representation (#10760).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
