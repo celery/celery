@@ -306,14 +306,16 @@ class AsyncResult(ResultBase):
             def pow2(i):
                 return i ** 2
 
+        To collect only the values returned by leaf tasks, unpack each pair
+        and select results with no children:
+
         .. code-block:: pycon
 
-            >>> from celery.result import ResultBase
             >>> from proj.tasks import A
 
             >>> result = A.delay(10)
-            >>> [v for v in result.collect()
-            ...  if not isinstance(v, (ResultBase, tuple))]
+            >>> [value for child, value in result.collect()
+            ...  if not child.children]
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         Note:
