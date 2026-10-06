@@ -281,6 +281,56 @@ class test_Consumer(ConsumerTestCase):
         assert c.initial_prefetch_count == c.max_prefetch_count
         assert c._maximum_prefetch_restored is True
 
+    @pytest.mark.parametrize(
+        'active_requests_count,expected_initial,expected_maximum',
+        [
+            # Idle worker at reconnect (the common case during a broker
+            # maintenance roll): nothing in flight, keep the full prefetch.
+            (0, 50, True),
+            # Busy worker: reduce by the in-flight count, restore gradually.
+            (3, 47, False),
+        ],
+        ids=['idle', 'busy'],
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_reduction_uses_green_pool_capacity_not_running_greenlets(
+            self, active_requests_mock, active_requests_count, expected_initial,
+            expected_maximum):
+        """Reconnect-time prefetch reduction must size from pool capacity.
+
+        Regression test for the gevent pool reporting ``num_processes`` as
+        the number of greenlets running *right now* (0 when idle) instead of
+        the configured concurrency. With that, ``max_prefetch_count`` was 0
+        on an idle worker, the reduction dropped the channel to
+        ``prefetch_multiplier`` (1) and the restore step immediately treated
+        ``min(0, qos + 1)`` as "restored", so a worker that lost its broker
+        connection once stayed at prefetch=1 for the rest of its life.
+        Fixed on the pool side by #10361; this pins the consumer-side
+        outcome against a real green pool.
+        """
+        pytest.importorskip('gevent')
+        from celery.concurrency.gevent import TaskPool
+
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+        active_requests_mock.update({Mock() for _ in range(active_requests_count)})
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.qos_global = True
+        c.prefetch_multiplier = 1
+        c.pool = TaskPool(50)
+        # A *started* green pool tracks only the greenlets currently
+        # running; that number must not leak into the prefetch math.
+        c.pool._pool = [object()] * active_requests_count
+        c.initial_prefetch_count = 50
+        c._maximum_prefetch_restored = True
+
+        c.on_connection_error_after_connected(ConnectionError('simulated'))
+
+        assert c.max_prefetch_count == 50
+        assert c.initial_prefetch_count == expected_initial
+        assert c._maximum_prefetch_restored is expected_maximum
+
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
 
