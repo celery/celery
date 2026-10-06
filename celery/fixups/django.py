@@ -49,6 +49,11 @@ def _maybe_close_fd(fh: IO) -> None:
         pass
 
 
+def _unwrap_app(app: Any) -> Any:
+    """Return the app behind a proxy such as ``current_app``."""
+    return app._get_current_object() if isinstance(app, Proxy) else app
+
+
 def _verify_django_version(django: "ModuleType") -> None:
     if django.VERSION < (1, 11):
         raise ImproperlyConfigured('Celery 5.x requires Django 1.11 or later.')
@@ -78,6 +83,10 @@ class DjangoFixup:
         self._worker_fixup: Optional["DjangoWorkerFixup"] = None
         # Not derived from id(self): an id can be reused once a fixup has
         # been garbage collected, a per-instance token can't.
+        # Only one fixup per app is supported: a second one installed for
+        # the same app (e.g. calling fixup(app) by hand on top of the
+        # automatic one) gets its own receiver and installs its worker
+        # fixup too.
         self._worker_init_uid = (
             'celery.fixups.django.DjangoFixup.on_worker_init', uuid4().hex,
         )
@@ -122,13 +131,12 @@ class DjangoFixup:
     def on_worker_init(self, **kwargs: Any) -> None:
         worker: Optional["WorkController"] = kwargs.get("sender")
         if worker:
-            worker_app = getattr(worker, 'app', None)
-            if isinstance(worker_app, Proxy):
-                # e.g. a worker created with ``app=current_app``.
-                worker_app = worker_app._get_current_object()
+            # Either side may be a proxy, e.g. a worker or a fixup created
+            # with ``current_app``.
+            worker_app = _unwrap_app(getattr(worker, 'app', None))
             # A sender without an app can't be told apart, so it's handled
             # like before; only workers known to be another app's are skipped.
-            if worker_app is not None and worker_app is not self.app:
+            if worker_app is not None and worker_app is not _unwrap_app(self.app):
                 logger.debug(
                     'Django fixup of app %r ignores worker_init of %r: '
                     'the worker belongs to app %r, whose own fixup handles it.',

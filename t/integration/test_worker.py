@@ -97,11 +97,14 @@ def test_django_fixup_installs_django_task_for_celery_subclass(monkeypatch):
 @pytest.fixture
 def two_django_apps(monkeypatch):
     """Two Django-enabled apps in one process, torn down afterwards."""
-    import django
+    import weakref
+
+    django = pytest.importorskip('django')
 
     from celery import _state, signals
     from celery.app import trace
     from celery.fixups.django import DjangoFixup
+    from celery.utils.dispatch import Signal
 
     monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.django_settings')
     monkeypatch.setenv('CELERY_SKIP_CHECKS', '1')
@@ -129,6 +132,9 @@ def two_django_apps(monkeypatch):
             signals.worker_init.disconnect(
                 dispatch_uid=fixup._worker_init_uid,
             )
+            # Has to mirror the signals DjangoWorkerFixup.install()
+            # connects; the check below fails if one is added there and
+            # not here.
             worker_fixup = fixup.worker_fixup
             signals.beat_embedded_init.disconnect(worker_fixup.close_database)
             signals.task_prerun.disconnect(worker_fixup.on_task_prerun)
@@ -141,6 +147,21 @@ def two_django_apps(monkeypatch):
             app.close()
         _state.default_app = prev_default_app
         _state._tls.current_app = prev_current_app
+
+        def owner(receiver):
+            if isinstance(receiver, weakref.ReferenceType):
+                receiver = receiver()
+            return getattr(receiver, '__self__', None)
+
+        owners = [*fixups, *(fixup.worker_fixup for fixup in fixups)]
+        leaked = [
+            name
+            for name, signal in vars(signals).items()
+            if isinstance(signal, Signal)
+            for _, receiver in signal.receivers
+            if any(owner(receiver) is o for o in owners)
+        ]
+        assert not leaked, f'receivers left connected to: {leaked}'
 
 
 def test_django_fixup_signals_only_handled_by_own_app(

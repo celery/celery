@@ -252,12 +252,35 @@ class test_DjangoFixup(FixupCase):
                 assert DWF.return_value.worker is sender
                 DWF.return_value.install.assert_called_once_with()
 
+    def test_on_worker_init_fixup_with_proxy_app(self):
+        # the fixup's own app can be a proxy too, e.g. current_app.
+        with self.fixup_context(Proxy(lambda: self.app)) as (f, _, _):
+            assert f.app is not self.app
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                for worker_app in (self.app, Proxy(lambda: self.app)):
+                    DWF.reset_mock()
+                    worker = Mock(name="worker", app=worker_app)
+                    f.on_worker_init(sender=worker)
+                    assert DWF.return_value.worker is worker
+                    DWF.return_value.install.assert_called_once_with()
+
+                DWF.reset_mock()
+                f.on_worker_init(
+                    sender=Mock(name="worker", app=Mock(name="other_app")),
+                )
+                DWF.return_value.install.assert_not_called()
+
     def test_worker_init_uid_is_unique_per_instance(self):
         f1, f2 = DjangoFixup(self.app), DjangoFixup(self.app)
         assert f1._worker_init_uid != f2._worker_init_uid
-        # ids can be recycled after garbage collection, the uid must not
-        # depend on them.
-        assert id(f1) not in f1._worker_init_uid
+
+    def test_worker_init_uid_is_a_random_token(self):
+        # ids can be recycled after garbage collection, so the uid has to
+        # come from uuid4() and not from id(self).
+        with patch('celery.fixups.django.uuid4') as uuid4:
+            uuid4.return_value.hex = 'token'
+            f = DjangoFixup(self.app)
+        assert f._worker_init_uid[-1] == 'token'
 
     def _install_real_fixups(self, *apps):
         with patch('celery.fixups.django.symbol_by_name'), \
