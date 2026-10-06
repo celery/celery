@@ -1,5 +1,5 @@
 billiard>=4.3.1
-kombu>=5.7.0a1
+kombu>=5.7.0b1
 vine>=5.1.0,<6.0
 click>=8.3.1,<9.0
 click-didyoumean>=0.3.1

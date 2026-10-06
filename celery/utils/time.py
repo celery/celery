@@ -34,7 +34,7 @@ __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
-    'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
+    'add_seconds_to_datetime', 'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
@@ -211,12 +211,13 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
     args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
     for res, predicate in resolutions:
         if predicate(delta) >= 1.0:
-            return datetime(*args[:res], tzinfo=dt.tzinfo)
+            # Keep the same occurrence when rounding a repeated local time.
+            return datetime(*args[:res], tzinfo=dt.tzinfo, fold=dt.fold)
     return dt
 
 
 def remaining(
-        start: datetime, ends_in: timedelta, now: datetime | None = None,
+        start: datetime, ends_in: timedelta | ffwd, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
@@ -224,7 +225,7 @@ def remaining(
 
     Arguments:
         start (~datetime.datetime): Starting date.
-        ends_in (~datetime.timedelta): The end delta.
+        ends_in (~datetime.timedelta, ~celery.utils.time.ffwd): The end delta.
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
@@ -235,7 +236,10 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    end_date = start + ends_in
+    if isinstance(ends_in, timedelta):
+        end_date = add_seconds_to_datetime(start, ends_in.total_seconds())
+    else:
+        end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
 
@@ -331,6 +335,14 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
 def is_naive(dt: datetime) -> bool:
     """Return True if :class:`~datetime.datetime` is naive, meaning it doesn't have timezone info set."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def add_seconds_to_datetime(dt: datetime, seconds: float) -> datetime:
+    """Add elapsed seconds, preserving naive datetime behavior."""
+    delta = timedelta(seconds=seconds)
+    if is_naive(dt):
+        return dt + delta
+    return (dt.astimezone(datetime_timezone.utc) + delta).astimezone(dt.tzinfo)
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:
