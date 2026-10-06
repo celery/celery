@@ -267,6 +267,13 @@ a shortcut to set ETA by seconds into the future.
     >>> result.get()    # this takes at least 3 seconds to return
     4
 
+.. note::
+
+    ``countdown`` and numeric ``expires`` values use elapsed seconds across
+    daylight saving time (DST) changes. A value of ``86400`` means 24 hours.
+    When the clock changes by one hour, an interval starting at noon ends
+    at 13:00 the next day across spring-forward, or 11:00 across fall-back.
+
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
