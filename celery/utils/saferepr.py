@@ -163,7 +163,7 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
             yield ', ...'
             # move rest back to stack, so that we can include
             # dangling parens.
-            stack.append(it)
+            stack.append(chain([token], it))
             break
         if isinstance(token, _literal):
             val = token.value

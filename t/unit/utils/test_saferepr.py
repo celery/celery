@@ -138,6 +138,14 @@ class test_saferepr:
     def test_text_maxlen(self):
         assert saferepr(D_D_TEXT, 100).endswith("...', ...}}")
 
+    @pytest.mark.parametrize(('value', 'expected_ending'), [
+        (['v' * 100], ', ...]'),
+        ({'a': ['v' * 100]}, ', ...]}'),
+        (('x' * 100,), '...,)'),
+    ])
+    def test_maxlen_preserves_closing_brackets(self, value, expected_ending):
+        assert saferepr(value, maxlen=30).endswith(expected_ending)
+
     def test_maxlevels(self):
         saferepr(D_ALL, maxlevels=1)
 
