@@ -5,6 +5,7 @@ from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
+from dateutil import tz as dateutil_tz
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
@@ -12,7 +13,7 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery.utils.iso8601 import parse_iso8601
-from celery.utils.time import (LocalTimezone, _is_imaginary, delta_resolution, ffwd,
+from celery.utils.time import (LocalTimezone, _is_imaginary, add_seconds_to_datetime, delta_resolution, ffwd,
                                get_exponential_backoff_interval, humanize_seconds, localize, make_aware,
                                maybe_iso8601, maybe_make_aware, maybe_timedelta, rate, remaining, timezone,
                                utcoffset)
@@ -228,6 +229,19 @@ def test_remaining():
     next_run_edt = next_run_utc.astimezone(eastern_tz)
     assert next_run_utc == next_actual_time
     assert next_run_edt == next_actual_time
+
+
+def test_remaining_across_fall_back():
+    paris_tz = ZoneInfo('Europe/Paris')
+    start = datetime(2020, 10, 25, 2, 59, 55, tzinfo=paris_tz, fold=0)
+    now = datetime(2020, 10, 25, 2, 0, 5, tzinfo=paris_tz, fold=1)
+    assert start.isoformat() == '2020-10-25T02:59:55+02:00'
+
+    # DST changes the UTC offset from +02:00 to +01:00.
+    assert now.isoformat() == '2020-10-25T02:00:05+01:00'
+    assert now.astimezone(_timezone.utc) - start.astimezone(_timezone.utc) == timedelta(seconds=10)
+
+    assert remaining(start, timedelta(seconds=10), now) == timedelta(0)
 
 
 class test_timezone:
@@ -468,3 +482,83 @@ class test_get_exponential_backoff_interval:
         get_exponential_backoff_interval(
             factor=40, retries=10, maximum=maximum, full_jitter=True)
         rr.assert_called_once_with(maximum + 1)
+
+
+class test_add_seconds_to_datetime:
+
+    def test_across_spring_forward(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York'))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert result.isoformat() == '2026-03-08T04:00:00-04:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_naive_datetime(self):
+        now = datetime(2026, 3, 8, 1, 30)
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        assert result == datetime(2026, 3, 8, 3, 0)
+
+    def test_across_fall_back(self):
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert result.isoformat() == '2026-11-01T02:00:00-05:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_second_occurrence_of_repeated_hour(self):
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 15 * 60)
+
+        assert result.isoformat() == '2026-11-01T01:45:00-05:00'
+        assert result.fold == 1
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=15)
+
+    def test_local_timezone(self):
+        local_timezone = LocalTimezone()
+        now = datetime(2026, 6, 15, 1, 30, tzinfo=local_timezone)
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # Adding 90 minutes must keep the correct local offset and elapsed duration.
+        assert result.utcoffset() == local_timezone.utcoffset(result)
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_dateutil_timezone_across_spring_forward(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=dateutil_tz.gettz('America/New_York'))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # DST skips an hour, so 90 elapsed minutes from 01:30 end at 04:00.
+        assert result.isoformat() == '2026-03-08T04:00:00-04:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_fixed_offset_timezone(self):
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=_timezone(timedelta(hours=-5)))
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # A fixed UTC-05:00 offset stays the same even on a DST transition date.
+        assert result.isoformat() == '2026-03-08T03:00:00-05:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)
+
+    def test_utc_timezone(self):
+        now = datetime(2026, 3, 8, 6, 30, tzinfo=_timezone.utc)
+        assert now.isoformat() == '2026-03-08T06:30:00+00:00'
+
+        result = add_seconds_to_datetime(now, 90 * 60)
+
+        # UTC input stays in UTC after adding 90 minutes.
+        assert result.isoformat() == '2026-03-08T08:00:00+00:00'
+        assert result.astimezone(_timezone.utc) - now.astimezone(_timezone.utc) == timedelta(minutes=90)

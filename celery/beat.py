@@ -462,7 +462,28 @@ class Scheduler:
         pass
 
     def close(self):
-        self.sync()
+        """Sync and release publishing resources; subclasses close storage.
+
+        The base publishing properties are recreated lazily on next access.
+        Resuming a subclass may require reopening storage or reacquiring locks.
+        """
+        sync_failed = True
+        try:
+            self.sync()
+            sync_failed = False
+        finally:
+            # Inspect the cache so closing an unused scheduler cannot open
+            # a broker connection. Releasing it also closes its channels.
+            self.__dict__.pop('producer', None)
+            connection = self.__dict__.pop('connection', None)
+            if connection is not None:
+                try:
+                    ignore_errors(connection, connection.release)
+                except Exception:
+                    if not sync_failed:
+                        raise
+                    error('beat: Connection cleanup failed after sync error',
+                          exc_info=True)
 
     def add(self, **kwargs):
         entry = self.Entry(app=self.app, **kwargs)
@@ -627,8 +648,19 @@ class PersistentScheduler(Scheduler):
             self._store.sync()
 
     def close(self):
-        self.sync()
-        self._store.close()
+        close_failed = True
+        try:
+            super().close()
+            close_failed = False
+        finally:
+            if self._store is not None:
+                try:
+                    self._store.close()
+                except Exception:
+                    if not close_failed:
+                        raise
+                    error('beat: Store cleanup failed after scheduler error',
+                          exc_info=True)
 
     @property
     def info(self):

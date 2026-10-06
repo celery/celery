@@ -1411,7 +1411,9 @@ class _chain(Signature):
         if app is None:
             try:
                 app = self.tasks[0].app
-            except LookupError:
+            except (LookupError, AttributeError):
+                # An empty chain, or a nested chain or group whose first task
+                # is still a dict and cannot resolve an app until it is frozen.
                 pass
         return app or current_app
 
