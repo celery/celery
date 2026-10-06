@@ -1,5 +1,6 @@
 import copy
 import datetime
+import doctest
 import platform
 import traceback
 from contextlib import contextmanager
@@ -487,6 +488,42 @@ class test_AsyncResult:
         result = self.app.AsyncResult(self.task1['id'])
         result.backend = None
         del result
+
+
+class test_collect:
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('serializer', ['json', 'pickle'])
+    def test_documented_example(self, serializer):
+        self.app.conf.result_serializer = serializer
+        children = []
+        for i in range(10):
+            leaf = self.app.AsyncResult(uuid())
+            self.app.backend.mark_as_done(leaf.id, i ** 2)
+            child = self.app.AsyncResult(uuid())
+            request = Context()
+            request.children.append(leaf)
+            self.app.backend.mark_as_done(
+                child.id, leaf, request=request,
+            )
+            children.append(child)
+        group = self.app.GroupResult(uuid(), children)
+        result = self.app.AsyncResult(uuid())
+        request = Context()
+        request.children.append(group)
+        self.app.backend.mark_as_done(
+            result.id, group, request=request,
+        )
+
+        example = doctest.DocTestFinder().find(AsyncResult.collect)[0]
+        example.examples = [
+            item for item in example.examples
+            if 'result.collect(' in item.source
+        ]
+        example.globs['result'] = result
+        failures, attempted = doctest.DocTestRunner().run(example)
+        assert attempted == 1
+        assert failures == 0
 
 
 class test_ResultSet:
