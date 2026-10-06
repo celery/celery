@@ -229,3 +229,37 @@ class test_saferepr:
         # V stands for however many characters of the value were kept.
         assert result == expected.replace('V', 'v' * result.count('v'))
         assert result.count('v') < 100
+
+    @pytest.mark.parametrize('value,maxlen,expected', [
+        # the limit is reached right before a nested container: neither of
+        # its parens is shown.
+        ([1, [2]], 4, '[1, , ...]'),
+        ([[1, 2]], 1, '[, ...]'),
+        ([({'a': 1},)], 1, '[, ...]'),
+        ({'k': [1]}, 6, "{'k': , ...}"),
+        # the placeholder for a container below maxlevels is kept whole.
+        ([[[(5,)]]], 4, '[[[(...,)]]]'),
+        ([[[[5], 6]]], 4, '[[[[...], ...]]]'),
+    ])
+    def test_maxlen_skips_parens_of_omitted_container(
+            self, value, maxlen, expected):
+        assert saferepr(value, maxlen=maxlen) == expected
+
+    @pytest.mark.parametrize('value', [
+        [], {}, [[]], [()], [{}], [1, [2]], [[1, 2], [3, [4, (5,)]]],
+        {'a': [1, {'b': (2, 3)}], 'c': {4, }},
+        ([1, 2], {'k': ['v', ('w',)]}, [[[]]]),
+        [1, {'a': ()}, [[2], 3], 'text'],
+    ])
+    def test_maxlen_parens_are_balanced(self, value):
+        closing = {')': '(', ']': '[', '}': '{'}
+        for maxlen in range(1, len(repr(value)) + 2):
+            result = saferepr(value, maxlen=maxlen)
+            opened = []
+            for char in result:
+                if char in closing.values():
+                    opened.append(char)
+                elif char in closing:
+                    assert opened and opened.pop() == closing[char], (
+                        maxlen, result)
+            assert not opened, (maxlen, result)

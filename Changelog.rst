@@ -12,6 +12,12 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``saferepr`` no longer drops or unbalances closing brackets when ``maxlen``
+  is reached: a container whose last element was truncated is now closed,
+  without a misleading ``, ...``, and a nested container that starts after
+  the limit is left out entirely instead of leaving a stray closing bracket.
+  This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
+  (#10760).
 - ``countdown`` and numeric ``expires`` now use elapsed seconds across DST
   transitions instead of wall-clock arithmetic in task protocols 1 and 2.
   Timedelta-based Beat schedules also continue running across DST fall-back

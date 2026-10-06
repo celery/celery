@@ -169,8 +169,9 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
                 continue
             yield ', ...'
             # move rest back to stack, so that we can include
-            # dangling parens.
-            stack.append(it)
+            # dangling parens.  The token we just pulled goes back too:
+            # if it opens a container, the pass below has to know.
+            stack.append(chain([token], it))
             break
         if isinstance(token, _literal):
             val = token.value
@@ -183,11 +184,17 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
         yield val
         if maxlen is not None:
             maxlen -= len(val)
+    depth = 0
     for rest1 in stack:
         # maxlen exceeded, process any dangling parens.
         for rest2 in rest1:
             if isinstance(rest2, _literal) and not rest2.truncate:
-                yield rest2.value
+                # a container opened after the limit isn't shown, so its
+                # closing paren is skipped as well.
+                depth += rest2.direction
+                if depth < 0:
+                    depth = 0
+                    yield rest2.value
 
 
 def _reprseq(val, lit_start, lit_end, builtin_type, chainer):
@@ -260,7 +267,11 @@ def reprstream(stack: deque,
                     continue
 
                 if maxlevels and level >= maxlevels:
-                    yield f'{lit_start.value}...{lit_end.value}', it
+                    # a literal, so that maxlen can't cut it in half and
+                    # leave an unbalanced paren behind.
+                    yield _literal(
+                        f'{lit_start.value}...{lit_end.value}', False, 0,
+                    ), it
                     continue
 
                 objid = id(orig)
