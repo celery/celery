@@ -12,6 +12,11 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- The Django fixup now only handles the ``import_modules`` and
+  ``worker_init`` signals of its own app. With several Django-enabled apps in
+  one process, only the first app's fixup used to be installed, for every
+  app's worker. Also, the fixup no longer reacts to ``import_modules`` sent
+  with a sender other than its app (#10731).
 - ``EagerResult.revoke()`` now replaces the result with a
   ``TaskRevokedError`` and clears the traceback, so ``get()`` raises
   ``TaskRevokedError`` instead of the task's return value wrapped in a bare
