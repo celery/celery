@@ -311,6 +311,21 @@ class test_DjangoFixup(FixupCase):
         finally:
             self._uninstall_real_fixups(f1, f2)
 
+    def test_on_import_modules_fixup_with_proxy_app(self):
+        # connected with sender=<proxy>, sent with the real app: the signal
+        # resolves the proxy, so it still reaches the fixup.
+        other_app = Celery(set_as_current=False)
+        f, = self._install_real_fixups(Proxy(lambda: self.app))
+        try:
+            assert f.app is not self.app
+            signals.import_modules.send(sender=other_app)
+            f.worker_fixup.validate_models.assert_not_called()
+
+            signals.import_modules.send(sender=self.app)
+            f.worker_fixup.validate_models.assert_called_once_with()
+        finally:
+            self._uninstall_real_fixups(f)
+
     def test_worker_init_only_for_own_app(self):
         other_app = Celery(set_as_current=False)
         f1, f2 = self._install_real_fixups(self.app, other_app)
