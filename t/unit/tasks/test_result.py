@@ -1110,6 +1110,37 @@ class test_EagerResult:
         with pytest.raises(TaskRevokedError):
             res.get()
 
+    def test_revoke_replaces_original_exception(self):
+        res = self.raising.apply(args=[3, 3])
+        original = res.result
+        assert isinstance(original, KeyError)
+        with pytest.raises(KeyError):
+            res.get()
+
+        res.revoke()
+
+        # the task's own exception is intentionally discarded.
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert not isinstance(excinfo.value, KeyError)
+        assert excinfo.value is not original
+        assert res.result is excinfo.value
+        assert res.get(propagate=False) is excinfo.value
+
+    def test_revoke_replaces_original_return_value(self):
+        res = EagerResult('x', 4, states.SUCCESS)
+        assert res.get() == 4
+
+        res.revoke()
+
+        # the return value is intentionally discarded, and it isn't raised
+        # wrapped in a bare Exception anymore (Issue #10761).
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert excinfo.value.args == ('revoked',)
+        assert res.result != 4
+        assert res.get(propagate=False) != 4
+
     @patch('celery.result.task_join_will_block')
     def test_get_sync_subtask_option(self, task_join_will_block):
         task_join_will_block.return_value = True

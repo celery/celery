@@ -1078,6 +1078,30 @@ class EagerResult(AsyncResult):
         pass
 
     def revoke(self, *args, **kwargs):
+        """Mark the result as revoked.
+
+        An eager task has already finished by the time its result exists,
+        so nothing is cancelled.  The state is set to ``REVOKED`` and the
+        task's return value or exception is intentionally replaced by a
+        :exc:`~celery.exceptions.TaskRevokedError`, which is what the result
+        backend stores for a task revoked on a worker.  :meth:`get` then
+        raises that error, and :attr:`result` and ``get(propagate=False)``
+        return it.
+
+        Note:
+            This differs from revoking an already finished task through a
+            result backend, where the stored result is left untouched.
+            The original return value or exception is no longer available
+            from this instance afterwards.
+
+        .. versionchanged:: 5.7.0
+
+            The previous result is replaced by a
+            :exc:`~celery.exceptions.TaskRevokedError` and the traceback is
+            cleared.  Before, the state changed to ``REVOKED`` but the
+            return value was kept, so :meth:`get` raised it wrapped in a
+            bare :exc:`Exception`.
+        """
         self._state = states.REVOKED
         # Same as what the backend stores for a revoked task
         # (see ``Backend.mark_as_revoked``), so that get() raises it.
