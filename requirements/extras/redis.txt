@@ -1,4 +1,1 @@
 kombu[redis]
-# 6.4 made the PubSub lock reentrant; older versions can deadlock on nested
-# pubsub commands (#10326).  Matches kombu, see celery/kombu#2682.
-redis>=6.4.0,<9.0.0
