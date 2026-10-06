@@ -6,12 +6,15 @@ import warnings
 from datetime import datetime, timezone
 from importlib import import_module
 from typing import IO, TYPE_CHECKING, Any, List, Optional, cast
+from uuid import uuid4
 
 from kombu.utils.imports import symbol_by_name
 from kombu.utils.objects import cached_property
 
 from celery import _state, signals
 from celery.exceptions import FixupWarning, ImproperlyConfigured
+from celery.local import Proxy
+from celery.utils.log import get_logger
 from celery.worker import WorkController
 
 if TYPE_CHECKING:
@@ -29,6 +32,8 @@ if TYPE_CHECKING:
 
 
 __all__ = ('DjangoFixup', 'fixup')
+
+logger = get_logger(__name__)
 
 ERR_NOT_INSTALLED = """\
 Environment variable DJANGO_SETTINGS_MODULE is defined
@@ -71,6 +76,11 @@ class DjangoFixup:
         if _state.default_app is None:
             self.app.set_default()
         self._worker_fixup: Optional["DjangoWorkerFixup"] = None
+        # Not derived from id(self): an id can be reused once a fixup has
+        # been garbage collected, a per-instance token can't.
+        self._worker_init_uid = (
+            'celery.fixups.django.DjangoFixup.on_worker_init', uuid4().hex,
+        )
 
     def install(self) -> "DjangoFixup":
         # Need to add project directory to path.
@@ -96,10 +106,6 @@ class DjangoFixup:
         return self
 
     @property
-    def _worker_init_uid(self) -> tuple:
-        return ('celery.fixups.django.DjangoFixup.on_worker_init', id(self))
-
-    @property
     def worker_fixup(self) -> "DjangoWorkerFixup":
         if self._worker_fixup is None:
             self._worker_fixup = DjangoWorkerFixup(self.app)
@@ -116,8 +122,18 @@ class DjangoFixup:
     def on_worker_init(self, **kwargs: Any) -> None:
         worker: Optional["WorkController"] = kwargs.get("sender")
         if worker:
-            if worker.app is not self.app:
-                # The worker belongs to another app; its own fixup handles it.
+            worker_app = getattr(worker, 'app', None)
+            if isinstance(worker_app, Proxy):
+                # e.g. a worker created with ``app=current_app``.
+                worker_app = worker_app._get_current_object()
+            # A sender without an app can't be told apart, so it's handled
+            # like before; only workers known to be another app's are skipped.
+            if worker_app is not None and worker_app is not self.app:
+                logger.debug(
+                    'Django fixup of app %r ignores worker_init of %r: '
+                    'the worker belongs to app %r, whose own fixup handles it.',
+                    self.app, worker, worker_app,
+                )
                 return
             self.worker_fixup.worker = worker
         else:

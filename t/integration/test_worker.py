@@ -94,37 +94,95 @@ def test_django_fixup_installs_django_task_for_celery_subclass(monkeypatch):
     assert hasattr(app.Task, 'apply_async_on_commit')
 
 
-def test_django_fixup_signals_only_handled_by_own_app(monkeypatch):
-    """With two Django-enabled apps, each fixup only handles its own app."""
+@pytest.fixture
+def two_django_apps(monkeypatch):
+    """Two Django-enabled apps in one process, torn down afterwards."""
     import django
 
+    from celery import _state, signals
+    from celery.app import trace
     from celery.fixups.django import DjangoFixup
 
     monkeypatch.setenv('DJANGO_SETTINGS_MODULE', 't.integration.django_settings')
     monkeypatch.setenv('CELERY_SKIP_CHECKS', '1')
     django.setup()
 
-    def django_fixup(app):
-        return next(f for f in app._fixups if isinstance(f, DjangoFixup))
-
-    app1 = Celery('test_django_multi_app1')
-    app2 = Celery('test_django_multi_app2')
-    for app in (app1, app2):
+    prev_default_app = _state.default_app
+    prev_current_app = getattr(_state._tls, 'current_app', None)
+    apps = [
+        Celery(f'test_django_multi_app{i}', set_as_current=False)
+        for i in (1, 2)
+    ]
+    for app in apps:
         app.config_from_object('django.conf:settings', namespace='CELERY')
-    fixup1, fixup2 = django_fixup(app1), django_fixup(app2)
+    fixups = [
+        next(f for f in app._fixups if isinstance(f, DjangoFixup))
+        for app in apps
+    ]
+    try:
+        yield tuple(zip(apps, fixups))
+    finally:
+        for app, fixup in zip(apps, fixups):
+            signals.import_modules.disconnect(
+                fixup.on_import_modules, sender=app,
+            )
+            signals.worker_init.disconnect(
+                dispatch_uid=fixup._worker_init_uid,
+            )
+            worker_fixup = fixup.worker_fixup
+            signals.beat_embedded_init.disconnect(worker_fixup.close_database)
+            signals.task_prerun.disconnect(worker_fixup.on_task_prerun)
+            signals.task_postrun.disconnect(worker_fixup.on_task_postrun)
+            signals.worker_process_init.disconnect(
+                worker_fixup.on_worker_process_init,
+            )
+            # Undo what building a worker for the app did to global state.
+            trace.reset_worker_optimizations(app)
+            app.close()
+        _state.default_app = prev_default_app
+        _state._tls.current_app = prev_current_app
+
+
+def test_django_fixup_signals_only_handled_by_own_app(
+        two_django_apps, monkeypatch):
+    """With two Django-enabled apps, each fixup only handles its own app.
+
+    Unlike the unit tests, the signals come from the real loader and from
+    real workers instead of being sent by hand.
+    """
+    from celery.fixups.django import DjangoWorkerFixup
+
+    (app1, fixup1), (app2, fixup2) = two_django_apps
+
+    validated, installed = [], []
+    validate_models = DjangoWorkerFixup.validate_models
+    install = DjangoWorkerFixup.install
+
+    def recording_validate_models(self):
+        validated.append(self.app)
+        return validate_models(self)
+
+    def recording_install(self):
+        installed.append(self.app)
+        return install(self)
+
+    monkeypatch.setattr(
+        DjangoWorkerFixup, 'validate_models', recording_validate_models)
+    monkeypatch.setattr(DjangoWorkerFixup, 'install', recording_install)
 
     # import_modules for app2 must only reach app2's fixup.
     app2.loader.import_default_modules()
-    assert fixup2._worker_fixup is not None
-    assert fixup1._worker_fixup is None
+    assert validated == [app2]
 
     # worker_init for app2's worker must only reach app2's fixup.
     worker2 = app2.Worker(pool='solo', concurrency=1)
+    assert installed == [app2]
+    assert app1 not in validated
     assert fixup2.worker_fixup.worker is worker2
-    assert fixup1._worker_fixup is None
 
     # And app1's worker is picked up by app1's fixup, not app2's.
     worker1 = app1.Worker(pool='solo', concurrency=1)
+    assert installed == [app2, app1]
     assert fixup1.worker_fixup.worker is worker1
     assert fixup2.worker_fixup.worker is worker2
 
