@@ -1,10 +1,14 @@
 import subprocess
+import sys
+import time
+from uuid import uuid4
 
 import pytest
 
 from celery import Celery
+from celery.utils.sysinfo import cpu_budget
 
-from .conftest import flaky
+from .conftest import TEST_BROKER, flaky
 from .tasks import add
 
 TIMEOUT = 10
@@ -88,6 +92,44 @@ def test_django_fixup_installs_django_task_for_celery_subclass(monkeypatch):
     assert issubclass(app.Task, DjangoTask)
     assert hasattr(app.Task, 'delay_on_commit')
     assert hasattr(app.Task, 'apply_async_on_commit')
+
+
+@flaky
+def test_concurrency_auto_sizes_prefork_pool(tmp_path):
+    """``celery worker -c auto`` resolves concurrency and sizes the real pool."""
+    hostname = f'auto-{uuid4().hex[:8]}@integration'
+    log_path = tmp_path / 'worker.log'
+    app = Celery(broker=TEST_BROKER)
+    expected = cpu_budget().count
+
+    with open(log_path, 'wb') as log:
+        worker = subprocess.Popen(
+            [sys.executable, '-m', 'celery', '-b', TEST_BROKER, 'worker',
+             '-P', 'prefork', '-c', 'auto', '-n', hostname, '-l', 'INFO',
+             '--without-mingle', '--without-gossip', '--without-heartbeat'],
+            stdout=log, stderr=subprocess.STDOUT)
+        try:
+            stats = None
+            deadline = time.monotonic() + 30
+            while not stats and time.monotonic() < deadline:
+                assert worker.poll() is None, log_path.read_text()
+                stats = app.control.inspect(
+                    destination=[hostname], timeout=1).stats()
+            assert stats, log_path.read_text()
+            assert stats[hostname]['pool']['max-concurrency'] == expected
+        finally:
+            worker.terminate()
+            try:
+                worker.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                worker.kill()
+                worker.wait()
+            app.close()
+
+    assert (
+        f"worker_concurrency='auto' resolved to {expected} (pool=prefork"
+        in log_path.read_text()
+    )
 
 
 @flaky
