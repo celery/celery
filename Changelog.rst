@@ -12,6 +12,15 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``EagerResult.revoke()`` now replaces the result with a
+  ``TaskRevokedError`` and clears the traceback, so ``get()`` raises
+  ``TaskRevokedError`` instead of the task's return value wrapped in a bare
+  ``Exception``. The original return value or exception is no longer
+  available from the result after ``revoke()`` (#10761).
+- ``countdown`` and numeric ``expires`` now use elapsed seconds across DST
+  transitions instead of wall-clock arithmetic in task protocols 1 and 2.
+  Timedelta-based Beat schedules also continue running across DST fall-back
+  transitions (#10769, #6438).
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted
@@ -21,6 +30,35 @@ Unreleased
 - The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
   and used to publish ``task-sent`` events is now always a dictionary containing
   the merged configured and per-call retry options, never ``None`` (#10708).
+- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
+  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
+- A chain in which groups are followed by tasks, ``chain(task, group, task,
+  group, task, ...)``, no longer nests the rest of the chain into each chord
+  body when it is run. The first message grew by (header size + 2) per group;
+  it now grows linearly. ``prepare_steps()`` returns ``chord(header, a), b, c``
+  where it returned ``chord(header, chain(a, b, c))``, which code inspecting
+  prepared canvases may notice (#10743).
+- A chord body's ``parent_id`` is the header task that fires it, for every
+  body shape. A single-task body previously reported the task before the
+  chord as its parent while a chain body reported the header task (#10743).
+- In a chain of chords, a header failure now fails the chords after it. The
+  chain is kept flat since 5.6.3 (#10171), and a failing header left the
+  following chords pending, so joining the chain's result hung.
+- Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
+  prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
+  ``worker_concurrency`` is no longer coerced to an integer at config load, so
+  code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
+  numeric string such as ``"4"``; the worker converts it at startup.
+- Prefork warm shutdown no longer hangs when the worker stops while the
+  event loop has only partly read a child's result: the pool join now
+  resumes the half-read message instead of calling a blocking ``recv()``
+  on the rest of it, so tasks that finished after the shutdown signal no
+  longer hit their time limits and get redelivered when the process is
+  killed. With ``task_acks_late`` the acks of tasks that finish while the
+  pool is being joined are now sent during the join rather than at
+  ``hub.close()``, so a long-running task outliving the shutdown no longer
+  causes every task finished during the drain to run twice (#3802, #10768).
+
 
 .. _version-5.7.0a1:
 

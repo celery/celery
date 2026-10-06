@@ -1428,10 +1428,40 @@ E.g.
 Cache backend settings
 ----------------------
 
+.. versionchanged:: 5.7
+
+    The Memcached cache backend now uses :pypi:`pymemcache` exclusively.
+    Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
+    has been removed.
+
 .. note::
 
-    The cache backend supports the :pypi:`pylibmc` and :pypi:`python-memcached`
-    libraries. The latter is used only if :pypi:`pylibmc` isn't installed.
+    The cache backend requires the :pypi:`pymemcache` library, which can be
+    installed with ``pip install celery[memcache]`` (or
+    ``celery[pymemcache]``).
+
+    When upgrading from an earlier version, keep the following in mind:
+
+    * Install :pypi:`pymemcache`: :pypi:`pylibmc` and
+      :pypi:`python-memcached` are no longer used, even if installed.
+    * The ``pylibmc://`` URL scheme is still accepted as an alias of
+      ``memcache://`` for backward compatibility.
+    * The ``behaviors`` and ``binary`` keys of
+      :setting:`cache_backend_options` are specific to :pypi:`pylibmc`.
+      They are now ignored and emit a deprecation warning. Other options
+      are passed to the :pypi:`pymemcache` client, so remove any option it
+      doesn't support.
+    * The client now waits for the server reply on every write and uses a
+      5 second connection and socket timeout by default. See
+      :setting:`cache_backend_options` to change these defaults.
+    * The ``get_best_memcache()`` and ``import_best_memcache()`` helpers of
+      :mod:`celery.backends.cache` are deprecated in favor of
+      ``get_memcache_client()``.
+    * When several servers are configured, a
+      :class:`pymemcache.client.hash.HashClient` is used to distribute keys
+      across them, which may lead to a different key distribution than with
+      :pypi:`pylibmc`. Results stored before the upgrade may not be found
+      afterwards.
 
 Using a single Memcached server:
 
@@ -1461,14 +1491,41 @@ The "memory" backend stores the cache in memory only:
 
 Default: ``{}`` (empty mapping).
 
-You can set :pypi:`pylibmc` options using the :setting:`cache_backend_options`
-setting:
+You can set :pypi:`pymemcache` client options using the
+:setting:`cache_backend_options` setting:
 
 .. code-block:: python
 
     cache_backend_options = {
-        'binary': True,
-        'behaviors': {'tcp_nodelay': True},
+        'connect_timeout': 2,
+        'timeout': 2,
+        'no_delay': True,
+    }
+
+Unless set in this setting, Celery passes the following options to the
+client:
+
+* ``default_noreply``: ``False``, so that the client reads the server reply
+  and raises an error when a result can't be stored (for example when it's
+  larger than the memcached item size limit). Setting it to ``True`` saves
+  one round trip per write, but failed writes are then silently ignored.
+* ``connect_timeout`` and ``timeout``: ``5.0`` seconds, so that an
+  unresponsive server doesn't block the worker forever. Set them to
+  ``None`` to wait indefinitely.
+
+The following extra options enable retries by wrapping the client in a
+:class:`pymemcache.client.retrying.RetryingClient`:
+
+* ``retry_attempts``: number of attempts (enables retries when set).
+* ``retry_delay``: delay in seconds between attempts.
+* ``retry_for``: list of exceptions to retry for.
+* ``do_not_retry_for``: list of exceptions to not retry for.
+
+.. code-block:: python
+
+    cache_backend_options = {
+        'retry_attempts': 3,
+        'retry_delay': 0.5,
     }
 
 .. setting:: cache_backend
@@ -3372,7 +3429,9 @@ exceeded.
 ``broker_connection_retry_on_startup``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Default: Enabled.
+Default: :const:`None`, which falls back to
+:setting:`broker_connection_retry` and so is enabled unless you have
+disabled that.
 
 Automatically try to establish the connection to the AMQP broker on Celery startup if it is unavailable.
 
@@ -3543,6 +3602,37 @@ on the host will be used.
 
 The command-line equivalent is the
 :option:`--concurrency <celery worker --concurrency>` argument.
+
+.. versionadded:: 5.7
+   The ``"auto"`` value.
+
+Accepts an integer or the string ``"auto"``. Setting it to ``"auto"``
+(equivalent to passing ``--concurrency=auto``) sizes the ``prefork``
+pool from the CPU resources available to the worker process on Linux:
+
+* the scheduler affinity mask (``taskset``, cpusets,
+  ``docker run --cpuset-cpus``), read via :func:`os.process_cpu_count`
+  or :func:`os.sched_getaffinity`, and
+* the cgroup CFS bandwidth quota (``cpu.max`` on cgroup v2,
+  ``cpu.cfs_quota_us`` / ``cpu.cfs_period_us`` on cgroup v1). The
+  worker's own cgroup is resolved from ``/proc/self/cgroup`` and every
+  ancestor up to the root is inspected; the smallest quota found wins,
+  so a limit set on a Kubernetes pod, a Docker container or a systemd
+  slice (``CPUQuota=``) is honored.
+
+The result is ``ceil(quota)``, clamped to at least 1 and at most the
+affinity CPU count. A fractional quota of 1.5 CPUs therefore yields 2
+processes, so the whole quota can be consumed at the cost of some CFS
+throttling; integer quotas are unaffected. When no quota is set the
+affinity CPU count is used and the worker logs at INFO level that no
+quota was found.
+
+For greenlet pools (``gevent``, ``eventlet``), the thread pool and the
+``solo`` pool, ``"auto"`` is a no-op and resolves to the affinity CPU
+count: concurrency for the IO pools is bound by memory and file
+descriptors, not CPU, and ``solo`` always runs one task at a time. On
+non-Linux platforms or when no cgroup CPU controller is mounted,
+``"auto"`` resolves to the affinity CPU count as well.
 
 .. setting:: worker_prefetch_multiplier
 
@@ -4194,8 +4284,7 @@ Default:
 
 .. code-block:: text
 
-    "[%(asctime)s: %(levelname)s/%(processName)s]
-        %(task_name)s[%(task_id)s]: %(message)s"
+    "[%(asctime)s: %(levelname)s/%(processName)s] %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 
@@ -4548,6 +4637,112 @@ that are past due will always run immediately.
 .. warning::
 
     Setting this higher than 3600 (1 hour) is highly discouraged.
+
+.. setting:: beat_enable_remote_control
+
+``beat_enable_remote_control``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+If enabled, :mod:`~celery.bin.beat` joins the same remote-control
+(pidbox) exchange the workers use, as a node named
+``celerybeat@hostname``, and answers :program:`celery inspect ping`.
+This makes it possible to health-check the beat process, for example
+as a Kubernetes liveness probe:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+
+The command exits with a non-zero status when beat doesn't reply
+within the timeout. Note that :option:`--timeout <celery inspect
+--timeout>` defaults to one second, which a probe that also has to
+establish a broker connection can easily exceed.
+
+Beat replies with the same ``{'ok': 'pong'}`` a worker sends, and stops
+replying once the scheduler falls behind -- see
+:setting:`beat_remote_control_max_tick_age`.
+
+The node name defaults to ``celerybeat@hostname`` and can be set with
+:option:`--hostname <celery beat --hostname>`. The setting itself can be
+overridden per process with
+:option:`--enable-remote-control <celery beat --enable-remote-control>`.
+
+Note that when this is enabled, beat will also show up as a node in
+the output of destination-less :program:`celery inspect ping` and
+:program:`celery status`. Beat only implements the ``ping`` command;
+all other remote-control commands are ignored.
+
+Only standalone :program:`celery beat` is affected: a beat scheduler
+embedded in a worker (:option:`-B <celery worker -B>`) never starts a
+remote-control node, since the worker already answers for that
+process.
+
+The control node connects on its own, separately from the scheduler,
+under the same settings the worker uses:
+:setting:`broker_connection_retry_on_startup` for its first attempt
+when that is set, :setting:`broker_connection_retry` otherwise -- which
+is the default, since the startup setting defaults to :const:`None` --
+and :setting:`broker_connection_max_retries` for how long it keeps
+trying.
+
+**Once it gives up, it stays given up.** The scheduler carries on
+running and firing tasks, but beat answers no remote control commands
+for the rest of the process's life and logs an error saying so. A
+connection that drops after it was established gets one further attempt
+under the same settings; if that one also gives up, it is likewise
+final. Nothing here requires you to have disabled anything: on stock
+settings, a broker unreachable for longer than
+:setting:`broker_connection_max_retries` allows reaches the same place.
+
+That matters if you use :program:`celery inspect ping` as a liveness
+probe. The probe keeps failing, so a supervisor restarts beat and the
+connection is attempted afresh, which is the recovery. Without such a
+probe nothing notices, so check beat's log if remote control stops
+answering while the scheduler seems fine.
+
+Availability: RabbitMQ (AMQP) and Redis transports (the same
+transports that support worker remote control).
+
+.. setting:: beat_remote_control_max_tick_age
+
+``beat_remote_control_max_tick_age``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: :const:`None` (twice the scheduler's loop interval).
+
+Only has an effect when :setting:`beat_enable_remote_control` is
+enabled.
+
+Seconds the scheduler may go without completing a pass before beat
+stops answering :program:`celery inspect ping`. The control node runs
+in a thread of its own, so without this a ping would be answered even
+by a beat whose scheduler loop had wedged -- the exact failure a health
+check exists to catch.
+
+The default tolerates exactly one missed pass, measured against the
+interval the scheduler actually settled on -- a scheduler class may
+choose its own when :setting:`beat_max_loop_interval` is unset, as
+``django-celery-beat`` does -- and never drops below a floor of sixty
+seconds, so that a single slow pass on a short-interval scheduler is
+not mistaken for a stall.
+
+Beat records a tick when it starts, so a process that wedges before its
+first tick goes stale on the same schedule rather than looking healthy
+forever.
+
+Beat declines by staying silent, because :program:`celery inspect`
+exits non-zero only when no node replies at all; an error reply would
+leave the exit status at zero. Each refusal is logged as a warning, so
+a probe running once a minute against a stalled beat produces a warning
+a minute.
+
+Set to ``0`` to answer regardless of how long ago the last tick was.
 
 .. setting:: beat_logfile
 

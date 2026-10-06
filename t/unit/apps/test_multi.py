@@ -304,6 +304,39 @@ class test_Node:
             '',
         ])
 
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=True)
+    def test_workdir_tilde_is_expanded(self, mock_exists, mock_dirs):
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                workdir='~/mydir',
+            )
+        assert f'--workdir={os.path.expanduser("~/mydir")}' in ' '.join(n.argv)
+
+    @patch('celery.apps.multi.os.makedirs')
+    @patch('celery.apps.multi.os.path.exists', return_value=False)
+    def test_pidfile_and_logfile_tilde_is_expanded(self, mock_exists, mock_dirs):
+        with patch('celery.apps.multi.os.mkdir'):
+            n = Node.from_kwargs(
+                'foo@bar.com',
+                pidfile='~/run/%n.pid',
+                logfile='~/log/%n%I.log',
+            )
+        expected_pidfile = os.path.expanduser('~/run/foo.pid')
+        expected_logfile = os.path.expanduser('~/log/foo%I.log')
+        assert n.pidfile == expected_pidfile
+        assert n.logfile == expected_logfile
+        assert f'--pidfile={expected_pidfile}' in ' '.join(n.argv)
+        assert f'--logfile={expected_logfile}' in ' '.join(n.argv)
+
+        # Ensure directories were created with expanded paths, never literal ~
+        mock_dirs.assert_any_call(os.path.expanduser('~/run'))
+        mock_dirs.assert_any_call(os.path.expanduser('~/log'))
+        for c in mock_dirs.call_args_list:
+            arg = c[0][0]
+            assert not arg.startswith('~'), f'Unexpanded tilde passed to makedirs: {arg}'
+
     @patch('os.kill')
     def test_send(self, kill):
         assert self.node.send(9)

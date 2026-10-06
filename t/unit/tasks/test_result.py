@@ -10,7 +10,7 @@ import pytest
 from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
-from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from celery.exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
                            denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
@@ -1093,6 +1093,54 @@ class test_EagerResult:
         res = self.raising.apply(args=[3, 3])
         assert not res.revoke()
 
+    def test_revoke_then_get_raises_TaskRevokedError(self):
+        res = EagerResult('x', 4, states.SUCCESS)
+        res.revoke()
+        assert res.state == states.REVOKED
+        assert res.traceback is None
+        with pytest.raises(TaskRevokedError):
+            res.get()
+        assert isinstance(res.get(propagate=False), TaskRevokedError)
+        assert isinstance(res.result, TaskRevokedError)
+
+    def test_revoke_failed_task_then_get_raises_TaskRevokedError(self):
+        res = self.raising.apply(args=[3, 3])
+        res.revoke()
+        assert res.traceback is None
+        with pytest.raises(TaskRevokedError):
+            res.get()
+
+    def test_revoke_replaces_original_exception(self):
+        res = self.raising.apply(args=[3, 3])
+        original = res.result
+        assert isinstance(original, KeyError)
+        with pytest.raises(KeyError):
+            res.get()
+
+        res.revoke()
+
+        # the task's own exception is intentionally discarded.
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert not isinstance(excinfo.value, KeyError)
+        assert excinfo.value is not original
+        assert res.result is excinfo.value
+        assert res.get(propagate=False) is excinfo.value
+
+    def test_revoke_replaces_original_return_value(self):
+        res = EagerResult('x', 4, states.SUCCESS)
+        assert res.get() == 4
+
+        res.revoke()
+
+        # the return value is intentionally discarded, and it isn't raised
+        # wrapped in a bare Exception anymore (Issue #10761).
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert excinfo.value.args == ('revoked',)
+        assert res.result != 4
+        assert res.get(propagate=False) != 4
+
     @patch('celery.result.task_join_will_block')
     def test_get_sync_subtask_option(self, task_join_will_block):
         task_join_will_block.return_value = True
@@ -1108,6 +1156,52 @@ class test_EagerResult:
 
         res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
         assert res.name == 'test_task_named_argument'
+
+    @pytest.mark.parametrize('kwargs', [{}, {'name': 'test_task'}])
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_attributes(self, kwargs, method):
+        res = EagerResult(uuid(), {'value': [1, 2]}, states.SUCCESS,
+                          PYTRACEBACK, **kwargs)
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed is not res
+        assert type(reconstructed) is EagerResult
+        assert reconstructed.id == res.id
+        assert reconstructed.result == res.result
+        assert reconstructed.state == res.state
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.name == res.name
+        assert reconstructed.ready()
+        assert reconstructed.successful()
+        assert reconstructed.get() == res.get()
+        if method == 'copy':
+            assert reconstructed.result is res.result
+
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_eager_task(self, method):
+        res = self.raising.apply(args=[3, 3])
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed.id == res.id
+        assert reconstructed.name == self.raising.name
+        assert reconstructed.state == res.state == states.FAILURE
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.ready()
+        assert reconstructed.failed()
+        assert isinstance(reconstructed.result, KeyError)
+        assert reconstructed.result.args == res.result.args == (3, 3)
+        with pytest.raises(KeyError) as exc_info:
+            reconstructed.get()
+        assert exc_info.value.args == (3, 3)
+        assert reconstructed.get(propagate=False) is reconstructed.result
 
 
 class test_tuples:
