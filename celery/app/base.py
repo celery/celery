@@ -38,7 +38,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, qualname, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import maybe_make_aware, timezone, to_utc
+from celery.utils.time import subtract_datetimes, timezone, to_utc
 
 from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
 from ..utils.quorum_queues import detect_quorum_queues
@@ -1043,7 +1043,7 @@ class Celery:
                     if eta:
                         if isinstance(eta, str):
                             eta = isoparse(eta)
-                        countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+                        countdown = subtract_datetimes(eta, self.now()).total_seconds()
 
                     if countdown:
                         if countdown > 0:
@@ -1066,11 +1066,9 @@ class Celery:
 
         if expires is not None:
             if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(
-                    expires) - self.now()).total_seconds()
+                expires_s = subtract_datetimes(expires, self.now()).total_seconds()
             elif isinstance(expires, str):
-                expires_s = (maybe_make_aware(
-                    isoparse(expires)) - self.now()).total_seconds()
+                expires_s = subtract_datetimes(isoparse(expires), self.now()).total_seconds()
             else:
                 expires_s = expires
 
