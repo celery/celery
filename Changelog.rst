@@ -12,6 +12,11 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- ``EagerResult.revoke()`` now replaces the result with a
+  ``TaskRevokedError`` and clears the traceback, so ``get()`` raises
+  ``TaskRevokedError`` instead of the task's return value wrapped in a bare
+  ``Exception``. The original return value or exception is no longer
+  available from the result after ``revoke()`` (#10761).
 - ``countdown`` and numeric ``expires`` now use elapsed seconds across DST
   transitions instead of wall-clock arithmetic in task protocols 1 and 2.
   Timedelta-based Beat schedules also continue running across DST fall-back
