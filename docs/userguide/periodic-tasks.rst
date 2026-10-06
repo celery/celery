@@ -159,7 +159,17 @@ be sent in 30 second intervals (the first task will be sent 30 seconds
 after `celery beat` starts, and then every 30 seconds
 after the last run).
 
-A Crontab like schedule also exists, see the section on `Crontab schedules`_.
+.. note::
+
+    With the default ``relative=False``, numeric and
+    :class:`~datetime.timedelta` schedules use elapsed time across daylight
+    saving time (DST) changes. For example, ``timedelta(days=1)`` is a
+    24-hour interval. When the clock changes by one hour, a task last run
+    at noon becomes due at 13:00 the next day across spring-forward, or
+    11:00 across fall-back.
+
+    To run a task at the same local time every day, use :ref:`beat-crontab`.
+    For example, ``crontab(hour=12, minute=0)`` schedules a task at noon.
 
 Like with :command:`cron`, the tasks may overlap if the first task doesn't complete
 before the next. If that's a concern you should use a locking
