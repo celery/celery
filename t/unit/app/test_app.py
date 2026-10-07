@@ -2101,6 +2101,7 @@ class test_App:
         except TypeError as e:
             pytest.fail(f'raise unexcepted error {e}')
 
+    @pytest.mark.parametrize('as_string', [False, True], ids=['datetime', 'string'])
     @pytest.mark.parametrize('now,expires,expected_expiration', [
         pytest.param(
             datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
@@ -2127,49 +2128,12 @@ class test_App:
             id='naive-expiration-is-utc',
         ),
     ])
-    def test_send_task_expiration_datetime(self, now, expires, expected_expiration):
+    def test_send_task_expiration_across_dst(self, as_string, now, expires, expected_expiration):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {}
         self.app.now = Mock(return_value=now)
 
-        self.app.send_task('foo', (1, 2), expires=expires)
-
-        self.app.amqp.send_task_message.assert_called_once_with(
-            ANY, 'foo', ANY, expiration=expected_expiration,
-        )
-
-    @pytest.mark.parametrize('now,expires,expected_expiration', [
-        pytest.param(
-            datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
-            '2026-03-08T04:00:00-04:00',
-            90 * 60,
-            id='spring-forward',
-        ),
-        pytest.param(
-            datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=0),
-            '2026-11-01T01:30:00-05:00',
-            60 * 60,
-            id='fall-back',
-        ),
-        pytest.param(
-            datetime(2026, 11, 1, 1, 15, tzinfo=ZoneInfo('America/New_York'), fold=1),
-            '2026-11-01T01:45:00-04:00',
-            0,
-            id='past-during-fall-back',
-        ),
-        pytest.param(
-            datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
-            '2026-03-08T08:00:00',
-            90 * 60,
-            id='naive-expiration-is-utc',
-        ),
-    ])
-    def test_send_task_expiration_string(self, now, expires, expected_expiration):
-        self.app.amqp = MagicMock(name='amqp')
-        self.app.amqp.router.route.return_value = {}
-        self.app.now = Mock(return_value=now)
-
-        self.app.send_task('foo', (1, 2), expires=expires)
+        self.app.send_task('foo', (1, 2), expires=expires.isoformat() if as_string else expires)
 
         self.app.amqp.send_task_message.assert_called_once_with(
             ANY, 'foo', ANY, expiration=expected_expiration,
@@ -2280,6 +2244,7 @@ class test_App:
             routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery'
         )
 
+    @pytest.mark.parametrize('as_string', [False, True], ids=['datetime', 'string'])
     @pytest.mark.parametrize('now,eta,expected_countdown,expected_routing_key', [
         pytest.param(
             datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
@@ -2304,8 +2269,8 @@ class test_App:
         ),
     ])
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
-    def test_native_delayed_delivery_eta_datetime_across_dst(
-        self, detect_quorum_queues, now, eta, expected_countdown, expected_routing_key,
+    def test_native_delayed_delivery_eta_across_dst(
+        self, detect_quorum_queues, as_string, now, eta, expected_countdown, expected_routing_key,
     ):
         self.app.amqp = MagicMock(name='amqp')
         self.app.amqp.router.route.return_value = {
@@ -2317,7 +2282,7 @@ class test_App:
         }
         self.app.now = Mock(return_value=now)
 
-        self.app.send_task('foo', (1, 2), eta=eta)
+        self.app.send_task('foo', (1, 2), eta=eta.isoformat() if as_string else eta)
 
         assert self.app.amqp.create_task_message.call_args[0][4] == expected_countdown
         exchange = Exchange(
@@ -2356,58 +2321,6 @@ class test_App:
             ANY,
             exchange=exchange,
             routing_key='0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.0.0.0.0.testcelery',
-        )
-
-    @pytest.mark.parametrize('now,eta,expected_countdown,expected_routing_key', [
-        pytest.param(
-            datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
-            '2026-03-08T04:00:00-04:00',
-            90 * 60,
-            '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.testcelery',
-            id='spring-forward',
-        ),
-        pytest.param(
-            datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo('America/New_York'), fold=0),
-            '2026-11-01T01:30:00-05:00',
-            60 * 60,
-            '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.1.1.0.0.0.0.1.0.0.0.0.testcelery',
-            id='fall-back',
-        ),
-        pytest.param(
-            datetime(2026, 3, 8, 1, 30, tzinfo=ZoneInfo('America/New_York')),
-            '2026-03-08T08:00:00',
-            90 * 60,
-            '0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.1.0.1.0.1.0.0.0.1.1.0.0.0.testcelery',
-            id='naive-eta-with-local-now',
-        ),
-    ])
-    @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
-    def test_native_delayed_delivery_eta_str_across_dst(
-        self, detect_quorum_queues, now, eta, expected_countdown, expected_routing_key,
-    ):
-        self.app.amqp = MagicMock(name='amqp')
-        self.app.amqp.router.route.return_value = {
-            'queue': Queue(
-                'testcelery',
-                routing_key='testcelery',
-                exchange=Exchange('testcelery', type='topic')
-            )
-        }
-        self.app.now = Mock(return_value=now)
-
-        self.app.send_task('foo', (1, 2), eta=eta)
-
-        assert self.app.amqp.create_task_message.call_args[0][4] == expected_countdown
-        exchange = Exchange(
-            'celery_delayed_27',
-            type='topic',
-        )
-        self.app.amqp.send_task_message.assert_called_once_with(
-            ANY,
-            ANY,
-            ANY,
-            exchange=exchange,
-            routing_key=expected_routing_key,
         )
 
     @patch('celery.app.base.detect_quorum_queues', return_value=[True, "testcelery"])
