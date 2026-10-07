@@ -8,7 +8,7 @@ from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
 from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
-from celery.worker.control import control_command
+from celery.worker.control import add_consumer, cancel_consumer, control_command, inspect_command
 
 LEGACY_TASKS_DISABLED = True
 try:
@@ -34,6 +34,20 @@ logger = get_task_logger(__name__)
 @control_command(visible=False)
 def pidbox_reset_error(state, **kwargs):
     raise RuntimeError('pidbox reset integration test')
+
+
+@control_command(args=[('queue', str)], visible=False)
+def schedule_add_then_cancel_consumer(state, queue, **kwargs):
+    """Schedule two queue operations in one pidbox callback."""
+    add_consumer(state, queue)
+    cancel_consumer(state, queue)
+    return {"scheduled": queue}
+
+
+@inspect_command(visible=False)
+def pending_operations_count(state, **kwargs):
+    """Return the number of deferred consumer operations."""
+    return len(state.consumer._pending_operations)
 
 
 @shared_task
@@ -159,6 +173,11 @@ def replace_with_chain_which_raises(self, *args, link_msg=None):
 @shared_task(bind=True)
 def replace_with_empty_chain(self, *_):
     return self.replace(chain())
+
+
+@shared_task(bind=True)
+def replace_with_chain_which_contains_a_group(self):
+    return self.replace(chain(add.s(1, 2), group(add.s(1), add.s(1))))
 
 
 @shared_task(bind=True)
@@ -386,6 +405,12 @@ def fail_replaced(self, *args):
 @shared_task(bind=True)
 def return_priority(self, *_args):
     return "Priority: %s" % self.request.delivery_info['priority']
+
+
+@shared_task(bind=True)
+def return_request_eta(self):
+    """Return this task's ETA so countdown/eta forwarding can be asserted."""
+    return self.request.eta
 
 
 @shared_task(bind=True)

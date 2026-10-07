@@ -11,7 +11,7 @@ on:
         description: 'JSON array of Python versions to test'
         required: false
         type: string
-        default: '["3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]'
+        default: '["3.11", "3.12", "3.13", "3.14", "3.15"]'
       tox_environments:
         description: 'JSON array of tox environments to test'
         required: false
@@ -50,7 +50,7 @@ jobs:
         run: |
           echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
           sudo apt-get update
-          sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+          sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
 
       - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}

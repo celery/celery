@@ -2,10 +2,31 @@ import sys
 import time
 from unittest.mock import Mock, call, patch
 
+import pytest
+
 from celery.utils import timer2 as timer2
 
 
 class test_Timer:
+
+    @pytest.mark.parametrize('has_entries', [False, True])
+    def test_init_with_schedule(self, has_entries):
+        schedule = timer2.Schedule(max_interval=7)
+        if has_entries:
+            schedule.call_after(60, Mock())
+
+        t = timer2.Timer(schedule=schedule)
+
+        assert t.schedule is schedule
+
+    def test_init_without_schedule(self):
+        on_error = Mock()
+
+        t = timer2.Timer(on_error=on_error, max_interval=7)
+
+        assert isinstance(t.schedule, timer2.Schedule)
+        assert t.schedule.on_error is on_error
+        assert t.schedule.max_interval == 7
 
     def test_enter_after(self):
         t = timer2.Timer()

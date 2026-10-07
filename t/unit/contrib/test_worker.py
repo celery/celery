@@ -6,6 +6,7 @@ import pytest
 # to install the celery.ping task that the test lib uses
 import celery.contrib.testing.tasks  # noqa
 from celery import Celery
+from celery.contrib.testing.app import TestApp, setup_default_app
 from celery.contrib.testing.worker import TestWorkController, start_worker
 
 
@@ -59,6 +60,17 @@ class test_worker:
             result = self.add.s(1, 2).apply_async()
             val = result.get(timeout=5)
         assert val == 3
+
+
+class test_setup_default_app:
+
+    @pytest.mark.parametrize('thread_safe', [False, True])
+    def test_teardown_clears_cached_backend(self, thread_safe):
+        app = TestApp(config={'result_backend_thread_safe': thread_safe})
+        with setup_default_app(app):
+            backend = app.backend
+            assert app._backend is backend
+        assert app._backend is None
 
 
 class test_TestWorkController:

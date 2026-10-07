@@ -15,6 +15,7 @@ from functools import partial
 
 from billiard.common import REMAP_SIGTERM
 from billiard.process import current_process
+from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 
 from celery import VERSION_BANNER, _original_os_write, platforms, signals
@@ -26,7 +27,10 @@ from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.threads import bound_open_broker_sockets
+from celery.utils.time import humanize_seconds
 from celery.worker import WorkController
+from celery.worker.worker import SHUTDOWN_SOCKET_TIMEOUT
 
 __all__ = ('Worker',)
 
@@ -189,8 +193,36 @@ class Worker(WorkController):
             redirect_stdouts=False, colorize=colorize, hostname=self.hostname,
         )
 
+    def _ensure_connected(self, connection):
+        """Connect to the broker, retrying if the app is configured to.
+
+        The connection is lazy, so without this the first thing to touch it
+        raises straight away. ``--purge`` runs from :meth:`on_start`, which
+        makes ``broker_connection_retry_on_startup`` the setting that decides
+        whether to retry, falling back to ``broker_connection_retry`` for apps
+        that predate it.
+        """
+        retry = self.app.conf.broker_connection_retry_on_startup
+        if retry is None:
+            retry = self.app.conf.broker_connection_retry
+
+        if not retry:
+            connection.connect()
+            return connection
+
+        def _error_handler(exc, interval):
+            logger.error(
+                'purge: Connection error: %s. Trying again %s...',
+                exc, humanize_seconds(interval, 'in', ' '),
+            )
+
+        return connection.ensure_connection(
+            _error_handler, self.app.conf.broker_connection_max_retries,
+        )
+
     def purge_messages(self):
         with self.app.connection_for_write() as connection:
+            connection = self._ensure_connected(connection)
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
                 print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
@@ -415,9 +447,18 @@ def on_cold_shutdown(worker: Worker):
     # Initiate soft shutdown process (if enabled and tasks are running)
     worker.wait_for_soft_shutdown()
 
-    # Stop consuming new tasks to prevents requeued messages from being immediately redelivered
+    # Bound the broker socket before cancel(): on amqp that is a basic_cancel
+    # waiting for a reply a silent broker never sends (Issue 975).
+    # terminate() bounds again for cold paths that skip this handler; warm
+    # shutdown is deliberately left unbounded, see WorkController._shutdown.
+    connection = getattr(worker.consumer, 'connection', None)
+    if connection is not None:
+        bound_open_broker_sockets(connection, SHUTDOWN_SOCKET_TIMEOUT)
+
+    # Stop consuming new tasks to prevents requeued messages from being immediately redelivered.
+    # A bounded socket makes cancel() raise on a silent peer; that must not abort the shutdown.
     if worker.consumer.task_consumer:
-        worker.consumer.task_consumer.cancel()
+        ignore_errors(worker.consumer, worker.consumer.task_consumer.cancel)
 
     # Cancel all unacked requests and allow the worker to terminate naturally
     worker.consumer.cancel_active_requests()

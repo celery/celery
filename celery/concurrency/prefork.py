@@ -6,14 +6,16 @@ import os
 import threading
 import time
 
-from billiard import forking_enable
+from billiard import forking_enable, get_start_method, set_start_method
 from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
 from kombu.asynchronous import get_event_loop
+from kombu.message import Message
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
+from celery.app import base as _app_base
 from celery.app import trace
 from celery.concurrency.base import BasePool
 from celery.utils.functional import noop
@@ -50,6 +52,16 @@ def process_initializer(app, hostname):
     platforms.signals.reset(*WORKER_SIGRESET)
     platforms.signals.ignore(*WORKER_SIGIGNORE)
     platforms.set_mp_process_title('celeryd', hostname=hostname)
+    if get_start_method() != 'fork':
+        # billiard started this child as a fresh interpreter on its own (for
+        # example the macOS default since billiard 4.3), so announce it the
+        # same way the parent does for worker_pool_start_method 'spawn'.
+        # Both have to be set before init_worker() imports the task modules:
+        # the environment variable for whatever this process starts later,
+        # and the flag in the already-imported module that decides how
+        # @app.task binds.
+        os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+        _app_base.USING_EXECV = True
     # This is for Windows and other platforms not supporting
     # fork().  Note that init_worker makes sure it's only
     # run once per process.
@@ -65,7 +77,7 @@ def process_initializer(app, hostname):
                   str(os.environ.get('CELERY_LOG_REDIRECT_LEVEL')),
                   hostname=hostname)
     if os.environ.get('FORKED_BY_MULTIPROCESSING'):
-        # pool did execv after fork
+        # the child is a fresh interpreter (spawn, forkserver or execv)
         trace.setup_worker_optimizations(app, hostname)
     else:
         app.set_current()
@@ -92,6 +104,42 @@ def process_destructor(pid, exitcode):
     )
 
 
+def _is_ack_callback(callback):
+    # The consumer queues ``promise(message.ack_log_error)`` and
+    # ``promise(message.reject_log_error)``.  Match the bound method by owner
+    # type and name so a transport's Message subclass overriding them still
+    # counts; anything unrecognised is left for ``hub.close()``.
+    fun = getattr(callback, 'fun', None)
+    return (isinstance(getattr(fun, '__self__', None), Message) and
+            getattr(fun, '__name__', None) in ('ack_log_error', 'reject_log_error'))
+
+
+def _run_ready_callbacks(hub):
+    """Run the task ack/reject callbacks queued with ``hub.call_soon()``.
+
+    With ``task_acks_late`` the acknowledgement of a task that finished
+    while the pool is being joined is one of these, and nothing else runs
+    them before ``hub.close()``, which waits for the join.  Only the
+    ``Message.ack_log_error`` / ``reject_log_error`` promises are run: the
+    queue can also hold the transport's socket reader, which re-queues
+    itself after every read and would hand deliveries to the closed pool,
+    so anything else is put back for ``hub.close()``.  Pop one at a time:
+    the main thread may still add to the set we drained
+    (``Consumer.on_send_event_buffered`` bypasses the lock) and must not
+    abort the batch.
+    """
+    ready = hub._pop_ready()
+    while ready:
+        callback = ready.pop()
+        if not _is_ack_callback(callback):
+            hub.call_soon(callback)
+            continue
+        try:
+            callback()
+        except Exception as exc:  # pylint: disable=broad-except
+            hub.on_callback_error(callback, exc)
+
+
 class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
 
@@ -102,7 +150,23 @@ class TaskPool(BasePool):
     write_stats = None
 
     def on_start(self):
-        forking_enable(self.forking_enable)
+        if self.forking_enable:
+            forking_enable(True)
+        else:
+            # billiard's forking_enable(False) maps to the legacy execv
+            # mechanism, which depends on the optional _billiard C extension
+            # and is unavailable on CPython 3 (always warns and silently
+            # stays on fork). Use the modern 'spawn' start method instead,
+            # which is implemented in pure Python and actually takes effect.
+            #
+            # Each spawned child is a fresh interpreter and therefore must
+            # re-run the worker optimizations (task registry shortcut used by
+            # fast_trace_task, Django model validation, etc.). The rest of
+            # Celery keys this "fresh interpreter" behavior off the
+            # FORKED_BY_MULTIPROCESSING environment variable (historically set
+            # by billiard's execv path), so set it for the spawned children.
+            os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
+            set_start_method('spawn', force=True)
         Pool = (self.BlockingPool if self.options.get('threads', True)
                 else self.Pool)
         proc_alive_timeout = (
@@ -155,6 +219,7 @@ class TaskPool(BasePool):
                     while not shutdown_event.is_set():
                         try:
                             hub.fire_timers()
+                            _run_ready_callbacks(hub)
                         except Exception:
                             logger.warning(
                                 "Exception in timer thread during prefork on_stop()",
@@ -182,6 +247,16 @@ class TaskPool(BasePool):
                         logger.warning(
                             "Timer thread in prefork on_stop() did not terminate cleanly"
                         )
+                    else:
+                        # The results the join waited for queued their acks
+                        # after the thread's last pass.
+                        try:
+                            _run_ready_callbacks(hub)
+                        except Exception:
+                            logger.warning(
+                                "Exception running ready callbacks after prefork pool join",
+                                exc_info=True,
+                            )
             else:
                 self._pool.join()
 

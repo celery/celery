@@ -90,7 +90,7 @@ Celery is…
         Celery is easy to use and maintain, and it *doesn't need configuration files*.
 
         It has an active, friendly community you can talk to for support,
-        including a `mailing-list`_ and an :ref:`IRC channel <irc-channel>`.
+        including a `getting-help`_ and an :ref:`IRC channel <getting-help>`.
 
         Here's one of the simplest applications you can make:
 

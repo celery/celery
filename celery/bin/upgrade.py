@@ -1,5 +1,4 @@
 """The ``celery upgrade`` command, used to upgrade from previous versions."""
-import codecs
 import sys
 
 import click
@@ -18,7 +17,7 @@ def upgrade(ctx):
 
 def _slurp(filename):
     # TODO: Handle case when file does not exist
-    with codecs.open(filename, 'r', 'utf-8') as read_fh:
+    with open(filename, encoding='utf-8', newline='') as read_fh:
         return [line for line in read_fh]
 
 
@@ -34,8 +33,8 @@ def _backup(filename, suffix='.orig'):
     backup_filename = ''.join([filename, suffix])
     print(f'writing backup to {backup_filename}...',
           file=sys.stderr)
-    with codecs.open(filename, 'r', 'utf-8') as read_fh:
-        with codecs.open(backup_filename, 'w', 'utf-8') as backup_fh:
+    with open(filename, encoding='utf-8', newline='') as read_fh:
+        with open(backup_filename, 'w', encoding='utf-8', newline='') as backup_fh:
             for line in read_fh:
                 backup_fh.write(line)
                 lines.append(line)
@@ -81,7 +80,7 @@ def settings(filename, django, compat, no_backup):
     if any(n[0] for n in new_lines):  # did have changes
         if not no_backup:
             _backup(filename)
-        with codecs.open(filename, 'w', 'utf-8') as write_fh:
+        with open(filename, 'w', encoding='utf-8', newline='') as write_fh:
             for _, line in new_lines:
                 write_fh.write(line)
         print('Changes to your setting have been made!',

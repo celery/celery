@@ -166,6 +166,106 @@ use the ``additional_connection_errors`` key under
 
 Both dotted import strings and exception classes are supported.
 
+.. _redis-broker-storage:
+
+How Celery uses Redis
+=====================
+
+Redis has no native concept of queues or exchanges, so the transport
+(implemented in :pypi:`Kombu`) emulates them on top of ordinary Redis data
+structures. Knowing which keys are involved helps when sharing a Redis
+server with other applications, when deciding how to configure persistence,
+and when debugging.
+
+All keys below live in the logical database selected by the
+``db_number`` part of the :setting:`broker_url` (database ``0`` by default).
+Pub/Sub channels are server-wide; Kombu prefixes their names with this database
+number as described below.
+
+Queues are lists
+----------------
+
+Each queue is a Redis **list** whose key is the queue name (optionally prefixed
+by ``global_keyprefix``), for example ``celery`` for the default queue. Publishing a task
+is an ``LPUSH`` onto that list and workers consume with a blocking ``BRPOP`` across all the
+queues they listen to, so messages are delivered in FIFO order per queue.
+Pub/Sub is *not* used for regular task messages.
+
+When message priorities are enabled, each queue is split into several
+lists, one per priority step (``celery``, ``celery\x06\x163``, ...).
+See :ref:`redis-message-priorities` for details.
+
+Bindings are sets
+-----------------
+
+The routing table of each exchange is a Redis **set** named
+``_kombu.binding.<exchange name>`` (optionally prefixed by ``global_keyprefix``),
+for example ``_kombu.binding.celery``. Its members record which queues are
+bound to the exchange with which routing key.
+(see :ref:`redis-caveats` below), messages published to that exchange have
+no queue to route to: Kombu delivers them to the queue named by the
+``deadletter_queue`` transport option if one is configured, and otherwise
+discards them silently. The set is re-created the next time a worker or a
+publisher declares the queue.
+
+Unacknowledged messages are kept in a hash
+------------------------------------------
+
+Redis has no message acknowledgement either, so the transport emulates
+it. When a worker receives a message it is removed from the queue list
+and stored in the ``unacked`` **hash** (delivery tag to message), and the
+time it was received is recorded in the ``unacked_index`` **sorted set**.
+Acknowledging the task deletes both entries. A periodic sweep, guarded by
+the ``unacked_mutex`` key, pushes any entry older than the
+:ref:`redis-visibility_timeout` back onto its queue list so another worker
+can pick it up. These keys are shared by every worker that uses the same
+database *and* the same ``global_keyprefix`` (see below); the prefix is
+applied to them like to every other broker key.
+
+Broadcasts use Pub/Sub
+----------------------
+
+Fanout exchanges, such as the ``celery.pidbox`` exchange used by
+:ref:`remote control commands <worker-remote-control>`, are the one place where
+Redis **Pub/Sub** is used. Each fanout exchange is published to a channel
+whose name is prefixed with the database number (``/0.celery.pidbox``), so
+applications using different databases on the same server do not receive
+each other's broadcasts. Pub/Sub messages are delivered only to currently
+connected subscribers and are never stored.
+
+Sharing a Redis server
+----------------------
+
+Because the keys above have no prefix by default, a key named ``celery``
+or ``unacked`` in your own application would collide with the broker.
+The safest options are a dedicated Redis instance or a dedicated database
+number for the broker. If the database must be shared, you can prefix
+every key the broker uses with the ``global_keyprefix`` transport option:
+
+.. code-block:: python
+
+    app.conf.broker_transport_options = {'global_keyprefix': 'myapp:'}
+
+The Redis result backend stores results under separate ``celery-task-meta-*``
+keys and has its own prefix option, see :ref:`redis-result-backend-global-keyprefix`.
+
+Do not run ``FLUSHDB`` against the broker database, or ``FLUSHALL`` against
+the server, unless you intend to throw away all broker state. Both delete
+queued tasks, unacknowledged tasks and the bindings in one go, whether or not
+Celery is running at the time, and ``FLUSHALL`` also clears every other
+database on the server.
+
+Persistence
+-----------
+
+Messages are regular Redis keys, so whether a queued task survives a
+Redis restart depends entirely on how the server's persistence is
+configured. With the default RDB snapshotting you can lose tasks published
+since the last snapshot; enabling AOF (``appendonly yes``) narrows that
+window to at most one second with ``appendfsync everysec``. Redis must
+also be prevented from evicting keys under memory pressure, see
+:ref:`redis-caveats`.
+
 .. _redis-serverless:
 
 Serverless

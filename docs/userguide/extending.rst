@@ -859,6 +859,16 @@ as the following:
     def flower(port, debug):
         print('Running our command')
 
+.. note::
+
+    Discovering entry-points requires scanning the metadata of every
+    installed package, which can be slow in environments with many
+    dependencies. Celery caches the result of this scan for the lifetime
+    of the process, so installing or removing a package that provides
+    entry-points (for the ``celery.commands``, ``celery.result_backends``,
+    or ``celery.beat_schedulers`` namespaces) only takes effect after the
+    process restarts.
+
 
 Worker API
 ==========

@@ -461,8 +461,25 @@ class test_Request(RequestCase):
         req.delivery_info['redelivered'] = True
         req.task.backend = Mock()
 
-        with self.assert_signal_called(
-            task_failure,
+        # Don't assert the request directly, but capture it instead, as
+        # errors may be captured differently in signal handlers.
+        captured_request = []
+
+        def assert_sender_has_request(sender, **kwargs):
+            captured_request.append(sender.request)
+
+        on_call = Mock(side_effect=assert_sender_has_request)
+        task_failure.connect(on_call)
+        sentinel = Mock()
+        req.task.request_stack.push(sentinel)
+
+        try:
+            req.on_failure(einfo)
+        finally:
+            task_failure.disconnect(on_call)
+
+        on_call.assert_called_once_with(
+            signal=task_failure,
             sender=req.task,
             task_id=req.id,
             exception=einfo.exception.exc,
@@ -470,8 +487,13 @@ class test_Request(RequestCase):
             kwargs=req.kwargs,
             traceback=einfo.traceback,
             einfo=einfo
-        ):
-            req.on_failure(einfo)
+        )
+
+        assert captured_request[0] is req._context
+
+        # after the on_failure, the previous task request is restored
+        assert req.task.request_stack.top is sentinel
+        req.task.request_stack.pop()
 
         req.task.backend.mark_as_failure.assert_called_once_with(req.id,
                                                                  einfo.exception.exc,
@@ -970,6 +992,74 @@ class test_Request(RequestCase):
             exc_info = ExceptionInfo()
             job.on_failure(exc_info)
         assert job.acknowledged
+
+    def test_on_failure_SystemExit_cancelled_request_stays_unacked(self):
+        # Billiard 4.3.0 marshals the SystemExit raised by the child's
+        # SIGTERM handler back as a task failure; a request the worker
+        # cancelled itself must not be acked, so the message is redelivered.
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_cancelled = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    def test_on_failure_SystemExit_revoked_request_stays_unacked(self):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        job._already_revoked = True
+        try:
+            raise SystemExit(-241)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert not job.acknowledged
+        mark.assert_not_called()
+
+    @pytest.mark.parametrize('exc,status', [
+        (SystemExit(1), 'exitcode 1'),
+        (SystemExit(None), 'exitcode 0'),
+        (SystemExit('boom'), 'exitcode 1'),
+        (KeyboardInterrupt(), 'KeyboardInterrupt'),
+    ])
+    def test_on_failure_exit_from_task_itself_is_worker_lost(self, exc, status):
+        job = self.xRequest()
+        job.time_start = 1
+        self.mytask.acks_late = True
+        try:
+            raise exc
+        except BaseException:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        assert job.acknowledged
+        stored = mark.call_args[0][1]
+        assert isinstance(stored, WorkerLostError)
+        assert str(stored) == f'Worker exited prematurely: {status}.'
+
+    def test_on_failure_SystemExit_from_task_itself_reject_on_worker_lost(self):
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.reject_on_worker_lost = True
+        try:
+            raise SystemExit(None)
+        except SystemExit:
+            exc_info = ExceptionInfo()
+        with patch.object(job.task.backend, 'mark_as_failure') as mark:
+            job.on_failure(exc_info)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          True)
+        mark.assert_not_called()
 
     def test_on_failure_acks_on_failure_or_timeout_disabled_for_task(self):
         job = self.xRequest()
