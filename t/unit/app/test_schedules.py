@@ -252,6 +252,81 @@ class test_schedule:
         s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
         assert s.is_due(last_run_at) == (False, 2)
 
+    @pytest.mark.parametrize('timezone_name,interval,last_run_at,due_at', [
+        pytest.param(
+            'America/New_York', timedelta(days=1),
+            datetime(2026, 11, 1, 0, 30), datetime(2026, 11, 2),
+            id='daily-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=2),
+            datetime(2026, 10, 31, 0, 30), datetime(2026, 11, 2),
+            id='two-days-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=1),
+            datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8),
+            id='daily-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=2),
+            datetime(2026, 3, 6, 23, 30), datetime(2026, 3, 8),
+            id='two-days-spring-forward',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', timedelta(hours=1),
+            datetime(2026, 4, 5, 1), datetime(2026, 4, 5, 2),
+            id='hourly-half-hour-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(hours=1),
+            datetime(2026, 11, 1, 1, 15),
+            datetime(2026, 11, 1, 1, fold=1),
+            id='hourly-repeated-hour',
+        ),
+    ])
+    def test_relative_schedule_across_dst(
+        self, timezone_name, interval, last_run_at, due_at,
+    ):
+        self.app.conf.timezone = timezone_name
+        last_run_at = last_run_at.replace(tzinfo=self.app.timezone)
+        due_at = due_at.replace(tzinfo=self.app.timezone)
+        now = last_run_at
+        s = schedule(
+            interval, relative=True, nowfun=lambda: now, app=self.app,
+        )
+        expected_remaining = (
+            due_at.astimezone(timezone.utc) - now.astimezone(timezone.utc)
+        ).total_seconds()
+
+        assert s.is_due(last_run_at) == (False, expected_remaining)
+
+        now = due_at.astimezone(timezone.utc) - timedelta(seconds=1)
+        assert s.is_due(last_run_at) == (False, 1)
+
+        now = due_at
+        assert s.is_due(last_run_at) == (True, interval.total_seconds())
+
+        now = due_at.astimezone(timezone.utc) + timedelta(seconds=10)
+        assert s.is_due(last_run_at) == (True, interval.total_seconds())
+
+    @pytest.mark.parametrize('last_run_at', [
+        datetime(2026, 11, 1, 0, 30),
+        datetime(2026, 3, 7, 23, 30),
+    ])
+    def test_non_relative_daily_schedule_uses_elapsed_time(
+        self, last_run_at,
+    ):
+        self.app.conf.timezone = 'America/New_York'
+        last_run_at = last_run_at.replace(tzinfo=self.app.timezone)
+        now = last_run_at
+        s = schedule(timedelta(days=1), nowfun=lambda: now, app=self.app)
+
+        assert s.is_due(last_run_at) == (False, 86400)
+
+        now = last_run_at.astimezone(timezone.utc) + timedelta(days=1)
+        assert s.is_due(last_run_at) == (True, 86400)
+
 
 # Module-level helper used as crontab(nowfun=...) in pickling tests.
 # Defined at top level so it is picklable/serializable.

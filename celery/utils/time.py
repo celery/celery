@@ -236,12 +236,27 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    if isinstance(ends_in, timedelta):
+    if isinstance(ends_in, timedelta) and not (
+            relative and ends_in >= timedelta(days=1)):
         end_date = add_seconds_to_datetime(start, ends_in.total_seconds())
     else:
+        # Day-resolution relative schedules advance by local calendar days.
+        # An elapsed-time addition can land on the wrong date across DST.
         end_date = start + ends_in
     if relative:
         end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
+        if (
+            isinstance(ends_in, timedelta)
+            and ends_in >= timedelta(minutes=1)
+            and end_date.astimezone(timezone.utc)
+            <= start.astimezone(timezone.utc)
+        ):
+            # A partial-hour DST rollback can make rounding return a time
+            # at or before start. Fall back to a calendar boundary so the
+            # next run remains after start.
+            end_date = delta_resolution(start + ends_in, ends_in).replace(
+                microsecond=0,
+            )
 
     # Using UTC to calculate real time difference.
     # Python by default uses wall time in arithmetic between datetimes with
