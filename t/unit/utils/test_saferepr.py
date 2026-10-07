@@ -210,3 +210,24 @@ class test_saferepr:
 
     def test_bytes_with_unicode_py2_and_3(self):
         assert saferepr([b'foo', 'a®rgs'.encode()])
+
+    def test_maxlen_keeps_closing_bracket_of_last_element(self):
+        # Regression for #10760: truncating the *last* element of a container
+        # used to drop the container's closing bracket, because the bracket
+        # literal was consumed by reprstream just before the budget ran out.
+        # A following element keeps the bracket (see "extra" below) — the
+        # last-element case must match it.
+        extra = [1, 2, 3, 'abcdefghij', 5]
+        assert saferepr(extra, 12) == "[1, 2, 3, 'ab...', ...]"
+        assert saferepr([1, 2, 3, 'abcdefghij'], 12) == (
+            "[1, 2, 3, 'ab...', ...]"
+        )
+
+    def test_maxlen_keeps_closing_bracket_across_types(self):
+        assert saferepr((1, 2, 3, 'abcdefghij'), 12) == "(1, 2, 3, 'ab...', ...)"
+        assert saferepr({1, 2, 3, 'abcdefghij'}, 12) == "{1, 2, 3, 'ab...', ...}"
+
+    def test_maxlen_keeps_nested_closing_brackets(self):
+        assert saferepr([1, [2, 3, 'abcdefghij']], 13) == (
+            "[1, [2, 3, 'ab...', ...]]"
+        )

@@ -164,6 +164,12 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
             # move rest back to stack, so that we can include
             # dangling parens.
             stack.append(it)
+            # If the token that exhausted the budget is an un-truncatable
+            # closing literal (e.g. ']' of the last element of a list), it
+            # was already consumed from ``it`` by ``reprstream``, so the
+            # drain loop below would lose it. Emit it here instead.
+            if isinstance(token, _literal) and not token.truncate:
+                yield token.value
             break
         if isinstance(token, _literal):
             val = token.value
