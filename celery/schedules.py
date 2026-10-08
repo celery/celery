@@ -177,7 +177,18 @@ class schedule(BaseSchedule):
         rem_delta = self.remaining_estimate(last_run_at)
         remaining_s = max(rem_delta.total_seconds(), 0)
         if remaining_s == 0:
-            return schedstate(is_due=True, next=self.seconds)
+            next_s = self.seconds
+            if self.relative:
+                # The next rounded deadline can differ from the interval,
+                # especially across DST. Do not queue a check past it.
+                now = self.maybe_make_aware(self.now())
+                now = now.astimezone(last_run_at.tzinfo)
+                next_s = self.remaining_estimate(now).total_seconds()
+                if next_s <= 0:
+                    # Preserve the interval for subsecond rounding and
+                    # zero or negative intervals with no future boundary.
+                    next_s = self.seconds
+            return schedstate(is_due=True, next=next_s)
         return schedstate(is_due=False, next=remaining_s)
 
     def __repr__(self) -> str:
