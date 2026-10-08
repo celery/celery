@@ -9,42 +9,111 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
-Unreleased
-==========
+.. _version-5.7.0b1:
 
-- Fix ``%%`` in node and host format strings to produce a literal percent sign.
-  Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
-  percent sign. Log and pid file paths passed through ``celery multi`` are formatted
-  twice and require ``%%%%`` to preserve a literal percent sign in the final
-  worker path. ``multi`` uses the same final pidfile path when stopping workers
-  (#10663).
-- The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
-  and used to publish ``task-sent`` events is now always a dictionary containing
-  the merged configured and per-call retry options, never ``None`` (#10708).
-- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
-  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
-- A chain in which groups are followed by tasks, ``chain(task, group, task,
-  group, task, ...)``, no longer nests the rest of the chain into each chord
-  body when it is run. The first message grew by (header size + 2) per group;
-  it now grows linearly. ``prepare_steps()`` returns ``chord(header, a), b, c``
-  where it returned ``chord(header, chain(a, b, c))``, which code inspecting
-  prepared canvases may notice (#10743).
-- A chord body's ``parent_id`` is the header task that fires it, for every
-  body shape. A single-task body previously reported the task before the
-  chord as its parent while a chain body reported the header task (#10743).
-- In a chain of chords, a header failure now fails the chords after it. The
-  chain is kept flat since 5.6.3 (#10171), and a failing header left the
-  following chords pending, so joining the chain's result hung.
-- Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
-  prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
-  ``worker_concurrency`` is no longer coerced to an integer at config load, so
-  code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
-  numeric string such as ``"4"``; the worker converts it at startup.
+5.7.0b1
+=======
+
+:release-date: 2026-10-06
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0b1 Beta 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add opt-in remote control (inspect ping) support to ``celery beat`` (#10422)
+- Add ``pymemcache`` result backend support (#9977)
+- Make ``--concurrency=auto`` aware of cgroup CPU limits (#10328)
+
+Results
+~~~~~~~
+
+- Fix Couchbase missing-document handling to raise instead of returning
+  ``None`` (#10680)
+- Preserve ``propagate`` when joining nested native results (#10689)
+- Keep ``forget()`` idempotent on Elasticsearch and CouchDB backends (#10697)
+- Keep ``forget()`` idempotent on Azure Blob Storage and CosmosDB (#10714)
+- Handle missing ArangoDB documents when deleting results (#10701)
+- Upsert CosmosDB results so later task states are stored correctly (#10746)
+- Publish the Cassandra session only once the connection is ready (#10657)
+- Avoid holding the Redis pubsub lock while waiting for messages (#10715)
+- Defer re-entrant ``cancel_for`` to avoid Redis pubsub deadlocks (#10716)
+- Preserve ``EagerResult.name`` when copying or pickling (#10773)
+- Raise ``TaskRevokedError`` from ``EagerResult.get()`` after ``revoke()`` (#10772)
+- Finish a half-read child result on prefork shutdown and acknowledge it
+  during the join (#10768)
+
+Canvas
+~~~~~~
+
+- Apply ``countdown`` and ``eta`` to chord headers (#10735)
+- Fail chords after a chord whose header failed (#10767)
+- Fix geometric message bloat in chains of implicit chords (#10743)
+- Resolve the app of a chain or chord through its tasks (#10749)
+- Avoid raising in ``chain.app`` when the first task's canvas contains a
+  dict (#10792)
+
+Workers
+~~~~~~~
+
+- Flush buffered events with ``hub.call_soon()`` (#10736)
+- Synchronize ``EventDispatcher`` shutdown with publishing (#10745)
+- Preserve pending operation order in the consumer (#10734)
+- Fix consumer reconnect prefetch reduction for green pools (#10804)
+- Fix Beat scheduler connection cleanup on shutdown (#10776)
+- Fix ``countdown``, expiration, and Beat intervals across DST transitions
+  (#10769)
+- Limit Django fixup signal handlers to its own app (#10731)
+- Tell apart signal receivers bound to different instances (#10699)
+
+Task Publishing
+~~~~~~~~~~~~~~~
+
+* Use the merged retry policy for `before_task_publish` and task-sent
+  events (#10708)
+* Avoid calling `isoformat()` on protocol v1 ETA and expiration strings
+  (#10720)
+
+Command Line
+~~~~~~~~~~~~
+
+- Apply index lists such as ``-c:1,2`` to named nodes in ``celery multi``
+  (#10661)
+- Expand ``~`` in ``--workdir`` for spawned workers (#10739)
+- Replace deprecated ``codecs.open`` in ``celery upgrade`` settings (#10706)
+- Fix escaped percent signs in node formatting (#10663)
+
+Utilities
+~~~~~~~~~
+
+- Fix ``BufferMap`` handling of ``bufmaxsize`` and total size accounting
+  (#10705)
+- Fix regeneration iteration when consumed elsewhere during the loop
+  (#10756)
+- Stop ``firstmethod()`` from swallowing ``AttributeError`` (#10774)
+- Handle ``AttributeError`` in ``iterate_file_descriptors_safely()`` after
+  connection loss (#10318)
+
+Docker
+~~~~~~
+
+- Fix cache directory ownership in Docker builds (#10707)
+
+Packaging
+~~~~~~~~~
+
+- Update the ``billiard`` dependency to 4.3.1 or later (#10802)
+- Update the Kombu dependency to 5.7.0b1 (#10809)
+- Remove version constraints for Redis requirements (#10810)
+
 
 
 .. _version-5.7.0a1:
 
-5.7.0b1
+5.7.0a1
 =======
 
 :release-date: 2026-09-22
