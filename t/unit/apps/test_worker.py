@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from celery.apps.worker import Worker
+from celery.worker import WorkController
 
 
 class test_Worker_purge:
@@ -70,3 +71,35 @@ class test_Worker_purge:
 
         connection.ensure_connection.assert_called_once()
         connection.connect.assert_not_called()
+
+
+class test_Worker_setup_defaults:
+    """``setup_defaults`` must only run once per worker.
+
+    ``WorkController.__init__`` already calls it, so ``on_after_init`` calling
+    it again bypassed subclass overrides.
+    See https://github.com/celery/celery/issues/7278.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup_app(self, app):
+        self.app = app
+
+    def test_setup_defaults_called_once(self):
+        with patch.object(WorkController, 'setup_defaults',
+                          autospec=True,
+                          side_effect=WorkController.setup_defaults) as setup_defaults:
+            Worker(app=self.app, hostname='test@example.com',
+                   concurrency=2, pool='solo')
+        setup_defaults.assert_called_once()
+
+    def test_setup_defaults_override_is_kept(self):
+        class CustomWorker(Worker):
+
+            def setup_defaults(self, **kwargs):
+                super().setup_defaults(**kwargs)
+                self.concurrency = 7
+
+        worker = CustomWorker(app=self.app, hostname='test@example.com',
+                              concurrency=2, pool='solo')
+        assert worker.concurrency == 7
