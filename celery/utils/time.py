@@ -34,7 +34,8 @@ __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
-    'add_seconds_to_datetime', 'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
+    'add_seconds_to_datetime', 'subtract_datetimes',
+    'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
@@ -358,6 +359,13 @@ def add_seconds_to_datetime(dt: datetime, seconds: float) -> datetime:
     if is_naive(dt):
         return dt + delta
     return (dt.astimezone(datetime_timezone.utc) + delta).astimezone(dt.tzinfo)
+
+
+def subtract_datetimes(end: datetime, start: datetime) -> timedelta:
+    """Return the elapsed time between two datetimes, treating naive datetimes as UTC."""
+    end_utc = maybe_make_aware(end).astimezone(datetime_timezone.utc)
+    start_utc = maybe_make_aware(start).astimezone(datetime_timezone.utc)
+    return end_utc - start_utc
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:
