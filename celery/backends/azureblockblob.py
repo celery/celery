@@ -3,6 +3,7 @@ from kombu.transport.azurestoragequeues import Transport as AzureStorageQueuesTr
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 
+from celery.app.utils import _redact_azure_connection_string
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
 
@@ -188,17 +189,12 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
                 f'{self._connection_string}'
             )
 
-        # Azure matches connection string keys case-insensitively, and a
-        # SharedAccessSignature is as much a secret as an AccountKey.
-        secret_keys = {'accountkey', 'sharedaccesssignature'}
-        redacted_connection_string_parts = []
-        for part in self._connection_string.split(';'):
-            key, sep, _ = part.partition('=')
-            if sep and key.strip().lower() in secret_keys:
-                part = f'{key}=**'
-            redacted_connection_string_parts.append(part)
+        # Use shared helper to redact Azure connection string secrets
+        redacted_connection_string = _redact_azure_connection_string(
+            self._connection_string, mask='**'
+        )
 
         return (
             f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
-            f'{";".join(redacted_connection_string_parts)}'
+            f'{redacted_connection_string}'
         )
