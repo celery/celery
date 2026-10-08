@@ -1,3 +1,4 @@
+import threading
 from datetime import datetime
 from pickle import dumps, loads
 from unittest.mock import Mock
@@ -5,6 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from celery import states
+from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.objects import Bunch
 
@@ -14,6 +16,31 @@ CASSANDRA_MODULES = [
     'cassandra.cluster',
     'cassandra.query',
 ]
+
+
+class FakeCassandraTable:
+    """Stand-in for ``Session.execute`` that keeps the rows it is given.
+
+    The real driver hands a blob column back as ``bytes``, so the values a
+    write puts in are the values a read takes out, which is what makes a
+    store-then-retrieve assertion meaningful here.
+    """
+
+    def __init__(self):
+        self.rows = {}
+
+    def __call__(self, statement, parameters=None):
+        if parameters is None:
+            # DDL, CREATE TABLE for instance, carries no parameters
+            return Mock(name='ddl-result')
+        if len(parameters) > 1:
+            task_id, status, result, date_done, traceback, children = \
+                parameters
+            self.rows[task_id] = (
+                status, result, date_done, traceback, children)
+            return Mock(name='write-result')
+        task_id, = parameters
+        return Mock(one=Mock(return_value=self.rows.get(task_id)))
 
 
 class test_CassandraBackend:
@@ -38,9 +65,9 @@ class test_CassandraBackend:
             mod.cassandra = prev
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
-    def test_init_with_and_without_LOCAL_QUROM(self, module):
+    def test_init_with_and_without_LOCAL_QUROM(self, module, monkeypatch):
         from celery.backends import cassandra as mod
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
 
         cons = mod.cassandra.ConsistencyLevel = Bunch(
             LOCAL_QUORUM='foo',
@@ -70,7 +97,7 @@ class test_CassandraBackend:
                 app=self.app, keyspace='b', column_family='c',
             )
 
-    def test_init_with_cloud(self):
+    def test_init_with_cloud(self, monkeypatch):
         # Tests behavior when Cluster.connect works properly
         # and cluster is created with 'cloud' param instead of 'contact_points'
         from celery.backends import cassandra as mod
@@ -86,7 +113,7 @@ class test_CassandraBackend:
             def connect(self, *args, **kwargs):
                 return Mock()
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         mod.cassandra.cluster = Mock()
         mod.cassandra.cluster.Cluster = DummyClusterWithBundle
 
@@ -104,9 +131,9 @@ class test_CassandraBackend:
         assert loads(dumps(CassandraBackend(app=self.app)))
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
-    def test_get_task_meta_for(self, module):
+    def test_get_task_meta_for(self, module, monkeypatch):
         from celery.backends import cassandra as mod
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
 
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
@@ -125,26 +152,95 @@ class test_CassandraBackend:
         meta = x._get_task_meta_for('task_id')
         assert meta['status'] == states.PENDING
 
-    def test_as_uri(self):
+    def test_as_uri(self, monkeypatch):
         # Just ensure as_uri works properly
         from celery.backends import cassandra as mod
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
 
         x = mod.CassandraBackend(app=self.app)
         x.as_uri()
         x.as_uri(include_password=False)
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
-    def test_store_result(self, module):
+    def test_store_result(self, module, monkeypatch):
         from celery.backends import cassandra as mod
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
 
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
         x._store_result('task_id', 'result', states.SUCCESS)
 
-    def test_timeouting_cluster(self):
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_store_result_compressed(self, module, monkeypatch):
+        # encode() returns bytes once result_compression is set, and the
+        # result, traceback and children columns are blobs, so the write path
+        # has to accept bytes as well as str.
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        self.app.conf.result_compression = 'gzip'
+        x = mod.CassandraBackend(app=self.app)
+        session = x._session = Mock()
+        session.execute = Mock()
+        x._store_result('task_id', 'result', states.SUCCESS)
+
+        params = session.execute.call_args[0][1]
+        # result, traceback and children; index 3 is the date_done timestamp.
+        assert all(isinstance(params[i], bytes) for i in (2, 4, 5))
+        assert x.decode(params[2]) == 'result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('serializer', ['json', 'pickle'])
+    def test_store_and_get_result_compressed(self, module, serializer, monkeypatch):
+        # Round trip across the backend boundary rather than through encode()
+        # on its own: the row the write path hands the driver is the row the
+        # read path is given back, so anything the backend does to the bytes
+        # on the way in has to survive the way out.
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = 'gzip'
+        x = mod.CassandraBackend(app=self.app)
+        x._session = Mock()
+        x._session.execute = FakeCassandraTable()
+
+        result = {'value': 'a repetitive value ' * 40}
+        x._store_result('task_id', result, states.SUCCESS)
+
+        stored = x._session.execute.rows['task_id'][1]
+        assert isinstance(stored, bytes)
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == result
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_get_result_written_before_compression(self, module, monkeypatch):
+        # A worker with compression off writes str for a text serializer, and
+        # the reader has to keep taking that once compression is turned on.
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        table = FakeCassandraTable()
+        writer = mod.CassandraBackend(app=self.app)
+        writer._session = Mock()
+        writer._session.execute = table
+        writer._store_result('task_id', {'foo': 'bar'}, states.SUCCESS)
+        assert isinstance(table.rows['task_id'][1], bytes)
+        assert not table.rows['task_id'][1].startswith(
+            COMPRESSED_PAYLOAD_MAGIC)
+
+        self.app.conf.result_compression = 'gzip'
+        reader = mod.CassandraBackend(app=self.app)
+        reader._session = Mock()
+        reader._session.execute = table
+        assert reader._get_task_meta_for('task_id')['result'] == {'foo': 'bar'}
+
+    def test_timeouting_cluster(self, monkeypatch):
         # Tests behavior when Cluster.connect raises
         # cassandra.OperationTimedOut.
         from celery.backends import cassandra as mod
@@ -162,7 +258,7 @@ class test_CassandraBackend:
             def shutdown(self):
                 pass
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         mod.cassandra.OperationTimedOut = OTOExc
         mod.cassandra.cluster = Mock()
         mod.cassandra.cluster.Cluster = VeryFaultyCluster
@@ -174,7 +270,7 @@ class test_CassandraBackend:
         assert x._cluster is None
         assert x._session is None
 
-    def test_create_result_table(self):
+    def test_create_result_table(self, monkeypatch):
         # Tests behavior when session.execute raises
         # cassandra.AlreadyExists.
         from celery.backends import cassandra as mod
@@ -197,7 +293,7 @@ class test_CassandraBackend:
             def connect(self, *args, **kwargs):
                 return FaultySession()
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         mod.cassandra.cluster = Mock()
         mod.cassandra.cluster.Cluster = DummyCluster
         mod.cassandra.AlreadyExists = OTOExc
@@ -206,7 +302,112 @@ class test_CassandraBackend:
         x._get_connection(write=True)
         assert x._session is not None
 
-    def test_init_session(self):
+    def test_create_table_other_error_keeps_new_session_published(
+            self, monkeypatch):
+        # CREATE TABLE can fail for reasons other than AlreadyExists, for
+        # example a worker role that is allowed to read/write but was
+        # never granted CREATE, which raises Unauthorized on every single
+        # write. That failure must still be raised (we can't assume the
+        # table exists), but the Cluster/session we *just* connected are
+        # perfectly usable otherwise, so they must not be torn down:
+        # doing that would force every retry to build a brand new
+        # Cluster, leaking the previous one each time.
+        from celery.backends import cassandra as mod
+
+        class OtherExc(Exception):
+            pass
+
+        class FaultySession:
+            def execute(self, statement, parameters=None):
+                if statement.query.lstrip().startswith('CREATE TABLE'):
+                    raise OtherExc()
+                return Mock(one=Mock(return_value=None))
+
+        connect_calls = []
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                connect_calls.append(1)
+                return FaultySession()
+
+            def shutdown(self):
+                raise AssertionError(
+                    'a usable, published session must not be shut down')
+
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+        mod.cassandra.AlreadyExists = type(
+            'AlreadyExists', (Exception,), {})
+
+        x = mod.CassandraBackend(app=self.app)
+
+        with pytest.raises(OtherExc):
+            x._get_connection(write=True)
+
+        # published despite the CREATE failure: readers, and a future
+        # writer that doesn't need CREATE, keep working.
+        assert x._session is not None
+        assert x._table_created is False
+        assert len(connect_calls) == 1
+
+        # a later call reuses the published session/Cluster instead of
+        # building (and leaking) a new one.
+        x._get_task_meta_for('task_id')
+        assert len(connect_calls) == 1
+
+    def test_create_table_other_error_preserves_existing_session(
+            self, monkeypatch):
+        # The general form of the timeout case above: an already-published
+        # session (in use by readers through the lock-free fast path in
+        # _is_ready()) must survive a CREATE TABLE failure that isn't
+        # AlreadyExists, exactly like it must survive a timeout.
+        from celery.backends import cassandra as mod
+
+        class OtherExc(Exception):
+            pass
+
+        class FaultySession:
+            def execute(self, statement, parameters=None):
+                if statement.query.lstrip().startswith('CREATE TABLE'):
+                    raise OtherExc()
+                return Mock(one=Mock(return_value=None))
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return FaultySession()
+
+            def shutdown(self):
+                raise AssertionError(
+                    'a usable, published session must not be shut down')
+
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+        mod.cassandra.AlreadyExists = type(
+            'AlreadyExists', (Exception,), {})
+
+        x = mod.CassandraBackend(app=self.app)
+        # open the session as a reader first, so it's already published
+        # (with _table_created still False) by the time a writer shows up.
+        x._get_task_meta_for('task_id')
+        session_before = x._session
+        cluster_before = x._cluster
+
+        with pytest.raises(OtherExc):
+            x._get_connection(write=True)
+
+        assert x._session is session_before
+        assert x._cluster is cluster_before
+        assert x._table_created is False
+
+    def test_init_session(self, monkeypatch):
         # Tests behavior when Cluster.connect works properly
         from celery.backends import cassandra as mod
 
@@ -218,7 +419,7 @@ class test_CassandraBackend:
             def connect(self, *args, **kwargs):
                 return Mock()
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         mod.cassandra.cluster = Mock()
         mod.cassandra.cluster.Cluster = DummyCluster
 
@@ -231,7 +432,88 @@ class test_CassandraBackend:
         x._get_connection()
         assert s is x._session
 
-    def test_auth_provider(self):
+    def test_session_not_published_before_table_is_created(self, monkeypatch):
+        # A second thread must not see the session, and write through it,
+        # while the first one is still preparing statements and issuing
+        # CREATE TABLE.
+        from celery.backends import cassandra as mod
+
+        executed = []
+        other_thread = []
+        other_thread_started = threading.Event()
+
+        class Session:
+            def execute(self, statement, parameters=None):
+                if statement is None:
+                    raise AssertionError('executed a statement that is None')
+                if statement.query.lstrip().startswith('CREATE TABLE'):
+                    def run():
+                        other_thread_started.set()
+                        x._store_result('task_id', 'result', states.SUCCESS)
+
+                    t = threading.Thread(target=run)
+                    t.start()
+                    # Deterministically wait for the second thread to have
+                    # started (and thus be blocked trying to acquire the
+                    # lock we're holding) instead of gambling on a fixed
+                    # sleep before CREATE TABLE finishes and the session
+                    # gets published.
+                    other_thread_started.wait(5)
+                    other_thread.append(t)
+                executed.append(statement.query.split()[0])
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Session()
+
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_connection(write=True)
+        other_thread[0].join(5)
+        assert not other_thread[0].is_alive()
+        assert executed == ['CREATE', 'INSERT']
+
+    def test_table_is_created_for_a_write_through_a_read_session(self, monkeypatch):
+        # A read opens the session without creating the table, so the first
+        # write through that session still has to issue CREATE TABLE.
+        from celery.backends import cassandra as mod
+
+        executed = []
+
+        class Session:
+            def execute(self, statement, parameters=None):
+                executed.append(statement.query.split()[0])
+                return Mock(one=Mock(return_value=None))
+
+        class DummyCluster:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def connect(self, *args, **kwargs):
+                return Session()
+
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.cluster.Cluster = DummyCluster
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        x = mod.CassandraBackend(app=self.app)
+        x._get_task_meta_for('task_id')
+        assert executed == ['SELECT']
+
+        x._store_result('task_id', 'result', states.SUCCESS)
+        assert executed == ['SELECT', 'CREATE', 'INSERT']
+
+        # ...and only the first write pays for it.
+        x._store_result('task_id', 'result', states.SUCCESS)
+        assert executed == ['SELECT', 'CREATE', 'INSERT', 'INSERT']
+
+    def test_auth_provider(self, monkeypatch):
         # Ensure valid auth_provider works properly, and invalid one raises
         # ImproperlyConfigured exception.
         from celery.backends import cassandra as mod
@@ -239,7 +521,7 @@ class test_CassandraBackend:
         class DummyAuth:
             ValidAuthProvider = Mock()
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         mod.cassandra.auth = DummyAuth
 
         # Valid auth_provider
@@ -257,11 +539,11 @@ class test_CassandraBackend:
         with pytest.raises(ImproperlyConfigured):
             mod.CassandraBackend(app=self.app)
 
-    def test_options(self):
+    def test_options(self, monkeypatch):
         # Ensure valid options works properly
         from celery.backends import cassandra as mod
 
-        mod.cassandra = Mock()
+        monkeypatch.setattr(mod, 'cassandra', Mock())
         # Valid options
         self.app.conf.cassandra_options = {
             'cql_version': '3.2.1',

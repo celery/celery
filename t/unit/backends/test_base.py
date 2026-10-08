@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import re
 from contextlib import contextmanager
@@ -11,9 +12,11 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 import celery
 from celery import chord, group, signature, states, uuid
 from celery.app.task import Context, Task
-from celery.backends.base import (BaseBackend, DisabledBackend, KeyValueStoreBackend, _create_chord_error_with_cause,
-                                  _create_fake_task_request, _nulldict)
-from celery.exceptions import BackendGetMetaError, BackendStoreError, ChordError, SecurityError, TimeoutError
+from celery.backends.base import (COMPRESSED_PAYLOAD_MAGIC, BaseBackend, DisabledBackend, KeyValueStoreBackend,
+                                  _create_chord_error_with_cause, _create_fake_task_request, _nulldict,
+                                  compress_payload, decompress_payload)
+from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
+                               SecurityError, TimeoutError)
 from celery.result import GroupResult, result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
@@ -283,6 +286,72 @@ class test_BaseBackend_interface:
             called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
             assert called_kwargs['queue'] == 'test_queue_three'
 
+    def test_chord_unlock_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(
+            queue='my_queue',
+            exchange='my_exchange',
+            exchange_type='headers',
+            routing_key='my_routing_key',
+            headers={'my_header': 'my_value'},
+        )
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_args[1]['_chord_unlock_exchange_type'] == 'headers'
+        assert called_kwargs['queue'] == 'my_queue'
+        assert called_kwargs['exchange'] == 'my_exchange'
+        assert called_kwargs['exchange_type'] == 'headers'
+        assert called_kwargs['routing_key'] == 'my_routing_key'
+        assert called_kwargs['headers'] == {'my_header': 'my_value'}
+
+    def test_chord_unlock_with_unknown_queue(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        self.app.amqp.queues.create_missing = False
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='missing_queue')
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
+    def test_chord_unlock_with_queue_without_exchange(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        queue = Mock(spec=[])
+        body = self.callback.s().set(queue=queue)
+
+        self.b.apply_chord(header_result_args, body)
+        called_args, called_kwargs = self.app.tasks[unlock].apply_async.call_args
+        assert called_kwargs['queue'] is queue
+        assert '_chord_unlock_exchange_type' not in called_args[1]
+        assert 'exchange_type' not in called_kwargs
+
+    def test_chord_unlock_stamped_routing_options(self, unlock='celery.chord_unlock'):
+        self.app.tasks[unlock] = Mock()
+        header_result_args = (
+            uuid(),
+            [self.app.AsyncResult(x) for x in range(3)],
+        )
+        body = self.callback.s().set(queue='my_queue')
+        body.stamp(headers='my_stamp')
+
+        self.b.apply_chord(header_result_args, body)
+        called_kwargs = self.app.tasks[unlock].apply_async.call_args[1]
+        assert called_kwargs['queue'] == 'my_queue'
+        assert 'headers' not in called_kwargs
+
 
 class test_exception_pickle:
     def test_BaseException(self):
@@ -346,6 +415,19 @@ class test_prepare_exception:
         y = self.b.exception_to_python(x)
         assert isinstance(y, KeyError)
 
+    @pytest.mark.parametrize('exc', [BaseException('boom'), asyncio.CancelledError()])
+    def test_encode_result_json_base_exception(self, exc):
+        self.b.serializer = 'json'
+        x = self.b.encode_result(exc, states.FAILURE)
+        assert x == {
+            'exc_message': exc.args,
+            'exc_type': type(exc).__name__,
+            'exc_module': type(exc).__module__}
+        self.b.encode({'result': x})
+        y = self.b.exception_to_python(x)
+        assert isinstance(y, type(exc))
+        assert y.args == exc.args
+
     def test_unicode_message(self):
         message = '\u03ac'
         x = self.b.prepare_exception(Exception(message))
@@ -377,6 +459,10 @@ class KVBackend(KeyValueStoreBackend):
         self.db.pop(key, None)
 
 
+class CompressingKVBackend(KVBackend):
+    supports_result_compression = True
+
+
 class DictBackend(BaseBackend):
 
     def __init__(self, *args, **kwargs):
@@ -390,6 +476,7 @@ class DictBackend(BaseBackend):
     def _get_task_meta_for(self, task_id):
         if task_id == 'task-exists':
             return {'result': 'task'}
+        return {'status': states.PENDING, 'result': None}
 
     def _delete_group(self, group_id):
         self._data.pop(group_id, None)
@@ -639,6 +726,7 @@ class test_BaseBackend_dict:
     def test_mark_as_failure__chained_chord_propagates_to_body(self):
         b = BaseBackend(app=self.app)
         b.store_result = Mock()
+        b.get_state = Mock(return_value=states.PENDING)
         b.on_chord_part_return = Mock()
 
         inner_chord = chord(
@@ -684,6 +772,92 @@ class test_BaseBackend_dict:
         task.backend.fail_from_current_stack.assert_called_with(
             callback.id, exc=mock_call_errbacks.side_effect,
         )
+
+    def test_chord_error_from_stack_fails_the_chain_after_the_body(self):
+        header = [signature('h', options={'task_id': 'h-id'})]
+        after = chord(header, signature('after', options={'task_id': 'after-id'}))
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result:
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
+        assert failed == {'body-id': states.FAILURE, 'after-id': states.FAILURE}
+
+    def test_chord_error_from_stack_fails_the_chain_after_a_group_body(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = group([signature('x1', options={'task_id': 'x1-id'})], options={'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, '_handle_group_chord_error') as handle_group:
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        handle_group.assert_called_once()
+        failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
+        assert failed == {'after-id': states.FAILURE}
+
+    def test_fail_chain_returns_the_chord_part_of_a_chained_member(self):
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, 'on_chord_part_return') as part_return:
+            self.b._fail_chain([member], ValueError('header failed'))
+
+        part_return.assert_called_once()
+        assert part_return.call_args[0][0].id == 'member-id'
+        assert [call_[0][0] for call_ in store_result.call_args_list] == ['member-id']
+
+    def test_fail_chain_returns_a_chord_part_once_per_member(self):
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state', side_effect=[states.PENDING, states.FAILURE]), \
+                patch.object(self.b, 'on_chord_part_return') as part_return:
+            self.b._fail_chain([member], ValueError('header failed'))
+            self.b._fail_chain([member], ValueError('header failed'))
+
+        part_return.assert_called_once()
+
+    def test_fail_chain_skips_a_chord_without_a_body(self):
+        with patch.object(self.b, 'store_result') as store_result:
+            self.b._fail_chain([chord([signature('h')], None)], ValueError('header failed'))
+
+        store_result.assert_not_called()
+
+    def test_chord_error_from_stack_resolves_the_current_exception_for_the_chain(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result:
+            try:
+                raise ValueError('header failed')
+            except ValueError:
+                self.b.chord_error_from_stack(callback)
+
+        stored = {call_[0][0]: call_[0][1] for call_ in store_result.call_args_list}
+        assert isinstance(stored['after-id'], ValueError)
+
+    def test_chord_error_from_stack_fails_the_chain_with_the_errback_error(self):
+        after = signature('after', options={'task_id': 'after-id'})
+        callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, '_call_task_errbacks', side_effect=KeyError('errback crashed')):
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        stored = {call_[0][0]: type(call_[0][1]) for call_ in store_result.call_args_list}
+        assert stored == {'body-id': KeyError, 'after-id': KeyError}
 
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
@@ -746,6 +920,35 @@ class test_BaseBackend_dict:
 
         b._get_task_meta_for.return_value = {'status': states.SUCCESS}
         b.wait_for(task_id='1', timeout=None)
+
+    def test_wait_for__timeout_zero_does_not_wait_forever(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+
+    def test_wait_for__timeout_zero_does_not_sleep(self):
+        """timeout=0 means do not block, so it must not sleep before giving up."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0)
+        sleep.assert_not_called()
+
+    def test_wait_for__does_not_sleep_past_the_timeout(self):
+        """A timeout below the poll interval must not be overshot."""
+        sleep = self.patching('time.sleep')
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock()
+        b._get_task_meta_for.return_value = {'status': states.PENDING}
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=0.1, interval=0.5)
+        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
 
     def test_get_children(self):
         b = BaseBackend(app=self.app)
@@ -1076,6 +1279,20 @@ class test_BaseBackend_dict:
         backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
         backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
 
+    def test_handle_group_chord_error_stores_failures_before_revoke(self):
+        # The revoke handler keeps a result that is already ready, so every
+        # failure has to be in the backend before the revoke goes out.
+        task_ids = ["task-id-1", "task-id-2"]
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+        calls = []
+        backend.fail_from_current_stack.side_effect = lambda task_id, exc=None: calls.append(task_id)
+        backend.mark_as_failure.side_effect = lambda task_id, exc: calls.append(task_id)
+        frozen_group.revoke.side_effect = lambda: calls.append("revoke")
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert calls == ["task-id-1", "task-id-2", "group-id", "revoke"]
+
     def test_handle_group_chord_error_with_errbacks(self):
         """Test _handle_group_chord_error calls error callbacks for each task."""
         errbacks = ["errback1", "errback2"]
@@ -1301,6 +1518,67 @@ class test_KeyValueStoreBackend:
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.01, interval=0.01))
 
+    def test_get_many__timeout_zero_does_not_wait_forever(self):
+        """A timeout of 0 must time out, not fall back to waiting forever."""
+        # max_iterations keeps this test terminating if the deadline is
+        # skipped again, so the regression shows up as a failure not a hang.
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(
+                tasks, timeout=0, interval=0.01, max_iterations=3))
+        # timeout=0 means do not block, so it must not sleep either.
+        sleep.assert_not_called()
+
+    def test_get_many__does_not_sleep_past_the_timeout(self):
+        """A timeout below the poll interval must not be overshot."""
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
+        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+
+    def test_get_many__timeout_zero_returns_results_that_are_ready(self):
+        """A timeout of 0 still gets to return work that is already done."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        for id, i in ids.items():
+            self.b.mark_as_done(id, i)
+        # the ids are served by the first mget, not out of the cache, so the
+        # poll loop is entered and the deadline check is reached.
+        self.b._cache.clear()
+
+        got = dict(self.b.get_many(list(ids), timeout=0, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        sleep.assert_not_called()
+
+    def test_get_many__ids_completing_on_the_deadline_is_not_a_timeout(self):
+        """Satisfying the last id as the budget runs out is a success."""
+        sleep = self.patching('time.sleep')
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        polls = []
+
+        def mget(keys):
+            # nothing is stored until the second poll, which lands exactly
+            # when the one interval of budget has been spent.
+            polls.append(keys)
+            if len(polls) > 1:
+                for id, i in ids.items():
+                    self.b.mark_as_done(id, i)
+            return [self.b.get(k) for k in keys]
+
+        self.b.mget = mget
+
+        got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
+
+        assert {id: state['result'] for id, state in got.items()} == ids
+        assert sleep.call_args_list == [call(0.5)]
+
     def test_get_many_passes_ready_states(self):
         tasks_length = 10
         ready_states = frozenset({states.SUCCESS})
@@ -1524,6 +1802,136 @@ class test_KeyValueStoreBackend:
         assert self.b.task_result_exists(tid) is True
         self.b.forget(tid)
         assert self.b.task_result_exists(tid) is False
+
+
+class test_result_compression:
+
+    def setup_method(self):
+        self.app.conf.result_serializer = 'json'
+        self.app.conf.accept_content = ['json']
+
+    def backend(self, compression=None, cls=CompressingKVBackend):
+        self.app.conf.result_compression = compression
+        return cls(app=self.app)
+
+    def test_compression_is_off_by_default(self):
+        b = self.backend()
+        assert b.compression is None
+        payload = b.encode({'foo': 'bar'})
+        assert payload == '{"foo": "bar"}'
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    @pytest.mark.parametrize('compression', ['gzip', 'zlib', 'bzip2'])
+    def test_encode_compresses_and_decode_round_trips(self, compression):
+        b = self.backend(compression)
+        assert b.compression == compression
+        payload = b.encode({'foo': 'bar'})
+        assert isinstance(payload, bytes)
+        assert payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.decode(payload) == {'foo': 'bar'}
+
+    def test_compressed_payload_is_smaller(self):
+        data = {'result': ['a repetitive value'] * 200}
+        assert len(self.backend('gzip').encode(data)) < len(
+            self.backend().encode(data))
+
+    def test_decode_reads_an_uncompressed_payload(self):
+        payload = self.backend().encode({'foo': 'bar'})
+        b = self.backend('gzip')
+        assert b.decode(payload) == {'foo': 'bar'}
+        assert b.decode(ensure_bytes(payload)) == {'foo': 'bar'}
+
+    def test_decode_reads_a_compressed_payload_with_compression_off(self):
+        payload = self.backend('gzip').encode({'foo': 'bar'})
+        assert self.backend().decode(payload) == {'foo': 'bar'}
+
+    def test_stores_compressed_and_reads_back_older_results(self):
+        old = self.backend()
+        old.store_result('legacy', {'foo': 'bar'}, states.SUCCESS)
+        # a real backend hands the stored payload back as bytes
+        stored = {key: ensure_bytes(value) for key, value in old.db.items()}
+
+        b = self.backend('gzip')
+        b.db = stored
+        b.store_result('current', {'foo': 'baz'}, states.SUCCESS)
+
+        assert stored[b.get_key_for_task('legacy')].startswith(b'{')
+        assert stored[b.get_key_for_task('current')].startswith(
+            COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('legacy') == {'foo': 'bar'}
+        assert b.get_result('current') == {'foo': 'baz'}
+
+    def test_exception_result_round_trips(self):
+        b = self.backend('gzip')
+        b.store_result('errored', KeyError('boom'), states.FAILURE)
+        assert isinstance(b.get_result('errored'), KeyError)
+
+    def test_ignored_when_the_backend_cannot_store_bytes(self):
+        with pytest.warns(UserWarning,
+                          match='cannot store compressed payloads'):
+            b = self.backend('gzip', cls=KVBackend)
+        assert b.compression is None
+        assert b.encode({'foo': 'bar'}) == '{"foo": "bar"}'
+
+    def test_unknown_compression_method_is_rejected(self):
+        with pytest.raises(ImproperlyConfigured,
+                           match='Unknown compression method'):
+            self.backend('no-such-compression')
+
+    def test_decompress_payload_leaves_other_types_alone(self):
+        assert decompress_payload('{"foo": "bar"}') == '{"foo": "bar"}'
+        assert decompress_payload(42) == 42
+
+    def test_decompress_payload_accepts_a_memoryview(self):
+        payload = compress_payload(b'{"foo": "bar"}', 'gzip')
+        assert decompress_payload(memoryview(payload)) == b'{"foo": "bar"}'
+
+
+class test_result_compression_binary_serializer:
+    """Compression on top of a serializer that already produces bytes.
+
+    Kombu's ``dumps`` returns bytes for pickle and msgpack, so ``encode``
+    compresses bytes rather than str, and the value stored has no valid text
+    encoding at all. This is the boundary the Cassandra write path broke on.
+    """
+
+    def backend(self, serializer, compression='gzip'):
+        self.app.conf.result_serializer = serializer
+        self.app.conf.accept_content = [serializer]
+        self.app.conf.result_compression = compression
+        return CompressingKVBackend(app=self.app)
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_store_and_get_binary_result(self, serializer):
+        pytest.importorskip(serializer)
+        b = self.backend(serializer)
+        # The premise of this class: the payload is bytes before compression
+        # touches it, not only after.
+        assert isinstance(b._encode({'foo': 'bar'})[2], bytes)
+
+        # The value has no valid text encoding, so anything decoding the
+        # payload to str on the way through raises rather than quietly
+        # changing it.
+        result = {'value': b'\x00\x01\x02\xff', 'text': 'a value ' * 40}
+        b.store_result('binary', result, states.SUCCESS)
+
+        stored = ensure_bytes(b.db[b.get_key_for_task('binary')])
+        assert stored.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert b.get_result('binary') == result
+
+    @pytest.mark.parametrize('serializer', ['pickle', 'msgpack'])
+    def test_uncompressed_binary_payload_is_not_read_as_compressed(
+            self, serializer):
+        # The marker starts with NUL, which neither serializer can start its
+        # own output with, so a payload written before compression was turned
+        # on is not mistaken for a compressed one.
+        pytest.importorskip(serializer)
+        plain = self.backend(serializer, compression=None)
+        payload = plain.encode({'value': b'\x00\x01\x02\xff'})
+        assert isinstance(payload, bytes)
+        assert not payload.startswith(COMPRESSED_PAYLOAD_MAGIC)
+        assert self.backend(serializer).decode(payload) == {
+            'value': b'\x00\x01\x02\xff'}
 
 
 class test_KeyValueStoreBackend_interface:

@@ -15,14 +15,44 @@ from kombu.serialization import pickle, pickle_protocol
 from kombu.utils.objects import cached_property
 
 from celery import __version__
-from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.exceptions import ImproperlyConfigured, WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 
 __all__ = (
     'SOFTWARE_INFO', 'reserved_requests', 'active_requests',
-    'total_count', 'revoked', 'task_reserved', 'maybe_shutdown',
-    'task_accepted', 'task_ready', 'Persistent',
+    'scheduled_requests', 'total_count', 'revoked', 'task_reserved',
+    'task_scheduled', 'maybe_shutdown', 'task_accepted', 'task_ready',
+    'merge_revoked', 'Persistent',
 )
+
+
+def _int_env(name: str, default: int) -> int:
+    """Parse an integer environment variable with proper error handling."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            f"Invalid value for {name}: expected int, got {value!r}"
+        ) from exc
+
+
+def _float_env(name: str, default: float) -> float:
+    """Parse a float environment variable with proper error handling."""
+    value = os.environ.get(name)
+    if value is None:
+        return float(default)
+
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ImproperlyConfigured(
+            f"Invalid value for {name}: expected float, got {value!r}"
+        ) from exc
+
 
 #: Worker software/platform information.
 SOFTWARE_INFO = {
@@ -32,18 +62,18 @@ SOFTWARE_INFO = {
 }
 
 #: maximum number of revokes to keep in memory.
-REVOKES_MAX = int(os.environ.get('CELERY_WORKER_REVOKES_MAX', 50000))
+REVOKES_MAX = _int_env('CELERY_WORKER_REVOKES_MAX', 50000)
 
 #: maximum number of successful tasks to keep in memory.
-SUCCESSFUL_MAX = int(os.environ.get('CELERY_WORKER_SUCCESSFUL_MAX', 1000))
+SUCCESSFUL_MAX = _int_env('CELERY_WORKER_SUCCESSFUL_MAX', 1000)
 
 #: how many seconds a revoke will be active before
 #: being expired when the max limit has been exceeded.
-REVOKE_EXPIRES = float(os.environ.get('CELERY_WORKER_REVOKE_EXPIRES', 10800))
+REVOKE_EXPIRES = _float_env('CELERY_WORKER_REVOKE_EXPIRES', 10800)
 
 #: how many seconds a successful task will be cached in memory
 #: before being expired when the max limit has been exceeded.
-SUCCESSFUL_EXPIRES = float(os.environ.get('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800))
+SUCCESSFUL_EXPIRES = _float_env('CELERY_WORKER_SUCCESSFUL_EXPIRES', 10800)
 
 #: Mapping of reserved task_id->Request.
 requests = {}
@@ -53,6 +83,18 @@ reserved_requests = weakref.WeakSet()
 
 #: set of currently active :class:`~celery.worker.request.Request`'s.
 active_requests = weakref.WeakSet()
+
+#: set of :class:`~celery.worker.request.Request`'s scheduled for an
+#: ETA/countdown and not yet handed over to the pool.
+#:
+#: A request is discarded from here by :func:`task_reserved` once its
+#: ETA/countdown has elapsed.  Note that for a rate-limited task the ETA
+#: firing only moves the request into its token bucket
+#: (``Consumer._limit_post_eta``); it stays in this set until a token frees
+#: up and ``Consumer._limit_move_to_pool`` reserves it, so such a request
+#: keeps reporting ``scheduled`` after its ETA has passed even though
+#: ``inspect scheduled`` no longer lists it.
+scheduled_requests = weakref.WeakSet()
 
 #: A limited set of successful :class:`~celery.worker.request.Request`'s.
 successful_requests = LimitedSet(maxlen=SUCCESSFUL_MAX,
@@ -70,6 +112,32 @@ revoked = LimitedSet(maxlen=REVOKES_MAX, expires=REVOKE_EXPIRES)
 #: Mapping of stamped headers flagged for revoking.
 revoked_stamps = {}
 
+
+def merge_revoked(task_ids):
+    """Add task ids revoked elsewhere: on another worker, or before a restart.
+
+    Only the ids are taken, stamped with the local clock; the stamps they
+    may come with are dropped.  :data:`revoked` stamps its items with
+    :func:`time.monotonic`, which counts from the boot of the host, so a
+    stamp taken on another host (received on mingle) or before a reboot
+    (read from the state db) is not comparable with the local ones: a
+    stamp ahead of the local clock never expires here, and once such
+    stamps fill the set up to its limit, every id revoked here is purged
+    as the oldest one the moment it is added.  The ids received live
+    ``REVOKE_EXPIRES`` seconds from now on rather than from the time they
+    were revoked.
+
+    Arguments:
+        task_ids (Iterable): the ids, or a mapping/:class:`LimitedSet`
+            of them, in which case its stamps are ignored.  The order
+            matters when the local set is full: the ids are added in it,
+            and the first ones are then the first to be purged.
+    """
+    if not task_ids:
+        return
+    revoked.update(list(task_ids))
+
+
 should_stop = None
 should_terminate = None
 
@@ -78,6 +146,7 @@ def reset_state():
     requests.clear()
     reserved_requests.clear()
     active_requests.clear()
+    scheduled_requests.clear()
     successful_requests.clear()
     total_count.clear()
     all_total_count[:] = [0]
@@ -95,10 +164,38 @@ def maybe_shutdown():
 
 def task_reserved(request,
                   add_request=requests.__setitem__,
-                  add_reserved_request=reserved_requests.add):
+                  add_reserved_request=reserved_requests.add,
+                  discard_scheduled_request=scheduled_requests.discard):
     """Update global state when a task has been reserved."""
     add_request(request.id, request)
     add_reserved_request(request)
+    discard_scheduled_request(request)
+
+
+def task_scheduled(request,
+                   add_request=requests.__setitem__,
+                   add_scheduled_request=scheduled_requests.add,
+                   all_reserved_requests=reserved_requests,
+                   all_active_requests=active_requests):
+    """Update global state when a task has been scheduled for an ETA/countdown.
+
+    Unlike :func:`task_reserved`, this doesn't add the request to
+    ``reserved_requests``: the request isn't waiting for a worker pool slot
+    yet, it's only registered so that it can be found (e.g. by the
+    ``query_task`` remote control command) before its ETA/countdown elapses.
+
+    This is a no-op for a request that already moved on to being reserved or
+    active: with a threaded timer (:class:`celery.utils.timer2.Timer`, used by
+    the non-eventloop pools) an ETA that's already in the past fires on the
+    timer thread right away, so ``apply_eta_task()`` -> :func:`task_reserved`
+    can run before the strategy gets here.  Adding the request back to
+    ``scheduled_requests`` then would misreport its state and let
+    ``Consumer.on_close()`` drop a still-running task from ``requests``.
+    """
+    if request in all_reserved_requests or request in all_active_requests:
+        return
+    add_request(request.id, request)
+    add_scheduled_request(request)
 
 
 def task_accepted(request,
@@ -119,7 +216,8 @@ def task_ready(request,
                successful=False,
                remove_request=requests.pop,
                discard_active_request=active_requests.discard,
-               discard_reserved_request=reserved_requests.discard):
+               discard_reserved_request=reserved_requests.discard,
+               discard_scheduled_request=scheduled_requests.discard):
     """Update global state when a task is ready."""
     if successful:
         successful_requests.add(request.id)
@@ -127,6 +225,7 @@ def task_ready(request,
     remove_request(request.id, None)
     discard_active_request(request)
     discard_reserved_request(request)
+    discard_scheduled_request(request)
 
 
 C_BENCH = os.environ.get('C_BENCH') or os.environ.get('CELERY_BENCH')
@@ -262,18 +361,16 @@ class Persistent:
 
     def _merge_revoked_v3(self, zrevoked):
         if zrevoked:
-            self._revoked_tasks.update(pickle.loads(self.decompress(zrevoked)))
+            self._merge_revoked_v1(pickle.loads(self.decompress(zrevoked)))
 
     def _merge_revoked_v2(self, saved):
-        if not isinstance(saved, LimitedSet):
-            # (pre 3.0.18) used to be stored as a dict
-            return self._merge_revoked_v1(saved)
-        self._revoked_tasks.update(saved)
+        # a LimitedSet, or a dict before 3.0.18
+        self._merge_revoked_v1(saved)
 
     def _merge_revoked_v1(self, saved):
-        add = self._revoked_tasks.add
-        for item in saved:
-            add(item)
+        # The saved stamps are dropped whatever the format: they may come
+        # from before a reboot, see merge_revoked().
+        self.state.merge_revoked(saved)
 
     def _dumps(self, obj):
         return pickle.dumps(obj, protocol=self.protocol)

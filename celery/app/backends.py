@@ -59,7 +59,7 @@ def by_name(backend=None, loader=None,
 def by_url(backend=None, loader=None):
     """Get backend class by URL."""
     url = None
-    if backend and '://' in backend:
+    if isinstance(backend, str) and '://' in backend:
         url = backend
         scheme, _, _ = url.partition('://')
         if '+' in scheme:

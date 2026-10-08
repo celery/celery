@@ -8,7 +8,7 @@ import errno
 import logging
 import os
 import warnings
-from collections import defaultdict
+from collections import defaultdict, deque
 from time import sleep
 
 from billiard.common import restart_state
@@ -30,10 +30,11 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
+from celery.utils.threads import bound_open_broker_sockets
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, scheduled_requests,
+                                 successful_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -236,6 +237,10 @@ class Consumer:
         else:
             self.amqheartbeat = 0
 
+        # Reused for every buffered event, so that the hub's ready set
+        # holds at most one pending flush.
+        self._flush_events_promise = promise(self._flush_events)
+
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
 
@@ -245,7 +250,7 @@ class Consumer:
             # connect again.
             self.app.conf.broker_connection_timeout = None
 
-        self._pending_operations = []
+        self._pending_operations = deque()
 
         self.steps = []
         self.blueprint = self.Blueprint(
@@ -255,6 +260,10 @@ class Consumer:
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
     def call_soon(self, p, *args, **kwargs):
+        """Schedule a callback.
+
+        Callback ordering is not guaranteed across pool implementations.
+        """
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
@@ -289,7 +298,7 @@ class Consumer:
         if not self.hub:
             while self._pending_operations:
                 try:
-                    self._pending_operations.pop()()
+                    self._pending_operations.popleft()()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Pending callback raised: %r', exc)
 
@@ -418,12 +427,10 @@ class Consumer:
 
     def on_connection_error_after_connected(self, exc):
         warn(CONNECTION_RETRY, exc_info=True)
+        # Bound the sockets that are already open before cleanup reads from
+        # them; collect()'s socket_timeout only applies to new sockets.
+        bound_open_broker_sockets(self.connection, COLLECT_SOCKET_TIMEOUT)
         try:
-            # Pass an explicit socket_timeout so that cleanup I/O on a
-            # broken connection (e.g. _brpop_read during Channel.close)
-            # cannot block indefinitely.  The default of None would set
-            # the global socket timeout to blocking-forever, which can
-            # cause the worker to hang here and never reach the reconnect.
             self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
@@ -543,6 +550,30 @@ class Consumer:
                 requests.pop(r.id, None)
         reserved_requests.clear()
         reserved_requests.update(tuple(active_requests))
+        # Scheduled (ETA/countdown) requests never became reserved, so they
+        # aren't covered by the cleanup above. Cancel their pending timer
+        # entries (through self.timer.cancel(), not entry.cancel()
+        # directly, since e.g. the Eventlet timer relies on that to catch
+        # GreenletExit) so the callback can't fire after we've torn down
+        # this connection (the synloop error path doesn't clear the timer
+        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
+        # our copies since the broker may redeliver these tasks to another
+        # worker on reconnect.
+        for r in tuple(scheduled_requests):
+            entry = r._eta_timer_entry
+            if entry is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling ETA timer entry: %r', exc)
+            # A request can be in both sets: with a threaded timer an ETA
+            # already in the past fires immediately, so task_reserved() may
+            # have run before the strategy registered the request as
+            # scheduled.  Never drop one that's reserved/running.
+            if r not in active_requests and r not in reserved_requests:
+                requests.pop(r.id, None)
+        scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
 
@@ -627,7 +658,7 @@ class Consumer:
 
     def on_send_event_buffered(self):
         if self.hub:
-            self.hub._ready.add(self._flush_events)
+            self.hub.call_soon(self._flush_events_promise)
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
                        routing_key=None, **options):
@@ -653,8 +684,9 @@ class Consumer:
 
     def cancel_task_queue(self, queue):
         info('Canceling queue %s', queue)
-        self.app.amqp.queues.deselect(queue)
-        self.task_consumer.cancel_by_queue(queue)
+        queues = self.app.amqp.queues
+        queues.deselect(queue)
+        self.task_consumer.cancel_by_queue(queues.aliases.get(queue, queue))
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an ETA/countdown."""

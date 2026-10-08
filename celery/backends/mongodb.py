@@ -54,6 +54,9 @@ class MongoBackend(BaseBackend):
 
     supports_autoexpire = False
 
+    # Bytes round-trip through BSON as a binary field.
+    supports_result_compression = True
+
     _connection = None
 
     def __init__(self, app=None, **kwargs):
@@ -200,15 +203,20 @@ class MongoBackend(BaseBackend):
         obj = self.collection.find_one({'_id': task_id})
         if obj:
             if self.app.conf.find_value_for_key('extended', 'result'):
+                # The request-derived fields are only written by
+                # ``_get_result_meta`` when a request is available, so a
+                # document stored without one (for example by
+                # ``AbortableAsyncResult.abort``) does not carry them.
+                # Default them to None instead of raising KeyError.
                 return self.meta_from_decoded({
-                    'name': obj['name'],
-                    'args': obj['args'],
+                    'name': obj.get('name'),
+                    'args': obj.get('args'),
                     'task_id': obj['_id'],
-                    'queue': obj['queue'],
-                    'kwargs': obj['kwargs'],
+                    'queue': obj.get('queue'),
+                    'kwargs': obj.get('kwargs'),
                     'status': obj['status'],
-                    'worker': obj['worker'],
-                    'retries': obj['retries'],
+                    'worker': obj.get('worker'),
+                    'retries': obj.get('retries'),
                     'children': obj['children'],
                     'date_done': obj['date_done'],
                     'traceback': obj['traceback'],

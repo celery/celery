@@ -47,6 +47,7 @@ The ``hostname`` argument can expand the following variables:
     - ``%h``:  Hostname, including domain name.
     - ``%n``:  Hostname only.
     - ``%d``:  Domain name only.
+    - ``%%``:  Literal percent sign.
 
 If the current hostname is *george.example.com*, these will expand to:
 
@@ -59,6 +60,24 @@ If the current hostname is *george.example.com*, these will expand to:
 +----------+----------------+------------------------------+
 | ``%d``   | ``worker1@%d`` | *worker1@example.com*        |
 +----------+----------------+------------------------------+
+
+When starting ``celery worker`` directly, use ``%%`` for a literal percent
+sign in a node or host format string. For example, ``logs/%%n-%n.log`` keeps
+``%n`` literal before the hyphen and expands the worker name after it.
+
+``celery multi`` formats option values before passing them to the worker. The
+worker formats log and pid file paths again, so a literal percent sign in these
+paths needs ``%%%%`` when passed through ``multi``. For example,
+``--logfile=logs/%%%%n-%n.log`` becomes ``logs/%n-worker.log`` for a worker named
+``worker``. Similarly, ``--pidfile=%%%%n-%n.pid`` becomes ``%n-worker.pid``;
+``multi stop`` and ``multi stopwait`` look up that same final path.
+The process-index placeholders ``%i`` and ``%I`` are preserved by
+``multi`` for the worker to expand.
+
+.. versionadded:: 5.7
+
+    Leading ``~`` in path options (such as ``--workdir``, ``--pidfile``, and ``--logfile``)
+    is expanded for the user running ``celery multi`` (not the user specified by ``--uid``).
 
 .. admonition:: Note for :pypi:`supervisor` users
 
@@ -434,6 +453,15 @@ of worker processes/threads can be changed using the
 :option:`--concurrency <celery worker --concurrency>` argument and defaults
 to the number of CPUs available on the machine.
 
+.. versionadded:: 5.7
+   ``--concurrency=auto``.
+
+Inside a container or a systemd unit with a CPU limit the host CPU count
+overstates what the worker may use. Passing ``--concurrency=auto`` sizes
+the prefork pool from the cgroup CPU quota and the CPU affinity mask
+instead (Linux only); for the threads, gevent, eventlet and solo pools it
+is a no-op. See :setting:`worker_concurrency` for details.
+
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
     More pool processes are usually better, but there's a cut-off point where
@@ -636,12 +664,16 @@ Persistent revokes
 
 Revoking tasks works by sending a broadcast message to all the workers,
 the workers then keep a list of revoked tasks in memory. When a worker starts
-up it will synchronize revoked tasks with other workers in the cluster.
+up it will synchronize revoked tasks with other workers in the cluster: the
+ids received this way count as revoked from that moment on, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later.
 
 The list of revoked tasks is in-memory so if all workers restart the list
 of revoked ids will also vanish. If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
-argument to :program:`celery worker`:
+argument to :program:`celery worker` (the ids read from the file count as
+revoked from the start of the worker, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later):
 
 .. code-block:: console
 
@@ -1244,9 +1276,10 @@ There are two types of remote control commands:
     Performs side effects, like adding a new queue to consume from.
 
 Remote control commands are registered in the control panel and
-they take a single argument: the current
-:class:`!celery.worker.control.ControlDispatch` instance.
-From there you have access to the active
+they take a ``state`` object as their first argument, followed by
+any arguments sent with the command.
+``state`` holds the worker's ``app``, ``hostname`` and ``consumer``,
+so from it you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:

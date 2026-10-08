@@ -57,6 +57,10 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     on_task_received = obj.create_task_handler()
 
     heartbeat_error = _enable_amqheartbeats(hub.timer, connection, rate=hbrate)
+    dispatcher_heartbeat_error = [None]
+    if obj.event_dispatcher:
+        dispatcher_heartbeat_error = _enable_amqheartbeats(
+            hub.timer, obj.event_dispatcher.connection, rate=hbrate)
 
     consumer.on_message = on_task_received
     obj.controller.register_with_event_loop(hub)
@@ -86,6 +90,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
             state.maybe_shutdown()
             if heartbeat_error[0] is not None:
                 raise heartbeat_error[0]
+            if dispatcher_heartbeat_error[0] is not None:
+                raise dispatcher_heartbeat_error[0]
 
             # We only update QoS when there's no more messages to read.
             # This groups together qos calls, and makes sure that remote
@@ -137,8 +143,13 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
     on_task_received = obj.create_task_handler()
     perform_pending_operations = obj.perform_pending_operations
     heartbeat_error = [None]
-    if getattr(obj.pool, 'is_green', False):
+    dispatcher_heartbeat_error = [None]
+    is_green = getattr(obj.pool, 'is_green', False)
+    if is_green:
         heartbeat_error = _enable_amqheartbeats(obj.timer, connection, rate=hbrate)
+        if obj.event_dispatcher:
+            dispatcher_heartbeat_error = _enable_amqheartbeats(
+                obj.timer, obj.event_dispatcher.connection, rate=hbrate)
     consumer.on_message = on_task_received
     consumer.consume()
 
@@ -150,6 +161,8 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         """
         if heartbeat_error[0] is not None:
             raise heartbeat_error[0]
+        if dispatcher_heartbeat_error[0] is not None:
+            raise dispatcher_heartbeat_error[0]
         if qos.prev != qos.value:
             qos.update()
         try:
@@ -160,6 +173,15 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
         except OSError:
             if blueprint.state == RUN:
                 raise
+        # drain this connection so broker heartbeats are consumed.
+        if is_green and obj.amqheartbeat and obj.event_dispatcher:
+            connection_ = obj.event_dispatcher.connection
+            if connection_ and connection_.supports_heartbeats:
+                try:
+                    _quick_drain(obj.event_dispatcher.connection)
+                except OSError:
+                    if blueprint.state == RUN:
+                        raise
 
     try:
         while blueprint.state == RUN and obj.connection:

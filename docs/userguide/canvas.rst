@@ -612,8 +612,8 @@ you chain tasks together:
     proj.tasks.add(4, 4) | proj.tasks.mul(8) | proj.tasks.mul(10)
 
 
-Calling the chain will call the tasks in the current process
-and return the result of the last task in the chain:
+Calling the chain submits the first task to the broker for asynchronous execution
+and returns an ``AsyncResult`` for the last task in the chain:
 
 .. code-block:: pycon
 
@@ -905,6 +905,11 @@ Chords
 A chord is a task that only executes after all of the tasks in a group have
 finished executing.
 
+``countdown`` and ``eta`` passed to :meth:`~celery.chord.apply_async` (or set
+on the chord / on a ``group | task`` signature) delay the **header** tasks.
+They do not delay the body callback, and they do not change the
+``chord_unlock`` retry interval (that remains the ``countdown`` argument of
+:meth:`~celery.chord.run`).
 
 Let's calculate the sum of the expression
 :math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.

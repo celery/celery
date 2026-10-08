@@ -1,20 +1,28 @@
 import errno
 import os
+import pickle
+import select
 import socket
 import tempfile
+import threading
 from itertools import cycle
+from struct import pack
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from billiard.pool import ApplyResult
 from kombu.asynchronous import Hub
+from kombu.message import Message
+from vine import promise
 
 import t.skip
+from celery.app import base as app_base
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+from t.unit.conftest import restore_execv_state
 
 try:
     from celery.concurrency import asynpool
@@ -55,6 +63,79 @@ class MockResult:
         return self.value
 
 
+class PipeReader:
+    """Stand-in for ``proc.outq._reader`` backed by a real pipe fd.
+
+    ``poll`` reports real readiness so the test sees exactly what
+    ``_flush_outqueue`` would see, and ``recv`` fails loudly instead of
+    blocking: a blocking ``recv`` on a half-read message is the bug.
+    """
+
+    def __init__(self, fd):
+        self._fd = fd
+
+    def fileno(self):
+        return self._fd
+
+    def poll(self, timeout=0.0):
+        readable, _, _ = select.select([self._fd], [], [], timeout)
+        return bool(readable)
+
+    def recv(self):
+        raise AssertionError(
+            'recv() on a pipe holding the tail of a partly read message '
+            'would block forever')
+
+
+@pytest.fixture
+def result_pipe():
+    r, w = os.pipe()
+    os.set_blocking(r, False)
+    yield r, w
+    for fd in (r, w):
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+
+def make_result_handler(fd, proc):
+    handler = asynpool.ResultHandler(
+        Mock(), Mock(), {}, Mock(),
+        Mock(), Mock(), Mock(), Mock(),
+        fileno_to_outq={fd: proc},
+        on_process_alive=Mock(),
+        on_job_ready=Mock(),
+    )
+    handler.on_state_change = Mock(name='on_state_change')
+    return handler
+
+
+def start_partial_read(handler, hub, r, w, message):
+    """Register a ``_recv_message`` generator on ``hub`` for ``r`` that has
+    read the header and the first half of ``message``'s body.
+
+    Returns the body bytes still to be written.
+    """
+    body = pickle.dumps(message, pickle.HIGHEST_PROTOCOL)
+    half = len(body) // 2
+    os.write(w, pack('>i', len(body)) + body[:half])
+    handler.register_with_event_loop(hub)
+    handler.handle_event(r)
+    callback, _ = hub.readers[r]
+    assert asynpool.gen_not_started(callback) is False
+    return body[half:]
+
+
+def ack_promise(name, side_effect=None):
+    """What the consumer leaves in ``hub._ready`` once a request acks:
+    a promise around a bound ``Message`` method."""
+    method = Mock(name=name, side_effect=side_effect)
+    method.__self__ = Mock(spec=Message)
+    method.__name__ = name
+    return promise(method), method
+
+
 @patch('celery.platforms.set_mp_process_title')
 class test_process_initializer:
 
@@ -66,7 +147,8 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer(self, _get_start_method, _signals, set_mp_process_title, restore_logging):
         from celery import signals
         from celery._state import _tls
         from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
@@ -85,13 +167,11 @@ class test_process_initializer:
                 'celeryd', hostname='awesome.worker.com',
             )
 
-            with patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    S.assert_called_with(app, 'luke.worker.com')
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                process_initializer(app, 'luke.worker.com')
+                S.assert_called_with(app, 'luke.worker.com')
 
             os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
             app.log.setup = Mock(name='log_setup')
@@ -100,8 +180,46 @@ class test_process_initializer:
             finally:
                 os.environ.pop('CELERY_LOG_FILE', None)
 
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='spawn')
+    def test_process_initializer_spawned_child(self, _get_start_method, _signals, set_mp_process_title,
+                                               restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'spawned.worker.com')
+                assert os.environ['FORKED_BY_MULTIPROCESSING'] == '1'
+                # base was imported before the child knew it was spawned, so
+                # the flag has to be set too, not just the variable.
+                assert app_base.USING_EXECV
+                S.assert_called_with(app, 'spawned.worker.com')
+            assert app.loader.init_worker.call_count
+
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer_forked_child(self, _get_start_method, _signals, set_mp_process_title,
+                                              restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'forked.worker.com')
+                assert 'FORKED_BY_MULTIPROCESSING' not in os.environ
+                assert not app_base.USING_EXECV
+                S.assert_not_called()
+
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_pdeath_sig(self, _get_start_method, _set_pdeathsig, set_mp_process_title, restore_logging):
         from celery import signals
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
@@ -365,6 +483,23 @@ class test_AsynPool:
 
         # Then: all items were removed from the managed data source
         assert fd_iter == {}, "Expected all items removed from managed dict"
+
+    def test_iterate_file_descriptors_safely_handles_attribute_error(self):
+        # Given: fd objects whose underlying socket has been set to None
+        # after a connection loss (hub_method raises AttributeError on .fileno())
+        fd_iter = [1, 2, 3]
+
+        def _fake_hub(*args, **kwargs):
+            raise AttributeError("'NoneType' object has no attribute 'fileno'")
+
+        # When: iterating — must not propagate AttributeError as Unrecoverable
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", kw1="kw1",
+        )
+
+        # Then: stale fds are cleaned up, not raised
+        assert fd_iter == [], "Expected stale None-socket fds removed from managed list"
 
     def _get_hub(self):
         hub = Hub()
@@ -930,6 +1065,188 @@ class test_AsynPool:
             hub.add_reader, 3, x.on_state_change,
         )
 
+    def test_flush_outqueue_completes_partial_message_instead_of_recv(
+            self, result_pipe):
+        """A message half-read by the event loop is finished by resuming
+        the hub's generator, not by a blocking ``recv()`` on the pipe."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        message = ('ready', 42)
+        rest = start_partial_read(handler, hub, r, w, message)
+
+        os.write(w, rest)
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.sleep'):
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            hub.close()
+
+        handler.on_state_change.assert_called_once_with(message)
+        remove.assert_not_called()
+        assert (hub.readers.get(r) is None or
+                hub.readers[r][0] is handler.handle_event)
+
+    def test_flush_outqueue_waits_for_a_live_child_still_writing(
+            self, result_pipe):
+        """The tail arrives only after the first resume: a live child is
+        polled for and the message is completed, not handed to recv()."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        message = ('ready', 42)
+        rest = start_partial_read(handler, hub, r, w, message)
+        writer = threading.Timer(0.05, os.write, args=(w, rest))
+        writer.start()
+
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.sleep'):
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            writer.join()
+            hub.close()
+
+        handler.on_state_change.assert_called_once_with(message)
+        remove.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_process_dies_mid_message(
+            self, result_pipe):
+        """If the child never finishes writing and is dead, the fd is
+        removed rather than waited on forever."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = False
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_a_live_child_stalls(self, result_pipe):
+        """A child that is alive but never finishes its write is given up
+        on once ``partial_read_deadline`` has passed."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        handler.partial_read_deadline = 0.05
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.logger') as logger:
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+        logger.warning.assert_called_once()
+
+    def test_flush_outqueue_drops_fd_on_eof_mid_message(self, result_pipe):
+        """The write end closes before the rest of the body arrives: the
+        resumed generator raises and the fd is dropped."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+        os.close(w)
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_poll_fails(self, result_pipe):
+        """The pipe can no longer be polled (e.g. closed under us): the fd
+        is dropped instead of retried."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        reader = PipeReader(r)
+        reader.poll = Mock(name='poll', side_effect=OSError(errno.EBADF, 'closed'))
+        proc.outq._reader = reader
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        reader.poll.assert_called_once_with(handler.partial_read_timeout)
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_finish_partial_read_fd_not_on_hub(self, result_pipe):
+        r, _ = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        handler = make_result_handler(r, proc)
+        handler.register_with_event_loop(hub)
+        try:
+            assert handler._finish_partial_read(r, proc) is False
+        finally:
+            hub.close()
+        proc.outq._reader.poll.assert_not_called()
+
+    def test_finish_partial_read_no_generator_registered(self, result_pipe):
+        r, _ = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        handler = make_result_handler(r, proc)
+        handler.register_with_event_loop(hub)
+        hub.add_reader(r, handler.handle_event, r)
+        try:
+            assert handler._finish_partial_read(r, proc) is False
+        finally:
+            hub.close()
+        proc.outq._reader.poll.assert_not_called()
+
+    def test_finish_partial_read_not_registered_with_event_loop(self):
+        proc = Mock(name='proc')
+        handler = make_result_handler(3, proc)
+        assert handler._finish_partial_read(3, proc) is False
+
 
 class test_TaskPool:
 
@@ -1023,6 +1340,7 @@ class test_TaskPool:
 
         mock_hub = Mock(name='hub')
         mock_hub.fire_timers.side_effect = [Exception("Hub error"), None]
+        mock_hub._pop_ready.return_value = set()
         mock_get_event_loop.return_value = mock_hub
 
         mock_shutdown_event = Mock(name='shutdown_event')
@@ -1047,6 +1365,93 @@ class test_TaskPool:
 
         # Should match number of loop iterations allowed by mock_shutdown_event.is_set.side_effect
         assert mock_hub.fire_timers.call_count == 2
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    @patch('celery.concurrency.prefork.threading.Event')
+    def test_on_stop_timer_thread_runs_ready_callbacks(
+        self,
+        mock_event_class,
+        mock_thread,
+        mock_get_event_loop,
+    ):
+        """Callbacks queued with ``hub.call_soon`` (e.g. late acks) run on
+        every tick of the shutdown timer thread; one failing callback is
+        reported through ``hub.on_callback_error`` and does not stop the
+        others."""
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        error = RuntimeError('ack failed')
+        failing_ack, _ = ack_promise('ack_log_error', side_effect=error)
+        ack, ack_method = ack_promise('reject_log_error')
+        socket_read = Mock(name='socket_read')
+        socket_reader = promise(socket_read)
+        mock_hub = Mock(name='hub')
+        mock_hub._pop_ready.side_effect = [
+            set(), {failing_ack, ack, socket_reader}, set()]
+        mock_get_event_loop.return_value = mock_hub
+
+        mock_shutdown_event = Mock(name='shutdown_event')
+        mock_shutdown_event.is_set.side_effect = [False, False, True]
+        mock_event_class.return_value = mock_shutdown_event
+
+        thread_target = None
+
+        def capture_thread(*args, **kwargs):
+            nonlocal thread_target
+            thread_target = kwargs['target']
+            timer_thread = Mock(name='timer_thread')
+            timer_thread.is_alive.return_value = False
+            return timer_thread
+
+        mock_thread.side_effect = capture_thread
+
+        pool.on_stop()
+        # the acks queued by the results the join waited for are drained
+        # once more on the main thread after the timer thread has exited
+        assert mock_hub._pop_ready.call_count == 1
+
+        with patch('celery.concurrency.prefork.time.sleep'):
+            thread_target()
+
+        assert mock_hub.fire_timers.call_count == 2
+        assert mock_hub._pop_ready.call_count == 3
+        ack_method.assert_called_once_with()
+        mock_hub.on_callback_error.assert_called_once_with(failing_ack, error)
+        # the transport reader re-queues itself after every read and would
+        # feed deliveries to the closed pool: it is put back for hub.close()
+        socket_read.assert_not_called()
+        mock_hub.call_soon.assert_called_once_with(socket_reader)
+
+    @patch('celery.concurrency.prefork.logger')
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    def test_on_stop_ready_callbacks_error_after_join_is_logged(
+        self, mock_thread, mock_get_event_loop, mock_logger,
+    ):
+        """A failure in the post-join drain (e.g. a hub without
+        ``_pop_ready``) is logged and does not escape ``on_stop``."""
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_hub._pop_ready.side_effect = AttributeError('_pop_ready')
+        mock_get_event_loop.return_value = mock_hub
+        timer_thread = Mock(name='timer_thread')
+        timer_thread.is_alive.return_value = False
+        mock_thread.return_value = timer_thread
+
+        pool.on_stop()
+
+        mock_pool.join.assert_called_once_with()
+        mock_hub._pop_ready.assert_called_once_with()
+        mock_logger.warning.assert_called_once()
+        assert mock_logger.warning.call_args[1]['exc_info'] is True
 
     @patch('celery.concurrency.prefork.get_event_loop')
     def test_on_stop_no_hub(self, mock_get_event_loop):
@@ -1114,3 +1519,28 @@ class test_TaskPool:
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 8.0
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_fork(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=True)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _forking_enable.assert_called_once_with(True)
+        _set_start_method.assert_not_called()
+
+    @patch.dict(os.environ, clear=False)
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_spawn(self, _forking_enable, _set_start_method):
+        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=False)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _set_start_method.assert_called_once_with('spawn', force=True)
+        _forking_enable.assert_not_called()
+        # spawned children must be flagged as fresh interpreters so they
+        # re-run setup_worker_optimizations in process_initializer.
+        assert os.environ.get('FORKED_BY_MULTIPROCESSING') == '1'

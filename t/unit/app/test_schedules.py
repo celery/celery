@@ -124,6 +124,134 @@ class test_schedule:
         s2 = fun(*args)
         assert s1 == s2
 
+    def test_is_due_across_spring_forward(self):
+        # The task runs every 10 seconds. Now is exactly 10 elapsed seconds after
+        # the last run, so the task should be due now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock jumps forward.
+        last_run_at = datetime(2020, 3, 29, 1, 59, 55, tzinfo=self.app.timezone)
+        now = datetime(2020, 3, 29, 3, 0, 5, tzinfo=self.app.timezone)
+        assert last_run_at.isoformat() == '2020-03-29T01:59:55+01:00'
+
+        # DST changes the UTC offset from +01:00 to +02:00.
+        assert now.isoformat() == '2020-03-29T03:00:05+02:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=10)
+
+        s = schedule(10, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (True, 10)
+
+    def test_is_due_across_spring_forward_relative(self):
+        # The task runs every hour with relative=True. Adding one elapsed hour gives
+        # 03:59:55+02:00, then rounding gives 03:00+02:00, which is exactly now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock jumps forward.
+        last_run_at = datetime(2020, 3, 29, 1, 59, 55, tzinfo=self.app.timezone)
+        now = datetime(2020, 3, 29, 3, 0, tzinfo=self.app.timezone)
+        assert last_run_at.isoformat() == '2020-03-29T01:59:55+01:00'
+
+        # DST changes the UTC offset from +01:00 to +02:00.
+        assert now.isoformat() == '2020-03-29T03:00:00+02:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=5)
+
+        s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (True, 3600)
+
+    def test_is_not_due_before_spring_forward(self):
+        # The task runs every 10 seconds. Now is only 3 elapsed seconds after
+        # the last run, so the task should not be due yet, with 7 seconds remaining.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock jumps forward.
+        last_run_at = datetime(2020, 3, 29, 1, 59, 55, tzinfo=self.app.timezone)
+        now = datetime(2020, 3, 29, 1, 59, 58, tzinfo=self.app.timezone)
+        assert last_run_at.isoformat() == '2020-03-29T01:59:55+01:00'
+
+        # Both times are before the clock jumps from 02:00 to 03:00.
+        assert now.isoformat() == '2020-03-29T01:59:58+01:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=3)
+
+        s = schedule(10, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (False, 7)
+
+    def test_is_not_due_before_spring_forward_relative(self):
+        # The task runs every hour with relative=True. Adding one elapsed hour gives
+        # 03:59:55+02:00, then rounding gives 03:00+02:00, only 2 seconds after now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock jumps forward.
+        last_run_at = datetime(2020, 3, 29, 1, 59, 55, tzinfo=self.app.timezone)
+        now = datetime(2020, 3, 29, 1, 59, 58, tzinfo=self.app.timezone)
+        assert last_run_at.isoformat() == '2020-03-29T01:59:55+01:00'
+
+        # Both times are before the clock jumps from 02:00 to 03:00.
+        assert now.isoformat() == '2020-03-29T01:59:58+01:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=3)
+
+        s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (False, 2)
+
+    def test_is_due_across_fall_back(self):
+        # The task runs every 10 seconds. Now is exactly 10 elapsed seconds after
+        # the last run, so the task should be due now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock goes back.
+        last_run_at = datetime(2020, 10, 25, 2, 59, 55, tzinfo=self.app.timezone, fold=0)
+        now = datetime(2020, 10, 25, 2, 0, 5, tzinfo=self.app.timezone, fold=1)
+        assert last_run_at.isoformat() == '2020-10-25T02:59:55+02:00'
+
+        # DST changes the UTC offset from +02:00 to +01:00.
+        assert now.isoformat() == '2020-10-25T02:00:05+01:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=10)
+
+        s = schedule(10, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (True, 10)
+
+    def test_is_due_across_fall_back_relative(self):
+        # The task runs every hour with relative=True. Adding one elapsed hour gives
+        # 02:59:55+01:00 (fold=1), then rounding gives 02:00+01:00, which is exactly now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock goes back.
+        last_run_at = datetime(2020, 10, 25, 2, 59, 55, tzinfo=self.app.timezone, fold=0)
+        now = datetime(2020, 10, 25, 2, 0, tzinfo=self.app.timezone, fold=1)
+        assert last_run_at.isoformat() == '2020-10-25T02:59:55+02:00'
+
+        # DST changes the UTC offset from +02:00 to +01:00.
+        assert now.isoformat() == '2020-10-25T02:00:00+01:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=5)
+
+        s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (True, 3600)
+
+    def test_is_not_due_before_fall_back(self):
+        # The task runs every 10 seconds. Now is only 3 elapsed seconds after
+        # the last run, so the task should not be due yet, with 7 seconds remaining.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock goes back.
+        last_run_at = datetime(2020, 10, 25, 2, 59, 55, tzinfo=self.app.timezone, fold=0)
+        now = datetime(2020, 10, 25, 2, 59, 58, tzinfo=self.app.timezone, fold=0)
+        assert last_run_at.isoformat() == '2020-10-25T02:59:55+02:00'
+
+        # Both times are in the first occurrence, before the clock goes back.
+        assert now.isoformat() == '2020-10-25T02:59:58+02:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=3)
+
+        s = schedule(10, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (False, 7)
+
+    def test_is_not_due_before_fall_back_relative(self):
+        # The task runs every hour with relative=True. Adding one elapsed hour gives
+        # 02:59:55+01:00 (fold=1), then rounding gives 02:00+01:00, 2 seconds after now.
+        self.app.conf.timezone = 'Europe/Paris'
+        # The last run is 5 seconds before the clock goes back.
+        last_run_at = datetime(2020, 10, 25, 2, 59, 55, tzinfo=self.app.timezone, fold=0)
+        now = datetime(2020, 10, 25, 2, 59, 58, tzinfo=self.app.timezone, fold=0)
+        assert last_run_at.isoformat() == '2020-10-25T02:59:55+02:00'
+
+        # Both times are in the first occurrence, before the clock goes back.
+        assert now.isoformat() == '2020-10-25T02:59:58+02:00'
+        assert now.astimezone(timezone.utc) - last_run_at.astimezone(timezone.utc) == timedelta(seconds=3)
+
+        s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
+        assert s.is_due(last_run_at) == (False, 2)
+
 
 # Module-level helper used as crontab(nowfun=...) in pickling tests.
 # Defined at top level so it is picklable/serializable.
@@ -147,6 +275,17 @@ class test_crontab_parser:
             month_of_year='5',
             nowfun=utcnow)
         assert c == loads(dumps(c))
+
+    def test_crontab_reduce_preserves_state_across_multiple_round_trips(self):
+        import functools
+
+        c = self.crontab(nowfun=functools.partial(utcnow))
+
+        for _ in range(5):
+            c = loads(dumps(c))
+
+        assert isinstance(c.nowfun, functools.partial)
+        assert c.nowfun.func is utcnow
 
     def test_range_steps_not_enough(self):
         with pytest.raises(crontab_parser.ParseException):
@@ -585,6 +724,26 @@ class test_crontab_remaining_estimate:
 
         assert next == datetime(2025, 5, 20, 8, 40, tzinfo=ZoneInfo("UTC"))
 
+    def test_remaining_estimate_finds_hour_slot_before_now(self):
+        crontab = self.crontab(minute=0, hour='1,2')  # every day at 01:00 and 02:00
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 02:00
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 2, 0)
+
+    def test_remaining_estimate_finds_minute_slot_before_now(self):
+        crontab = self.crontab(minute='0,30', hour=1)  # every day at 01:00 and 01:30
+        last_run_at = datetime(2022, 12, 5, 1, 0)  # next run is 01:30
+        now = datetime(2022, 12, 6, 0, 10)  # the next day
+        crontab.nowfun = lambda: now
+
+        next = now + crontab.remaining_estimate(last_run_at)
+
+        assert next == datetime(2022, 12, 5, 1, 30)
+
 
 class test_crontab_is_due:
 
@@ -1009,6 +1168,60 @@ class test_crontab_is_due:
             due, remaining = self.daily.is_due(last_run)
             assert remaining == expected_remaining
             assert not due
+
+    def test_execution_due_if_task_not_run_at_any_feasible_time_within_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is 20 minutes ago, within a 30-minute
+        # deadline, so the task should still be due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 20)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_most_recent_feasible_run_is_exactly_on_deadline_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 12/5 9:00, 9:45, or 10:00.
+        # The most recent (10:00) is exactly 30 minutes ago, matching the
+        # deadline, so it should still be treated as due.
+        self.app.conf.beat_cron_starting_deadline = 1800
+        cron = self.crontab(minute='0,45')
+        last_run = datetime(2022, 12, 5, 8, 45)
+        now = datetime(2022, 12, 5, 10, 30)
+        expected_next_execution_time = datetime(2022, 12, 5, 10, 45)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+        # Run the (:00, :45) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
+
+    def test_execution_due_if_missed_run_within_deadline_spanning_dst_start_on_non_uniform_schedule(self):
+        # Could have feasibly been run on 3/11 6:00 or 3/12 0:00.
+        # The most recent (3/12 0:00) is 7800 seconds ago, within the
+        # 10800-second deadline even though the window spans the
+        # spring-forward transition, so it should still be treated as due.
+        tzname = "America/New_York"
+        self.app.timezone = tzname
+        tz = ZoneInfo(tzname)
+        self.app.conf.beat_cron_starting_deadline = 10800
+        cron = self.crontab(minute=0, hour='0,6')
+        last_run = datetime(2023, 3, 11, 0, 0, tzinfo=tz)
+        now = datetime(2023, 3, 12, 3, 10, tzinfo=tz)
+        expected_next_execution_time = datetime(2023, 3, 12, 6, 0, tzinfo=tz)
+        expected_remaining = (expected_next_execution_time - now).total_seconds()
+
+        # Run the (0:00, 6:00) crontab with the current date
+        with patch_crontab_nowfun(cron, now):
+            due, remaining = cron.is_due(last_run)
+            assert remaining == expected_remaining
+            assert due
 
     def test_execution_not_due_if_last_run_in_future(self):
         # Should not run if the last_run hasn't happened yet.

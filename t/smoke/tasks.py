@@ -8,7 +8,7 @@ from signal import SIGKILL
 from time import sleep
 
 import celery.utils
-from celery import Task, shared_task, signature
+from celery import Task, current_app, shared_task, signature
 from celery.canvas import Signature
 from t.integration.tasks import *  # noqa
 from t.integration.tasks import replaced_with_me
@@ -17,6 +17,11 @@ from t.integration.tasks import replaced_with_me
 @shared_task
 def noop(*args, **kwargs) -> None:
     return celery.utils.noop(*args, **kwargs)
+
+
+@current_app.task(lazy=True)
+def add_with_explicit_lazy_option(x, y):
+    return x + y
 
 
 @shared_task

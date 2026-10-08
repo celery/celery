@@ -159,12 +159,58 @@ be sent in 30 second intervals (the first task will be sent 30 seconds
 after `celery beat` starts, and then every 30 seconds
 after the last run).
 
-A Crontab like schedule also exists, see the section on `Crontab schedules`_.
+.. note::
+
+    With the default ``relative=False``, numeric and
+    :class:`~datetime.timedelta` schedules use elapsed time across daylight
+    saving time (DST) changes. For example, ``timedelta(days=1)`` is a
+    24-hour interval. When the clock changes by one hour, a task last run
+    at noon becomes due at 13:00 the next day across spring-forward, or
+    11:00 across fall-back.
+
+    To run a task at the same local time every day, use :ref:`beat-crontab`.
+    For example, ``crontab(hour=12, minute=0)`` schedules a task at noon.
 
 Like with :command:`cron`, the tasks may overlap if the first task doesn't complete
 before the next. If that's a concern you should use a locking
 strategy to ensure only one instance can run at a time (see for example
 :ref:`cookbook-task-serial`).
+
+.. _beat-groups-workflows:
+
+Scheduling groups and other workflows
+-------------------------------------
+
+:command:`beat` schedules a single task by name, so you can't pass a
+:ref:`group <canvas-group>`, chain, or chord signature directly to
+:meth:`~@add_periodic_task` (or a :setting:`beat_schedule` entry) -- an entry only
+stores a task name with its arguments, not a workflow.
+
+To run a workflow periodically, wrap it in a regular task and schedule that task:
+
+.. code-block:: python
+
+    from celery import Celery, group
+
+    app = Celery()
+
+    @app.task
+    def add(x, y):
+        return x + y
+
+    @app.task
+    def run_add_group():
+        group(add.s(i, i) for i in range(10)).apply_async()
+
+    @app.on_after_configure.connect
+    def setup_periodic_tasks(sender: Celery, **kwargs):
+        sender.add_periodic_task(30.0, run_add_group.s(), name='add group every 30')
+
+The wrapper only *dispatches* the workflow with ``apply_async()`` and returns. Don't
+call ``get()`` on the result inside the task to wait for it to finish: blocking on a
+result from within a task ties up a worker process and is discouraged (see
+:ref:`task-synchronous-subtasks`). The group's tasks run independently on the workers,
+so the initiating task can return immediately.
 
 .. _beat-entry-fields:
 
@@ -442,6 +488,153 @@ location for this file:
 .. note::
 
     To daemonize beat see :ref:`daemonizing`.
+
+.. _beat-health-checks:
+
+Health checks
+-------------
+
+.. versionadded:: 5.7
+
+By default there's no way to check whether a running beat process is
+still healthy. If you enable the
+:setting:`beat_enable_remote_control` setting -- or pass
+:option:`--enable-remote-control <celery beat --enable-remote-control>`
+-- beat joins the same remote-control exchange the workers use (as a
+node named ``celerybeat@hostname``) and answers
+:program:`celery inspect ping`:
+
+.. code-block:: console
+
+    $ celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+    ->  celerybeat@example.com: OK
+            pong
+
+The command exits non-zero when nobody replies within the timeout.
+Give :option:`--timeout <celery inspect --timeout>` room to spare: it
+defaults to one second, and the probe has to establish a broker
+connection of its own before it can ask anything.
+
+Beat's reply is the same ``{'ok': 'pong'}`` a worker sends, so nothing
+downstream has to special-case it.
+
+What a reply means
+~~~~~~~~~~~~~~~~~~
+
+The control node runs in its own thread, so on its own a reply would
+only prove that the process is alive and reaching the broker -- not
+that the schedule is advancing. To close that gap, beat stops answering
+once the scheduler has not completed a pass for
+:setting:`beat_remote_control_max_tick_age` seconds, which defaults to
+twice the interval the scheduler settled on. A wedged scheduler
+therefore fails the probe rather than passing it.
+
+Silence is deliberate: :program:`celery inspect` exits non-zero only
+when *no* node replies, so an error reply would leave the exit status
+at zero and the probe green. Beat logs a warning each time it declines,
+so the reason is visible in its own output.
+
+Set :setting:`beat_remote_control_max_tick_age` to ``0`` to answer
+regardless of tick age.
+
+Choosing a probe
+~~~~~~~~~~~~~~~~
+
+Only a **liveness** probe actually recovers a wedged beat: beat serves
+no traffic and sits behind no Service, so marking a pod NotReady
+removes nothing and starts no remediation. A readiness probe on beat
+buys you visibility in ``kubectl get pods`` and gating for Deployment
+rollouts -- useful, but it will not restart anything.
+
+The catch is that this check travels over the broker, so it fails
+whenever the broker is unreachable -- during an ordinary broker
+restart, and for every beat pod at once. Restarting beat does not fix a
+broker outage, and a beat that restarts re-reads its schedule. Wired
+carelessly, a short blip becomes a cluster-wide restart storm.
+
+So use a liveness probe, but give it a ``failureThreshold`` that rides
+out a broker restart and an ``initialDelaySeconds`` long enough for the
+control node to have connected, or the first probe kills a healthy pod:
+
+.. code-block:: yaml
+
+    livenessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -t 10 -d celerybeat@$(hostname)
+      initialDelaySeconds: 60
+      periodSeconds: 60
+      failureThreshold: 5
+
+With those numbers a wedged beat is restarted about fifteen minutes
+after its last tick: ten waiting for
+:setting:`beat_remote_control_max_tick_age` to elapse, which defaults
+to twice the default scheduler's five minute loop interval, then five
+more for the probe to fail often enough. Lower the setting if that is
+slower than you want to find out. A broker outage, by contrast, only
+costs you a restart if it outlasts those last five minutes.
+
+Add a readiness probe as well if you want the state surfaced in
+``kubectl`` and rollouts gated on beat coming up:
+
+.. code-block:: yaml
+
+    readinessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - celery -A proj inspect ping -t 5 -d celerybeat@$(hostname)
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      failureThreshold: 3
+
+Comparison with a heartbeat file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A common alternative is to have the scheduler touch a file on every
+tick and let the probe check its age, usually through a custom
+scheduler subclass. That has no broker dependency at all, so a broker
+outage cannot take it down, and it proves the tick loop directly.
+
+The trade-off is reach. A file is only visible from inside the
+container, so it answers "is *this* beat alive" and nothing more.
+Remote control answers the same question from anywhere that can talk to
+the broker, which is what lets ``celery status`` and centralised
+monitoring see beat alongside the workers. Pick the file if you only
+need a local probe; pick remote control if you want beat visible in the
+same place as everything else.
+
+Interactions worth knowing
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Beat shows up as a node in destination-less
+  :program:`celery inspect ping` and :program:`celery status` output
+  once this is enabled. If you count nodes in those replies, the count
+  changes.
+* For the same reason, a destination-less broadcast with a reply limit
+  -- ``app.control.ping(limit=1)``, say -- may now come back with beat
+  instead of a worker.
+* Beat implements ``ping`` and nothing else. Other remote-control
+  commands are ignored silently, ``shutdown`` included: ``celery
+  control shutdown`` stops your workers and leaves beat running.
+* A beat scheduler embedded in a worker
+  (:option:`-B <celery worker -B>`) never starts a control node, since
+  the worker already answers for that process.
+* Node names have to be unique. Two beats resolving to the same name --
+  the same hostname, or containers on ``network_mode: host`` -- share
+  one pidbox queue, so only one of them ever answers. Give each its own
+  :option:`--hostname <celery beat --hostname>` if that can happen.
+* Remote control needs fanout exchanges, so it is available on the
+  RabbitMQ (AMQP) and Redis transports. On a transport without them
+  beat logs one warning at startup and carries on without a control
+  node.
+* If the control node gives up on the broker, it does not come back,
+  so the probe fails until beat is restarted. That applies to the
+  connection it makes at startup and to re-establishing one that
+  dropped. See :setting:`beat_enable_remote_control`.
 
 .. _beat-custom-schedulers:
 

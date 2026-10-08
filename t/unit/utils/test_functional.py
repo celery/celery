@@ -49,6 +49,15 @@ class test_firstmethod:
         assert 'four' == firstmethod('m')([
             A(), A(), A(), lazy(lambda: A('four')), A('five')])
 
+    def test_propagates_method_attribute_error(self):
+        class A:
+
+            def m(self):
+                return self.missing_attribute
+
+        with pytest.raises(AttributeError, match='missing_attribute'):
+            firstmethod('m')([A()])
+
 
 def test_first():
     iterations = [0]
@@ -137,6 +146,41 @@ class test_regen:
         assert g.data == list(range(10))
 
         assert list(iter(g)) == list(range(10))
+
+    def test_gen__index_type(self, g):
+        class Index:
+            def __index__(self):
+                return 2
+
+        # anything list accepts, _regen accepts
+        assert g[Index()] == 2
+        assert g[True] == 1
+
+        for bad_index in ('x', None, 1.0):
+            with pytest.raises(TypeError):
+                g[bad_index]
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice(self, g):
+        assert g[:3] == [0, 1, 2]
+        assert g[2:5] == [2, 3, 4]
+        assert g[7:] == [7, 8, 9]
+        assert g[::2] == [0, 2, 4, 6, 8]
+        assert g[-3:] == [7, 8, 9]
+        assert g[::-1] == list(reversed(range(10)))
+        assert g[:] == list(range(10))
+        assert g[5:2] == []
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice_matches_list(self):
+        source = list(range(10))
+        for index in (slice(3), slice(2, 5), slice(7, None), slice(None, None, 2),
+                      slice(-3, None), slice(None, None, -1), slice(5, 2)):
+            assert regen(iter(source))[index] == source[index]
+            # regen returns lists untouched, so both paths have to agree
+            assert regen(source)[index] == source[index]
 
     def test_nonzero__does_not_consume_more_than_first_item(self):
         def build_generator():
@@ -229,6 +273,39 @@ class test_regen:
             assert getattr(g, "_regen__done") is (i == len_g - 1)
         # Just for sanity, check against a specific `bool` here
         assert getattr(g, "_regen__done") is True
+
+    def test_iter_does_not_look_ahead_over_concretised_items(self):
+        pulled = []
+
+        def build_generator():
+            for i in range(5):
+                pulled.append(i)
+                yield i
+
+        g = regen(build_generator())
+        assert g[0] == 0
+        assert pulled == [0, 1]
+        it = iter(g)
+        assert next(it) == 0
+        assert next(it) == 1
+        # Yielding what's already concretised must not pull any further from
+        # the generator, chord headers rely on this being lazy (#3021).
+        assert pulled == [0, 1]
+        assert next(it) == 2
+        assert pulled == [0, 1, 2, 3]
+
+    def test_iter_survives_len_during_iteration(self, g):
+        # `len()` concretises the rest of the generator midway through the
+        # loop, which must not cut the in-progress iteration short.
+        assert [(x, len(g)) for x in g] == [(i, 10) for i in range(10)]
+
+    def test_iter_survives_getitem_during_iteration(self, g):
+        assert [(x, g[-1]) for x in g] == [(i, 9) for i in range(10)]
+
+    def test_nested_iter(self, g):
+        assert [(a, b) for a in g for b in g] == [
+            (a, b) for a in range(10) for b in range(10)
+        ]
 
     def test_lookahead_consume(self, subtests):
         """
