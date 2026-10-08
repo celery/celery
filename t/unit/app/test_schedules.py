@@ -7,6 +7,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 import pytest
+from dateutil import tz as dateutil_tz
 
 from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
@@ -252,6 +253,10 @@ class test_schedule:
         s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
         assert s.is_due(last_run_at) == (False, 2)
 
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
     @pytest.mark.parametrize('timezone_name,interval,last_run_at,due_at', [
         pytest.param(
             'America/New_York', timedelta(days=1),
@@ -284,11 +289,87 @@ class test_schedule:
             datetime(2026, 11, 1, 1, fold=1),
             id='hourly-repeated-hour',
         ),
+        pytest.param(
+            'America/Havana', timedelta(days=1),
+            datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8, 1),
+            id='daily-midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', timedelta(days=2),
+            datetime(2026, 3, 6, 23, 30), datetime(2026, 3, 8, 1),
+            id='two-days-midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', timedelta(days=1),
+            datetime(2026, 10, 31, 23, 30), datetime(2026, 11, 1),
+            id='daily-midnight-fall-back',
+        ),
+        pytest.param(
+            'Asia/Singapore', timedelta(hours=1),
+            datetime(1945, 9, 11, 23),
+            datetime(1945, 9, 11, 23, fold=1),
+            id='hourly-ninety-minute-fall-back',
+        ),
+        pytest.param(
+            'Pacific/Nauru', timedelta(hours=1),
+            datetime(1942, 8, 28, 23),
+            datetime(1942, 8, 28, 22, fold=1),
+            id='hourly-two-and-half-hours-fall-back',
+        ),
+        pytest.param(
+            'Asia/Kathmandu', timedelta(days=1),
+            datetime(1985, 12, 31, 23, 50), datetime(1986, 1, 1, 0, 15),
+            id='daily-quarter-hour-midnight-gap',
+        ),
+        pytest.param(
+            'Pacific/Apia', timedelta(days=1),
+            datetime(2011, 12, 29, 23, 30), datetime(2011, 12, 31),
+            id='daily-skipped-date',
+        ),
+        pytest.param(
+            'Pacific/Kwajalein', timedelta(days=1),
+            datetime(1969, 9, 30, 0, 30), datetime(1969, 10, 1),
+            id='daily-twenty-three-hour-fall-back',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(days=1),
+            datetime(2000, 10, 28, 23, 30, fold=1),
+            datetime(2000, 10, 29, fold=1),
+            id='daily-second-midnight',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(hours=1),
+            datetime(2000, 10, 28, 23, 1), datetime(2000, 10, 29),
+            id='hourly-first-midnight',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(hours=1),
+            datetime(2000, 10, 28, 23, 1, fold=1),
+            datetime(2000, 10, 29, fold=1),
+            id='hourly-second-midnight',
+        ),
+        pytest.param(
+            'Pacific/Chatham', timedelta(hours=2),
+            datetime(2026, 4, 5, 2, 45),
+            datetime(2026, 4, 5, 3, fold=1),
+            id='two-hours-after-repeated-period',
+        ),
+        pytest.param(
+            'Antarctica/Casey', timedelta(days=1),
+            datetime(2010, 3, 4, 23, 30, fold=1),
+            datetime(2010, 3, 5, fold=1),
+            id='daily-three-hours-fall-back',
+        ),
+        pytest.param(
+            'Africa/Cairo', timedelta(days=1),
+            datetime(2026, 4, 23, 23, 30), datetime(2026, 4, 24, 1),
+            id='daily-cairo-midnight-gap',
+        ),
     ])
     def test_relative_schedule_across_dst(
-        self, timezone_name, interval, last_run_at, due_at,
+        self, timezone_name, interval, last_run_at, due_at, tz_factory,
     ):
-        self.app.conf.timezone = timezone_name
+        self.app.conf.timezone = tz_factory(timezone_name)
         last_run_at = last_run_at.replace(tzinfo=self.app.timezone)
         due_at = due_at.replace(tzinfo=self.app.timezone)
         now = last_run_at
