@@ -575,7 +575,10 @@ class AMQP:
                 timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
-            send_after_publish(sender=name, body=body, headers=headers2, exchange=exchange, routing_key=routing_key)
+            send_after_publish(
+                sender=name, body=body, headers=headers2,
+                exchange=exchange, routing_key=routing_key,
+            )
             if sent_receivers:  # XXX deprecated
                 if isinstance(body, tuple):  # protocol version 2
                     send_task_sent(
