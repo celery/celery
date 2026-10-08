@@ -302,6 +302,32 @@ class test_regen:
     def test_iter_survives_getitem_during_iteration(self, g):
         assert [(x, g[-1]) for x in g] == [(i, 9) for i in range(10)]
 
+    def test_map_during_cached_iteration(self):
+        g = regen(i for i in range(4))
+        if g:  # Primes the cache.
+            for value in g:
+                if value == 0:
+                    g.map(lambda x: x + 10)
+        assert list(g) == [10, 11, 12, 13]
+
+    def test_iter_survives_source_iter_consuming_cache(self):
+        class Iterator:
+            def __init__(self):
+                self.values = iter([1, 2])
+                self.started = False
+
+            def __iter__(self):
+                if not self.started:
+                    self.started = True
+                    len(g)
+                return self
+
+            def __next__(self):
+                return next(self.values)
+
+        g = regen(Iterator())
+        assert list(iter(g)) == [1, 2]
+
     def test_nested_iter(self, g):
         assert [(a, b) for a in g for b in g] == [
             (a, b) for a in range(10) for b in range(10)
