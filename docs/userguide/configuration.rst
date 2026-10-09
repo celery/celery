@@ -1052,14 +1052,19 @@ Default: Same as :setting:`result_expires`.
 
 Time (in seconds, or a :class:`~datetime.timedelta` object) a chord's
 bookkeeping is kept after the chord starts or after one of its header tasks
-finishes. If it runs out before the next header task finishes, the chord's
-body never runs, so set it longer than the slowest header task.
+finishes. With the cache backend, each header task's result is also kept that
+long after the task finishes, and never for less than :setting:`result_expires`.
+If it runs out before the chord's last header task finishes, the chord's body
+never runs, so set it longer than the chord's total run time.
 A value of 0 means the chord's bookkeeping never expires while the chord is
 open, and the saved header of a chord with nested groups never expires.
 
 .. note::
 
-    For the moment this only works with the Redis backend.
+    For the moment this only works with the cache and Redis backends.
+
+    Memcached reads an expiry over 30 days as an absolute time, so keep this
+    setting at 30 days or less with the cache backend.
 
 .. setting:: result_cache_max
 

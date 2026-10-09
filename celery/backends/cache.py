@@ -223,7 +223,7 @@ class CacheBackend(KeyValueStoreBackend):
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])
-        self.client.set(chord_key, 0, self.expires or 0)
+        self.client.set(chord_key, 0, self.chord_expires or 0)
         return super()._apply_chord_incr(
             header_result_args, body, **kwargs)
 
