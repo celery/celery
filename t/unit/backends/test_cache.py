@@ -4,11 +4,11 @@ from contextlib import contextmanager
 from unittest.mock import Mock, patch
 
 import pytest
-from kombu.utils.encoding import ensure_bytes, str_to_bytes
+from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
 
 from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import CDeprecationWarning, ImproperlyConfigured
 from t.unit import conftest
 
 
@@ -24,11 +24,11 @@ class test_CacheBackend:
         self.app.conf.result_serializer = 'pickle'
         self.tb = CacheBackend(backend='memory://', app=self.app)
         self.tid = uuid()
-        self.old_get_best_memcached = backends['memcache']
+        self.old_get_memcache_client = backends['memcache']
         backends['memcache'] = lambda: (DummyClient, ensure_bytes)
 
     def teardown_method(self):
-        backends['memcache'] = self.old_get_best_memcached
+        backends['memcache'] = self.old_get_memcache_client
 
     def test_no_backend(self):
         self.app.conf.cache_backend = None
@@ -142,143 +142,402 @@ class test_CacheBackend:
         b = CacheBackend(backend=backend, app=self.app)
         assert b.as_uri() == backend
 
-    def test_regression_worker_startup_info(self):
-        pytest.importorskip('memcache')
-        self.app.conf.result_backend = (
-            'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
-        )
-        worker = self.app.Worker()
-        with conftest.stdouts():
-            worker.on_start()
-            assert worker.startup_info()
+
+def _check_expire(expire):
+    # pymemcache rejects anything but an integer expiry (e.g. None).
+    if not isinstance(expire, int):
+        raise TypeError(f'expire must be an integer, got {expire!r}')
 
 
-class MyMemcachedStringEncodingError(Exception):
-    pass
+def make_pymemcache_clients():
+    """Build mock clients that keep the real pymemcache method signatures."""
+    utils = pytest.importorskip('pymemcache.test.utils')
+    retrying = pytest.importorskip('pymemcache.client.retrying')
+
+    class PyMemcacheClient(utils.MockMemcacheClient):
+        """Mock pymemcache base Client."""
+        __module__ = 'pymemcache.client.base'
+
+        def __init__(self, server, **kwargs):
+            super().__init__(server, **kwargs)
+            self.server = server
+            self.options = kwargs
+
+        def set(self, key, value, expire=0, noreply=None, flags=None):
+            _check_expire(expire)
+            return super().set(key, value, expire, noreply, flags)
+
+        def touch(self, key, expire=0, noreply=None):
+            _check_expire(expire)
+            return super().touch(key, expire, noreply)
+
+    class PyMemcacheHashClient(PyMemcacheClient):
+        """Mock pymemcache HashClient."""
+        __module__ = 'pymemcache.client.hash'
+
+        def __init__(self, servers, **kwargs):
+            super().__init__(None, **kwargs)
+            self.servers = servers
+
+    return PyMemcacheClient, PyMemcacheHashClient, retrying.RetryingClient
 
 
-class MemcachedClient(DummyClient):
-
-    def set(self, key, value, *args, **kwargs):
-        key_t, must_be, not_be, cod = bytes, 'string', 'bytes', 'decode'
-
-        if isinstance(key, key_t):
-            raise MyMemcachedStringEncodingError(
-                f'Keys must be {must_be}, not {not_be}.  Convert your '
-                f'strings using mystring.{cod}(charset)!')
-        return super().set(key, value, *args, **kwargs)
-
-
-class MockCacheMixin:
+class MockPyMemcacheMixin:
 
     @contextmanager
-    def mock_memcache(self):
-        memcache = types.ModuleType('memcache')
-        memcache.Client = MemcachedClient
-        memcache.Client.__module__ = memcache.__name__
-        prev, sys.modules['memcache'] = sys.modules.get('memcache'), memcache
+    def mock_pymemcache(self):
+        """Mock pymemcache modules."""
+        Client, HashClient, RetryingClient = make_pymemcache_clients()
+
+        pymemcache = types.ModuleType('pymemcache')
+        pymemcache_client = types.ModuleType('pymemcache.client')
+        pymemcache_client_base = types.ModuleType('pymemcache.client.base')
+        pymemcache_client_hash = types.ModuleType('pymemcache.client.hash')
+        pymemcache_client_retrying = types.ModuleType('pymemcache.client.retrying')
+
+        # Parent modules must be packages for submodule imports to work
+        pymemcache.__path__ = []
+        pymemcache_client.__path__ = []
+
+        pymemcache_client_base.Client = Client
+        pymemcache_client_hash.HashClient = HashClient
+        pymemcache_client_retrying.RetryingClient = RetryingClient
+        pymemcache.Client = Client
+
+        pymemcache_client.base = pymemcache_client_base
+        pymemcache_client.hash = pymemcache_client_hash
+        pymemcache_client.retrying = pymemcache_client_retrying
+        pymemcache.client = pymemcache_client
+
+        # Save previous state
+        prev_modules = {
+            'pymemcache': sys.modules.get('pymemcache'),
+            'pymemcache.client': sys.modules.get('pymemcache.client'),
+            'pymemcache.client.base': sys.modules.get('pymemcache.client.base'),
+            'pymemcache.client.hash': sys.modules.get('pymemcache.client.hash'),
+            'pymemcache.client.retrying': sys.modules.get('pymemcache.client.retrying'),
+        }
+
+        # Install mocks
+        sys.modules['pymemcache'] = pymemcache
+        sys.modules['pymemcache.client'] = pymemcache_client
+        sys.modules['pymemcache.client.base'] = pymemcache_client_base
+        sys.modules['pymemcache.client.hash'] = pymemcache_client_hash
+        sys.modules['pymemcache.client.retrying'] = pymemcache_client_retrying
+
         try:
             yield True
         finally:
-            if prev is not None:
-                sys.modules['memcache'] = prev
+            # Clean up mocks
+            sys.modules.pop('pymemcache', None)
+            sys.modules.pop('pymemcache.client', None)
+            sys.modules.pop('pymemcache.client.base', None)
+            sys.modules.pop('pymemcache.client.hash', None)
+            sys.modules.pop('pymemcache.client.retrying', None)
 
-    @contextmanager
-    def mock_pylibmc(self):
-        pylibmc = types.ModuleType('pylibmc')
-        pylibmc.Client = MemcachedClient
-        pylibmc.Client.__module__ = pylibmc.__name__
-        prev = sys.modules.get('pylibmc')
-        sys.modules['pylibmc'] = pylibmc
-        try:
-            yield True
-        finally:
-            if prev is not None:
-                sys.modules['pylibmc'] = prev
+            # Restore previous modules
+            for name, module in prev_modules.items():
+                if module is not None:
+                    sys.modules[name] = module
 
 
-class test_get_best_memcache(MockCacheMixin):
+class test_pymemcache_client(MockPyMemcacheMixin):
 
-    def test_pylibmc(self):
-        with self.mock_pylibmc():
+    def test_single_server_uses_base_client(self):
+        """Test that single server uses base Client."""
+        with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
-                assert cache.get_best_memcache()[0].__module__ == 'pylibmc'
+                Client, _ = cache.get_memcache_client()
+                client = Client(['127.0.0.1:11211'])
+                assert client.__module__ == 'pymemcache.client.base'
 
-    @pytest.mark.masked_modules('pylibmc')
-    def test_memcache(self, mask_modules):
-        with self.mock_memcache():
+    def test_multiple_servers_uses_hash_client(self):
+        """Test that multiple servers use HashClient."""
+        with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
-                assert (cache.get_best_memcache()[0]().__module__ ==
-                        'memcache')
+                Client, _ = cache.get_memcache_client()
+                client = Client(['127.0.0.1:11211', '127.0.0.1:11212'])
+                assert client.__module__ == 'pymemcache.client.hash'
 
-    @pytest.mark.masked_modules('pylibmc', 'memcache')
-    def test_no_implementations(self, mask_modules):
+    def test_retry_client_wrapping(self):
+        """Test that retry_attempts enables RetryingClient."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(['127.0.0.1:11211'], retry_attempts=3, retry_delay=0.1)
+                assert client.__module__ == 'pymemcache.client.retrying'
+                assert client._attempts == 3
+                assert client._retry_delay == 0.1
+
+    def test_retry_client_with_exceptions(self):
+        """Test that retry options are properly passed."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                retry_for = [Exception]
+                do_not_retry_for = [KeyError]
+                client = Client(
+                    ['127.0.0.1:11211'],
+                    retry_attempts=2,
+                    retry_for=retry_for,
+                    do_not_retry_for=do_not_retry_for
+                )
+                assert client.__module__ == 'pymemcache.client.retrying'
+                assert client._retry_for == tuple(retry_for)
+                assert client._do_not_retry_for == tuple(do_not_retry_for)
+
+    @pytest.mark.parametrize('option, value', [
+        ('behaviors', {'tcp_nodelay': True}),
+        ('binary', True),
+    ])
+    def test_pylibmc_options_ignored_with_warning(self, option, value):
+        """Test that pylibmc only options are dropped with a warning."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                with pytest.warns(CDeprecationWarning, match=option):
+                    client = Client(['127.0.0.1:11211'], **{option: value})
+                assert client.__module__ == 'pymemcache.client.base'
+                assert option not in client.options
+
+    @pytest.mark.parametrize('servers', [
+        ['127.0.0.1:11211'],
+        ['127.0.0.1:11211', '127.0.0.1:11212'],
+    ])
+    def test_default_client_options(self, servers):
+        """Test that replies are awaited and timeouts are set by default."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(servers)
+                assert client.options == cache.DEFAULT_CLIENT_OPTIONS
+
+    def test_default_client_options_can_be_overridden(self):
+        """Test that user options take precedence over the defaults."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(
+                    ['127.0.0.1:11211'], default_noreply=True, timeout=None,
+                )
+                assert client.options['default_noreply'] is True
+                assert client.options['timeout'] is None
+                assert client.options['connect_timeout'] == 5.0
+
+    def test_deprecated_get_best_memcache(self):
+        """Test that get_best_memcache() still works with a warning."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                with pytest.warns(CDeprecationWarning, match='get_best_memcache'):
+                    Client, key_t = cache.get_best_memcache()
+                client = Client(['127.0.0.1:11211'])
+                assert client.__module__ == 'pymemcache.client.base'
+                assert key_t is bytes_to_str
+
+    def test_deprecated_import_best_memcache(self):
+        """Test that import_best_memcache() still works with a warning."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                with pytest.warns(CDeprecationWarning, match='import_best_memcache'):
+                    is_pylibmc, memcache, key_t = cache.import_best_memcache()
+                assert is_pylibmc is False
+                assert memcache is sys.modules['pymemcache']
+                assert key_t is bytes_to_str
+
+    @pytest.mark.parametrize('servers', [None, [], [''], ('', '')])
+    def test_no_servers_raises_error(self, servers):
+        """Test that missing or empty servers raise ImproperlyConfigured."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                with pytest.raises(ImproperlyConfigured):
+                    Client(servers)
+
+    def test_empty_server_entries_are_filtered(self):
+        """Test that empty entries (e.g. trailing ';') are ignored."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(['127.0.0.1:11211', ''])
+                assert client.__module__ == 'pymemcache.client.base'
+
+    @pytest.mark.parametrize('servers', ['127.0.0.1:11211', ('127.0.0.1', 11211)])
+    def test_single_server_address_is_accepted(self, servers):
+        """Test that a single string or (host, port) address is accepted."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                client = Client(servers)
+                assert client.__module__ == 'pymemcache.client.base'
+
+    @pytest.mark.parametrize('servers', [11211, [11211]])
+    def test_invalid_servers_raises_error(self, servers):
+        """Test that invalid server values raise ImproperlyConfigured."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                Client, _ = cache.get_memcache_client()
+                with pytest.raises(ImproperlyConfigured):
+                    Client(servers)
+
+    @pytest.mark.masked_modules(
+        'pymemcache',
+        'pymemcache.client.base',
+        'pymemcache.client.hash',
+        'pymemcache.client.retrying',
+    )
+    def test_no_pymemcache_raises_error(self, mask_modules):
+        """Test that missing pymemcache raises ImproperlyConfigured."""
         with conftest.reset_modules('celery.backends.cache'):
+            # Don't mock pymemcache - it's masked by the decorator
             from celery.backends import cache
-            cache._imp = [None]
             with pytest.raises(ImproperlyConfigured):
-                cache.get_best_memcache()
+                cache.get_memcache_client()
 
-    def test_cached(self):
-        with self.mock_pylibmc():
+    def test_all_backend_names_work(self):
+        """Test that all backend names are mapped correctly."""
+        with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
-                cache.get_best_memcache()[0](behaviors={'foo': 'bar'})
-                assert cache._imp[0]
-                cache.get_best_memcache()[0]()
-
-    def test_backends(self):
-        from celery.backends.cache import backends
-        with self.mock_memcache():
-            for name, fun in backends.items():
-                assert fun()
+                for backend_name in ['memcache', 'memcached', 'pylibmc', 'pymemcache']:
+                    assert backend_name in cache.backends
+                    Client, _ = cache.backends[backend_name]()
+                    assert Client is not None
 
 
-class test_memcache_key(MockCacheMixin):
+class test_pymemcache_integration(MockPyMemcacheMixin):
 
-    @pytest.mark.masked_modules('pylibmc')
-    def test_memcache_unicode_key(self, mask_modules):
-        with self.mock_memcache():
+    def test_cache_backend_with_unicode_key(self):
+        """Test storing and retrieving with unicode keys."""
+        with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
                 task_id, result = str(uuid()), 42
-                b = cache.CacheBackend(backend='memcache', app=self.app)
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
                 b.store_result(task_id, result, state=states.SUCCESS)
                 assert b.get_result(task_id) == result
 
-    @pytest.mark.masked_modules('pylibmc')
-    def test_memcache_bytes_key(self, mask_modules):
-        with self.mock_memcache():
+    def test_cache_backend_with_bytes_key(self):
+        """Test storing and retrieving with bytes keys."""
+        with self.mock_pymemcache():
             with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
                 task_id, result = str_to_bytes(uuid()), 42
-                b = cache.CacheBackend(backend='memcache', app=self.app)
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
                 b.store_result(task_id, result, state=states.SUCCESS)
                 assert b.get_result(task_id) == result
 
-    def test_pylibmc_unicode_key(self):
-        with conftest.reset_modules('celery.backends.cache'):
-            with self.mock_pylibmc():
+    def test_cache_backend_with_retry_options(self):
+        """Test that retry options are passed to the client."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
-                task_id, result = str(uuid()), 42
-                b = cache.CacheBackend(backend='memcache', app=self.app)
-                b.store_result(task_id, result, state=states.SUCCESS)
-                assert b.get_result(task_id) == result
+                self.app.conf.cache_backend_options = {
+                    'retry_attempts': 3,
+                    'retry_delay': 0.1,
+                }
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
+                client = b.client
+                # Should be wrapped with RetryingClient
+                assert client.__module__ == 'pymemcache.client.retrying'
+                assert client._attempts == 3
+                assert client._retry_delay == 0.1
 
-    def test_pylibmc_bytes_key(self):
-        with conftest.reset_modules('celery.backends.cache'):
-            with self.mock_pylibmc():
+    def test_cache_backend_with_multiple_servers(self):
+        """Test that multiple servers use HashClient."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
                 from celery.backends import cache
-                cache._imp = [None]
-                task_id, result = str_to_bytes(uuid()), 42
-                b = cache.CacheBackend(backend='memcache', app=self.app)
-                b.store_result(task_id, result, state=states.SUCCESS)
-                assert b.get_result(task_id) == result
+                b = cache.CacheBackend(
+                    backend='memcache://127.0.0.1:11211;127.0.0.1:11212/',
+                    app=self.app
+                )
+                client = b.client
+                assert client.__module__ == 'pymemcache.client.hash'
+
+    def test_backward_compatible_pylibmc_backend_name(self):
+        """Test that pylibmc:// backend name still works."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                b = cache.CacheBackend(backend='pylibmc://127.0.0.1:11211/', app=self.app)
+                assert b.backend == 'pylibmc'
+                client = b.client
+                # Should use pymemcache under the hood
+                assert client.__module__ == 'pymemcache.client.base'
+
+    def test_cache_backend_without_servers(self):
+        """Test that a URL without servers raises a clear error."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                b = cache.CacheBackend(backend='memcache://', app=self.app)
+                with pytest.raises(ImproperlyConfigured):
+                    b.client
+
+    @patch('celery.result.GroupResult.restore')
+    def test_chord_with_pymemcache_signatures(self, restore):
+        """Test the chord counter with the real pymemcache signatures."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
+
+                deps = Mock()
+                deps.__len__ = Mock(return_value=2)
+                restore.return_value = deps
+                task = Mock()
+                task.name = 'foobarbaz'
+                self.app.tasks['foobarbaz'] = task
+                task.request.chord = signature(task)
+
+                result_args = (
+                    uuid(),
+                    [self.app.AsyncResult(uuid()) for _ in range(2)],
+                )
+                task.request.group = result_args[0]
+                b.apply_chord(result_args, None)
+
+                b.on_chord_part_return(task.request, 'SUCCESS', 10)
+                deps.join_native.assert_not_called()
+
+                b.on_chord_part_return(task.request, 'SUCCESS', 10)
+                deps.join_native.assert_called_with(propagate=True, timeout=3.0)
+                deps.delete.assert_called_with()
+
+    def test_cache_backend_without_expiry(self):
+        """Test that result_expires=None is sent as an integer to pymemcache."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                from celery.backends import cache
+                self.app.conf.result_expires = None
+                b = cache.CacheBackend(backend='memcache://127.0.0.1:11211/', app=self.app)
+                assert b.expires is None
+                task_id = uuid()
+                b.store_result(task_id, 42, state=states.SUCCESS)
+                assert b.get_result(task_id) == 42
+                b.expire(task_id, b.expires)
+
+    def test_regression_worker_startup_info(self):
+        """Test that worker startup info works with multiple servers."""
+        with self.mock_pymemcache():
+            with conftest.reset_modules('celery.backends.cache'):
+                self.app.conf.result_backend = (
+                    'cache+memcached://127.0.0.1:11211;127.0.0.2:11211;127.0.0.3/'
+                )
+                worker = self.app.Worker()
+                with conftest.stdouts():
+                    worker.on_start()
+                    assert worker.startup_info()

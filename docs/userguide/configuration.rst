@@ -1397,10 +1397,40 @@ E.g.
 Cache backend settings
 ----------------------
 
+.. versionchanged:: 5.7
+
+    The Memcached cache backend now uses :pypi:`pymemcache` exclusively.
+    Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
+    has been removed.
+
 .. note::
 
-    The cache backend supports the :pypi:`pylibmc` and :pypi:`python-memcached`
-    libraries. The latter is used only if :pypi:`pylibmc` isn't installed.
+    The cache backend requires the :pypi:`pymemcache` library, which can be
+    installed with ``pip install celery[memcache]`` (or
+    ``celery[pymemcache]``).
+
+    When upgrading from an earlier version, keep the following in mind:
+
+    * Install :pypi:`pymemcache`: :pypi:`pylibmc` and
+      :pypi:`python-memcached` are no longer used, even if installed.
+    * The ``pylibmc://`` URL scheme is still accepted as an alias of
+      ``memcache://`` for backward compatibility.
+    * The ``behaviors`` and ``binary`` keys of
+      :setting:`cache_backend_options` are specific to :pypi:`pylibmc`.
+      They are now ignored and emit a deprecation warning. Other options
+      are passed to the :pypi:`pymemcache` client, so remove any option it
+      doesn't support.
+    * The client now waits for the server reply on every write and uses a
+      5 second connection and socket timeout by default. See
+      :setting:`cache_backend_options` to change these defaults.
+    * The ``get_best_memcache()`` and ``import_best_memcache()`` helpers of
+      :mod:`celery.backends.cache` are deprecated in favor of
+      ``get_memcache_client()``.
+    * When several servers are configured, a
+      :class:`pymemcache.client.hash.HashClient` is used to distribute keys
+      across them, which may lead to a different key distribution than with
+      :pypi:`pylibmc`. Results stored before the upgrade may not be found
+      afterwards.
 
 Using a single Memcached server:
 
@@ -1430,14 +1460,41 @@ The "memory" backend stores the cache in memory only:
 
 Default: ``{}`` (empty mapping).
 
-You can set :pypi:`pylibmc` options using the :setting:`cache_backend_options`
-setting:
+You can set :pypi:`pymemcache` client options using the
+:setting:`cache_backend_options` setting:
 
 .. code-block:: python
 
     cache_backend_options = {
-        'binary': True,
-        'behaviors': {'tcp_nodelay': True},
+        'connect_timeout': 2,
+        'timeout': 2,
+        'no_delay': True,
+    }
+
+Unless set in this setting, Celery passes the following options to the
+client:
+
+* ``default_noreply``: ``False``, so that the client reads the server reply
+  and raises an error when a result can't be stored (for example when it's
+  larger than the memcached item size limit). Setting it to ``True`` saves
+  one round trip per write, but failed writes are then silently ignored.
+* ``connect_timeout`` and ``timeout``: ``5.0`` seconds, so that an
+  unresponsive server doesn't block the worker forever. Set them to
+  ``None`` to wait indefinitely.
+
+The following extra options enable retries by wrapping the client in a
+:class:`pymemcache.client.retrying.RetryingClient`:
+
+* ``retry_attempts``: number of attempts (enables retries when set).
+* ``retry_delay``: delay in seconds between attempts.
+* ``retry_for``: list of exceptions to retry for.
+* ``do_not_retry_for``: list of exceptions to not retry for.
+
+.. code-block:: python
+
+    cache_backend_options = {
+        'retry_attempts': 3,
+        'retry_delay': 0.5,
     }
 
 .. setting:: cache_backend
@@ -4196,8 +4253,7 @@ Default:
 
 .. code-block:: text
 
-    "[%(asctime)s: %(levelname)s/%(processName)s]
-        %(task_name)s[%(task_id)s]: %(message)s"
+    "[%(asctime)s: %(levelname)s/%(processName)s] %(task_name)s[%(task_id)s]: %(message)s"
 
 The format to use for log messages logged in tasks.
 
