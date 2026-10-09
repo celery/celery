@@ -11,6 +11,7 @@ from billiard.common import REMAP_SIGTERM, TERM_SIGNAME
 from billiard.pool import CLOSE, RUN
 from billiard.pool import Pool as BlockingPool
 from kombu.asynchronous import get_event_loop
+from kombu.message import Message
 
 from celery import platforms, signals
 from celery._state import _set_task_join_will_block, set_default_app
@@ -103,6 +104,42 @@ def process_destructor(pid, exitcode):
     )
 
 
+def _is_ack_callback(callback):
+    # The consumer queues ``promise(message.ack_log_error)`` and
+    # ``promise(message.reject_log_error)``.  Match the bound method by owner
+    # type and name so a transport's Message subclass overriding them still
+    # counts; anything unrecognised is left for ``hub.close()``.
+    fun = getattr(callback, 'fun', None)
+    return (isinstance(getattr(fun, '__self__', None), Message) and
+            getattr(fun, '__name__', None) in ('ack_log_error', 'reject_log_error'))
+
+
+def _run_ready_callbacks(hub):
+    """Run the task ack/reject callbacks queued with ``hub.call_soon()``.
+
+    With ``task_acks_late`` the acknowledgement of a task that finished
+    while the pool is being joined is one of these, and nothing else runs
+    them before ``hub.close()``, which waits for the join.  Only the
+    ``Message.ack_log_error`` / ``reject_log_error`` promises are run: the
+    queue can also hold the transport's socket reader, which re-queues
+    itself after every read and would hand deliveries to the closed pool,
+    so anything else is put back for ``hub.close()``.  Pop one at a time:
+    the main thread may still add to the set we drained
+    (``Consumer.on_send_event_buffered`` bypasses the lock) and must not
+    abort the batch.
+    """
+    ready = hub._pop_ready()
+    while ready:
+        callback = ready.pop()
+        if not _is_ack_callback(callback):
+            hub.call_soon(callback)
+            continue
+        try:
+            callback()
+        except Exception as exc:  # pylint: disable=broad-except
+            hub.on_callback_error(callback, exc)
+
+
 class TaskPool(BasePool):
     """Multiprocessing Pool implementation."""
 
@@ -182,6 +219,7 @@ class TaskPool(BasePool):
                     while not shutdown_event.is_set():
                         try:
                             hub.fire_timers()
+                            _run_ready_callbacks(hub)
                         except Exception:
                             logger.warning(
                                 "Exception in timer thread during prefork on_stop()",
@@ -209,6 +247,16 @@ class TaskPool(BasePool):
                         logger.warning(
                             "Timer thread in prefork on_stop() did not terminate cleanly"
                         )
+                    else:
+                        # The results the join waited for queued their acks
+                        # after the thread's last pass.
+                        try:
+                            _run_ready_callbacks(hub)
+                        except Exception:
+                            logger.warning(
+                                "Exception running ready callbacks after prefork pool join",
+                                exc_info=True,
+                            )
             else:
                 self._pool.join()
 

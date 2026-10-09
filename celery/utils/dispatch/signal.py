@@ -25,7 +25,9 @@ def _make_id(target):  # pragma: no cover
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
-        return id(target.__func__)
+        # Bound methods of different instances share the same __func__,
+        # so the instance is part of the id (a staticmethod has none).
+        return (id(getattr(target, '__self__', None)), id(target.__func__))
     return id(target)
 
 

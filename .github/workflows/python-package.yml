@@ -57,7 +57,7 @@ jobs:
       run: |
         echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
         sudo apt-get update
-        sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect libmemcached-dev
+        sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
 
     - uses: actions/checkout@v7
     - name: Set up Python ${{ matrix.python-version }}
@@ -77,15 +77,19 @@ jobs:
       run: |
         tox --verbose --verbose
 
-    - uses: codecov/codecov-action@v7
+    - name: Upload coverage to Codecov
+      if: ${{ !cancelled() }}
+      continue-on-error: true
+      uses: codecov/codecov-action@v7
       with:
-        flags: unittests # optional
-        fail_ci_if_error: true # optional (default = false)
+        flags: unittests
+        fail_ci_if_error: false
         token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: true # optional (default = false)
+        verbose: false
 
     - name: Upload test results to Codecov
       if: ${{ !cancelled() }}
+      continue-on-error: true
       uses: codecov/codecov-action@v7
       with:
         report_type: test_results
