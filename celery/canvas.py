@@ -2283,16 +2283,22 @@ class _chord(Signature):
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
                 header_delay[key] = options.pop(key)
+        # Cloning with link= would replace the body's own callbacks: run()
+        # adds them to the body instead.
+        callbacks = {key: options.pop(key)
+                     for key in ('link', 'link_error') if key in options}
         body = body.clone(**self._body_options(options))
         app = self._get_app(body)
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
         if app.conf.task_always_eager:
+            # apply() does not use the options of the chord, unlike run()
+            self._add_body_callbacks(body, dict(self.options, **callbacks))
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options, **options)
+        merged_options = dict(self.options, **options, **callbacks)
         # Keep countdown/eta off run()'s kwargs so they don't replace the unlock
         # retry interval; run() still sees .set() values via self.options.
         for key in ('countdown', 'eta'):
@@ -2359,6 +2365,20 @@ class _chord(Signature):
         """Options passed on to the body: the header task that fires the body is its parent."""
         return {k: v for k, v in options.items() if k != 'parent_id'}
 
+    @staticmethod
+    def _add_body_callbacks(body, options):
+        """Move ``link`` and ``link_error`` from ``options`` to the body.
+
+        They are appended to the ``link`` / ``link_error`` options of the
+        body, after the callbacks it already has, and must not reach the
+        header: a group refuses them. Unlike :meth:`link_error` with
+        ``task_allow_error_cb_on_chord_header`` enabled, ``link_error`` is
+        not added to the header tasks.
+        """
+        for key in ('link', 'link_error'):
+            for callback in maybe_list(options.pop(key, None)) or []:
+                body.append_to_list_option(key, callback)
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, header_delay=None, **options):
@@ -2396,12 +2416,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
-            # Callbacks of the chord belong to its body, as with chord.link()
-            # and chord.link_error(). They must not reach the header: a group
-            # refuses link and link_error.
-            for key in ('link', 'link_error'):
-                for callback in maybe_list(options.pop(key, None)) or []:
-                    body.append_to_list_option(key, callback)
+            self._add_body_callbacks(body, options)
             body.options.update(self._body_options(options))
 
         body_task_id = task_id or uuid()
