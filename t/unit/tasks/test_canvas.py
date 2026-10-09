@@ -474,6 +474,16 @@ class test_xmap_xstarmap(CanvasCase):
         assert call_kwargs['queue'] == 'q2'
         assert call_kwargs['countdown'] == 3
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_with_route_name_option(self, attr):
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+        s.set(route_name='custom.route')
+
+        s.apply_async()
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom.route'
+
 
 class test_chunks(CanvasCase):
 
