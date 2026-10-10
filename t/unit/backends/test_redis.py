@@ -1958,6 +1958,28 @@ class test_RedisBackend(basetest_RedisBackend):
             key, 512,
         )
 
+    @pytest.mark.parametrize('state,expires', [
+        (states.FAILURE, 1024),
+        (states.SUCCESS, 512),
+    ])
+    def test_failure_expires(self, state, expires):
+        self.app.conf.result_failure_expires = 1024
+        self.b = self.Backend(expires=512, app=self.app)
+        tid = uuid()
+        self.b.store_result(tid, 42, state)
+        self.b.client.expire.assert_called_with(
+            self.b.get_key_for_task(tid), expires)
+
+    def test_failure_expires_defaults_to_result_expires(self):
+        self.b = self.Backend(expires=512, app=self.app)
+        assert self.b.failure_expires == 512
+
+    def test_failure_expires_zero_never_expires(self):
+        self.app.conf.result_failure_expires = 0
+        self.b = self.Backend(expires=512, app=self.app)
+        self.b.store_result(uuid(), 42, states.FAILURE)
+        self.b.client.expire.assert_not_called()
+
     def test_set_raises_error_on_large_value(self):
         with pytest.raises(BackendStoreError):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))

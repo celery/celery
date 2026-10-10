@@ -219,6 +219,7 @@ NAMESPACES = Namespace(
             timedelta(days=1),
             type='float', old={'celery_task_result_expires'},
         ),
+        failure_expires=Option(None, type='float'),
         persistent=Option(None, type='bool'),
         extended=Option(False, type='bool'),
         serializer=Option('json'),

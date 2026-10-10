@@ -399,6 +399,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                  connection_pool=None, **kwargs):
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
+        failure_expires = _get('result_failure_expires')
+        self.failure_expires = (
+            self.expires if failure_expires is None
+            else self.prepare_expires(failure_expires, type=int))
         if self.redis is None:
             raise ImproperlyConfigured(E_REDIS_MISSING.strip())
 
@@ -697,16 +701,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
-    def set(self, key, value, **retry_policy):
+    def _set_with_state(self, key, value, state):
+        if state == states.FAILURE:
+            return self.set(key, value, expires=self.failure_expires)
+        return self.set(key, value)
+
+    def set(self, key, value, expires=None, **retry_policy):
         if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
             raise BackendStoreError('value too large for Redis backend')
 
-        return self.ensure(self._set, (key, value), **retry_policy)
+        return self.ensure(self._set, (key, value, expires), **retry_policy)
 
-    def _set(self, key, value):
+    def _set(self, key, value, expires=None):
+        if expires is None:
+            expires = self.expires
         with self.client.pipeline() as pipe:
-            if self.expires:
-                pipe.setex(key, self.expires, value)
+            if expires:
+                pipe.setex(key, expires, value)
             else:
                 pipe.set(key, value)
             pipe.publish(key, value)

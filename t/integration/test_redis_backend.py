@@ -36,6 +36,24 @@ def test_decode_responses_disables_compression(app):
         backend.forget(task_id)
 
 
+@pytest.mark.celery(result_expires=60, result_failure_expires=600)
+def test_failure_expires(app):
+    if not app.conf.result_backend.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    backend = app.backend
+    success_id, failure_id = uuid(), uuid()
+    try:
+        backend.store_result(success_id, 42, states.SUCCESS)
+        backend.store_result(failure_id, KeyError('x'), states.FAILURE)
+
+        assert 0 < backend.client.ttl(backend.get_key_for_task(success_id)) <= 60
+        assert 60 < backend.client.ttl(backend.get_key_for_task(failure_id)) <= 600
+    finally:
+        backend.forget(success_id)
+        backend.forget(failure_id)
+
+
 @pytest.mark.celery(
     result_serializer='json',
     accept_content=['json'],
