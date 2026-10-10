@@ -1232,7 +1232,11 @@ class _chain(Signature):
         # popped: nested chains are spliced in place, and empty groups are
         # stripped as long as another step follows them.  A chain made up of
         # empty groups only keeps a single one, matching the in-loop skip
-        # below, so that it still yields an (empty) group result.
+        # below, so that it still yields an (empty) group result.  The same
+        # goes for empty groups followed by nothing but empty chains: the
+        # step that follows them is spliced away, so the last stripped group
+        # is put back.
+        stripped_group = None
         while steps:
             head = steps[0]
             if not isinstance(head, abstract.CallableSignature):
@@ -1251,9 +1255,11 @@ class _chain(Signature):
                     isinstance(head.tasks, (list, tuple)) and
                     not head.tasks
                 ):
-                    steps.popleft()
+                    stripped_group = steps.popleft()
                     continue
             break
+        if stripped_group is not None and not steps:
+            steps.append(stripped_group)
 
         # optimization: now the pop func is a local variable
         steps_pop = steps.pop
