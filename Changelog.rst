@@ -9,6 +9,18 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+Canvas
+~~~~~~
+
+- Avoid geometric message growth when a chord body is a chain of implicit
+  chords using the chain message field. Eligible inner chord bodies are split
+  on the execution copy before freezing; link-based chains and explicitly
+  freezing a signature still preserve their written shape.
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
