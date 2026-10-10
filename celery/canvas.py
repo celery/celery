@@ -1505,10 +1505,15 @@ class _basemap(Signature):
         # need to evaluate generators
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        # options stored on the signature (e.g. via .set(), .link() or freeze())
+        # are merged with the ones given to this call, as in Signature.apply_async
+        opts = {k: v for k, v in opts.items() if v is not None}
+        _, _, opts = self._merge(options=opts)
+        route_name = opts.pop('route_name', None) or task_name_from(self.kwargs.get('task'))
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
             (), {'task': task, 'it': list(it)},
-            route_name=task_name_from(self.kwargs.get('task')), **opts
+            route_name=route_name, **opts
         )
 
 
