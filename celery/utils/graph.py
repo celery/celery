@@ -80,7 +80,11 @@ class DependencyGraph:
                 successor_c = NC[successor]
                 if node_c != successor_c:
                     graph.add_edge(node_c, successor_c)
-        return [t[0] for t in graph._khan62()]
+        # Each strongly connected component is collapsed into one vertex by
+        # the condensation; emit all of its members, otherwise nodes that
+        # are only reachable through a cycle silently disappear from the
+        # result (e.g. a two-node A <-> B cycle used to yield just ['A']).
+        return [node for component in graph._khan62() for node in component]
 
     def valency_of(self, obj):
         """Return the valency (degree) of a vertex in the graph."""

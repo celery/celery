@@ -68,3 +68,19 @@ class test_DependencyGraph:
         s = WhateverIO()
         self.graph1().to_dot(s)
         assert s.getvalue()
+
+
+def test_topsort_cycle_keeps_all_nodes():
+    # a cycle used to collapse its whole strongly connected component
+    # down to its first member: A <-> B sorted to just ['A']
+    graph = DependencyGraph([("A", ["B"]), ("B", ["A"])])
+    assert sorted(graph.topsort()) == ["A", "B"]
+
+    # mixed graph: the cycle members are all kept, in dependency order
+    # relative to the acyclic part
+    graph = DependencyGraph(
+        [("A", ["B"]), ("B", ["A"]), ("C", ["A"]), ("D", [])]
+    )
+    order = graph.topsort()
+    assert sorted(order) == ["A", "B", "C", "D"]
+    assert order.index("C") > order.index("A")
