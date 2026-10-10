@@ -6,6 +6,7 @@ import time
 from unittest.mock import patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 import t.skip
 from celery import states, uuid
@@ -157,6 +158,63 @@ class test_FilesystemBackend:
         assert len(os.listdir(self.directory)) == 0
 
     @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_is_atomic_no_tempfile_left_behind(self):
+        import glob
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tid = uuid()
+        tb.mark_as_done(tid, {'x': 'y' * 100})
+        assert tb.get(tb.get_key_for_task(tid)) is not None
+        # no temporary files remain in the result directory
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_preserves_file_mode_and_umask_default(self):
+        import stat
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        # new file gets the umask-derived default mode
+        key = tb.get_key_for_task(uuid())
+        tb.set(key, ensure_bytes('{"a": 1}'))
+        new_mode = stat.S_IMODE(os.stat(tb._filename(key)).st_mode)
+        prev_umask = os.umask(0o022)
+        try:
+            expected_default = 0o666 & ~prev_umask
+            assert new_mode == expected_default
+        finally:
+            os.umask(prev_umask)
+        # overwrite preserves the existing file's mode
+        os.chmod(tb._filename(key), 0o640)
+        tb.set(key, ensure_bytes('{"a": 2}'))
+        assert stat.S_IMODE(os.stat(tb._filename(key)).st_mode) == 0o640
+
+    def test_concurrent_readers_never_see_torn_payload(self):
+        import threading
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        key = tb.get_key_for_task(uuid())
+        payload = ensure_bytes('{"result": "' + 'x' * 100000 + '"}')
+        stop = threading.Event()
+        errors = []
+
+        def reader():
+            while not stop.is_set():
+                value = tb.get(key)
+                if value is not None:
+                    try:
+                        tb.decode(value)
+                    except Exception as exc:
+                        errors.append(exc)
+                        return
+
+        t = threading.Thread(target=reader, daemon=True)
+        t.start()
+        try:
+            for _ in range(50):
+                tb.set(key, payload)
+        finally:
+            stop.set()
+        t.join(5)
+        assert not errors
+
+    @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
         assert pickle.loads(pickle.dumps(tb))
@@ -193,3 +251,54 @@ class test_FilesystemBackend:
             tb.get_key_for_task(tid) in filenames
             for tid in today_task_ids
         )
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cleanup_removes_stale_temp_files(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        stale = os.path.join(self.directory, f'celery-result-{uuid()}.tmp')
+        fresh = os.path.join(self.directory, f'celery-result-{uuid()}.tmp')
+        for name in (stale, fresh):
+            with open(name, 'wb') as f:
+                f.write(b'partial')
+        old = time.time() - 3600
+        os.utime(stale, (old, old))
+        day_length = 0.2
+        with patch.object(tb, 'expires', day_length):
+            tb.cleanup()
+        assert not os.path.exists(stale)
+        assert os.path.exists(fresh)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_retries_replace_on_permission_error(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        real_replace = os.replace
+        failures = []
+
+        def flaky_replace(src, dst):
+            if len(failures) < 2:
+                failures.append(1)
+                raise PermissionError(dst)
+            return real_replace(src, dst)
+
+        key = tb.get_key_for_task(uuid())
+        with patch('celery.backends.filesystem.os.replace', flaky_replace):
+            tb.set(key, ensure_bytes('{"a": 1}'))
+        assert len(failures) == 2
+        assert tb.get(key) == ensure_bytes('{"a": 1}')
+        import glob
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_set_raises_after_replace_retries_exhausted(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+
+        def always_denied(src, dst):
+            raise PermissionError(dst)
+
+        key = tb.get_key_for_task(uuid())
+        with patch('celery.backends.filesystem.os.replace', always_denied):
+            with pytest.raises(PermissionError):
+                tb.set(key, ensure_bytes('{"a": 1}'))
+        # the temp file is cleaned up on the final failure
+        import glob
+        assert glob.glob(os.path.join(self.directory, 'celery-result-*')) == []
