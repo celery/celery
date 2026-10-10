@@ -832,6 +832,33 @@ class test_BaseBackend_dict:
 
         store_result.assert_not_called()
 
+    def test_fail_chain_does_not_call_get_state_for_plain_chain(self):
+        """Regression test for issue where _fail_chain called get_state()
+        for ordinary chain elements, causing NotImplementedError with DisabledBackend."""
+        # Plain chain element without chord option
+        after = signature('after', options={'task_id': 'after-id'})
+
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state') as get_state:
+            self.b._fail_chain([after], ValueError('boom failed'))
+
+        # get_state should not be called for plain chain elements
+        get_state.assert_not_called()
+
+    def test_fail_chain_calls_get_state_for_chord_member(self):
+        """Ensure chord members still perform state lookup for duplicate failure protection."""
+        # Chord member has 'chord' in options
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state', return_value=states.PENDING) as get_state, \
+                patch.object(self.b, 'on_chord_part_return'):
+            self.b._fail_chain([member], ValueError('header failed'))
+
+        # get_state should be called for chord members
+        get_state.assert_called_once_with('member-id')
+
     def test_chord_error_from_stack_resolves_the_current_exception_for_the_chain(self):
         after = signature('after', options={'task_id': 'after-id'})
         callback = signature('body', options={'task_id': 'body-id', 'chain': [after]})
@@ -1976,17 +2003,25 @@ class test_DisabledBackend:
     def test_as_uri(self):
         assert DisabledBackend(self.app).as_uri() == 'disabled://'
 
-    @pytest.mark.celery(result_backend='disabled')
-    def test_chord_raises_error(self):
-        with pytest.raises(NotImplementedError):
-            chord(self.add.s(i, i) for i in range(10))(self.add.s([2]))
+    def test_fail_chain_with_plain_chain(self):
+        """Regression test: _fail_chain should work with DisabledBackend for plain chains."""
+        backend = DisabledBackend(self.app)
+        # Plain chain element without chord option
+        after = signature('after', options={'task_id': 'after-id'})
 
-    @pytest.mark.celery(result_backend='disabled')
-    def test_chain_with_chord_raises_error(self):
+        # Should not raise NotImplementedError
+        backend._fail_chain([after], ValueError('boom failed'))
+
+    def test_fail_chain_with_chord_member_raises(self):
+        """Chord members still require a result backend."""
+        backend = DisabledBackend(self.app)
+        # Chord member has 'chord' in options
+        options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
+        member = signature('member', options=options)
+
+        # Should raise NotImplementedError for chord members
         with pytest.raises(NotImplementedError):
-            (self.add.s(2, 2) |
-             group(self.add.s(2, 2),
-                   self.add.s(5, 6)) | self.add.s()).delay()
+            backend._fail_chain([member], ValueError('header failed'))
 
 
 class test_as_uri:

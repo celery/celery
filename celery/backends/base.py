@@ -298,7 +298,11 @@ class Backend:
             chain_elem_ctx.update(chain_elem_ctx.options)
             chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
             chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            # Only check state for chord members to avoid requiring a result backend
+            # for ordinary chains. The already_failed check is only used when
+            # calling on_chord_part_return() for chord members below.
             already_failed = (
+                'chord' in chain_elem_ctx.options and
                 chain_elem_ctx.id is not None and
                 self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
             )
