@@ -741,8 +741,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             raise chord_error
         return retval
 
+    def _set_chord_key(self, key, value):
+        set_key = partial(self.client.set, ex=self.chord_expires or None)
+        return self.ensure(set_key, (key, value))
+
     def set_chord_size(self, group_id, chord_size):
-        self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+        self._set_chord_key(self.get_key_for_group(group_id, '.s'), chord_size)
 
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group
@@ -754,7 +758,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if not isinstance(header_result_args[1], _regen):
             header_result = self.app.GroupResult(*header_result_args)
             if any(isinstance(nr, GroupResult) for nr in header_result.results):
-                header_result.save(backend=self)
+                self._set_chord_key(
+                    self.get_key_for_group(header_result.id),
+                    self.encode({'result': header_result.as_tuple()}))
 
     @cached_property
     def _chord_zset(self):
@@ -785,11 +791,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 if self._chord_zset
                 else pipe.rpush(jkey, encoded).llen(jkey)
             ).get(tkey).get(skey)
-            if self.expires:
+            expires = self.chord_expires
+            if expires:
                 pipeline = pipeline \
-                    .expire(jkey, self.expires) \
-                    .expire(tkey, self.expires) \
-                    .expire(skey, self.expires)
+                    .expire(jkey, expires) \
+                    .expire(tkey, expires) \
+                    .expire(skey, expires) \
+                    .expire(self.get_key_for_group(gid), expires)
 
             _, readycount, totaldiff, chord_size_bytes = pipeline.execute()[:4]
 

@@ -1119,10 +1119,17 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         super().__init__(*args, **kwargs)
+        self._chord_expires = self.app.conf.get('result_chord_expires')
         self._add_global_keyprefix()
         self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    @property
+    def chord_expires(self):
+        if self._chord_expires is None:
+            return self.expires
+        return self.prepare_expires(self._chord_expires, type=int)
 
     def _add_global_keyprefix(self):
         """
@@ -1345,6 +1352,8 @@ class BaseKeyValueStoreBackend(Backend):
         self.ensure_chords_allowed()
         header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
+        self.expire(self.get_key_for_group(header_result.id),
+                    self.chord_expires)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
@@ -1414,7 +1423,15 @@ class BaseKeyValueStoreBackend(Backend):
                 deps.delete()
                 self.delete(key)
         else:
-            self.expire(key, self.expires)
+            expires = self.chord_expires
+            self.expire(key, expires)
+            self.expire(self.get_key_for_group(gid), expires)
+            # The last part joins every header result, so keep this one too,
+            # never for less than result_expires (0 means no expiry).
+            result_expires = (
+                0 if not expires or not self.expires
+                else max(expires, self.expires))
+            self.expire(self.get_key_for_task(request.id), result_expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

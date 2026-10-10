@@ -1,7 +1,7 @@
 import sys
 import types
 from contextlib import contextmanager
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
@@ -95,6 +95,7 @@ class test_CacheBackend:
             uuid(),
             [self.app.AsyncResult(uuid()) for _ in range(3)],
         )
+        task.request.id = uuid()
         task.request.group = result_args[0]
         tb.apply_chord(result_args, None)
 
@@ -105,6 +106,42 @@ class test_CacheBackend:
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
+
+    @pytest.mark.parametrize(
+        'result_expires,chord_expires,expected_chord,expected_result', [
+            (100, 600, 600, 600),
+            (86400, 600, 600, 86400),
+            (100, None, 100, 100),
+            (100, 0, 0, 0),
+            (None, 600, 600, 0),
+        ])
+    @patch('celery.result.GroupResult.restore')
+    def test_chord_uses_chord_expires(self, restore, result_expires,
+                                      chord_expires, expected_chord,
+                                      expected_result):
+        self.app.conf.result_expires = result_expires
+        self.app.conf.result_chord_expires = chord_expires
+        tb = CacheBackend(backend='memory://', app=self.app)
+        restore.return_value.__len__ = Mock(return_value=2)
+        task = Mock()
+        task.request.id = uuid()
+        task.request.group = gid = uuid()
+        task.request.chord = {}
+        with patch.object(tb.client, 'set') as client_set, \
+                patch.object(tb, 'expire') as expire:
+            tb.apply_chord((gid, []), None)
+        client_set.assert_any_call(
+            tb.get_key_for_chord(gid), 0, expected_chord or 0)
+        expire.assert_called_once_with(
+            tb.get_key_for_group(gid), expected_chord)
+        tb.client.set(tb.get_key_for_chord(gid), 0)
+        with patch.object(tb, 'expire') as expire:
+            tb.on_chord_part_return(task.request, states.SUCCESS, 1)
+        expire.assert_has_calls([
+            call(tb.get_key_for_chord(gid), expected_chord),
+            call(tb.get_key_for_group(gid), expected_chord),
+            call(tb.get_key_for_task(task.request.id), expected_result),
+        ])
 
     def test_mget(self):
         self.tb._set_with_state('foo', 1, states.SUCCESS)
@@ -507,6 +544,7 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                     uuid(),
                     [self.app.AsyncResult(uuid()) for _ in range(2)],
                 )
+                task.request.id = uuid()
                 task.request.group = result_args[0]
                 b.apply_chord(result_args, None)
 
