@@ -658,7 +658,12 @@ class Celery:
 
         if name not in self._tasks:
             if pydantic is True:
+                # Shared with apply_async(), which dumps models passed by the
+                # caller the same way the wrapper dumps returned models.
+                pydantic_dump_kwargs = {'mode': 'json', **(pydantic_dump_kwargs or {})}
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
+            else:
+                pydantic_dump_kwargs = None
 
             run = fun if bind else staticmethod(fun)
             task = type(fun.__name__, (base,), dict({
@@ -666,6 +671,7 @@ class Celery:
                 'name': name,
                 'run': run,
                 '_decorated': True,
+                '_pydantic_dump_kwargs': pydantic_dump_kwargs,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
                 '__annotations__': _get_annotations(fun),

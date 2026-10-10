@@ -18,10 +18,10 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
-from kombu.exceptions import LimitExceeded
+from kombu.exceptions import EncodeError, LimitExceeded
 from pydantic import BaseModel
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ValidationInfo, model_validator
+from pydantic import ConfigDict, Field, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -1037,6 +1037,170 @@ class test_App:
 
             assert task({'value': 1}) == {'value': datetime(2024, 5, 14, tzinfo=timezone.utc)}
             check.assert_called_once_with(ArgModel(value=1))
+
+    def test_task_with_pydantic_with_models_passed_by_caller(self):
+        """Test that models passed when calling a task are sent as dicts."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class KwargModel(BaseModel):
+            value: datetime
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: ArgModel, kwarg: Optional[KwargModel] = None):
+                pass
+
+            with patch.object(app, 'send_task') as send_task:
+                task.delay(ArgModel(value=1), kwarg=KwargModel(value=datetime(2024, 5, 14, tzinfo=timezone.utc)))
+                task.apply_async((ArgModel(value=2),), {'kwarg': None})
+                task.s(ArgModel(value=3)).delay()
+
+            sent = [call.args[1:3] for call in send_task.call_args_list]
+            assert sent == [
+                (({'value': 1},), {'kwarg': {'value': '2024-05-14T00:00:00Z'}}),
+                (({'value': 2},), {'kwarg': None}),
+                (({'value': 3},), {}),
+            ]
+
+    def test_task_with_pydantic_with_models_passed_by_caller_eager(self):
+        """Test that models passed by the caller survive serialization in eager mode."""
+
+        class Model(BaseModel):
+            value: timedelta
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: Model) -> Model:
+                check(arg)
+                return Model(value=arg.value * 2)
+
+            assert task.delay(Model(value=timedelta(days=1))).get() == {'value': 'P2D'}
+            check.assert_called_once_with(Model(value=timedelta(days=1)))
+
+    def test_task_with_pydantic_with_models_passed_by_caller_dump_kwargs(self):
+        """Test that pydantic_dump_kwargs is also used for models passed by the caller."""
+
+        class ArgModel(BaseModel):
+            value: int = Field(alias='Value')
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            # The model is only valid by alias, so the round trip needs by_alias=True
+            @app.task(pydantic=True, pydantic_dump_kwargs={'by_alias': True})
+            def task(arg: ArgModel):
+                check(arg)
+
+            task.delay(ArgModel(Value=1)).get()
+            check.assert_called_once_with(ArgModel(Value=1))
+
+    def test_task_without_pydantic_does_not_dump_models(self):
+        """Test that models passed to a task without pydantic=True are left alone."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task
+            def task(arg):
+                pass
+
+            arg = ArgModel(value=1)
+            with patch.object(app, 'send_task') as send_task:
+                task.delay(arg)
+
+            assert send_task.call_args.args[1] == (arg,)
+
+    def test_task_with_pydantic_with_pickle_does_not_dump_models(self):
+        """Test that models are sent as they are when the pickle serializer is used."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True, serializer='pickle')
+            def pickle_task(arg: ArgModel):
+                pass
+
+            @app.task(pydantic=True)
+            def json_task(arg: ArgModel):
+                pass
+
+            arg = ArgModel(value=1)
+            with patch.object(app, 'send_task') as send_task:
+                pickle_task.delay(arg)
+                json_task.apply_async((arg,), serializer='pickle')
+
+            first, second = (call.args[1][0] for call in send_task.call_args_list)
+            assert first is arg
+            assert second is arg
+
+    def test_task_with_pydantic_with_json_hook_does_not_dump_models(self):
+        """Test that models defining kombu's __json__ hook are left to it."""
+
+        class ArgModel(BaseModel):
+            value: int = Field(alias='Value')
+
+            def __json__(self):
+                return self.model_dump(mode='json', by_alias=True)
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            # Dumping without by_alias=True would fail validation on the worker
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                check(arg)
+
+            task.delay(ArgModel(Value=1)).get()
+            check.assert_called_once_with(ArgModel(Value=1))
+
+    def test_task_with_pydantic_with_unserializable_model(self):
+        """Test that a model model_dump() can't serialize still raises EncodeError."""
+
+        class Thing:
+            pass
+
+        class ArgModel(BaseModel):
+            model_config = ConfigDict(arbitrary_types_allowed=True)
+            thing: Thing
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                pass
+
+            with pytest.raises(EncodeError):
+                task.delay(ArgModel(thing=Thing()))
+
+    def test_task_with_pydantic_with_invalid_args_type(self):
+        """Test that args and kwargs of the wrong type still raise TypeError."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                pass
+
+            @app.task(pydantic=True, typing=False)
+            def unchecked_task(arg: ArgModel):
+                pass
+
+            with pytest.raises(TypeError, match='task args must be a list or tuple'):
+                task.apply_async({'value': 1})
+            with pytest.raises(TypeError, match='task keyword arguments must be a mapping'):
+                unchecked_task.apply_async((), [('arg', ArgModel(value=1))])
 
     def test_task_with_pydantic_with_pydantic_not_installed(self):
         """Test configuring a task with Pydantic when pydantic is not installed."""

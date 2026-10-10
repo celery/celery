@@ -1,6 +1,7 @@
 """Task implementation: request context and the task base class."""
 import sys
 import types
+from collections.abc import Mapping
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
@@ -59,6 +60,33 @@ def _strflags(flags, default=''):
     if flags:
         return ' ({})'.format(', '.join(flags))
     return default
+
+
+def _dump_pydantic_models(args, kwargs, dump_kwargs):
+    """Dump Pydantic models in the arguments of a ``pydantic=True`` task.
+
+    The default JSON serializer can't encode models, so they are sent as dicts
+    and the worker validates them back into models (see ``pydantic_wrapper``).
+    """
+    from pydantic import BaseModel
+    from pydantic_core import PydanticSerializationError
+
+    def dump(value):
+        # A model with kombu's __json__ hook already knows how to be sent.
+        if not isinstance(value, BaseModel) or hasattr(type(value), '__json__'):
+            return value
+        try:
+            return value.model_dump(**dump_kwargs)
+        except PydanticSerializationError:
+            # Let the serializer raise EncodeError as before.
+            return value
+
+    # Anything else is left as is, so sending it still raises the usual TypeError.
+    if isinstance(args, (list, tuple)):
+        args = tuple(dump(arg) for arg in args)
+    if isinstance(kwargs, Mapping):
+        kwargs = {key: dump(value) for key, value in kwargs.items()}
+    return args, kwargs
 
 
 def _reprtask(task, fmt=None, flags=None):
@@ -391,6 +419,10 @@ class Task:
 
     _exec_options = None
 
+    #: ``model_dump()`` arguments of a task created with ``pydantic=True``,
+    #: used to dump models passed by the caller. ``None`` for other tasks.
+    _pydantic_dump_kwargs = None
+
     __bound__ = False
 
     from_config = (
@@ -685,6 +717,10 @@ class Task:
 
         preopts = self._get_exec_options()
         options = dict(preopts, **options)
+
+        # Pickle can send models as they are, so only dump them for other serializers.
+        if self._pydantic_dump_kwargs is not None and options.get('serializer') != 'pickle':
+            args, kwargs = _dump_pydantic_models(args, kwargs, self._pydantic_dump_kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
         if self.priority:

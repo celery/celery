@@ -821,10 +821,24 @@ Argument validation with Pydantic
 You can use Pydantic_ to validate and convert arguments as well as serializing
 results based on typehints by passing ``pydantic=True``.
 
-.. NOTE::
+.. versionchanged:: 5.7
 
-   Argument validation only covers arguments/return values on the task side. You still have
-   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+   Models passed directly as arguments to ``delay()`` or ``apply_async()`` are
+   now dumped with ``model_dump()`` before the task is sent (tasks using the
+   pickle serializer send them as they are), so you no longer have to serialize
+   them yourself. Only the serializer named ``pickle`` is skipped, so models are
+   still dumped for serializers that use pickle under another name. Models made
+   serializable with kombu's ``register_type()`` are dumped too, while models
+   that define kombu's ``__json__()`` hook or that ``model_dump()`` can't
+   serialize are sent as they are.
+
+   The worker validates the dumped dict again, so anything ``model_dump()``
+   drops or masks changes on the way: ``SecretStr`` values arrive as
+   ``'**********'``, and fields with ``exclude=True`` or dropped by options like
+   ``exclude_none`` get their defaults. Pass dicts for such models. Models inside
+   lists or dicts, or in ``link`` signatures, models given to a later task of a
+   chain, to the body of a chord or to ``map()``, ``starmap()`` or ``chunks()``,
+   and tasks called by name with ``send_task()``, still need dicts.
 
 For example:
 
@@ -846,11 +860,14 @@ For example:
         # The returned model will be converted to a dict automatically
         return ReturnModel(value=f"example: {arg.value}")
 
-The task can then be called using a dict matching the model, and you'll receive
+The task can then be called using a model or a dict matching the model, and you'll receive
 the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
 
 .. code-block:: python
 
+   >>> result = x.delay(ArgModel(value=1))
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
    >>> result = x.delay({'value': 1})
    >>> result.get(timeout=1)
    {'value': 'example: 1'}
@@ -920,8 +937,12 @@ There are a few more options influencing Pydantic behavior:
 
 .. attribute:: Task.pydantic_dump_kwargs
 
-   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
-   By default, only ``mode='json'`` is passed.
+   When serializing a result or a model passed as an argument, pass these additional
+   arguments to ``model_dump()``. By default, only ``mode='json'`` is passed. If your
+   models use field aliases, add ``by_alias=True`` so arguments validate again on the worker.
+   With ``pydantic_strict=True``, fields that ``mode='json'`` turns into strings, such as
+   ``datetime`` or ``UUID``, don't validate, so call those tasks with ``model.model_dump()``
+   instead of the model.
 
 
 .. _task-options:
