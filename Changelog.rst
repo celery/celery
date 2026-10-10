@@ -9,6 +9,17 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- ``saferepr`` no longer drops or unbalances closing brackets when ``maxlen``
+  is reached: a container whose last element was truncated is now closed,
+  without a misleading ``, ...``, and a nested container that starts after
+  the limit is left out entirely instead of leaving a stray closing bracket.
+  This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
+  (#10760).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
