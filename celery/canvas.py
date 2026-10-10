@@ -2480,12 +2480,14 @@ class _chord(Signature):
                 stacklevel=2,
             )
 
-        # Edge case for nested chords in the header
-        for task in maybe_list(self.tasks) or []:
-            if isinstance(task, chord):
-                # Let the nested chord do the error linking itself on its
-                # header and body where needed, based on the current configuration
-                task.link_error(errback)
+            # Edge case for nested chords in the header. With the setting
+            # enabled they were linked above already. freeze() wraps the
+            # header in a group, so look at the tasks of that group.
+            for task in maybe_list(getattr(self.tasks, 'tasks', self.tasks)) or []:
+                if isinstance(task, chord):
+                    # Let the nested chord do the error linking itself on its
+                    # header and body where needed, based on the current configuration
+                    task.link_error(errback)
 
         self.body.link_error(errback)
         return errback
@@ -2499,7 +2501,7 @@ class _chord(Signature):
         Arguments:
             immutable (bool): The new mutability value for chord header.
         """
-        for task in self.tasks:
+        for task in getattr(self.tasks, 'tasks', self.tasks):
             task.set_immutable(immutable)
 
     def __repr__(self):
