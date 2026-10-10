@@ -1,5 +1,6 @@
 import pytest
 
+from celery.utils import text
 from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, simple_format, truncate
 
 RANDTEXT = """\
@@ -96,3 +97,18 @@ def test_simple_format_percent_escape(value, expected):
 def test_simple_format_unknown_key():
     with pytest.raises(ValueError, match='Unknown format %x'):
         simple_format('%x', {})
+
+
+def test_abbr_small_width():
+    # widths below the ellipsis length used to slice from the END of the
+    # string ("he..." for width 0) and return text longer than max
+    assert text.abbr("hello", 0) == ""
+    assert text.abbr("hello", 1) == "h"
+    assert text.abbr("hello", 2) == "he"
+    assert text.abbr("hello", 3) == "..."
+    assert text.abbr("hello", 4) == "h..."
+    # unchanged behavior for fitting and regular truncation
+    assert text.abbr("he", 4) == "he"
+    assert text.abbr("hello", 5) == "hello"
+    assert text.abbr("hello world", 8) == "hello..."
+    assert text.abbr("hello", 4, ellipsis=False) == "hell"
