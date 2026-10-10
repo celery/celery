@@ -1,15 +1,166 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from threading import Event, Thread
 from time import monotonic, sleep
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
+from dateutil import tz as dateutil_tz
 
 from celery import beat
 from celery.schedules import crontab
 from t.integration.tasks import add
 
 from .conftest import flaky
+
+
+class test_beat_interval_timezones:
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
+    @pytest.mark.parametrize(
+        'timezone_name,interval,relative,last_run,due_at,next_due_at', [
+            pytest.param(
+                'America/New_York', timedelta(days=1), True,
+                datetime(2026, 11, 1, 0, 30), datetime(2026, 11, 2),
+                datetime(2026, 11, 3),
+                id='daily-fall-back',
+            ),
+            pytest.param(
+                'America/New_York', timedelta(days=1), True,
+                datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8),
+                datetime(2026, 3, 9),
+                id='daily-spring-forward',
+            ),
+            pytest.param(
+                'America/New_York', timedelta(days=1), True,
+                datetime(2026, 3, 8, 0, 30), datetime(2026, 3, 9),
+                datetime(2026, 3, 10),
+                id='daily-across-spring-forward',
+            ),
+            pytest.param(
+                'America/New_York', timedelta(hours=1), True,
+                datetime(2026, 3, 8, 1, 30), datetime(2026, 3, 8, 3),
+                datetime(2026, 3, 8, 4),
+                id='hourly-across-spring-forward',
+            ),
+            pytest.param(
+                'Australia/Lord_Howe', timedelta(hours=1), True,
+                datetime(2026, 10, 4, 1, 15), datetime(2026, 10, 4, 2, 30),
+                datetime(2026, 10, 4, 3),
+                id='hourly-half-hour-spring-forward',
+            ),
+            pytest.param(
+                'Africa/Cairo', timedelta(days=1), True,
+                datetime(2026, 4, 23, 23, 30), datetime(2026, 4, 24, 1),
+                datetime(2026, 4, 25),
+                id='daily-cairo-midnight-gap',
+            ),
+            pytest.param(
+                'America/Havana', timedelta(days=1), True,
+                datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8, 1),
+                datetime(2026, 3, 9),
+                id='daily-havana-midnight-gap',
+            ),
+            pytest.param(
+                'America/Goose_Bay', timedelta(days=1), True,
+                datetime(2000, 10, 28, 23, 30, fold=1),
+                datetime(2000, 10, 29, fold=1),
+                datetime(2000, 10, 30),
+                id='daily-repeated-midnight',
+            ),
+            pytest.param(
+                'Pacific/Chatham', timedelta(hours=2), True,
+                datetime(2026, 4, 5, 2, 45),
+                datetime(2026, 4, 5, 3, fold=1),
+                datetime(2026, 4, 5, 5),
+                id='two-hours-after-repeated-period',
+            ),
+            pytest.param(
+                'Australia/Lord_Howe', timedelta(hours=1), True,
+                datetime(2026, 4, 5, 1), datetime(2026, 4, 5, 2),
+                datetime(2026, 4, 5, 3),
+                id='hourly-half-hour-fall-back',
+            ),
+            pytest.param(
+                'America/New_York', timedelta(days=1), False,
+                datetime(2026, 11, 1, 0, 30), datetime(2026, 11, 1, 23, 30),
+                datetime(2026, 11, 2, 23, 30),
+                id='elapsed-day-fall-back',
+            ),
+            pytest.param(
+                'America/New_York', timedelta(days=1), False,
+                datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 9, 0, 30),
+                datetime(2026, 3, 10, 0, 30),
+                id='elapsed-day-spring-forward',
+            ),
+            pytest.param(
+                'Africa/Cairo', timedelta(days=1), False,
+                datetime(2026, 4, 23, 23, 30), datetime(2026, 4, 25, 0, 30),
+                datetime(2026, 4, 26, 0, 30),
+                id='elapsed-day-midnight-gap',
+            ),
+        ],
+    )
+    def test_dispatches_once_at_deadline(
+        self, app, monkeypatch, timezone_name, interval, relative,
+        last_run, due_at, next_due_at, tz_factory,
+    ):
+        zone = tz_factory(timezone_name)
+        app.conf.timezone = zone
+        last_run = last_run.replace(tzinfo=zone)
+        due_utc = due_at.replace(tzinfo=zone).astimezone(timezone.utc)
+        now = last_run
+        # Control only Beat's clock; the broker and worker use real time.
+        monkeypatch.setattr(app, 'now', lambda: now)
+        task_id = uuid4().hex
+        scheduler = beat.Scheduler(app=app, lazy=True)
+        entry = scheduler.add(
+            name='timezone-interval', task=add.name, args=(1, 2),
+            schedule=interval, relative=relative, last_run_at=last_run,
+            options={'task_id': task_id},
+        )
+
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 0
+
+        # Move through the transition without waiting for wall-clock time.
+        now = (due_utc - timedelta(seconds=1)).astimezone(zone)
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 0
+
+        now = due_utc.astimezone(zone)
+        assert scheduler.tick() == 0
+        assert app.AsyncResult(task_id).get(timeout=30) == 3
+        assert scheduler.schedule[entry.name].total_run_count == 1
+        last_dispatch = scheduler.schedule[entry.name].last_run_at
+        assert last_dispatch.astimezone(timezone.utc) == due_utc
+
+        # Further ticks must not dispatch the same deadline again.
+        assert scheduler.tick() > 0
+        now = (due_utc + timedelta(seconds=1)).astimezone(zone)
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        # Keep the populated heap and verify the following run as well.
+        next_due_utc = next_due_at.replace(tzinfo=zone).astimezone(timezone.utc)
+        next_task_id = uuid4().hex
+        scheduler.schedule[entry.name].options['task_id'] = next_task_id
+        now = (next_due_utc - timedelta(seconds=1)).astimezone(zone)
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        now = next_due_utc.astimezone(zone)
+        assert scheduler.tick() == 0
+        assert app.AsyncResult(next_task_id).get(timeout=30) == 3
+        assert scheduler.schedule[entry.name].total_run_count == 2
+        last_dispatch = scheduler.schedule[entry.name].last_run_at
+        assert last_dispatch.astimezone(timezone.utc) == next_due_utc
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 2
 
 
 class test_beat_cron_starting_deadline:

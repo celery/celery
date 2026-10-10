@@ -7,6 +7,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 
 import pytest
+from dateutil import tz as dateutil_tz
 
 from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
@@ -251,6 +252,218 @@ class test_schedule:
 
         s = schedule(timedelta(hours=1), relative=True, nowfun=lambda: now, app=self.app)
         assert s.is_due(last_run_at) == (False, 2)
+
+    @pytest.mark.parametrize('relative', [False, True])
+    @pytest.mark.parametrize('interval,relative_next', [
+        pytest.param(timedelta(seconds=0.1), 0.1, id='subsecond'),
+        pytest.param(timedelta(seconds=1), 0.25, id='second'),
+        pytest.param(timedelta(0), 0, id='zero'),
+        pytest.param(timedelta(seconds=-1), 0, id='negative'),
+    ])
+    def test_next_check_for_short_intervals(
+        self, interval, relative_next, relative,
+    ):
+        now = datetime(2026, 1, 1, microsecond=750000, tzinfo=timezone.utc)
+        s = schedule(
+            interval, relative=relative, nowfun=lambda: now, app=self.app,
+        )
+        next_check = (relative_next if relative
+                      else max(interval.total_seconds(), 0))
+        assert s.is_due(now - timedelta(seconds=10)) == (True, next_check)
+
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
+    @pytest.mark.parametrize('zone,interval,last_run_at,due_at,next_check', [
+        pytest.param(
+            'America/New_York', timedelta(days=1),
+            datetime(2026, 11, 1, 0, 30), datetime(2026, 11, 2),
+            86400,
+            id='daily-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=2),
+            datetime(2026, 10, 31, 0, 30), datetime(2026, 11, 2),
+            172800,
+            id='two-days-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=1),
+            datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8),
+            82800,
+            id='daily-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=1),
+            datetime(2026, 3, 8, 0, 30), datetime(2026, 3, 9),
+            86400,
+            id='daily-across-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(hours=1),
+            datetime(2026, 3, 8, 1, 30), datetime(2026, 3, 8, 3),
+            3600,
+            id='hourly-across-spring-forward',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', timedelta(hours=1),
+            datetime(2026, 10, 4, 1, 15), datetime(2026, 10, 4, 2, 30),
+            1800,
+            id='hourly-half-hour-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(days=2),
+            datetime(2026, 3, 6, 23, 30), datetime(2026, 3, 8),
+            169200,
+            id='two-days-spring-forward',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', timedelta(hours=1),
+            datetime(2026, 4, 5, 1), datetime(2026, 4, 5, 2),
+            3600,
+            id='hourly-half-hour-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', timedelta(hours=1),
+            datetime(2026, 11, 1, 1, 15),
+            datetime(2026, 11, 1, 1, fold=1),
+            3600,
+            id='hourly-repeated-hour',
+        ),
+        pytest.param(
+            'America/Havana', timedelta(days=1),
+            datetime(2026, 3, 7, 23, 30), datetime(2026, 3, 8, 1),
+            82800,
+            id='daily-midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', timedelta(days=2),
+            datetime(2026, 3, 6, 23, 30), datetime(2026, 3, 8, 1),
+            169200,
+            id='two-days-midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', timedelta(days=1),
+            datetime(2026, 10, 31, 23, 30), datetime(2026, 11, 1),
+            90000,
+            id='daily-midnight-fall-back',
+        ),
+        pytest.param(
+            'Asia/Singapore', timedelta(hours=1),
+            datetime(1945, 9, 11, 23),
+            datetime(1945, 9, 11, 23, fold=1),
+            3600,
+            id='hourly-ninety-minute-fall-back',
+        ),
+        pytest.param(
+            'Pacific/Nauru', timedelta(hours=1),
+            datetime(1942, 8, 28, 23),
+            datetime(1942, 8, 28, 22, fold=1),
+            3600,
+            id='hourly-two-and-half-hours-fall-back',
+        ),
+        pytest.param(
+            'Asia/Kathmandu', timedelta(days=1),
+            datetime(1985, 12, 31, 23, 50), datetime(1986, 1, 1, 0, 15),
+            85500,
+            id='daily-quarter-hour-midnight-gap',
+        ),
+        pytest.param(
+            'Pacific/Apia', timedelta(days=1),
+            datetime(2011, 12, 29, 23, 30), datetime(2011, 12, 31),
+            86400,
+            id='daily-skipped-date',
+        ),
+        pytest.param(
+            'Pacific/Kwajalein', timedelta(days=1),
+            datetime(1969, 9, 30, 0, 30), datetime(1969, 10, 1),
+            86400,
+            id='daily-twenty-three-hour-fall-back',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(days=1),
+            datetime(2000, 10, 28, 23, 30, fold=1),
+            datetime(2000, 10, 29, fold=1),
+            86400,
+            id='daily-second-midnight',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(hours=1),
+            datetime(2000, 10, 28, 23, 1), datetime(2000, 10, 29),
+            3600,
+            id='hourly-first-midnight',
+        ),
+        pytest.param(
+            'America/Goose_Bay', timedelta(hours=1),
+            datetime(2000, 10, 28, 23, 1, fold=1),
+            datetime(2000, 10, 29, fold=1),
+            3600,
+            id='hourly-second-midnight',
+        ),
+        pytest.param(
+            'Pacific/Chatham', timedelta(hours=2),
+            datetime(2026, 4, 5, 2, 45),
+            datetime(2026, 4, 5, 3, fold=1),
+            7200,
+            id='two-hours-after-repeated-period',
+        ),
+        pytest.param(
+            'Antarctica/Casey', timedelta(days=1),
+            datetime(2010, 3, 4, 23, 30, fold=1),
+            datetime(2010, 3, 5, fold=1),
+            86400,
+            id='daily-three-hours-fall-back',
+        ),
+        pytest.param(
+            'Africa/Cairo', timedelta(days=1),
+            datetime(2026, 4, 23, 23, 30), datetime(2026, 4, 24, 1),
+            82800,
+            id='daily-cairo-midnight-gap',
+        ),
+    ])
+    def test_relative_schedule_across_dst(
+        self, zone, interval, last_run_at, due_at, next_check,
+        tz_factory,
+    ):
+        self.app.conf.timezone = tz_factory(zone)
+        last_run_at = last_run_at.replace(tzinfo=self.app.timezone)
+        due_at = due_at.replace(tzinfo=self.app.timezone)
+        now = last_run_at
+        s = schedule(
+            interval, relative=True, nowfun=lambda: now, app=self.app,
+        )
+        expected_remaining = (
+            due_at.astimezone(timezone.utc) - now.astimezone(timezone.utc)
+        ).total_seconds()
+
+        assert s.is_due(last_run_at) == (False, expected_remaining)
+
+        now = due_at.astimezone(timezone.utc) - timedelta(seconds=1)
+        assert s.is_due(last_run_at) == (False, 1)
+
+        now = due_at
+        assert s.is_due(last_run_at) == (True, next_check)
+
+        now = due_at.astimezone(timezone.utc) + timedelta(seconds=10)
+        assert s.is_due(last_run_at) == (True, next_check - 10)
+
+    @pytest.mark.parametrize('last_run_at', [
+        datetime(2026, 11, 1, 0, 30),
+        datetime(2026, 3, 7, 23, 30),
+    ])
+    def test_non_relative_daily_schedule_uses_elapsed_time(
+        self, last_run_at,
+    ):
+        self.app.conf.timezone = 'America/New_York'
+        last_run_at = last_run_at.replace(tzinfo=self.app.timezone)
+        now = last_run_at
+        s = schedule(timedelta(days=1), nowfun=lambda: now, app=self.app)
+
+        assert s.is_due(last_run_at) == (False, 86400)
+
+        now = last_run_at.astimezone(timezone.utc) + timedelta(days=1)
+        assert s.is_due(last_run_at) == (True, 86400)
 
 
 # Module-level helper used as crontab(nowfun=...) in pickling tests.

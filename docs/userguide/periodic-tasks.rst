@@ -257,6 +257,14 @@ Available Fields
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
 
+    Intervals of a day or more advance by local calendar days before
+    rounding to midnight. For example, ``timedelta(days=1)`` becomes due
+    at the next midnight even when a DST change makes the day 23 or 25
+    hours long. If midnight falls in a DST gap, the deadline moves forward
+    by the change in UTC offset to an existing local time.
+    If midnight occurs twice, the first occurrence after the previous run
+    is used.
+
     By default `relative` is false, the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
 
