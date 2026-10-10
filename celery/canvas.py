@@ -1506,9 +1506,14 @@ class _basemap(Signature):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
         task, it = self._unpack_args(self.kwargs)
+        # Options stored on the signature (.set(), .link(), freeze()) apply
+        # too, like Signature.apply_async(): extra options set to None are
+        # dismissed and the rest override the stored ones.
+        _, _, options = self._merge(
+            options={k: v for k, v in opts.items() if v is not None})
         return self.type.apply_async(
             (), {'task': task, 'it': list(it)},
-            route_name=task_name_from(self.kwargs.get('task')), **opts
+            route_name=task_name_from(self.kwargs.get('task')), **options
         )
 
 

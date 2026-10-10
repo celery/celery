@@ -464,6 +464,26 @@ class test_xmap_xstarmap(CanvasCase):
             assert type.from_dict(dict(s)) == s
             assert repr(s)
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_uses_signature_options(self, attr):
+        s = getattr(self.add, attr)([(1, 1)])
+        s.set(queue='q1', countdown=10)
+        s.link(self.mul.s(2))
+        frozen = s.freeze()
+        s.type = Mock()
+
+        s.apply_async(countdown=20, priority=None)
+        (args, kwargs), options = s.type.apply_async.call_args
+        assert args == ()
+        assert kwargs == {'task': self.add.s(), 'it': [(1, 1)]}
+        assert options['route_name'] == self.add.name
+        assert options['queue'] == 'q1'
+        # Options passed to apply_async() override the stored ones
+        assert options['countdown'] == 20
+        assert 'priority' not in options
+        assert options['link'] == [self.mul.s(2)]
+        assert options['task_id'] == frozen.id
+
 
 class test_chunks(CanvasCase):
 
