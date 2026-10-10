@@ -79,6 +79,28 @@ else:
     def _get_annotations(fun):
         return fun.__annotations__
 
+
+def _same_task_callable(first, second):
+    """Compare callable identity, including freshly-created bound methods.
+
+    Accessing a method on an instance creates a new bound-method object each
+    time, so object identity alone misses a repeated registration. This does
+    not unwrap partials or arbitrary ``__wrapped__`` chains.
+    """
+    if first is second:
+        return True
+
+    first_self = getattr(first, '__self__', None)
+    second_self = getattr(second, '__self__', None)
+    first_func = getattr(first, '__func__', None)
+    return (
+        first_self is not None
+        and first_self is second_self
+        and first_func is not None
+        and first_func is getattr(second, '__func__', None)
+    )
+
+
 BUILTIN_FIXUPS = {
     'celery.fixups.django:fixup',
 }
@@ -694,7 +716,10 @@ class Celery:
             style task classes, you should not need to use this for
             new projects.
         """
-        task = inspect.isclass(task) and task() or task
+        # register_task() is an explicit request, so resolve task proxies
+        # before inspecting their metadata.
+        task = maybe_evaluate(task)
+        task = task() if inspect.isclass(task) else task
         if not task.name:
             task_cls = type(task)
             task.name = self.gen_task_name(
@@ -724,7 +749,7 @@ class Celery:
         ``bind=True`` and the wrapper under ``pydantic=True``.
         """
         existing_fun = getattr(task, '_decorated_fun', None)
-        if existing_fun is None or existing_fun is fun:
+        if existing_fun is None or _same_task_callable(existing_fun, fun):
             return
         self._warn_duplicate_task_name(
             name, qualname(existing_fun), qualname(fun),
@@ -763,11 +788,18 @@ class Celery:
                 if auto and not self.autofinalize:
                     raise RuntimeError('Contract breach: app not finalized')
                 self.finalized = True
-                _announce_app_finalized(self)
 
+                # In-tree finalizers only register shared and built-in tasks;
+                # they do not prepare state needed to construct app-local
+                # tasks. Evaluate local decorators first so they keep stable
+                # precedence over same-named tasks from global callbacks.
                 pending = self._pending
                 while pending:
                     maybe_evaluate(pending.popleft())
+
+                # finalized is already True, so callback task registrations
+                # are eager and cannot append new work to _pending.
+                _announce_app_finalized(self)
 
                 for task in self._tasks.values():
                     task.bind(self)
