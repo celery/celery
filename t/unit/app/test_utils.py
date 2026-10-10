@@ -127,6 +127,32 @@ class test_filter_hidden_settings:
         assert 'user:********@172.19.26.240:11211' in censored['result_backend']
         assert 'user:********@172.19.26.242:11211' in censored['result_backend']
 
+    def test_censors_azure_account_key_in_backend_url(self):
+        conf = {
+            'result_backend': (
+                'azureblockblob://'
+                'DefaultEndpointsProtocol=https;'
+                'AccountName=acct;'
+                'AccountKey=SECRET==;'
+                'EndpointSuffix=core.windows.net'
+            ),
+        }
+        censored = filter_hidden_settings(conf)
+        assert 'SECRET==' not in censored['result_backend']
+        assert 'AccountKey=********' in censored['result_backend']
+
+    def test_censors_azure_shared_access_signature_in_backend_url(self):
+        conf = {
+            'result_backend': (
+                'azureblockblob://'
+                'BlobEndpoint=https://name.blob.core.windows.net/;'
+                'SharedAccessSignature=sv=2022-11-02&sig=signature'
+            ),
+        }
+        censored = filter_hidden_settings(conf)
+        assert 'signature' not in censored['result_backend']
+        assert 'SharedAccessSignature=********' in censored['result_backend']
+
 
 class test_bugreport:
 
@@ -168,6 +194,28 @@ class test_bugreport:
         report_user = bugreport(self.app)
         assert 'p,a@ss' not in report_user
         assert 'redis://user:********@localhost:6379/0' in report_user
+
+    def test_bugreport_with_azure_account_key(self):
+        self.app.conf.result_backend = (
+            'azureblockblob://'
+            'DefaultEndpointsProtocol=https;'
+            'AccountName=acct;'
+            'AccountKey=SECRET==;'
+            'EndpointSuffix=core.windows.net'
+        )
+        report = bugreport(self.app)
+        assert 'SECRET==' not in report
+        assert 'AccountKey=********' in report
+
+    def test_bugreport_with_azure_shared_access_signature(self):
+        self.app.conf.result_backend = (
+            'azureblockblob://'
+            'BlobEndpoint=https://name.blob.core.windows.net/;'
+            'SharedAccessSignature=sv=2022-11-02&sig=signature'
+        )
+        report = bugreport(self.app)
+        assert 'signature' not in report
+        assert 'SharedAccessSignature=********' in report
 
 
 class test_sanitize_url:
@@ -296,3 +344,48 @@ class test_sanitize_url:
         url = 'sentinel://u1:p1@h1:26379;;h2:26379;u3:p3@h3:26379/0'
         expected = 'sentinel://u1:********@h1:26379;h2:26379;u3:********@h3:26379/0'
         assert sanitize_url(url) == expected
+
+    def test_azure_connection_string_account_key_redaction(self):
+        url = (
+            'azureblockblob://'
+            'DefaultEndpointsProtocol=https;'
+            'AccountName=acct;'
+            'AccountKey=SECRET==;'
+            'EndpointSuffix=core.windows.net'
+        )
+        sanitized = sanitize_url(url)
+        assert 'SECRET==' not in sanitized
+        assert 'AccountName=acct' in sanitized
+        assert 'EndpointSuffix=core.windows.net' in sanitized
+        assert 'AccountKey=********' in sanitized
+
+    def test_azure_connection_string_shared_access_signature_redaction(self):
+        url = (
+            'azureblockblob://'
+            'BlobEndpoint=https://name.blob.core.windows.net/;'
+            'SharedAccessSignature=sv=2022-11-02&sig=signature'
+        )
+        sanitized = sanitize_url(url)
+        assert 'signature' not in sanitized
+        assert 'SharedAccessSignature=********' in sanitized
+        assert 'BlobEndpoint=https://name.blob.core.windows.net/' in sanitized
+
+    def test_azure_connection_string_case_insensitive_key(self):
+        url = (
+            'azureblockblob://'
+            'AccountName=name;'
+            'accountkey=SECRET'
+        )
+        sanitized = sanitize_url(url)
+        assert 'SECRET' not in sanitized
+        assert 'accountkey=********' in sanitized
+
+    def test_azure_connection_string_uppercase_key(self):
+        url = (
+            'azureblockblob://'
+            'AccountName=name;'
+            'ACCOUNTKEY=SECRET'
+        )
+        sanitized = sanitize_url(url)
+        assert 'SECRET' not in sanitized
+        assert 'ACCOUNTKEY=********' in sanitized
