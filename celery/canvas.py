@@ -2408,6 +2408,10 @@ class _chord(Signature):
         # Neither should chords, for deeply nested chords to work
         options.pop('chord', None)
         options.pop('task_id', None)
+        # Callbacks belong to the body, which already got them above;
+        # group.apply_async() rejects link/link_error. See #10781
+        options.pop('link', None)
+        options.pop('link_error', None)
 
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 

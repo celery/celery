@@ -2885,6 +2885,33 @@ class test_chord(CanvasCase):
         assert "parent_id" not in body.options
         assert body.options["root_id"] == "root-id"
 
+    def test_chord_run_sends_link_options_to_body_only(self):
+        # See issue #10781
+        header = group([self.add.s(1, 1), self.add.s(2, 2)])
+        body = self.add.s(10)
+        callback, errback = self.mul.s(2), self.div.s(2)
+
+        with patch.object(group, 'apply_async') as header_apply_async:
+            chord(header, body).run(
+                header, body, (), link=callback, link_error=errback)
+
+        header_options = header_apply_async.call_args.kwargs
+        assert 'link' not in header_options
+        assert 'link_error' not in header_options
+        assert body.options['link'] == callback
+        assert body.options['link_error'] == errback
+
+    def test_chord_apply_async_with_link_option(self):
+        # See issue #10781
+        callback = self.mul.s(2)
+        x = chord([self.add.s(1, 1), self.add.s(2, 2)], body=self.add.s(10))
+
+        with patch.object(group, 'apply_async') as header_apply_async:
+            x.apply_async(link=callback)
+
+        header_apply_async.assert_called_once()
+        assert 'link' not in header_apply_async.call_args.kwargs
+
     def test_chord_run_body_freeze_prevents_task_id_empty_error(self):
         """Test that proper body.freeze() call prevents 'task_id must not be empty' error.
 
