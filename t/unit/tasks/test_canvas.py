@@ -2526,6 +2526,88 @@ class test_chord(CanvasCase):
         assert x.tasks
         assert x.body
 
+    @pytest.mark.parametrize('allow_header_errbacks', [False, True])
+    @pytest.mark.parametrize('key', ['link', 'link_error'])
+    def test_link_option_goes_to_body_not_header(self, key, allow_header_errbacks):
+        # Unlike chord.link_error(), the option is not added to the header
+        # tasks even with task_allow_error_cb_on_chord_header enabled
+        self.app.conf.task_allow_error_cb_on_chord_header = allow_header_errbacks
+        callback = self.div.s(2)
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            # The header group used to get the option too, and raise TypeError
+            x.apply_async(**{key: callback})
+        body = apply_chord.call_args[0][1]
+        assert body.options[key] == [callback]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert key not in header_call.kwargs
+
+    def _body_to_run(self, x, eager, **options):
+        """Apply the chord ``x`` and return the body it was going to run."""
+        if eager:
+            self.app.conf.task_always_eager = True
+            with patch.object(chord, 'apply') as apply:
+                x.apply_async(**options)
+            return apply.call_args.kwargs['body']
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async'):
+            x.apply_async(**options)
+        return apply_chord.call_args[0][1]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('key', ['link', 'link_error'])
+    def test_link_option_keeps_body_callbacks(self, key, eager):
+        own_callback = self.div.s(2)
+        callback = self.add.s(1)
+        body = self.mul.s(4)
+        body.extend_list_option(key, own_callback)
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=body)
+        body = self._body_to_run(x, eager, **{key: callback})
+        assert body.options[key] == [own_callback, callback]
+        # The signature of the user is not changed
+        assert x.body.options[key] == [own_callback]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_replaces_link_set_on_chord(self, eager):
+        # As for any signature, the link given to apply_async() wins
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        x.set(link=[self.div.s(2)])
+        body = self._body_to_run(x, eager, link=self.add.s(1))
+        assert body.options['link'] == [self.add.s(1)]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_set_on_chord_goes_to_body(self, eager):
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        x.set(link=[self.div.s(2)])
+        body = self._body_to_run(x, eager)
+        assert body.options['link'] == [self.div.s(2)]
+
+    def test_chain_link_to_chord_step_keeps_body_callbacks(self):
+        own_callback = self.div.s(2)
+        chain_callback = self.add.s(1)
+        body = self.xsum.s()
+        body.link(own_callback)
+        c = chain(self.add.s(1, 1),
+                  chord([self.add.s(10), self.add.s(20)], body))
+        with patch('celery.canvas.Signature.apply_async') as first_apply:
+            c.apply_async(link=chain_callback)
+        # The worker deserializes the next step of the chain and applies it
+        next_step = first_apply.call_args.kwargs['chain'][-1]
+        next_step = Signature.from_dict(json.loads(json.dumps(next_step)),
+                                        app=self.app)
+        assert isinstance(next_step, chord)
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            next_step.apply_async((2,))
+        body = apply_chord.call_args[0][1]
+        assert [cb['task'] for cb in body.options['link']] == [
+            own_callback.task, chain_callback.task]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert 'link' not in header_call.kwargs
+
     def test_repr(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
         assert repr(x)

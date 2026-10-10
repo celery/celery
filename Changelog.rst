@@ -9,6 +9,17 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- ``link`` / ``link_error`` given to a chord as options, such as
+  ``chord.apply_async(link=...)``, are now added to the callbacks of the
+  chord body. They were passed on to the header group as well, which
+  raised ``TypeError: Cannot add link to group``. This also broke a chain
+  ending in a chord with a callback: the worker marked the task before the
+  chord as failed and never ran the chord (#10781).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
