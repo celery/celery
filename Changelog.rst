@@ -9,6 +9,22 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+.. _version-5.7.0b2:
+
+5.7.0b2
+=======
+
+:release-date: TBA
+:status: DEVELOPMENT
+:branch: main
+
+Command Line
+~~~~~~~~~~~~
+
+- Deliver preload options to commands that do not accept ``**kwargs``,
+  including ``celery.commands`` plugins such as Flower (#7894).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
