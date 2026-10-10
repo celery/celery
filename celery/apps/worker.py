@@ -89,7 +89,10 @@ def safe_say(msg, f=sys.__stderr__):
     hub's event loop (e.g., during signal handling).
     """
     if hasattr(f, 'fileno') and f.fileno() is not None:
-        _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
+        try:
+            _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
+        except OSError:
+            pass
 
 
 class Worker(WorkController):
@@ -333,6 +336,15 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
+
+            # Set the shutdown flag first and unconditionally: this is the
+            # actual mechanism that stops the worker from accepting new
+            # work, and it must not be contingent on the callback/logging/
+            # signal-dispatch below succeeding. If any of those raise
+            # (e.g. safe_say()'s os.write on a closed/invalid fd), this
+            # must already have taken effect.
+            setattr(state, {'Warm': 'should_stop',
+                            'Cold': 'should_terminate'}[how], exitcode)
             if current_process()._name == 'MainProcess':
                 if callback:
                     callback(worker)
@@ -342,8 +354,6 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
                     sender=worker.hostname, sig=sig, how=how,
                     exitcode=exitcode,
                 )
-            setattr(state, {'Warm': 'should_stop',
-                            'Cold': 'should_terminate'}[how], exitcode)
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
