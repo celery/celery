@@ -354,7 +354,15 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        arity_greater(
+                            partial(errback.type.__header__,
+                                    *errback.args, **errback.kwargs)
+                            if not errback.immutable
+                            else errback.type.__header__,
+                            1,
+                        )
                 ):
                     try:
                         errback(request, exc, traceback)

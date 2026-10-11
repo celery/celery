@@ -656,6 +656,44 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
 
+    @pytest.mark.parametrize('use_kwargs', [False, True])
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_old_style_errback_with_partial_arguments(self, use_kwargs, eager):
+        calls = []
+
+        @self.app.task(shared=False)
+        def old_errback(task_id, foo, bar, baz):
+            calls.append((task_id, foo, bar, baz))
+
+        self.app.conf.task_always_eager = eager
+        errback = (old_errback.s(foo=1, bar=2, baz=3) if use_kwargs
+                   else old_errback.s(1, 2, 3))
+        request = Context(id='failed-id', root_id='root-id',
+                          errbacks=[errback], delivery_info={})
+        if eager:
+            self.b._call_task_errbacks(request, ValueError(), None)
+            assert calls == [('failed-id', 1, 2, 3)]
+        else:
+            with patch('celery.backends.base.group') as mock_group:
+                self.b._call_task_errbacks(request, ValueError(), None)
+            mock_group.assert_called_once_with([errback], app=self.app)
+            mock_group.return_value.apply_async.assert_called_once_with(
+                ('failed-id',), parent_id='failed-id', root_id='root-id')
+            assert calls == []
+
+    def test_new_style_errback_with_partial_arguments(self):
+        calls = []
+
+        @self.app.task(shared=False)
+        def new_errback(request, exc, traceback, label):
+            calls.append((request, exc, traceback, label))
+
+        request = Context(id='failed-id', errbacks=[new_errback.s('label')],
+                          delivery_info={})
+        exc = ValueError('failed')
+        self.b._call_task_errbacks(request, exc, 'traceback')
+        assert calls == [(request, exc, 'traceback', 'label')]
+
     @patch('celery.backends.base.group')
     def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
         b = BaseBackend(app=self.app)
