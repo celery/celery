@@ -300,6 +300,35 @@ class test_LimitedSet:
             assert n in s
         assert 'foo' not in s
 
+    def test_re_added_item_uses_its_new_timestamp(self):
+        # issue #10757: re-adding an item must reset its expiry, so it is
+        # neither expired by purge() nor evicted first on its *old*
+        # timestamp.  The stale heap entry left behind by discard() used to
+        # be trusted by both purge() and pop().
+        # 1. expiry: the re-added item lives until now + expires.
+        s = LimitedSet(expires=10)
+        for i in range(100):
+            s.add(i, now=i * 0.01)
+        s.add(0, now=100)          # re-added: lives until t=110
+        s.purge(now=50)
+        assert list(s) == [0]
+
+        # 2. maxlen: evicting makes room for the real oldest item.
+        s = LimitedSet(maxlen=100)
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)         # 0 is the newest item now
+        s.add(100, now=1001)       # over maxlen: evicts 1, not 0
+        assert 0 in s
+        assert 1 not in s
+
+        # 3. pop(): returns the real oldest item.
+        s = LimitedSet()
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)
+        assert s.pop() == 1
+
         s = LimitedSet(maxlen=10)
         for i in range(150):
             s.add(i)

@@ -629,22 +629,45 @@ class LimitedSet:
                 self.pop()
         # time based expiring:
         if self.expires:
-            while len(self._data) > self.minlen >= 0:
+            # drop the stale heap entries first: their timestamps are older
+            # than the items' current ones and would otherwise expire the
+            # wrong item.  See #10757.
+            self._discard_stale_heap_entries()
+            while len(self._data) > self.minlen >= 0 and self._heap:
                 inserted_time = self._heap[0][0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
                 self.pop()
+                self._discard_stale_heap_entries()
+
+    def _discard_stale_heap_entries(self):
+        # type: () -> None
+        """Drop the heap entries that are no longer the current entry of
+        their item, i.e. the item was re-added or discarded after the entry
+        was pushed.
+
+        Such an entry keeps an older timestamp than the item's current one,
+        so while it sits at the top of the heap :meth:`purge` would expire
+        (or keep) the wrong item.  See #10757.
+        """
+        while (
+            self._heap
+            and self._data.get(self._heap[0][2]) is not self._heap[0]
+        ):
+            heappop(self._heap)
 
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, _, item = heappop(self._heap)
-            try:
-                self._data.pop(item)
-            except KeyError:
-                pass
-            else:
-                return item
+            entry = heappop(self._heap)
+            item = entry[2]
+            if self._data.get(item) is not entry:
+                # stale heap entry: the item was re-added (or discarded)
+                # after this entry was pushed, so its timestamp is not the
+                # item's current one.  See #10757.
+                continue
+            del self._data[item]
+            return item
         return default
 
     def as_dict(self):
