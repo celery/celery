@@ -681,6 +681,34 @@ class test_BaseBackend_dict:
                 ('failed-id',), parent_id='failed-id', root_id='root-id')
             assert calls == []
 
+    @pytest.mark.parametrize('args,kwargs', [
+        ((1, 2, 3), {}),
+        ((), {'nope': 1}),
+        ((1,), {'task_id': 2}),
+    ])
+    def test_invalid_partial_errback_does_not_halt_other_errbacks(self, args, kwargs):
+        calls = []
+
+        @self.app.task(shared=False)
+        def bad_errback(task_id, foo):
+            raise AssertionError('invalid errback must not execute')
+
+        @self.app.task(shared=False)
+        def other_errback(task_id):
+            calls.append(task_id)
+
+        self.b._store_result = Mock()
+        bad = bad_errback.s(*args, **kwargs)
+        other = other_errback.s()
+        request = Context(id='failed-id', root_id='root-id',
+                          errbacks=[bad, other], delivery_info={})
+        with patch('celery.backends.base.group') as mock_group:
+            self.b.mark_as_failure('failed-id', ValueError(), request=request)
+        # The original header is new-style: a bad call is logged in isolation.
+        mock_group.assert_called_once_with([other], app=self.app)
+        mock_group.return_value.apply_async.assert_called_once_with(
+            ('failed-id',), parent_id='failed-id', root_id='root-id')
+
     def test_new_style_errback_with_partial_arguments(self):
         calls = []
 
