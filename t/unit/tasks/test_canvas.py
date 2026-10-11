@@ -1,7 +1,9 @@
 import json
 import math
+import operator
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
+from functools import reduce
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
@@ -9,8 +11,8 @@ import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
-                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_dictionaries, chain, chord,
+                           chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
@@ -521,6 +523,62 @@ class test_chain(CanvasCase):
         built = chain(group([add.si(1, 1)]), add.si(2, 2))
         assert isinstance(built, _chain)
         assert len(built.tasks) == 2
+
+    def test_chain_with_nested_chain_led_by_a_group(self):
+        # The first step of the inner chain turns the outer chain into a
+        # chord; the steps after it still have to be composed onto the
+        # chord body rather than dropped.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        built = chain(inner, add.s(20))
+        assert isinstance(built, chord)
+        assert isinstance(built.body, _chain)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_with_deserialised_chain_led_by_a_group(self):
+        # signature() of a serialised chain returns a _chain, so a chain
+        # that arrives over the wire takes the same path as the one above.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        built = chain(restored, add.s(20))
+        assert isinstance(built, chord)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_construction_matches_the_or_operator(self):
+        # _fold_chain repeats rules that live in _chain.__or__, group.__or__
+        # and Signature.__or__; this catches the two drifting apart.
+        add = self.add
+
+        def linked_chain():
+            built = _chain(add.si(1), add.si(2))
+            built.link(add.si(97))
+            built.link_error(add.si(96))
+            return built
+
+        shapes = (
+            lambda: [_chain(group(add.si(1), add.si(2)), add.s(10)), add.s(20)],
+            lambda: [group([group([add.si(1), add.si(2)])]), add.s(3)],
+            lambda: [chord([add.si(1)], add.si(2)), group([add.si(3), add.si(4)])],
+            lambda: [group([add.si(1)]), chord([add.si(2)], add.si(3)), group([add.si(4)])],
+            lambda: [linked_chain(), add.s(5)],
+            lambda: [add.si(1), linked_chain(), group([add.si(2), add.si(3)])],
+            lambda: [group([]), _chain(group(add.si(1)), add.s(2)), add.s(3)],
+        )
+        for build in shapes:
+            expected = reduce(operator.or_, build(), _chain())
+            assert (json.dumps(_fold_chain(build()), sort_keys=True, default=str) ==
+                    json.dumps(expected, sort_keys=True, default=str))
+
+    def test_chain_does_not_clone_the_final_task(self):
+        # `|` never clones its right-hand side, so the last task ends up in
+        # the chain as the caller passed it and stays linkable afterwards.
+        add = self.add
+        first, second, last = add.si(1), add.si(2), add.si(3)
+        built = chain(first, second, last)
+        assert built.tasks[-1] is last
+        last.link(add.si(4))
+        assert built.tasks[-1].options['link']
 
     def test_chain_clones_each_task_once(self):
         # Building the chain by folding with `|` re-cloned every task already

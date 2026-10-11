@@ -73,7 +73,7 @@ def _is_empty_group(task):
     )
 
 
-def _merge_chain_step(steps, other):
+def _merge_chain_step(steps, other, clone_other=True):
     """Add *other* to *steps*, applying the same rules as `_chain.__or__`.
 
     `_chain.__or__` rebuilds the chain on every step, cloning every task it
@@ -89,23 +89,31 @@ def _merge_chain_step(steps, other):
     if isinstance(other, group):
         other = maybe_unroll_group(other)
         if not isinstance(other, group):
-            return _merge_chain_step(steps, other)
+            return _merge_chain_step(steps, other, clone_other)
         if not steps:
             return other
         if isinstance(steps[-1], chord):
             steps[-1].body = steps[-1].body | other
             return steps
-        steps.append(other.clone())
+        steps.append(other.clone() if clone_other else other)
         return steps
     if isinstance(other, _chain):
-        for task in other.unchain_tasks():
-            result = _merge_chain_step(steps, task)
-            if result is not steps:
+        inner = other.unchain_tasks()
+        remaining = iter(inner)
+        for position, task in enumerate(remaining):
+            result = _merge_chain_step(
+                steps, task,
+                clone_other or position != len(inner) - 1)
+            if result is NotImplemented:
                 return result
+            if result is not steps:
+                # The rest of this chain composes with the new result
+                # through its own operator, as `_chain.__or__` would.
+                return reduce(operator.or_, remaining, result)
         return steps
     if isinstance(other, Signature):
         if steps and isinstance(steps[-1], group):
-            steps[-1] = chord(steps[-1], other.clone())
+            steps[-1] = chord(steps[-1], other.clone() if clone_other else other)
             if len(steps) > 1 and isinstance(steps[-2], chord):
                 steps[-2].body = steps[-2].body | steps[-1]
                 steps.pop()
@@ -113,7 +121,7 @@ def _merge_chain_step(steps, other):
         if steps and isinstance(steps[-1], chord) and not isinstance(other, chord):
             steps[-1].body = steps[-1].body | other
             return steps
-        steps.append(other.clone())
+        steps.append(other.clone() if clone_other else other)
         return steps
     return NotImplemented
 
@@ -128,8 +136,10 @@ def _fold_chain(tasks):
     tasks = list(tasks)
     steps = []
     remaining = iter(tasks)
-    for task in remaining:
-        result = _merge_chain_step(steps, task)
+    for position, task in enumerate(remaining):
+        # `|` never clones the task on its right-hand side, so the last
+        # one ends up in the chain as the caller passed it.
+        result = _merge_chain_step(steps, task, position != len(tasks) - 1)
         if result is NotImplemented:
             return reduce(operator.or_, tasks, _chain())
         if result is not steps:
