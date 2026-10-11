@@ -3,16 +3,16 @@ import math
 import operator
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
-from functools import reduce
 from contextlib import contextmanager
+from functools import reduce
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_dictionaries, chain, chord,
-                           chunks, group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_dictionaries, chain, chord, chunks,
+                           group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
