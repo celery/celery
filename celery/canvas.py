@@ -73,6 +73,73 @@ def _is_empty_group(task):
     )
 
 
+def _merge_chain_step(steps, other):
+    """Add *other* to *steps*, applying the same rules as `_chain.__or__`.
+
+    `_chain.__or__` rebuilds the chain on every step, cloning every task it
+    already holds, so folding N signatures with `|` performs O(N^2) clones.
+    The rules only ever inspect the last step, so they can be applied to a
+    list in place instead.
+
+    Returns *steps*, or a replacement result for the rules that yield
+    something which is not a chain.
+    """
+    if _is_empty_group(other):
+        return steps
+    if isinstance(other, group):
+        other = maybe_unroll_group(other)
+        if not isinstance(other, group):
+            return _merge_chain_step(steps, other)
+        if not steps:
+            return other
+        if isinstance(steps[-1], chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone())
+        return steps
+    if isinstance(other, _chain):
+        for task in other.unchain_tasks():
+            result = _merge_chain_step(steps, task)
+            if result is not steps:
+                return result
+        return steps
+    if isinstance(other, Signature):
+        if steps and isinstance(steps[-1], group):
+            steps[-1] = chord(steps[-1], other.clone())
+            if len(steps) > 1 and isinstance(steps[-2], chord):
+                steps[-2].body = steps[-2].body | steps[-1]
+                steps.pop()
+            return steps
+        if steps and isinstance(steps[-1], chord) and not isinstance(other, chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone())
+        return steps
+    return NotImplemented
+
+
+def _fold_chain(tasks):
+    """Build the chain for ``chain(X, Y, Z)`` in a single pass.
+
+    Equivalent to ``reduce(operator.or_, tasks, _chain())`` but linear in the
+    number of tasks rather than quadratic. Anything the single pass cannot
+    express is handed back to `|`.
+    """
+    tasks = list(tasks)
+    steps = []
+    remaining = iter(tasks)
+    for task in remaining:
+        result = _merge_chain_step(steps, task)
+        if result is NotImplemented:
+            return reduce(operator.or_, tasks, _chain())
+        if result is not steps:
+            # The accumulator stopped being a chain -- an empty chain
+            # followed by a group yields the group, which composes with
+            # the remaining tasks through its own operator.
+            return reduce(operator.or_, remaining, result)
+    return _chain(steps)
+
+
 def _is_chain_led_by_task(body):
     """Return True if the body is a chain whose first step is not a group.
 
@@ -1481,7 +1548,7 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                new_instance = reduce(operator.or_, tasks, _chain())
+                new_instance = _fold_chain(tasks)
                 if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
                     return super().__new__(cls, new_instance.tasks, **kwargs)
                 return new_instance

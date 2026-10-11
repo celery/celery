@@ -500,6 +500,46 @@ class test_chain(CanvasCase):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
 
+    def test_chain_construction_handles_nested_canvas_shapes(self):
+        add = self.add
+        # a group followed by a task collapses into a chord
+        built = chain(group([add.si(1, 1), add.si(2, 2)]), add.si(3, 3))
+        assert isinstance(built, chord)
+        # a chord followed by a task extends the chord body
+        built = chain(chord([add.si(1, 1)], add.si(2, 2)), add.si(3, 3))
+        assert isinstance(built.tasks[0], chord)
+        assert isinstance(built.tasks[0].body, _chain)
+        assert len(built.tasks[0].body.tasks) == 2
+        # nested chains are flattened
+        built = chain(chain(add.si(1, 1), add.si(2, 2)),
+                      chain(add.si(3, 3), add.si(4, 4)))
+        assert len(built.tasks) == 4
+        # empty groups are skipped
+        built = chain(add.si(1, 1), group([]))
+        assert len(built.tasks) == 1
+        # a group of one is unrolled rather than turned into a chord
+        built = chain(group([add.si(1, 1)]), add.si(2, 2))
+        assert isinstance(built, _chain)
+        assert len(built.tasks) == 2
+
+    def test_chain_clones_each_task_once(self):
+        # Building the chain by folding with `|` re-cloned every task already
+        # collected, so an n-task chain cost n * (n - 1) / 2 clones.
+        n = 40
+        sigs = [self.add.si(i, i) for i in range(n)]
+        calls = []
+        original_clone = Signature.clone
+
+        def counting_clone(self, *args, **kwargs):
+            calls.append(self)
+            return original_clone(self, *args, **kwargs)
+
+        with patch.object(Signature, 'clone', counting_clone):
+            built = chain(*sigs)
+
+        assert len(built.tasks) == n
+        assert len(calls) <= 2 * n
+
     @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
     def test_clone_preserves_state(self, chain_type):
         x = chain_type(self.add.s(i, i) for i in range(10))
