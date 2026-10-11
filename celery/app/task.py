@@ -358,6 +358,16 @@ class Task:
     #: what you're doing.
     reject_on_worker_lost = None
 
+    #: When enabled, a task whose worker process exits abruptly is sent
+    #: again the same way :meth:`retry` would, so :attr:`max_retries` and
+    #: :attr:`default_retry_delay` apply.  Once the retries run out the
+    #: task fails instead of being re-queued.
+    #:
+    #: Takes precedence over :attr:`reject_on_worker_lost`.
+    #: The default is taken from the :setting:`task_retry_on_worker_lost`
+    #: setting.
+    retry_on_worker_lost = None
+
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
@@ -405,6 +415,7 @@ class Task:
         ('acks_on_failure', 'task_acks_on_failure'),
         ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
+        ('retry_on_worker_lost', 'task_retry_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),

@@ -431,6 +431,81 @@ class test_Request(RequestCase):
             req_logger, req.connection_errors, True)
         req.task.backend.mark_as_failure.assert_not_called()
 
+    def _worker_lost_request(self, retries=0):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2).set(retries=retries))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        return req, einfo
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost(self):
+        req, einfo = self._worker_lost_request(retries=1)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_called_once()
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_called_once()
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert any(
+            c.args and c.args[0] == 'task-retried'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_options(self):
+        req, einfo = self._worker_lost_request(retries=1)
+        req.task.default_retry_delay = 30
+
+        with patch.object(req.task, 'signature_from_request') as sfr:
+            req.on_failure(einfo)
+
+        _, kwargs = sfr.call_args
+        assert kwargs['retries'] == 2
+        assert kwargs['countdown'] == 30
+        sfr.return_value.apply_async.assert_called_once_with()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_exhausted(self):
+        req, einfo = self._worker_lost_request(retries=3)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        # No retries left: the task fails instead of being re-queued.
+        apply_async.assert_not_called()
+        req.on_reject.assert_not_called()
+        req.on_ack.assert_called_once()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_send_fails(self):
+        req, einfo = self._worker_lost_request()
+
+        with patch('celery.canvas.Signature.apply_async',
+                   side_effect=ConnectionError('broker down')):
+            req.on_failure(einfo)
+
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_no_acks_late(self):
+        req, einfo = self._worker_lost_request()
+        req.task.acks_late = False
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+
     def test_on_failure_WorkerLostError_redelivered_None(self):
         try:
             raise WorkerLostError()

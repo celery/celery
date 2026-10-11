@@ -729,7 +729,27 @@ worker.
 .. warning::
 
     Enabling this can cause message loops; make sure you know
-    what you're doing.
+    what you're doing. See :setting:`task_retry_on_worker_lost` for a way
+    to limit how many times a task is sent again.
+
+.. setting:: task_retry_on_worker_lost
+
+``task_retry_on_worker_lost``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+When the worker process executing a task exits abruptly (e.g. it's killed
+by the OOM killer), send the task again the same way
+:meth:`Task.retry() <celery.app.task.Task.retry>` would, instead of
+re-queuing the original message. This means
+:attr:`~celery.app.task.Task.max_retries` and
+:attr:`~celery.app.task.Task.default_retry_delay` apply, and once the
+retries run out the task is marked as failed.
+
+This takes precedence over :setting:`task_reject_on_worker_lost`.
 
 .. setting:: task_default_rate_limit
 

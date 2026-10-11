@@ -702,14 +702,19 @@ class Request:
         elif isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
+        is_worker_lost = isinstance(exc, WorkerLostError)
+        retry_on_worker_lost = is_worker_lost and self.task.retry_on_worker_lost
+        if retry_on_worker_lost and self._retry_worker_lost(exc, exc_info):
+            return
+
         # (acks_late) acknowledge after result stored.
         requeue = False
-        is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             is_timeout = isinstance(exc, TimeLimitExceeded)
             ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
-                (self.task.reject_on_worker_lost and is_worker_lost)
+                (self.task.reject_on_worker_lost and is_worker_lost
+                 and not retry_on_worker_lost)
                 or (is_timeout and not ack_flag)
             )
             if reject:
@@ -760,6 +765,32 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _retry_worker_lost(self, exc, exc_info):
+        """Retry the task after its worker was lost, return False if not retried."""
+        task = self.task
+        request = self._context
+        retries = request.retries + 1
+        if task.max_retries is not None and retries > task.max_retries:
+            return False
+        try:
+            task.signature_from_request(
+                request, countdown=task.default_retry_delay, retries=retries,
+            ).apply_async()
+        except Exception as send_exc:
+            error('Failed to retry task %s[%s] after worker was lost: %r',
+                  self.task_name, self.id, send_exc, exc_info=True)
+            return False
+
+        task.backend.mark_as_retry(
+            self.id, exc, exc_info.traceback, request=request,
+        )
+        if task.acks_late:
+            self.acknowledge()
+        self.send_event('task-retried',
+                        exception=safe_repr(exc),
+                        traceback=safe_str(exc_info.traceback))
+        return True
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):

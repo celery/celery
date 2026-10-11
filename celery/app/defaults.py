@@ -308,6 +308,7 @@ NAMESPACES = Namespace(
         queues=Option(type='dict'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
+        retry_on_worker_lost=Option(False, type='bool'),
         remote_tracebacks=Option(False, type='bool'),
         repr_maxlevels=Option(3, type='int'),
         routes=Option(type='any'),
