@@ -15,7 +15,8 @@ from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
 
 from . import tasks
-from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
+from .conftest import (TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection,
+                       ids_in_as_tuple)
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
@@ -1274,6 +1275,63 @@ class test_chain:
 
         c = _chain(_chain(group(), add.s(10)), add.s(20), app=manager.app)
         assert c.apply_async((5,)).get(timeout=TIMEOUT) == 35
+
+    @flaky
+    @pytest.mark.parametrize('with_task_id', [False, True])
+    def test_chain_of_two_groups_as_tuple_holds_each_task_once(self, manager, with_task_id):
+        """Regression test for https://github.com/celery/celery/issues/9608.
+
+        The task after a group becomes the body of a chord, and the rest of
+        the chain must be linked to the chord's result only. as_tuple() must
+        list every node once, with or without a task_id.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        options = {'task_id': str(uuid.uuid4())} if with_task_id else {}
+        c = chain(
+            add.si(1, 0),
+            group(add.s(1), add.s(2)),
+            group(tsum.s(), tsum.s()),
+            tsum.s(),
+            add.s(1),
+            **options,
+        )
+        res = c.apply_async()
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        # The first task, two tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 9, ids
+        assert res.get(timeout=TIMEOUT) == 11
+
+    @flaky
+    def test_chord_with_chain_body_with_task_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/8890.
+
+        A chain with a task_id and a group inside used to make the chord
+        raise RuntimeError('Recursive result parents') when it was frozen
+        before it was sent.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        body = chain(
+            add.si(1, 0),
+            group(add.si(1, 1), add.si(1, 2)),
+            add.si(2, 2) | add.si(3, 3),
+            task_id=str(uuid.uuid4()),
+        )
+        c = chord([add.si(1, 1), add.si(1, 2)], body)
+        c.freeze()
+        res = c.apply_async()
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        assert len(ids) == len(set(ids)), ids
+        assert res.get(timeout=TIMEOUT) == 6
 
 
 class test_result_set:

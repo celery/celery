@@ -4,8 +4,8 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
-from t.integration.conftest import get_redis_connection
-from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo
+from t.integration.conftest import get_redis_connection, ids_in_as_tuple
+from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo, tsum
 
 
 class test_signature:
@@ -101,6 +101,28 @@ class test_chain:
         )
         res = sig.apply_async()
         assert res.get(timeout=RESULT_TIMEOUT) == 6
+
+    @pytest.mark.parametrize("with_task_id", [False, True])
+    def test_chain_of_two_groups_as_tuple_holds_each_task_once(
+        self, celery_setup: CeleryTestSetup, with_task_id: bool
+    ):
+        """https://github.com/celery/celery/issues/9608"""
+        queue = celery_setup.worker.worker_queue
+        options = {"task_id": str(uuid.uuid4())} if with_task_id else {}
+        sig = chain(
+            add.si(1, 0).set(queue=queue),
+            group(add.s(1).set(queue=queue), add.s(2).set(queue=queue)),
+            group(tsum.s().set(queue=queue), tsum.s().set(queue=queue)),
+            tsum.s().set(queue=queue),
+            add.s(1).set(queue=queue),
+            **options,
+        )
+        res = sig.apply_async(queue=queue)
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        # The first task, two tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 9, ids
+        assert res.get(timeout=RESULT_TIMEOUT) == 11
 
 
 class test_chord:
