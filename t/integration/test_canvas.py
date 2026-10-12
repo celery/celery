@@ -1886,7 +1886,7 @@ class test_chord:
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        inputs = [i for i in range(10)]
+        inputs = [*range(10)]
 
         c = chord((identity.si(i) for i in inputs), identity.s())
         result = c()
