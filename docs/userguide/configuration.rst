@@ -3255,6 +3255,7 @@ too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
 so if the heartbeat is 10.0 and the rate is the default 3.0, the check
 will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
+
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``
@@ -3673,6 +3674,7 @@ memory, potentially causing out-of-memory issues.
     implied by :setting:`worker_prefetch_multiplier` would exceed this cap, the
     worker will stop consuming new messages until previously received tasks have
     been acknowledged.
+
 .. setting:: worker_disable_prefetch
 
 ``worker_disable_prefetch``
