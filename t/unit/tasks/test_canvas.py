@@ -11,8 +11,9 @@ import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_dictionaries, chain, chord, chunks,
-                           group, maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_chain_step, _merge_dictionaries,
+                           chain, chord, chunks, group, maybe_signature, maybe_unroll_group, signature, xmap,
+                           xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
@@ -579,6 +580,24 @@ class test_chain(CanvasCase):
         assert built.tasks[-1] is last
         last.link(add.si(4))
         assert built.tasks[-1].options['link']
+
+    def test_chain_with_an_unsupported_operand(self):
+        # Anything the single pass does not understand is handed back to
+        # `|`, which raises the same TypeError as before.
+        with pytest.raises(TypeError):
+            chain(self.add.si(1), object())
+
+    def test_merge_chain_step_reports_unsupported_operands(self):
+        assert _merge_chain_step([], object()) is NotImplemented
+
+    def test_chain_with_an_unsupported_operand_inside_a_nested_chain(self):
+        # The inner chain is expanded through unchain_tasks(), so an operand
+        # it cannot handle has to abort the single pass there too.
+        unsupported = Mock()
+        unsupported.clone.return_value = unsupported
+        inner = _chain(unsupported, self.add.si(1))
+        with pytest.raises(TypeError):
+            chain(inner, self.add.si(2))
 
     def test_chain_clones_each_task_once(self):
         # Building the chain by folding with `|` re-cloned every task already

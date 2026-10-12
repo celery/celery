@@ -113,10 +113,11 @@ def _merge_chain_step(steps, other, clone_other=True):
         return steps
     if isinstance(other, Signature):
         if steps and isinstance(steps[-1], group):
+            # `_chain.__or__` also collapses a chord that is immediately
+            # followed by another one. That cannot arise here: a group is
+            # only appended when the step before it is not a chord, and
+            # nothing later turns that step into one.
             steps[-1] = chord(steps[-1], other.clone() if clone_other else other)
-            if len(steps) > 1 and isinstance(steps[-2], chord):
-                steps[-2].body = steps[-2].body | steps[-1]
-                steps.pop()
             return steps
         if steps and isinstance(steps[-1], chord) and not isinstance(other, chord):
             steps[-1].body = steps[-1].body | other
