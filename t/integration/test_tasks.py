@@ -16,11 +16,12 @@ from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
-                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
-                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
+                    add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
+                    print_unicode, reject_then_succeed, reject_without_requeue, retry, retry_once,
+                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    return_request_time_limits, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -198,6 +199,21 @@ class test_tasks:
         # Tests calling task only with args
         for i in range(10):
             results.append([i + i, add_pydantic_string_annotations.delay({'x': i, 'y': i})])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
+
+    @flaky
+    def test_pydantic_model_arguments(self, manager):
+        """Tests task call with Pydantic models passed by the caller."""
+        results = []
+        for i in range(10):
+            results.append([i + i, add_pydantic.delay(AddParameterModel(x=i, y=i))])
+        results.append([4, add_pydantic.apply_async(kwargs={'data': AddParameterModel(x=2, y=2)})])
+        results.append([6, add_pydantic.s(AddParameterModel(x=3, y=3)).delay()])
         for expected, result in results:
             value = result.get(timeout=10)
             assert value == {'result': expected}
