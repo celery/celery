@@ -1057,6 +1057,7 @@ Time (in seconds, or a :class:`~datetime.timedelta` object) a chord's
 bookkeeping is kept after the chord starts or after one of its header tasks
 finishes. With the cache backend, each header task's result is also kept that
 long after the task finishes, and never for less than :setting:`result_expires`.
+When the chord finishes, the header results get :setting:`result_expires` back.
 If it runs out before the chord's last header task finishes, the chord's body
 never runs, so set it longer than the chord's total run time.
 A value of 0 means the chord's bookkeeping never expires while the chord is

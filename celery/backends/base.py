@@ -1131,6 +1131,15 @@ class BaseKeyValueStoreBackend(Backend):
             return self.expires
         return self.prepare_expires(self._chord_expires, type=int)
 
+    @property
+    def _chord_result_expires(self):
+        # Header results and a saved GroupResult are also read by users, so
+        # never keep them for less than result_expires (0 means no expiry).
+        expires = self.chord_expires
+        if not expires or not self.expires:
+            return 0
+        return max(expires, self.expires)
+
     def _add_global_keyprefix(self):
         """
         This method prepends the global keyprefix to the existing keyprefixes.
@@ -1353,7 +1362,7 @@ class BaseKeyValueStoreBackend(Backend):
         header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
         self.expire(self.get_key_for_group(header_result.id),
-                    self.chord_expires)
+                    self._chord_result_expires)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
@@ -1422,16 +1431,16 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                # The chord is done: give the header results back their
+                # normal lifetime.
+                for dep in deps.results:
+                    self.expire(self.get_key_for_task(dep.id), self.expires)
         else:
-            expires = self.chord_expires
-            self.expire(key, expires)
-            self.expire(self.get_key_for_group(gid), expires)
-            # The last part joins every header result, so keep this one too,
-            # never for less than result_expires (0 means no expiry).
-            result_expires = (
-                0 if not expires or not self.expires
-                else max(expires, self.expires))
-            self.expire(self.get_key_for_task(request.id), result_expires)
+            self.expire(key, self.chord_expires)
+            # The last part joins every header result, so keep this one too.
+            self.expire(self.get_key_for_group(gid), self._chord_result_expires)
+            self.expire(self.get_key_for_task(request.id),
+                        self._chord_result_expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

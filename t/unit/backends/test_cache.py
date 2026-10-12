@@ -1,6 +1,7 @@
 import sys
 import types
 from contextlib import contextmanager
+from datetime import timedelta
 from unittest.mock import Mock, call, patch
 
 import pytest
@@ -85,6 +86,7 @@ class test_CacheBackend:
         deps = Mock()
         deps.__len__ = Mock()
         deps.__len__.return_value = 2
+        deps.results = []
         restore.return_value = deps
         task = Mock()
         task.name = 'foobarbaz'
@@ -133,15 +135,47 @@ class test_CacheBackend:
         client_set.assert_any_call(
             tb.get_key_for_chord(gid), 0, expected_chord or 0)
         expire.assert_called_once_with(
-            tb.get_key_for_group(gid), expected_chord)
+            tb.get_key_for_group(gid), expected_result)
         tb.client.set(tb.get_key_for_chord(gid), 0)
         with patch.object(tb, 'expire') as expire:
             tb.on_chord_part_return(task.request, states.SUCCESS, 1)
         expire.assert_has_calls([
             call(tb.get_key_for_chord(gid), expected_chord),
-            call(tb.get_key_for_group(gid), expected_chord),
+            call(tb.get_key_for_group(gid), expected_result),
             call(tb.get_key_for_task(task.request.id), expected_result),
         ])
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_resets_header_results(self, restore):
+        self.app.conf.result_expires = 100
+        self.app.conf.result_chord_expires = 0
+        tb = CacheBackend(backend='memory://', app=self.app)
+        task = Mock()
+        task.name = 'foobarbaz'
+        self.app.tasks['foobarbaz'] = task
+        task.request.id = uuid()
+        task.request.group = gid = uuid()
+        task.request.chord = signature(task)
+        header = [self.app.AsyncResult(uuid()) for _ in range(2)]
+        restore.return_value.__len__ = Mock(return_value=1)
+        restore.return_value.results = header
+        tb.client.set(tb.get_key_for_chord(gid), 0)
+        with patch.object(tb, 'expire') as expire:
+            tb.on_chord_part_return(task.request, states.SUCCESS, 1)
+        assert expire.call_args_list == [
+            call(tb.get_key_for_task(result.id), 100) for result in header]
+
+    def test_warns_on_chord_expires_over_30_days(self):
+        self.app.conf.result_chord_expires = timedelta(days=31)
+        with patch('celery.backends.cache.logger') as logger:
+            CacheBackend(backend='memory://', app=self.app)
+        logger.warning.assert_called_once()
+
+    def test_no_warning_on_chord_expires_within_30_days(self):
+        self.app.conf.result_chord_expires = timedelta(days=30)
+        with patch('celery.backends.cache.logger') as logger:
+            CacheBackend(backend='memory://', app=self.app)
+        logger.warning.assert_not_called()
 
     def test_mget(self):
         self.tb._set_with_state('foo', 1, states.SUCCESS)
@@ -534,6 +568,7 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
 
                 deps = Mock()
                 deps.__len__ = Mock(return_value=2)
+                deps.results = []
                 restore.return_value = deps
                 task = Mock()
                 task.name = 'foobarbaz'

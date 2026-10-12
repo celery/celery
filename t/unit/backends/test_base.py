@@ -1664,6 +1664,7 @@ class test_KeyValueStoreBackend:
             deps = GR.restore.return_value = Mock(name='DEPS')
             deps.__len__ = Mock()
             deps.__len__.return_value = 10
+            deps.results = []
             b.incr = Mock()
             b.incr.return_value = 10
             b.expire = Mock()
