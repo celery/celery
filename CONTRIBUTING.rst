@@ -161,7 +161,7 @@ If you'd like to submit the information encrypted our PGP key is::
 Other bugs
 ----------
 
-Bugs can always be described to the :ref:`mailing-list`, but the best
+Bugs can always be described to the `mailing-list`_, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
@@ -175,7 +175,7 @@ and participate in the discussion.
 2) **Determine if your bug is really a bug**.
 
 You shouldn't file a bug if you're requesting support. For that you can use
-the :ref:`mailing-list`, or :ref:`irc-channel`. If you still need support
+the `mailing-list`_, or `irc-channel`_. If you still need support
 you can open a github issue, please prepend the title with ``[QUESTION]``.
 
 3) **Make sure your bug hasn't already been reported**.
@@ -262,7 +262,7 @@ issue tracker.
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
 
 If you're unsure of the origin of the bug you can ask the
-:ref:`mailing-list`, or just use the Celery issue tracker.
+`mailing-list`_, or just use the Celery issue tracker.
 
 Contributors guide to the code base
 ===================================
