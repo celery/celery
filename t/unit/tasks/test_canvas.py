@@ -1,8 +1,10 @@
 import json
 import math
+import operator
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import reduce
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
@@ -499,6 +501,17 @@ class test_chain(CanvasCase):
     def test_chain_of_chain_with_a_single_task(self):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
+    def test_chain_of_signatures_clones_each_task_once(self):
+        sigs = [self.add.s(1, 1)] + [self.add.s(i) for i in range(50)]
+        expected = reduce(operator.or_, [sig.clone() for sig in sigs], _chain())
+
+        with patch.object(Signature, 'clone', autospec=True, side_effect=Signature.clone) as clone:
+            c = chain(*sigs)
+
+        assert clone.call_count == len(sigs) - 1
+        assert c.tasks == expected.tasks
+        assert c.tasks[-1] is sigs[-1]
 
     @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
     def test_clone_preserves_state(self, chain_type):

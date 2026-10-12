@@ -1481,7 +1481,13 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                new_instance = reduce(operator.or_, tasks, _chain())
+                tasks = list(tasks)
+                if tasks and all(type(task) is Signature for task in tasks):
+                    # Plain signatures only: same result as reducing with ``|``, but
+                    # without re-cloning every earlier task for each task added.
+                    new_instance = _chain([task.clone() for task in tasks[:-1]] + [tasks[-1]])
+                else:
+                    new_instance = reduce(operator.or_, tasks, _chain())
                 if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
                     return super().__new__(cls, new_instance.tasks, **kwargs)
                 return new_instance
