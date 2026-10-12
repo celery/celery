@@ -149,8 +149,11 @@ def remove_repeating_from_task(task_name: str, s: str) -> str:
     """
     # This is used by e.g. repr(chain), to remove repeating module names.
     #  - extract the module part of the task name
-    module = str(task_name).rpartition('.')[0] + '.'
-    return remove_repeating(module, s)
+    module = str(task_name).rpartition('.')[0]
+    if not module:
+        # Task name has no module part, there is nothing to shorten.
+        return s
+    return remove_repeating(module + '.', s)
 
 
 def remove_repeating(substr: str, s: str) -> str:
@@ -174,8 +177,10 @@ def remove_repeating(substr: str, s: str) -> str:
         return ''.join([
             # leave the first occurrence of substr untouched.
             s[:index + len(substr)],
-            # strip seen substr from the rest of the string.
-            s[index + len(substr):].replace(substr, ''),
+            # strip seen substr from the rest of the string, but only where
+            # it starts a name (so ``app.`` is not removed from ``webapp.``).
+            re.sub(r'(?<![\w.])' + re.escape(substr), '',
+                   s[index + len(substr):]),
         ])
     return s
 
