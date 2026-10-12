@@ -2159,18 +2159,32 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             call(jkey, 86400), call(tkey, 86400), call(skey, 86400),
         ])
 
-    def test_on_chord_part_return_uses_chord_expires(self):
+    @pytest.mark.parametrize('result_expires,group_expires', [
+        (100, 600),
+        (86400, 86400),
+        (None, None),
+    ])
+    def test_on_chord_part_return_uses_chord_expires(
+            self, result_expires, group_expires):
+        self.app.conf.result_expires = result_expires
         self.app.conf.result_chord_expires = 600
         self.b = self.Backend(app=self.app)
         task = self.create_task(0)
+        self.b.client.expire.reset_mock()
         self.b.on_chord_part_return(task.request, states.SUCCESS, 0)
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         skey = self.b.get_key_for_group('group_id', '.s')
         gkey = self.b.get_key_for_group('group_id')
-        self.b.client.expire.assert_has_calls([
-            call(jkey, 600), call(tkey, 600), call(skey, 600), call(gkey, 600),
-        ])
+        expected = [call(jkey, 600), call(tkey, 600), call(skey, 600)]
+        if group_expires:
+            expected.append(call(gkey, group_expires))
+        assert self.b.client.expire.call_args_list == expected
+
+    def test_set_chord_key_raises_error_on_large_value(self):
+        with pytest.raises(BackendStoreError):
+            self.b._set_chord_key(
+                'key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
     def test_on_chord_part_return__unordered(self):
         self.app.conf.result_backend_transport_options = dict(

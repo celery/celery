@@ -1041,6 +1041,9 @@ on backend specifications).
     When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
+See :setting:`result_chord_expires` for chords whose header tasks run longer
+than this.
+
 .. setting:: result_chord_expires
 
 ``result_chord_expires``
@@ -1058,6 +1061,8 @@ If it runs out before the chord's last header task finishes, the chord's body
 never runs, so set it longer than the chord's total run time.
 A value of 0 means the chord's bookkeeping never expires while the chord is
 open, and the saved header of a chord with nested groups never expires.
+The bookkeeping of a chord that never completes, for example after a lost
+header task, is then never removed.
 
 .. note::
 
