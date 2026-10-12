@@ -245,7 +245,7 @@ class _regen(UserList, list):
         # shared look-ahead generator, so that other consumers (``len()``,
         # indexing or a nested loop) exhausting the underlying iterator
         # midway through don't cut this iteration short.
-        it = iter(self.__it)
+        it = None
         index = 0
         # Items already concretised are yielded without looking ahead, only
         # once we pull from the underlying iterator ourselves do we look
@@ -256,6 +256,11 @@ class _regen(UserList, list):
             if index >= len(self.__consumed):
                 if self.__done:
                     return
+                if it is None:
+                    # map() may replace the source while we replay cached items.
+                    it = iter(self.__it)
+                    # __iter__() may itself consume and populate our cache.
+                    continue
                 try:
                     self.__consumed.append(next(it))
                 except StopIteration:
