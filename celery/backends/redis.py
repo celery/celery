@@ -749,6 +749,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return self.prepare_expires(self._chord_expires, type=int)
 
     def _set_chord_key(self, key, value):
+        if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
+            raise BackendStoreError('value too large for Redis backend')
         set_key = partial(self.client.set, ex=self.chord_expires or None)
         return self.ensure(set_key, (key, value))
 
@@ -803,8 +805,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 pipeline = pipeline \
                     .expire(jkey, expires) \
                     .expire(tkey, expires) \
-                    .expire(skey, expires) \
-                    .expire(self.get_key_for_group(gid), expires)
+                    .expire(skey, expires)
+                if self.expires:
+                    # The group key can also hold a GroupResult the user
+                    # saved, so never shorten it below result_expires.
+                    pipeline = pipeline.expire(
+                        self.get_key_for_group(gid), max(expires, self.expires))
 
             _, readycount, totaldiff, chord_size_bytes = pipeline.execute()[:4]
 
