@@ -1524,7 +1524,6 @@ following:
 
 .. _`GitHub Discussions`: https://github.com/celery/celery/discussions
 
-.. _`mailing-list`: https://groups.google.com/group/celery-users
 
 .. _`irc-channel`: https://docs.celeryq.dev/en/latest/getting-started/resources.html#irc
 
