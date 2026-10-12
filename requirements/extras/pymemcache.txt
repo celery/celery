@@ -1,1 +1,1 @@
-pymemcache>=3.4.0
+pymemcache>=3.5.0
