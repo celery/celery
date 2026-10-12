@@ -91,7 +91,7 @@ def process_initializer(app, hostname):
                                       app=app)
     from celery.worker import state as worker_state
     worker_state.reset_state()
-    signals.worker_process_init.send(sender=None)
+    signals.worker_process_init.send(sender=hostname)
 
 
 def process_destructor(pid, exitcode):

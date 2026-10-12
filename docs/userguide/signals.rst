@@ -615,6 +615,20 @@ Provides arguments:
 
 Dispatched in all pool child processes when they start.
 
+Sender is the host name of the worker the process belongs to, so
+handlers can set up only what that worker needs:
+
+.. code-block:: python
+
+    from celery.signals import worker_process_init
+
+    @worker_process_init.connect(sender='db@example.com')
+    def setup_db_connection(sender=None, **kwargs):
+        ...
+
+.. versionchanged:: 5.7
+    Sender used to be :const:`None`.
+
 Note that handlers attached to this signal mustn't be blocking
 for more than 4 seconds, or the process will be killed assuming
 it failed to start.

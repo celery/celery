@@ -162,6 +162,7 @@ class test_process_initializer:
             _signals.reset.assert_any_call(*WORKER_SIGRESET)
             assert app.loader.init_worker.call_count
             on_worker_process_init.assert_called()
+            assert on_worker_process_init.call_args.kwargs['sender'] == 'awesome.worker.com'
             assert _tls.current_app is app
             set_mp_process_title.assert_called_with(
                 'celeryd', hostname='awesome.worker.com',
@@ -229,6 +230,24 @@ class test_process_initializer:
             app.conf = AttributeDict(DEFAULTS)
             process_initializer(app, 'awesome.worker.com')
         _set_pdeathsig.assert_called_once_with('SIGKILL')
+
+    @patch('celery.platforms.set_pdeathsig')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_worker_process_init_sender_is_hostname(self, _get_start_method, _set_pdeathsig,
+                                                    set_mp_process_title, restore_logging):
+        from celery import signals
+        from celery.concurrency.prefork import process_initializer
+        on_db_worker = Mock()
+        signals.worker_process_init.connect(on_db_worker, sender='db@example.com')
+        try:
+            with self.Celery(loader=self.Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'web@example.com')
+                on_db_worker.assert_not_called()
+                process_initializer(app, 'db@example.com')
+                on_db_worker.assert_called_once()
+        finally:
+            signals.worker_process_init.disconnect(on_db_worker, sender='db@example.com')
 
 
 class test_process_destructor:
