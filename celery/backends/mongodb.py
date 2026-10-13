@@ -7,6 +7,7 @@ from kombu.utils.url import maybe_sanitize_url, urlparse
 
 from celery import states
 from celery.exceptions import ImproperlyConfigured
+from celery.utils.time import add_seconds_to_datetime
 
 from .base import BaseBackend
 
@@ -283,11 +284,12 @@ class MongoBackend(BaseBackend):
         if not self.expires:
             return
 
+        cutoff = add_seconds_to_datetime(self.app.now(), -self.expires_delta.total_seconds())
         self.collection.delete_many(
-            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
+            {'date_done': {'$lt': cutoff}},
         )
         self.group_collection.delete_many(
-            {'date_done': {'$lt': self.app.now() - self.expires_delta}},
+            {'date_done': {'$lt': cutoff}},
         )
 
     def __reduce__(self, args=(), kwargs=None):
