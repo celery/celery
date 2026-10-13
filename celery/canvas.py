@@ -1091,6 +1091,29 @@ class _chain(Signature):
                 task.link_error(sig)
         return tasks
 
+    def _unroll_chords(self, app=None):
+        """Split nested chord bodies before freezing.
+
+        This mutates the chain in place; call it only on an execution copy.
+        """
+        app = app or self.app
+        if self._use_link or (self._use_link is None and app.conf.task_protocol == 1):
+            # A failed header needs the whole body to reach the final result
+            # when callbacks, rather than the chain message field, link tasks.
+            return
+        pending = deque(self.tasks)
+        tasks = []
+        while pending:
+            task = pending.popleft()
+            if isinstance(task, _chain):
+                task = task.clone()
+                task._unroll_chords(app)
+            if isinstance(task, _chord) and _is_chain_led_by_task(task.body):
+                pending.extendleft(reversed(task._unroll_body()))
+            else:
+                tasks.append(task)
+        self.tasks = tasks
+
     def apply_async(self, args=None, kwargs=None, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
         args = args if args else ()
@@ -1284,15 +1307,9 @@ class _chain(Signature):
                     continue
 
             if clone and isinstance(task, chord) and _is_chain_led_by_task(task.body):
-                # chord(header, chain(a, b, c)) -> chord(header, a), b, c
-                # Every header task carries a copy of the body, so a body
-                # holding the rest of the chain is copied once per header
-                # task, at every chord. Freezing (clone=False) assigns ids
-                # to the tasks in place and keeps the chain as written.
-                task = task.clone()
-                body_tasks = task.body.unchain_tasks()
-                task.body = body_tasks[0].clone(**_first_task_options(task.body))
-                steps_extend([task, *body_tasks[1:]])
+                # Freezing (clone=False) assigns ids to the tasks in place
+                # and keeps the chain as written.
+                steps_extend(task._unroll_body())
                 continue
 
             # first task gets partial args from chain
@@ -2410,6 +2427,11 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(self._body_options(options))
 
+        # Freezing a nested chain first would embed its whole remaining tail
+        # in every inner chord header, before prepare_steps can split it.
+        # apply_async has already cloned the body; public freeze stays in place.
+        if isinstance(body, _chain):
+            body._unroll_chords(app)
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
@@ -2444,6 +2466,19 @@ class _chord(Signature):
 
         bodyres.parent = header_result
         return bodyres
+
+    def _unroll_body(self):
+        """Return this chord followed by the tail of its task-led chain body.
+
+        chord(header, chain(a, b, c)) -> chord(header, a), b, c
+
+        Every header task carries a copy of the body, so a body holding the
+        rest of the chain would be copied once per header task, at every chord.
+        """
+        task = self.clone()
+        body_tasks = task.body.unchain_tasks()
+        task.body = body_tasks[0].clone(**_first_task_options(task.body))
+        return [task, *body_tasks[1:]]
 
     def clone(self, *args, **kwargs):
         signature = super().clone(*args, **kwargs)
