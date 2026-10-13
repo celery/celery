@@ -1893,6 +1893,55 @@ class test_group(CanvasCase):
         res = self.helper_test_get_delay(x.delay(x=1, y=1))
         assert res == [2, 2]
 
+    def test_apply_chain_ending_in_group_skips_result_backend(self):
+        # Issue #4405
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        )
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = x.delay()
+        assert res.get() == [2, [6, 8]]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_apply_member_runs_under_its_result_id(self):
+        @self.app.task(shared=False, bind=True)
+        def request_id(self):
+            return self.request.id
+
+        res = group(request_id.si().set(task_id='preset'), request_id.si()).apply()
+        assert res.results[0].id == 'preset'
+        assert [r.get() for r in res.results] == [r.id for r in res.results]
+
+    def test_apply_runs_member_link_and_link_error(self):
+        self.app.conf.task_always_eager = True
+        calls = []
+
+        @self.app.task(shared=False)
+        def record(*args):
+            calls.append(args)
+
+        x = group(
+            self.add.si(1, 1).set(link=record.s()),
+            chain(self.add.si(2, 2), self.div.si(1, 0).set(link_error=record.si('failed'))),
+        )
+        res = x.apply()
+        assert res.results[0].get() == 2
+        assert isinstance(res.results[1].result, ZeroDivisionError)
+        assert calls == [(2,), ('failed',)]
+
+    def test_apply_chord_member(self):
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chord([self.add.si(2, 2), self.add.si(3, 3)], self.xsum.s()),
+        )
+        assert x.apply().get() == [2, 10]
+
     def test_kwargs_delay_partial(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(1), self.add.s(x=1)])

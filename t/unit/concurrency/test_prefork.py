@@ -599,6 +599,83 @@ class test_AsynPool:
         assert 2 in hub.readers
 
     @t.skip.if_pypy
+    @pytest.mark.parametrize('header_written', [False, True])
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_write_job_stops_when_inqueue_not_recovering(
+            self, _create_worker_process, header_written):
+        """_write_job must end cleanly when the inqueue stays unwritable.
+
+        After more than 100 consecutive EAGAIN errors writing the header or
+        the body, on_not_recovering() terminates the process and puts the
+        job back.  The generator must then end with StopIteration, which the
+        event loop expects: under PEP 479 a ``raise StopIteration()`` in the
+        generator becomes RuntimeError and stops the worker.
+        """
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = self._get_hub()
+
+        fd = 2
+        written = [4] if header_written else []
+
+        def send_job_offset(buf, offset):
+            if written:
+                return written.pop()
+            raise OSError(errno.EAGAIN, 'Resource temporarily unavailable')
+
+        proc = Mock(name='proc', index=0, exitcode=None)
+        proc._is_alive.return_value = True
+        proc.send_job_offset.side_effect = send_job_offset
+        pool._all_inqueues = {fd}
+        pool._fileno_to_inq[fd] = proc
+        pool._create_write_handlers(hub)
+
+        job = ApplyResult({}, lambda x: True)
+        job._payload = (memoryview(b'\0\0\0\x04'), memoryview(b'body'), 4)
+        pool.outbound_buffer.append(job)
+
+        with patch.object(asynpool, 'logger') as logger:
+            # schedule_writes() takes the first step and registers the
+            # generator as the writer for fd; the event loop drives the rest.
+            hub.consolidate_callback(ready_fds=[fd])
+            cor = job._writer()
+            assert hub.writers[fd] == (cor, ())
+            with pytest.raises(StopIteration):
+                for _ in range(200):
+                    next(cor)
+
+        logger.exception.assert_called_once()
+        assert logger.exception.call_args[0][0].startswith(
+            'Process inqueue damaged')
+        proc.terminate.assert_called_once_with()
+        assert list(pool.outbound_buffer) == [job]
+        assert fd not in hub.writers
+        assert fd not in pool._active_writes
+        assert cor not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_write_ack_stops_when_process_gone(self, _create_worker_process):
+        """_write_ack must end cleanly when the synq has no process anymore.
+
+        The ack is discarded and the generator must end with StopIteration,
+        not RuntimeError (PEP 479).
+        """
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        hub = self._get_hub()
+        pool._create_write_handlers(hub)
+
+        fd = 3
+        pool.send_ack(asynpool.ACK, 1234, Mock(name='job'), fd)
+        cor, _ = hub.writers[fd]
+        assert cor in pool._active_writers
+
+        with pytest.raises(StopIteration):
+            next(cor)
+
+        assert fd not in pool._active_writes
+        assert cor not in pool._active_writers
+
+    @t.skip.if_pypy
     def test_register_with_event_loop__no_on_tick_dupes(self):
         """Ensure AsynPool's register_with_event_loop only registers
         on_poll_start in the event loop the first time it's called. This
