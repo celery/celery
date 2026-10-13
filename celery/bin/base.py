@@ -1,4 +1,5 @@
 """Click customizations for Celery."""
+import inspect
 import json
 import numbers
 from collections import OrderedDict
@@ -144,12 +145,31 @@ def _preload_option_names(app):
     return [option.name for option in app.user_options.get('preload', ())]
 
 
-def _take_preload_options(app, kwargs):
-    """Remove preload values from a callback's keyword arguments."""
+def _callback_accepts_keyword(fun, name):
+    """Whether ``fun`` can take ``name`` without raising ``TypeError``."""
+    try:
+        parameters = inspect.signature(fun).parameters.values()
+    except (TypeError, ValueError):
+        return False
+    for parameter in parameters:
+        if parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            return True
+        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+            continue
+        if parameter.name == name:
+            return True
+    return False
+
+
+def _take_preload_options(app, kwargs, fun):
+    """Copy preload values and drop only those ``fun`` cannot accept."""
     taken = {}
     for name in _preload_option_names(app):
-        if name in kwargs:
-            taken[name] = kwargs.pop(name)
+        if name not in kwargs:
+            continue
+        taken[name] = kwargs[name]
+        if not _callback_accepts_keyword(fun, name):
+            kwargs.pop(name)
     return taken
 
 
@@ -176,7 +196,7 @@ def handle_preload_options(f):
 
     def caller(ctx, *args, **kwargs):
         app = ctx.obj.app
-        options = _take_preload_options(app, kwargs)
+        options = _take_preload_options(app, kwargs, f)
         if options:
             user_preload_options.send(sender=f, app=app, options=options)
         return f(ctx, *args, **kwargs)
@@ -185,13 +205,14 @@ def handle_preload_options(f):
 
 
 def consume_preload_options(fun):
-    """Remove preload options before invoking a command callback.
+    """Deliver preload options and drop only values the callback cannot accept.
 
     Preload options are added to every sub-command, including commands
     installed through the ``celery.commands`` entry-point group. Click
     forwards them as keyword arguments. A callback with no ``**kwargs``
-    then raises ``TypeError``. Those values are delivered through
-    ``user_preload_options`` instead.
+    and no matching parameter then raises ``TypeError``. Those values are
+    delivered through ``user_preload_options`` instead. A callback that can
+    accept the name, including ``worker``, ``beat``, and ``events``, keeps it.
     """
     if fun is None or _handles_preload_options(fun):
         return fun
@@ -199,7 +220,7 @@ def consume_preload_options(fun):
     def caller(*args, **kwargs):
         ctx = click.get_current_context()
         app = ctx.obj.app
-        options = _take_preload_options(app, kwargs)
+        options = _take_preload_options(app, kwargs, fun)
         if options:
             user_preload_options.send(sender=fun, app=app, options=options)
         return fun(*args, **kwargs)

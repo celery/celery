@@ -290,7 +290,13 @@ def _preload_wrapper_depth(fun):
     return depth
 
 
-def test_var_keyword_callback_receives_preload_options_only_via_signal():
+def test_var_keyword_callback_keeps_preload_options_it_can_accept():
+    """A callback with ``**kwargs`` still receives the preload values.
+
+    ``worker``, ``beat``, and ``events`` take ``**kwargs``. Dropping every
+    preload name removed values those commands used to see. Only a callback
+    that cannot accept the name loses it.
+    """
     seen = {}
     received = []
 
@@ -320,8 +326,44 @@ def test_var_keyword_callback_receives_preload_options_only_via_signal():
         user_preload_options.disconnect(receiver)
 
     assert result.exit_code == 0, result.output
-    assert "ini" not in seen
-    assert "ini_var" not in seen
+    assert seen["ini"] == "some_ini.ini"
+    assert seen["ini_var"] == "a=b"
+    assert len(received) == 1
+    assert received[0]["ini"] == "some_ini.ini"
+    assert received[0]["ini_var"] == "a=b"
+
+
+def test_explicit_parameter_is_kept_and_unknown_preload_is_dropped():
+    seen = {}
+    received = []
+
+    @click.command("plugin-with-one-preload-name")
+    @click.pass_context
+    def plugin_with_one_preload_name(ctx, ini):
+        seen["ini"] = ini
+
+    receiver = _on_preload(received)
+    user_preload_options.connect(receiver)
+    try:
+        with _temporary_command(plugin_with_one_preload_name):
+            result = CliRunner().invoke(
+                celery,
+                [
+                    "-A",
+                    "t.unit.bin.proj.pyramid_celery_app",
+                    "plugin-with-one-preload-name",
+                    "--ini",
+                    "some_ini.ini",
+                    "--ini-var",
+                    "a=b",
+                ],
+                catch_exceptions=False,
+            )
+    finally:
+        user_preload_options.disconnect(receiver)
+
+    assert result.exit_code == 0, result.output
+    assert seen["ini"] == "some_ini.ini"
     assert len(received) == 1
     assert received[0]["ini"] == "some_ini.ini"
     assert received[0]["ini_var"] == "a=b"
