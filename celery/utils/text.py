@@ -179,7 +179,7 @@ def remove_repeating(substr: str, s: str) -> str:
             s[:index + len(substr)],
             # strip seen substr from the rest of the string, but only where
             # it starts a name (so ``app.`` is not removed from ``webapp.``).
-            re.sub(r'(?<![\w.])' + re.escape(substr), '',
+            re.sub(r'(?<![\w.-])' + re.escape(substr), '',
                    s[index + len(substr):]),
         ])
     return s

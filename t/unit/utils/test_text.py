@@ -111,6 +111,9 @@ def test_simple_format_unknown_key():
     ('app.tasks.add',
      'app.tasks.add(2, 2) | webapp.tasks.mul(3)',
      'app.tasks.add(2, 2) | webapp.tasks.mul(3)'),
+    ('app.tasks.add',
+     'app.tasks.add(2, 2) | my-app.tasks.mul(3)',
+     'app.tasks.add(2, 2) | my-app.tasks.mul(3)'),
     # A task name without a module must not strip every dot from the string.
     ('add',
      'add(1.5) | proj.tasks.mul(2.5)',
