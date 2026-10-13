@@ -1906,6 +1906,55 @@ class test_group(CanvasCase):
         res = self.helper_test_get_delay(x.delay(x=1, y=1))
         assert res == [2, 2]
 
+    def test_apply_chain_ending_in_group_skips_result_backend(self):
+        # Issue #4405
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        )
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = x.delay()
+        assert res.get() == [2, [6, 8]]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_apply_member_runs_under_its_result_id(self):
+        @self.app.task(shared=False, bind=True)
+        def request_id(self):
+            return self.request.id
+
+        res = group(request_id.si().set(task_id='preset'), request_id.si()).apply()
+        assert res.results[0].id == 'preset'
+        assert [r.get() for r in res.results] == [r.id for r in res.results]
+
+    def test_apply_runs_member_link_and_link_error(self):
+        self.app.conf.task_always_eager = True
+        calls = []
+
+        @self.app.task(shared=False)
+        def record(*args):
+            calls.append(args)
+
+        x = group(
+            self.add.si(1, 1).set(link=record.s()),
+            chain(self.add.si(2, 2), self.div.si(1, 0).set(link_error=record.si('failed'))),
+        )
+        res = x.apply()
+        assert res.results[0].get() == 2
+        assert isinstance(res.results[1].result, ZeroDivisionError)
+        assert calls == [(2,), ('failed',)]
+
+    def test_apply_chord_member(self):
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chord([self.add.si(2, 2), self.add.si(3, 3)], self.xsum.s()),
+        )
+        assert x.apply().get() == [2, 10]
+
     def test_kwargs_delay_partial(self):
         self.app.conf.task_always_eager = True
         x = group([self.add.s(1), self.add.s(x=1)])
@@ -2942,6 +2991,78 @@ class test_chord(CanvasCase):
         assert result.id != group_id
         assert body.id is not None
         assert body.id != group_id
+
+    @pytest.mark.parametrize('task_protocol,use_link', [(1, None), (2, True)])
+    def test_link_based_body_keeps_final_result_on_inner_chord(self, task_protocol, use_link):
+        self.app.conf.task_protocol = task_protocol
+        inner_body = chain(self.add.s(10), self.add.s(100))
+        body = _chain(
+            self.add.si(0, 0),
+            chord([self.add.s(1), self.add.s(2)], inner_body, app=self.app),
+            app=self.app, use_link=use_link,
+        )
+        workflow = chord([self.add.si(1, 1)], body, app=self.app)
+
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            result = workflow.apply_async()
+
+        payload = send.call_args.args[2].body
+        published_body = (payload if task_protocol == 1 else payload[2])['chord']
+        # Link-based chains have no remaining chain field for a failed inner
+        # header to traverse, so its body must still identify the final result.
+        assert published_body.tasks[1].body.id == result.id
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('nested_chain', [False, True])
+    def test_chain_of_implicit_chords_body_message_size_linear(self, serialized, nested_chain):
+        sizes = []
+        for n_groups in range(2, 6):
+            steps = [self.add.s(0, 0)]
+            for i in range(n_groups):
+                steps.append(group(self.add.si(i, j) for j in range(2)))
+                steps.append(self.add.si(i, i))
+            body = chain(*steps)
+            if nested_chain:
+                body = _chain(body, self.add.si(1, 1), app=self.app)
+            written_body = json.dumps(body)
+            workflow = chord([self.add.si(1, 1), self.add.si(2, 2)], body, app=self.app)
+            if serialized:
+                workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+            with patch.object(self.app.amqp, 'send_task_message') as send:
+                workflow.apply_async()
+
+            assert send.call_count == 2
+            assert json.dumps(body) == written_body
+            sizes.append(len(json.dumps(send.call_args_list[0].args[2].body)))
+
+        assert sizes[-1] < 3 * sizes[0], (
+            f"Chord header messages grow geometrically with body groups: {sizes}"
+        )
+
+    def test_nested_chord_body_keeps_options_and_links(self):
+        callback = self.mul.s(3)
+        errback = self.div.s(2)
+        inner_body = chain(self.add.s(10), self.add.s(100)).set(queue='q2', priority=7)
+        inner_body.link(callback)
+        inner_body.link_error(errback)
+        body = _chain(
+            self.add.si(0, 0),
+            chord([self.add.s(1), self.add.s(2)], inner_body, app=self.app),
+            app=self.app,
+        )
+        workflow = chord([self.add.si(1, 1)], body, app=self.app)
+        written = json.dumps(body)
+
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            workflow.apply_async()
+
+        published_body = send.call_args.args[2].body[2]['chord']
+        first, last = published_body.tasks[1].body, published_body.tasks[2]
+        assert (first.options['queue'], first.options['priority']) == ('q2', 7)
+        assert 'queue' not in last.options
+        assert first.options['link_error'] == last.options['link_error'] == [errback]
+        assert last.options['link'] == [callback]
+        assert json.dumps(body) == written
 
 
 class test_maybe_signature(CanvasCase):
