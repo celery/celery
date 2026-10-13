@@ -2079,7 +2079,7 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = group_id or uuid()
+            gid = opts['task_id'] = uuid()
         if group_id:
             opts['group_id'] = group_id
         if chord:
@@ -2529,6 +2529,7 @@ class _chord(Signature):
         options.pop('chord', None)
         options.pop('task_id', None)
 
+        header.options['task_id'] = group_id
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 
         if header.tasks:
