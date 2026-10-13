@@ -1,16 +1,19 @@
 import json
 import math
+import operator
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import reduce
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
-                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
+from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_chain_step, _merge_dictionaries,
+                           chain, chord, chunks, group, maybe_signature, maybe_unroll_group, signature, xmap,
+                           xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 
@@ -499,6 +502,146 @@ class test_chain(CanvasCase):
     def test_chain_of_chain_with_a_single_task(self):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
+
+    def test_chain_construction_handles_nested_canvas_shapes(self):
+        add = self.add
+        # a group followed by a task collapses into a chord
+        built = chain(group([add.si(1, 1), add.si(2, 2)]), add.si(3, 3))
+        assert isinstance(built, chord)
+        # a chord followed by a task extends the chord body
+        built = chain(chord([add.si(1, 1)], add.si(2, 2)), add.si(3, 3))
+        assert isinstance(built.tasks[0], chord)
+        assert isinstance(built.tasks[0].body, _chain)
+        assert len(built.tasks[0].body.tasks) == 2
+        # nested chains are flattened
+        built = chain(chain(add.si(1, 1), add.si(2, 2)),
+                      chain(add.si(3, 3), add.si(4, 4)))
+        assert len(built.tasks) == 4
+        # empty groups are skipped
+        built = chain(add.si(1, 1), group([]))
+        assert len(built.tasks) == 1
+        # a group of one is unrolled rather than turned into a chord
+        built = chain(group([add.si(1, 1)]), add.si(2, 2))
+        assert isinstance(built, _chain)
+        assert len(built.tasks) == 2
+
+    def test_chain_with_nested_chain_led_by_a_group(self):
+        # The first step of the inner chain turns the outer chain into a
+        # chord; the steps after it still have to be composed onto the
+        # chord body rather than dropped.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        built = chain(inner, add.s(20))
+        assert isinstance(built, chord)
+        assert isinstance(built.body, _chain)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_with_deserialised_chain_led_by_a_group(self):
+        # signature() of a serialised chain returns a _chain, so a chain
+        # that arrives over the wire takes the same path as the one above.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        built = chain(restored, add.s(20))
+        assert isinstance(built, chord)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_construction_matches_the_or_operator(self):
+        # _fold_chain repeats rules that live in _chain.__or__, group.__or__
+        # and Signature.__or__; this catches the two drifting apart.
+        add = self.add
+
+        def linked_chain():
+            built = _chain(add.si(1), add.si(2))
+            built.link(add.si(97))
+            built.link_error(add.si(96))
+            return built
+
+        shapes = (
+            lambda: [_chain(group(add.si(1), add.si(2)), add.s(10)), add.s(20)],
+            lambda: [group([group([add.si(1), add.si(2)])]), add.s(3)],
+            lambda: [chord([add.si(1)], add.si(2)), group([add.si(3), add.si(4)])],
+            lambda: [group([add.si(1)]), chord([add.si(2)], add.si(3)), group([add.si(4)])],
+            lambda: [linked_chain(), add.s(5)],
+            lambda: [add.si(1), linked_chain(), group([add.si(2), add.si(3)])],
+            lambda: [group([]), _chain(group(add.si(1)), add.s(2)), add.s(3)],
+        )
+        for build in shapes:
+            expected = reduce(operator.or_, build(), _chain())
+            assert (json.dumps(_fold_chain(build()), sort_keys=True, default=str) ==
+                    json.dumps(expected, sort_keys=True, default=str))
+
+    def test_chain_does_not_clone_the_final_task(self):
+        # `|` never clones its right-hand side, so the last task ends up in
+        # the chain as the caller passed it and stays linkable afterwards.
+        add = self.add
+        first, second, last = add.si(1), add.si(2), add.si(3)
+        built = chain(first, second, last)
+        assert built.tasks[-1] is last
+        last.link(add.si(4))
+        assert built.tasks[-1].options['link']
+
+    def test_chain_with_an_unsupported_operand(self):
+        # Anything the single pass does not understand is handed back to
+        # `|`, which raises the same TypeError as before.
+        with pytest.raises(TypeError):
+            chain(self.add.si(1), object())
+
+    def test_merge_chain_step_reports_unsupported_operands(self):
+        assert _merge_chain_step([], object()) is NotImplemented
+
+    def test_chain_with_an_unsupported_operand_inside_a_nested_chain(self):
+        # The inner chain is expanded through unchain_tasks(), so an operand
+        # it cannot handle has to abort the single pass there too.
+        unsupported = Mock()
+        unsupported.clone.return_value = unsupported
+        inner = _chain(unsupported, self.add.si(1))
+        with pytest.raises(TypeError):
+            chain(inner, self.add.si(2))
+
+    def test_chain_does_not_share_errbacks_between_steps(self):
+        # unchain_tasks() hands the same errback object to every task of an
+        # inner chain. If the steps keep sharing it, a visitor that stamps
+        # per signature writes two steps' stamps into the one errback.
+        add = self.add
+        inner = _chain([add.s(5), chord([add.s(4), add.s(5)], add.s(9)), add.s(8)])
+        inner.link_error(add.si(99))
+        built = chain(chord([add.s(0), add.s(1)], add.s(4)), inner)
+
+        def errback_ids(sig, found):
+            for errback in (sig.options or {}).get('link_error') or []:
+                found.append(id(errback))
+            if isinstance(sig, chord):
+                header = sig.tasks
+                for task in (header if isinstance(header, (list, tuple)) else [header]):
+                    errback_ids(task, found)
+                errback_ids(sig.body, found)
+            elif isinstance(sig, (_chain, group)):
+                for task in sig.tasks:
+                    errback_ids(task, found)
+            return found
+
+        found = errback_ids(built, [])
+        assert found
+        assert len(found) == len(set(found))
+
+    def test_chain_clones_each_task_once(self):
+        # Building the chain by folding with `|` re-cloned every task already
+        # collected, so an n-task chain cost n * (n - 1) / 2 clones.
+        n = 40
+        sigs = [self.add.si(i, i) for i in range(n)]
+        calls = []
+        original_clone = Signature.clone
+
+        def counting_clone(self, *args, **kwargs):
+            calls.append(self)
+            return original_clone(self, *args, **kwargs)
+
+        with patch.object(Signature, 'clone', counting_clone):
+            built = chain(*sigs)
+
+        assert len(built.tasks) == n
+        assert len(calls) <= 2 * n
 
     @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
     def test_clone_preserves_state(self, chain_type):
@@ -1561,6 +1704,51 @@ class test_chain(CanvasCase):
         res = c.freeze()
         assert isinstance(res, GroupResult)
         assert res.id is not None
+
+    def test_chain_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()) -- the step after the empty group is empty too.
+
+        The empty chain is spliced away, so stripping the leading empty
+        group would leave no step at all.  The group is kept instead, as
+        for a chain made up of empty groups only.
+        Regression test for PR #10646.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], group)
+        assert not tasks[0].tasks
+        assert len(results) == 1
+        assert isinstance(results[0], GroupResult)
+
+    @pytest.mark.parametrize('trailing', [
+        lambda app: [chain(app=app)],
+        lambda app: [chain(chain(app=app), app=app)],
+        lambda app: [chain(app=app), chain(app=app)],
+        lambda app: [group(app=app), chain(app=app)],
+    ], ids=[
+        'empty_chain', 'nested_empty_chain', 'two_empty_chains',
+        'empty_group_then_empty_chain',
+    ])
+    def test_freeze_empty_group_followed_by_empty_chain(self, trailing):
+        """Freezing an empty group followed by empty chains returns a result.
+
+        Regression test for PR #10646, which raised ``IndexError``.
+        """
+        c = chain(group(app=self.app), *trailing(self.app), app=self.app)
+        res = c.freeze()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
+
+    def test_apply_async_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()).apply_async() returns the group's result.
+
+        Regression test for PR #10646, which returned ``None``.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        res = c.apply_async()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
 
     def test_nested_chain_with_leading_empty_group(self):
         """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
