@@ -18,7 +18,6 @@ from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY
 __all__ = (
     'Settings', 'appstr', 'bugreport',
     'filter_hidden_settings', 'find_app', 'sanitize_url',
-    '_redact_azure_connection_string',
 )
 
 #: Format used to generate bug-report information.
@@ -354,9 +353,17 @@ def _redact_azure_connection_string(connection_string, mask='**'):
     secret_keys = {'accountkey', 'sharedaccesssignature'}
     redacted_parts = []
     for part in connection_string.split(';'):
-        key, sep, _ = part.partition('=')
+        key, sep, value = part.partition('=')
         if sep and key.strip().lower() in secret_keys:
+            # Redact the entire value of secret keys
             part = f'{key}={mask}'
+        else:
+            # Redact sig parameters in endpoint URLs (case-insensitive)
+            # Pattern: (?|&)sig=VALUE, preserving the parameter name and separator
+            if value:
+                # Use case-insensitive regex to find and redact sig parameters
+                value = re.sub(r'([?&]sig=)[^&;#]*', r'\1' + mask, value, flags=re.IGNORECASE)
+                part = f'{key}={value}'
         redacted_parts.append(part)
 
     return ';'.join(redacted_parts)
@@ -399,18 +406,11 @@ def sanitize_url(url, mask='*' * 8):
         # Azure connection strings use semicolon-separated key=value pairs
         # Handle them specially before generic URL parsing
         if scheme == 'azureblockblob':
-            # For Azure, treat everything up to ? or # as the connection string
-            # Azure connection strings can contain URLs with / in them (e.g. BlobEndpoint)
-            # so we can't use / as a separator
-            idx = len(rest)
-            for sep in ('?', '#'):
-                pos = rest.find(sep)
-                if pos != -1 and pos < idx:
-                    idx = pos
-            connection_string = rest[:idx]
-            tail = rest[idx:]
-            redacted_connection_string = _redact_azure_connection_string(connection_string, mask=mask)
-            return f'{scheme}://{redacted_connection_string}{tail}'
+            # For Azure, treat the entire remainder as the connection string
+            # Azure connection strings can contain ? and # within SAS tokens or endpoint URLs
+            # so we must not split at these characters
+            redacted_connection_string = _redact_azure_connection_string(rest, mask=mask)
+            return f'{scheme}://{redacted_connection_string}'
 
         # Separate authority from path/query/fragment
         idx = len(rest)
