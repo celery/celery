@@ -246,17 +246,27 @@ class test_process_initializer:
                 on_db_worker.assert_not_called()
                 process_initializer(app, 'db@example.com')
                 on_db_worker.assert_called_once()
+                assert mp._process_hostname == 'db@example.com'
         finally:
             signals.worker_process_init.disconnect(on_db_worker, sender='db@example.com')
 
 
 class test_process_destructor:
 
+    @patch('celery.concurrency.prefork._process_hostname', None)
     @patch('celery.concurrency.prefork.signals')
     def test_process_destructor(self, signals):
         mp.process_destructor(13, -3)
         signals.worker_process_shutdown.send.assert_called_with(
             sender=None, pid=13, exitcode=-3,
+        )
+
+    @patch('celery.concurrency.prefork._process_hostname', 'db@example.com')
+    @patch('celery.concurrency.prefork.signals')
+    def test_process_destructor_sender_is_hostname(self, signals):
+        mp.process_destructor(13, 0)
+        signals.worker_process_shutdown.send.assert_called_with(
+            sender='db@example.com', pid=13, exitcode=0,
         )
 
 

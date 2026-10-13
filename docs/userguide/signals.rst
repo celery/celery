@@ -613,28 +613,42 @@ Provides arguments:
 ``worker_process_init``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Dispatched in all pool child processes when they start.
+Dispatched in each pool process when it starts: in every child process of
+the prefork pool, and once in the main process when a solo pool is created.
+The threads, gevent and eventlet pools don't send it.
 
-Sender is the host name of the worker the process belongs to, so
-handlers can set up only what that worker needs:
+The sender is the host name (node name) of the worker the process belongs
+to, the value given to :option:`celery worker -n`, such as
+``worker1@example.com``, as for :signal:`celeryd_init`. Connecting with a
+sender sets up only what that worker needs:
 
 .. code-block:: python
 
     from celery.signals import worker_process_init
 
     @worker_process_init.connect(sender='db@example.com')
-    def setup_db_connection(sender=None, **kwargs):
+    def setup_db_connection(**kwargs):
         ...
+
+A handler connected without a sender is called for every worker, and can
+check the sender itself:
+
+.. code-block:: python
+
+    from celery.signals import worker_process_init
+
+    @worker_process_init.connect
+    def setup_connections(sender=None, **kwargs):
+        if sender in ('db1@example.com', 'db2@example.com'):
+            ...
 
 .. versionchanged:: 5.7
 
-    The sender used to be :const:`None` in every case. It is now the host
-    name of the worker (as given by :option:`celery worker -n`) for the
-    prefork and solo pools, which are the pools that send this signal; a
-    solo pool created directly, outside a worker, still sends
-    :const:`None`. Handlers connected without a ``sender`` keep receiving
-    the signal from every worker as before, so only a handler that checks
-    for ``sender is None`` itself needs updating.
+    The sender used to be :const:`None` in every case; it is now the host
+    name of the worker. A solo pool created directly, outside a worker,
+    still sends :const:`None`. Handlers connected without a sender are
+    unaffected, so only a handler that checks for ``sender is None`` itself
+    needs updating.
 
 Note that handlers attached to this signal mustn't be blocking
 for more than 4 seconds, or the process will be killed assuming
@@ -645,7 +659,15 @@ it failed to start.
 ``worker_process_shutdown``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Dispatched in all pool child processes just before they exit.
+Dispatched in all prefork pool child processes just before they exit.
+
+The sender is the host name of the worker the process belongs to, as for
+:signal:`worker_process_init`, so a handler connected with a sender can
+tear down what the matching :signal:`worker_process_init` handler set up.
+
+.. versionchanged:: 5.7
+
+    The sender used to be :const:`None`.
 
 Note: There's no guarantee that this signal will be dispatched,
 similarly to :keyword:`finally` blocks it's impossible to guarantee that
