@@ -73,6 +73,88 @@ def _is_empty_group(task):
     )
 
 
+def _merge_chain_step(steps, other, clone_other=True):
+    """Add *other* to *steps*, applying the same rules as `_chain.__or__`.
+
+    `_chain.__or__` rebuilds the chain on every step, cloning every task it
+    already holds, so folding N signatures with `|` performs O(N^2) clones.
+    The rules only ever inspect the last step, so they can be applied to a
+    list in place instead.
+
+    Returns *steps*, or a replacement result for the rules that yield
+    something which is not a chain.
+    """
+    if _is_empty_group(other):
+        return steps
+    if isinstance(other, group):
+        other = maybe_unroll_group(other)
+        if not isinstance(other, group):
+            return _merge_chain_step(steps, other, clone_other)
+        if not steps:
+            return other
+        if isinstance(steps[-1], chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone() if clone_other else other)
+        return steps
+    if isinstance(other, _chain):
+        inner = other.unchain_tasks()
+        remaining = iter(inner)
+        for position, task in enumerate(remaining):
+            result = _merge_chain_step(
+                steps, task,
+                clone_other or position != len(inner) - 1)
+            if result is NotImplemented:
+                return result
+            if result is not steps:
+                # The rest of this chain composes with the new result
+                # through its own operator, as `_chain.__or__` would.
+                return reduce(operator.or_, remaining, result)
+        return steps
+    if isinstance(other, Signature):
+        if steps and isinstance(steps[-1], group):
+            # `_chain.__or__` also collapses a chord that is immediately
+            # followed by another one. That cannot arise here: a group is
+            # only appended when the step before it is not a chord, and
+            # nothing later turns that step into one.
+            steps[-1] = chord(steps[-1], other.clone() if clone_other else other)
+            return steps
+        if steps and isinstance(steps[-1], chord) and not isinstance(other, chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone() if clone_other else other)
+        return steps
+    return NotImplemented
+
+
+def _fold_chain(tasks):
+    """Build the chain for ``chain(X, Y, Z)`` in a single pass.
+
+    Equivalent to ``reduce(operator.or_, tasks, _chain())`` but linear in the
+    number of tasks rather than quadratic. Anything the single pass cannot
+    express is handed back to `|`.
+    """
+    tasks = list(tasks)
+    steps = []
+    remaining = iter(tasks)
+    for position, task in enumerate(remaining):
+        # `|` never clones the task on its right-hand side, so the last
+        # one ends up in the chain as the caller passed it.
+        result = _merge_chain_step(steps, task, position != len(tasks) - 1)
+        if result is NotImplemented:
+            return reduce(operator.or_, tasks, _chain())
+        if result is not steps:
+            # The accumulator stopped being a chain -- an empty chain
+            # followed by a group yields the group, which composes with
+            # the remaining tasks through its own operator.
+            return reduce(operator.or_, remaining, result)
+    # `unchain_tasks()` hands the same errback object to every task of an
+    # inner chain. Folding with `|` separated those copies as a side effect
+    # of re-cloning the chain on each step; clone the steps that are not
+    # last so a visitor stamping per signature still sees one errback each.
+    return _chain([step.clone() for step in steps[:-1]] + steps[-1:])
+
+
 def _is_chain_led_by_task(body):
     """Return True if the body is a chain whose first step is not a group.
 
@@ -1504,7 +1586,7 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                new_instance = reduce(operator.or_, tasks, _chain())
+                new_instance = _fold_chain(tasks)
                 if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
                     return super().__new__(cls, new_instance.tasks, **kwargs)
                 return new_instance
