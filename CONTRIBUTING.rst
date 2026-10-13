@@ -161,7 +161,7 @@ If you'd like to submit the information encrypted our PGP key is::
 Other bugs
 ----------
 
-Bugs can always be described to the :ref:`mailing-list`, but the best
+Bugs can always be described on `GitHub Discussions`_, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
@@ -175,7 +175,7 @@ and participate in the discussion.
 2) **Determine if your bug is really a bug**.
 
 You shouldn't file a bug if you're requesting support. For that you can use
-the :ref:`mailing-list`, or :ref:`irc-channel`. If you still need support
+`GitHub Discussions`_. If you still need support
 you can open a github issue, please prepend the title with ``[QUESTION]``.
 
 3) **Make sure your bug hasn't already been reported**.
@@ -261,8 +261,8 @@ issue tracker.
 * :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
 
-If you're unsure of the origin of the bug you can ask the
-:ref:`mailing-list`, or just use the Celery issue tracker.
+If you're unsure of the origin of the bug you can ask on
+`GitHub Discussions`_, or just use the Celery issue tracker.
 
 Contributors guide to the code base
 ===================================
@@ -1522,7 +1522,8 @@ following:
 
 * Also add the previous version under the "versions" tab.
 
-.. _`mailing-list`: https://groups.google.com/group/celery-users
+.. _`GitHub Discussions`: https://github.com/celery/celery/discussions
+
 
 .. _`irc-channel`: https://docs.celeryq.dev/en/latest/getting-started/resources.html#irc
 
