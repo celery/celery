@@ -335,6 +335,40 @@ def _unpickle_app_v2(cls, kwargs):
     return cls(**kwargs)
 
 
+def _redact_azure_connection_string(connection_string, mask='**'):
+    """Redact sensitive credentials in Azure Storage connection strings.
+
+    Azure connection strings use semicolon-separated key=value pairs.
+    This function redacts known secret keys while preserving other fields.
+
+    Args:
+        connection_string: The Azure connection string to redact.
+        mask: The mask string to replace secrets with (default: '**').
+
+    Returns:
+        The redacted connection string with AccountKey and SharedAccessSignature
+        values replaced by the mask.
+    """
+    # Azure matches connection string keys case-insensitively
+    secret_keys = {'accountkey', 'sharedaccesssignature'}
+    redacted_parts = []
+    for part in connection_string.split(';'):
+        key, sep, value = part.partition('=')
+        if sep and key.strip().lower() in secret_keys:
+            # Redact the entire value of secret keys
+            part = f'{key}={mask}'
+        else:
+            # Redact sig parameters in endpoint URLs (case-insensitive)
+            # Pattern: (?|&)sig=VALUE, preserving the parameter name and separator
+            if value:
+                # Use case-insensitive regex to find and redact sig parameters
+                value = re.sub(r'([?&]sig=)[^&;#]*', r'\1' + mask, value, flags=re.IGNORECASE)
+                part = f'{key}={value}'
+        redacted_parts.append(part)
+
+    return ';'.join(redacted_parts)
+
+
 def sanitize_url(url, mask='*' * 8):
     """Sanitize URL, masking passwords.
 
@@ -345,6 +379,7 @@ def sanitize_url(url, mask='*' * 8):
     - Redis Sentinel multi-node URLs (e.g. ``sentinel://:secret@h1:26379;sentinel://:secret@h2:26379/0``
       or ``sentinel://:secret@h1:26379;h2:26379/0``)
     - URLs with query strings containing semicolons (e.g. ``redis://user:secret@localhost:6379?a=1;b=2``)
+    - Azure Storage connection strings (e.g. ``azureblockblob://AccountKey=SECRET;...``)
 
     Fails closed on malformed URLs to prevent credential leakage.
     """
@@ -367,6 +402,15 @@ def sanitize_url(url, mask='*' * 8):
             return ';'.join(sanitize_url(p.strip(), mask=mask) for p in parts)
 
         scheme, _, rest = url.partition('://')
+
+        # Azure connection strings use semicolon-separated key=value pairs
+        # Handle them specially before generic URL parsing
+        if scheme == 'azureblockblob':
+            # For Azure, treat the entire remainder as the connection string
+            # Azure connection strings can contain ? and # within SAS tokens or endpoint URLs
+            # so we must not split at these characters
+            redacted_connection_string = _redact_azure_connection_string(rest, mask=mask)
+            return f'{scheme}://{redacted_connection_string}'
 
         # Separate authority from path/query/fragment
         idx = len(rest)
