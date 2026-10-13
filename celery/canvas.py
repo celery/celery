@@ -1762,7 +1762,11 @@ class group(Signature):
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
         options, group_id, root_id = self._freeze_gid(options)
-        tasks = self._prepared(self.tasks, [], group_id, root_id, app)
+        # Freezing a chain that ends in a group builds a GroupResult that
+        # subscribes to the result backend, which eager apply never uses.
+        tasks = self._prepared(
+            self.tasks, [], group_id, root_id, app, freeze=False,
+        )
         return app.GroupResult(group_id, [
             sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
         ])
@@ -1820,7 +1824,7 @@ class group(Signature):
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
-                  isinstance=isinstance, tuple=tuple):
+                  isinstance=isinstance, tuple=tuple, *, freeze=True):
         """Recursively unroll the group into a generator of its tasks.
 
         This is used by :meth:`apply_async` and :meth:`apply` to
@@ -1842,6 +1846,8 @@ class group(Signature):
             isinstance (fun): Function to check if an object is an instance
                 of a class.
             tuple (class): A tuple-like class.
+            freeze (bool): Freeze each task to get its result.  When false,
+                the generator yields ``None`` in place of the result.
 
         Returns:
             generator: A generator for the unrolled group tasks.
@@ -1859,6 +1865,7 @@ class group(Signature):
                 # needs yield_from :(
                 unroll = task._prepared(
                     task.tasks, partial_args, group_id, root_id, app,
+                    freeze=freeze,
                 )
                 yield from unroll
             elif isinstance(task, _chain) and not task.tasks:
@@ -1869,7 +1876,10 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
+                result = task.freeze(
+                    group_id=group_id, root_id=root_id, group_index=index,
+                ) if freeze else None
+                yield task, result, group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
