@@ -540,6 +540,34 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 29520
 
     @flaky
+    def test_chain_with_a_nested_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # The group at the head of the inner chain turns the outer chain
+        # into a chord, and the steps after it have to end up in the chord
+        # body rather than being dropped on the way.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        res = chain(inner, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
+
+    @flaky
+    def test_chain_with_a_deserialised_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # signature() of a serialised chain returns a _chain, so a canvas
+        # rebuilt from the wire reaches the same path as the test above.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        res = chain(restored, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
+
+    @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
