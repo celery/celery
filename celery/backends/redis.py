@@ -389,6 +389,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     supports_native_join = True
     # Redis preserves binary payloads; response decoding disables compression.
     supports_result_compression = True
+    supports_failure_expires = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types

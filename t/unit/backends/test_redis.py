@@ -1980,6 +1980,11 @@ class test_RedisBackend(basetest_RedisBackend):
         self.b.store_result(uuid(), 42, states.FAILURE)
         self.b.client.expire.assert_not_called()
 
+    def test_failure_expires_does_not_warn(self, recwarn):
+        self.app.conf.result_failure_expires = 1024
+        self.Backend(app=self.app)
+        assert not [w for w in recwarn if 'result_failure_expires' in str(w.message)]
+
     def test_set_raises_error_on_large_value(self):
         with pytest.raises(BackendStoreError):
             self.b.set('key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
