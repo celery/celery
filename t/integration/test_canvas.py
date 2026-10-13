@@ -1,4 +1,5 @@
 import collections
+import json
 import re
 import tempfile
 import uuid
@@ -537,6 +538,34 @@ class test_chain:
         )
         res = c()
         assert res.get(timeout=TIMEOUT) == 29520
+
+    @flaky
+    def test_chain_with_a_nested_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # The group at the head of the inner chain turns the outer chain
+        # into a chord, and the steps after it have to end up in the chord
+        # body rather than being dropped on the way.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        res = chain(inner, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
+
+    @flaky
+    def test_chain_with_a_deserialised_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # signature() of a serialised chain returns a _chain, so a canvas
+        # rebuilt from the wire reaches the same path as the test above.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        res = chain(restored, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
 
     @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
@@ -3626,6 +3655,56 @@ class test_chord:
 
         res = chord([chain(), add.s(1, 1), chain(), add.s(2, 2)], body=tsum.s())()
         assert res.get(timeout=TIMEOUT) == 6
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('frozen', [False, True])
+    @flaky
+    def test_chain_of_implicit_chords_as_body(self, manager, serialized, frozen):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        steps = [tsum.s()]
+        for _ in range(5):
+            steps.extend([group(add.s(1), add.s(2)), tsum.s()])
+        callback = identity.s()
+        callback_result = callback.freeze()
+        steps[-1].link(callback)
+        workflow = chord([add.si(1, 1), add.si(2, 2)], chain(*steps))
+        expected_id = str(uuid.uuid4())
+        if frozen:
+            assert workflow.freeze(expected_id).id == expected_id
+        if serialized:
+            workflow = signature(json.loads(json.dumps(workflow)))
+
+        result = workflow.apply_async(task_id=expected_id)
+
+        assert result.id == expected_id
+        # The outer header sums to 6; each inner group maps x to 2*x + 3.
+        assert result.get(timeout=TIMEOUT) == 285
+        assert callback_result.get(timeout=TIMEOUT) == 285
+
+    @pytest.mark.parametrize('failure', ['header', 'body'])
+    @flaky
+    def test_chain_of_implicit_chords_body_failure(self, manager, failure):
+        if manager.app.conf.task_protocol == 1:
+            raise pytest.skip('Requires the chain message field (task_protocol=2).')
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        first_group = group(fail.si(), add.si(1, 2)) if failure == 'header' else group(add.si(1, 2))
+        callback = fail.si() if failure == 'body' else tsum.s()
+        inner_body = chain(callback, group(add.s(1), add.s(2)), tsum.s())
+        inner_body.link_error(redis_echo.si('failed', redis_key=redis_key))
+        workflow = chord([add.si(1, 1)], chain(tsum.s(), chord(first_group, inner_body)))
+
+        result = workflow.delay()
+
+        with pytest.raises((ExpectedException, ChordError)):
+            result.get(timeout=TIMEOUT)
+        await_redis_echo('failed', redis_key=redis_key)
 
 
 class test_signature_serialization:
