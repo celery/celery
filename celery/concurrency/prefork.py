@@ -39,6 +39,10 @@ else:
 logger = get_logger(__name__)
 warning, debug = logger.warning, logger.debug
 
+#: Host name of the worker this pool process belongs to, set by
+#: :func:`process_initializer` for :func:`process_destructor`.
+_process_hostname = None
+
 
 def process_initializer(app, hostname):
     """Pool child process initializer.
@@ -91,7 +95,9 @@ def process_initializer(app, hostname):
                                       app=app)
     from celery.worker import state as worker_state
     worker_state.reset_state()
-    signals.worker_process_init.send(sender=None)
+    global _process_hostname
+    _process_hostname = hostname
+    signals.worker_process_init.send(sender=hostname)
 
 
 def process_destructor(pid, exitcode):
@@ -100,7 +106,7 @@ def process_destructor(pid, exitcode):
     Dispatch the :signal:`worker_process_shutdown` signal.
     """
     signals.worker_process_shutdown.send(
-        sender=None, pid=pid, exitcode=exitcode,
+        sender=_process_hostname, pid=pid, exitcode=exitcode,
     )
 
 
