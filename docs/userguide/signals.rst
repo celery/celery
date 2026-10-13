@@ -627,7 +627,14 @@ handlers can set up only what that worker needs:
         ...
 
 .. versionchanged:: 5.7
-    Sender used to be :const:`None`.
+
+    The sender used to be :const:`None` in every case. It is now the host
+    name of the worker (as given by :option:`celery worker -n`) for the
+    prefork and solo pools, which are the pools that send this signal; a
+    solo pool created directly, outside a worker, still sends
+    :const:`None`. Handlers connected without a ``sender`` keep receiving
+    the signal from every worker as before, so only a handler that checks
+    for ``sender is None`` itself needs updating.
 
 Note that handlers attached to this signal mustn't be blocking
 for more than 4 seconds, or the process will be killed assuming
