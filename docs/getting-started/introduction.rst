@@ -81,7 +81,7 @@ then you should read our getting started tutorials:
 Celery is…
 ==========
 
-.. _`mailing-list`: https://groups.google.com/group/celery-users
+.. _`GitHub Discussions`: https://github.com/celery/celery/discussions
 
 .. topic:: \
 
@@ -90,7 +90,7 @@ Celery is…
         Celery is easy to use and maintain, and it *doesn't need configuration files*.
 
         It has an active, friendly community you can talk to for support,
-        including a `getting-help`_ and an :ref:`IRC channel <getting-help>`.
+        including `GitHub Discussions`_.
 
         Here's one of the simplest applications you can make:
 
