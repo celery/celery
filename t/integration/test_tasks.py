@@ -214,6 +214,7 @@ class test_tasks:
             results.append([i + i, add_pydantic.delay(AddParameterModel(x=i, y=i))])
         results.append([4, add_pydantic.apply_async(kwargs={'data': AddParameterModel(x=2, y=2)})])
         results.append([6, add_pydantic.s(AddParameterModel(x=3, y=3)).delay()])
+        results.append([8, add_pydantic_string_annotations.delay(AddParameterModel(x=4, y=4))])
         for expected, result in results:
             value = result.get(timeout=10)
             assert value == {'result': expected}

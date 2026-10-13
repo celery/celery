@@ -21,7 +21,7 @@ from kombu import Exchange, Queue
 from kombu.exceptions import EncodeError, LimitExceeded
 from pydantic import BaseModel
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ConfigDict, Field, ValidationInfo, model_validator
+from pydantic import ConfigDict, Field, SecretStr, ValidationInfo, model_validator
 from vine import promise
 
 from celery import Celery, _state
@@ -77,6 +77,16 @@ class CustomReduceApp(Celery):
 
     def __reduce_args__(self):
         return super().__reduce_args__()
+
+
+class StringAnnotationModel(BaseModel):
+    """Model used in string annotations.
+
+    Declared at module level because ``typing.get_type_hints()`` can only
+    resolve string annotations from the module's globals.
+    """
+
+    value: int
 
 
 class test_module:
@@ -1201,6 +1211,263 @@ class test_App:
                 task.apply_async({'value': 1})
             with pytest.raises(TypeError, match='task keyword arguments must be a mapping'):
                 unchecked_task.apply_async((), [('arg', ArgModel(value=1))])
+
+    def test_task_with_pydantic_with_masked_or_excluded_fields(self):
+        """Test that models losing values in model_dump() still raise EncodeError."""
+
+        class SecretModel(BaseModel):
+            secret: SecretStr
+
+        class ExcludeModel(BaseModel):
+            value: int = Field(0, exclude=True)
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(secret: Optional[SecretModel] = None, exclude: Optional[ExcludeModel] = None):
+                check(secret, exclude)
+
+            # The task would get '**********' as the secret
+            with pytest.raises(EncodeError):
+                task.delay(SecretModel(secret='hunter2'))
+            # The task would get the default instead of 1
+            with pytest.raises(EncodeError):
+                task.delay(exclude=ExcludeModel(value=1))
+            check.assert_not_called()
+
+            # Nothing is lost if the excluded field has its default
+            task.delay(exclude=ExcludeModel()).get()
+            check.assert_called_once_with(None, ExcludeModel())
+
+    def test_task_with_pydantic_with_subclass_of_annotated_model(self):
+        """Test that a subclass passed for its base class still raises EncodeError."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class SubModel(ArgModel):
+            extra: int = 0
+
+        class ForbidModel(BaseModel):
+            model_config = ConfigDict(extra='forbid')
+            value: int
+
+        class SubForbidModel(ForbidModel):
+            extra: int = 0
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            @app.task(pydantic=True)
+            def task(arg: Optional[ArgModel] = None, forbid: Optional[ForbidModel] = None):
+                check(arg, forbid)
+
+            # The task would get an ArgModel without extra
+            with pytest.raises(EncodeError):
+                task.delay(SubModel(value=1, extra=5))
+            # Validating the dump as ForbidModel would fail on the worker
+            with pytest.raises(EncodeError):
+                task.delay(forbid=SubForbidModel(value=1))
+            check.assert_not_called()
+
+    def test_task_with_pydantic_with_strict_validation_and_models_passed_by_caller(self):
+        """Test that models strict validation rejects once dumped still raise EncodeError."""
+
+        class DatetimeModel(BaseModel):
+            value: datetime
+
+        class UUIDModel(BaseModel):
+            value: uuid.UUID
+
+        class IntModel(BaseModel):
+            value: int
+
+        moment = datetime(2024, 5, 14, tzinfo=timezone.utc)
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            @app.task(pydantic=True, pydantic_strict=True)
+            def task(
+                when: Optional[DatetimeModel] = None,
+                ident: Optional[UUIDModel] = None,
+                number: Optional[IntModel] = None,
+            ):
+                check(when, ident, number)
+
+            # mode='json' turns these fields into strings, which strict validation rejects
+            with pytest.raises(EncodeError):
+                task.delay(DatetimeModel(value=moment))
+            with pytest.raises(EncodeError):
+                task.delay(ident=UUIDModel(value=uuid.UUID(int=1)))
+            check.assert_not_called()
+
+            task.delay(number=IntModel(value=1)).get()
+            check.assert_called_once_with(None, None, IntModel(value=1))
+            check.reset_mock()
+
+            # The workaround from the docs
+            task.delay(DatetimeModel(value=moment).model_dump()).get()
+            check.assert_called_once_with(DatetimeModel(value=moment), None, None)
+
+    def test_task_with_pydantic_with_validator_failing_on_the_caller(self):
+        """Test that a model whose validator fails on the caller is sent as it is."""
+
+        connection = None  # only set up in worker processes
+
+        class ArgModel(BaseModel):
+            value: int
+
+            @model_validator(mode='after')
+            def check_on_worker(self, info: ValidationInfo):
+                if info.context and 'celery_app' in info.context:
+                    connection.check(self.value)
+                return self
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: ArgModel):
+                pass
+
+            arg = ArgModel(value=1)
+            with patch.object(app, 'send_task') as send_task:
+                task.delay(arg)
+            # Left to the serializer, as for tasks without pydantic=True
+            assert send_task.call_args.args[1][0] is arg
+
+            app.conf.task_always_eager = True
+            with pytest.raises(EncodeError):
+                task.delay(arg)
+
+    def test_task_with_pydantic_with_models_not_validated_by_the_task(self):
+        """Test that models for parameters the task doesn't validate as models are left alone."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        class OtherModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(
+                arg: ArgModel,
+                unannotated=None,
+                union: typing.Union[ArgModel, OtherModel, None] = None,
+                *rest,
+                **extra,
+            ):
+                pass
+
+            models = [ArgModel(value=index) for index in range(5)]
+            with patch.object(app, 'send_task') as send_task:
+                task.delay(models[0], models[1], union=models[2], extra=models[3])
+                task.delay(ArgModel(value=5), None, None, models[4])
+
+            first, second = send_task.call_args_list
+            assert first.args[1] == ({'value': 0}, models[1])
+            assert first.args[1][1] is models[1]
+            assert first.args[2] == {'union': models[2], 'extra': models[3]}
+            assert first.args[2]['union'] is models[2]
+            assert first.args[2]['extra'] is models[3]
+            assert second.args[1] == ({'value': 5}, None, None, models[4])
+            assert second.args[1][3] is models[4]
+
+    def test_task_with_pydantic_keeps_args_and_kwargs_without_models(self):
+        """Test that args and kwargs are sent as the caller passed them unless a model is dumped."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: Optional[ArgModel] = None, number: int = 0):
+                pass
+
+            args, kwargs = [None], {'number': 1}
+            with patch.object(app, 'send_task') as send_task:
+                task.apply_async(args, kwargs)
+                task.apply_async([ArgModel(value=1)], kwargs)
+                task.apply_async((ArgModel(value=2),), kwargs)
+
+            first, second, third = send_task.call_args_list
+            assert first.args[1] is args
+            assert first.args[2] is kwargs
+            # The type of args is kept when a model in it is dumped
+            assert second.args[1] == [{'value': 1}]
+            assert type(second.args[1]) is list
+            assert second.args[2] is kwargs
+            assert third.args[1] == ({'value': 2},)
+            assert type(third.args[1]) is tuple
+
+    def test_task_with_pydantic_with_kwargs_only_and_optional_model(self):
+        """Test models passed in kwargs only, and None for an Optional model."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: Optional[ArgModel] = None):
+                pass
+
+            kwargs = {'arg': None}
+            with patch.object(app, 'send_task') as send_task:
+                task.apply_async(kwargs={'arg': ArgModel(value=1)})
+                task.apply_async(kwargs=kwargs)
+                task.apply_async((None,))
+
+            first, second, third = send_task.call_args_list
+            assert first.args[1:3] == (None, {'arg': {'value': 1}})
+            assert second.args[1] is None
+            assert second.args[2] is kwargs
+            assert third.args[1:3] == ((None,), None)
+
+    def test_task_with_pydantic_with_bound_task_and_models_passed_by_caller(self):
+        """Test that models passed to a bound task are matched to the right parameters."""
+
+        class ArgModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            app.conf.task_always_eager = True
+            check = Mock()
+
+            @app.task(pydantic=True, bind=True)
+            def task(self, arg: ArgModel, kwarg: Optional[ArgModel] = None):
+                check(self.name, arg, kwarg)
+
+            task.delay(ArgModel(value=1), kwarg=ArgModel(value=2)).get()
+            check.assert_called_once_with(task.name, ArgModel(value=1), ArgModel(value=2))
+
+    def test_task_with_pydantic_with_string_annotations_and_models_passed_by_caller(self):
+        """Test models passed for string annotations, as with ``from __future__ import annotations``."""
+
+        class LocalModel(BaseModel):
+            value: int
+
+        with self.Celery() as app:
+            @app.task(pydantic=True)
+            def task(arg: 'StringAnnotationModel'):
+                pass
+
+            # get_type_hints() can't resolve a local class, so the task would get the dict
+            @app.task(pydantic=True)
+            def unresolved_task(arg: 'LocalModel'):
+                pass
+
+            arg = LocalModel(value=2)
+            with patch.object(app, 'send_task') as send_task:
+                task.delay(StringAnnotationModel(value=1))
+                unresolved_task.delay(arg)
+
+            first, second = send_task.call_args_list
+            assert first.args[1] == ({'value': 1},)
+            assert second.args[1][0] is arg
 
     def test_task_with_pydantic_with_pydantic_not_installed(self):
         """Test configuring a task with Pydantic when pydantic is not installed."""

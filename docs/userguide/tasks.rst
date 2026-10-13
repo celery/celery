@@ -821,24 +821,54 @@ Argument validation with Pydantic
 You can use Pydantic_ to validate and convert arguments as well as serializing
 results based on typehints by passing ``pydantic=True``.
 
+.. NOTE::
+
+   Argument validation only covers arguments/return values on the task side. You still have to
+   serialize arguments yourself in the cases listed below.
+
 .. versionchanged:: 5.7
 
-   Models passed directly as arguments to ``delay()`` or ``apply_async()`` are
-   now dumped with ``model_dump()`` before the task is sent (tasks using the
-   pickle serializer send them as they are), so you no longer have to serialize
-   them yourself. Only the serializer named ``pickle`` is skipped, so models are
-   still dumped for serializers that use pickle under another name. Models made
-   serializable with kombu's ``register_type()`` are dumped too, while models
-   that define kombu's ``__json__()`` hook or that ``model_dump()`` can't
-   serialize are sent as they are.
+   Models can be passed directly to ``delay()`` and ``apply_async()``.
 
-   The worker validates the dumped dict again, so anything ``model_dump()``
-   drops or masks changes on the way: ``SecretStr`` values arrive as
-   ``'**********'``, and fields with ``exclude=True`` or dropped by options like
-   ``exclude_none`` get their defaults. Pass dicts for such models. Models inside
-   lists or dicts, or in ``link`` signatures, models given to a later task of a
-   chain, to the body of a chord or to ``map()``, ``starmap()`` or ``chunks()``,
-   and tasks called by name with ``send_task()``, still need dicts.
+A model passed when calling a task is sent dumped with ``pydantic_dump_kwargs``
+only if the task gets an equal model back: before sending, the caller validates
+the dump the way the worker will, running the model's validators with the task's
+context, and compares the result with ``==``. Otherwise, or if dumping or
+validating raises an error on the caller, the model is left as it is, so the
+serializer raises ``EncodeError`` as it did before. Models are sent as they are
+for tasks using the ``pickle`` serializer and for models that define kombu's
+``__json__()`` hook.
+
+In these cases you still have to pass a dict, as passing a model raises ``EncodeError``:
+
+* models inside lists or dicts
+* models in ``link`` and ``link_error`` signatures
+* models for a later task of a chain, the body of a chord, or ``map()``,
+  ``starmap()`` and ``chunks()``
+* tasks called by name with ``send_task()``
+* models the task wouldn't get back as an equal model, for example:
+
+  * a model with a ``SecretStr`` field, which is dumped as ``'**********'``
+  * a model whose private attributes differ from those a new model gets, as
+    private attributes aren't sent
+  * a model with a computed field and ``extra='forbid'``
+  * a subclass passed for a parameter annotated with its base class
+  * a model for a parameter that isn't annotated with a model
+  * with ``pydantic_strict=True``, a model with fields like ``datetime`` or
+    ``UUID`` that ``mode='json'`` turns into strings
+
+An equal model can still differ in a few ways:
+
+* The task's model counts every dumped field as set. If the task uses
+  ``model_fields_set`` or ``model_dump(exclude_unset=True)``, add
+  ``exclude_unset=True`` to ``pydantic_dump_kwargs``.
+* Aware datetimes arrive with a fixed UTC offset instead of their time zone,
+  such as a ``ZoneInfo``.
+* The check uses the model's own ``__eq__``. If a model defines one, anything
+  it ignores can still change, such as a ``SecretStr`` field.
+* With the default ``mode='json'``, the dump is what the worker gets. With
+  ``mode='python'``, the serializer can still change it, for example tuples
+  arrive as lists, which ``pydantic_strict=True`` rejects on the worker.
 
 For example:
 
@@ -939,7 +969,7 @@ There are a few more options influencing Pydantic behavior:
 
    When serializing a result or a model passed as an argument, pass these additional
    arguments to ``model_dump()``. By default, only ``mode='json'`` is passed. If your
-   models use field aliases, add ``by_alias=True`` so arguments validate again on the worker.
+   models use field aliases, add ``by_alias=True`` so models passed as arguments can be sent.
    With ``pydantic_strict=True``, fields that ``mode='json'`` turns into strings, such as
    ``datetime`` or ``UUID``, don't validate, so call those tasks with ``model.model_dump()``
    instead of the model.
