@@ -1041,6 +1041,31 @@ on backend specifications).
     When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
 
+See :setting:`result_chord_expires` for chords whose header tasks run longer
+than this.
+
+.. setting:: result_chord_expires
+
+``result_chord_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) a chord's
+bookkeeping is kept after the chord starts or after one of its header tasks
+finishes. If it runs out before the next header task finishes, the chord's
+body never runs, so set it longer than the slowest header task.
+A value of 0 means the chord's bookkeeping never expires while the chord is
+open, and the saved header of a chord with nested groups never expires.
+The bookkeeping of a chord that never completes, for example after a lost
+header task, is then never removed.
+
+.. note::
+
+    For the moment this only works with the Redis backend.
+
 .. setting:: result_cache_max
 
 ``result_cache_max``
@@ -3255,6 +3280,7 @@ too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
 so if the heartbeat is 10.0 and the rate is the default 3.0, the check
 will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
+
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``
@@ -3673,6 +3699,7 @@ memory, potentially causing out-of-memory issues.
     implied by :setting:`worker_prefetch_multiplier` would exceed this cap, the
     worker will stop consuming new messages until previously received tasks have
     been acknowledged.
+
 .. setting:: worker_disable_prefetch
 
 ``worker_disable_prefetch``
