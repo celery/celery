@@ -2003,6 +2003,18 @@ class test_DisabledBackend:
     def test_as_uri(self):
         assert DisabledBackend(self.app).as_uri() == 'disabled://'
 
+    @pytest.mark.celery(result_backend='disabled')
+    def test_chord_raises_error(self):
+        with pytest.raises(NotImplementedError):
+            chord(self.add.s(i, i) for i in range(10))(self.add.s([2]))
+
+    @pytest.mark.celery(result_backend='disabled')
+    def test_chain_with_chord_raises_error(self):
+        with pytest.raises(NotImplementedError):
+            (self.add.s(2, 2) |
+             group(self.add.s(2, 2),
+                   self.add.s(5, 6)) | self.add.s()).delay()
+
     def test_fail_chain_with_plain_chain(self):
         """Regression test: _fail_chain should work with DisabledBackend for plain chains."""
         backend = DisabledBackend(self.app)
