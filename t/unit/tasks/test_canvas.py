@@ -1705,6 +1705,51 @@ class test_chain(CanvasCase):
         assert isinstance(res, GroupResult)
         assert res.id is not None
 
+    def test_chain_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()) -- the step after the empty group is empty too.
+
+        The empty chain is spliced away, so stripping the leading empty
+        group would leave no step at all.  The group is kept instead, as
+        for a chain made up of empty groups only.
+        Regression test for PR #10646.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], group)
+        assert not tasks[0].tasks
+        assert len(results) == 1
+        assert isinstance(results[0], GroupResult)
+
+    @pytest.mark.parametrize('trailing', [
+        lambda app: [chain(app=app)],
+        lambda app: [chain(chain(app=app), app=app)],
+        lambda app: [chain(app=app), chain(app=app)],
+        lambda app: [group(app=app), chain(app=app)],
+    ], ids=[
+        'empty_chain', 'nested_empty_chain', 'two_empty_chains',
+        'empty_group_then_empty_chain',
+    ])
+    def test_freeze_empty_group_followed_by_empty_chain(self, trailing):
+        """Freezing an empty group followed by empty chains returns a result.
+
+        Regression test for PR #10646, which raised ``IndexError``.
+        """
+        c = chain(group(app=self.app), *trailing(self.app), app=self.app)
+        res = c.freeze()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
+
+    def test_apply_async_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()).apply_async() returns the group's result.
+
+        Regression test for PR #10646, which returned ``None``.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        res = c.apply_async()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
+
     def test_nested_chain_with_leading_empty_group(self):
         """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
 
