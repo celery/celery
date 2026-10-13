@@ -9,7 +9,8 @@ from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLo
 from t.integration.tasks import add, add_ignore_result, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
-                           soft_time_limit_lower_than_time_limit, soft_time_limit_must_exceed_time_limit)
+                           self_termination_sigkill_with_retries, soft_time_limit_lower_than_time_limit,
+                           soft_time_limit_must_exceed_time_limit)
 
 
 class test_apply_async:
@@ -121,6 +122,28 @@ class test_task_termination(SuiteOperations):
             assert expected_exception_msg or expected_log in str(err)
 
         celery_setup.worker.assert_log_exists(expected_log)
+
+
+class test_retry_on_worker_lost:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_prefetch_multiplier = 1
+        app.conf.worker_concurrency = 1
+        app.conf.task_acks_late = True
+        app.conf.task_reject_on_worker_lost = True
+        app.conf.task_retry_on_worker_lost = True
+        return app
+
+    def test_task_fails_when_retries_run_out(self, celery_setup: CeleryTestSetup):
+        worker = celery_setup.worker
+        sig = self_termination_sigkill_with_retries.si().set(queue=worker.worker_queue)
+        res = sig.apply_async()
+
+        with pytest.raises(WorkerLostError):
+            res.get(timeout=RESULT_TIMEOUT)
+
+        assert worker.logs().count(f"{sig.name}[{res.id}] received") == 3
 
 
 class test_replace:
