@@ -13,6 +13,7 @@ from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
+from t.canvas_helpers import ids_in_as_tuple
 
 SIG = Signature({
     'task': 'TASK',
@@ -56,24 +57,6 @@ def _group_result_sizes_on_spine(result):
             sizes.append(len(node.results))
         node = node.parent
     return sizes
-
-
-def _ids_in_as_tuple(tuple_repr):
-    """Return the id of every node in an as_tuple() tree."""
-    ids = []
-
-    def walk(tup):
-        if tup is None:
-            return
-        (res, nodes) = tup
-        (node_id, parent) = res
-        ids.append(node_id)
-        for child in nodes or ():
-            walk(child)
-        walk(parent)
-
-    walk(tuple_repr)
-    return ids
 
 
 @contextmanager
@@ -1363,7 +1346,7 @@ class test_chain(CanvasCase):
             self.add.s(3),
             **options,
         )
-        ids = _ids_in_as_tuple(getattr(canvas, method)().as_tuple())
+        ids = ids_in_as_tuple(getattr(canvas, method)().as_tuple())
 
         # The first task, 2 * n tasks and a GroupResult per group, two last tasks.
         assert len(ids) == len(set(ids)) == 1 + 2 * (2 * n + 1) + 2, ids
@@ -1381,7 +1364,7 @@ class test_chain(CanvasCase):
             self.add.si(5, 5),
             task_id='last-task-id',
         )
-        ids = _ids_in_as_tuple(canvas.apply_async().as_tuple())
+        ids = ids_in_as_tuple(canvas.apply_async().as_tuple())
 
         # Eight tasks and two GroupResults.
         assert len(ids) == len(set(ids)) == 10, ids

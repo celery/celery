@@ -14,10 +14,10 @@ from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
+from t.canvas_helpers import ids_in_as_tuple
 
 from . import tasks
-from .conftest import (TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection,
-                       ids_in_as_tuple)
+from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
 from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
                     add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
                     delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,

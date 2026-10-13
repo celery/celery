@@ -4,7 +4,8 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
-from t.integration.conftest import get_redis_connection, ids_in_as_tuple
+from t.canvas_helpers import ids_in_as_tuple
+from t.integration.conftest import get_redis_connection
 from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo, tsum
 
 
