@@ -497,6 +497,8 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    # Outdated heap entries, see issue #10757.
+
     def test_readd_resets_expiry(self):
         s = LimitedSet(expires=10)
         for i in range(100):
@@ -522,6 +524,20 @@ class test_LimitedSet:
         s.add(0, now=1000)
         assert s.pop() == 1
         assert list(s)[-1] == 0
+
+    def test_discard_does_not_expire_next_item(self):
+        s = LimitedSet(expires=10)
+        s.add('discarded', now=0)
+        for i in range(100):
+            s.add(i, now=100 + i)
+        # Too few leftover entries for the heap to be rebuilt.
+        s.discard('discarded')
+        assert len(s._heap) == len(s) + 1
+        # The entry left behind by discard() is old enough to expire, but
+        # no item of the set is.
+        s.purge(now=50)
+        assert len(s) == 100
+        assert 0 in s
 
 
 class test_AttributeDict:
