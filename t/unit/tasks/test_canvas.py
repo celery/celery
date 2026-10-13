@@ -599,6 +599,32 @@ class test_chain(CanvasCase):
         with pytest.raises(TypeError):
             chain(inner, self.add.si(2))
 
+    def test_chain_does_not_share_errbacks_between_steps(self):
+        # unchain_tasks() hands the same errback object to every task of an
+        # inner chain. If the steps keep sharing it, a visitor that stamps
+        # per signature writes two steps' stamps into the one errback.
+        add = self.add
+        inner = _chain([add.s(5), chord([add.s(4), add.s(5)], add.s(9)), add.s(8)])
+        inner.link_error(add.si(99))
+        built = chain(chord([add.s(0), add.s(1)], add.s(4)), inner)
+
+        def errback_ids(sig, found):
+            for errback in (sig.options or {}).get('link_error') or []:
+                found.append(id(errback))
+            if isinstance(sig, chord):
+                header = sig.tasks
+                for task in (header if isinstance(header, (list, tuple)) else [header]):
+                    errback_ids(task, found)
+                errback_ids(sig.body, found)
+            elif isinstance(sig, (_chain, group)):
+                for task in sig.tasks:
+                    errback_ids(task, found)
+            return found
+
+        found = errback_ids(built, [])
+        assert found
+        assert len(found) == len(set(found))
+
     def test_chain_clones_each_task_once(self):
         # Building the chain by folding with `|` re-cloned every task already
         # collected, so an n-task chain cost n * (n - 1) / 2 clones.

@@ -148,7 +148,11 @@ def _fold_chain(tasks):
             # followed by a group yields the group, which composes with
             # the remaining tasks through its own operator.
             return reduce(operator.or_, remaining, result)
-    return _chain(steps)
+    # `unchain_tasks()` hands the same errback object to every task of an
+    # inner chain. Folding with `|` separated those copies as a side effect
+    # of re-cloning the chain on each step; clone the steps that are not
+    # last so a visitor stamping per signature still sees one errback each.
+    return _chain([step.clone() for step in steps[:-1]] + steps[-1:])
 
 
 def _is_chain_led_by_task(body):
