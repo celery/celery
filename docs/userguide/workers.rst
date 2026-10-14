@@ -919,6 +919,12 @@ based on load:
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
 
+Before removing processes, it waits for the keepalive period (30 seconds
+by default) to pass since the last task was accepted for immediate execution
+or the pool was grown. Tasks routed through ETA/countdown or rate-limit
+scheduling do not reset this timer.
+Set the ``AUTOSCALE_KEEPALIVE`` environment variable to change this period.
+
 It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
 which needs two numbers: the maximum and minimum number of pool processes:
 
