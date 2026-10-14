@@ -117,6 +117,22 @@ def compare_group_ids_in_redis(redis_key='redis-group-ids'):
 
 
 class test_link_error:
+    @pytest.mark.parametrize('make_errback', [
+        lambda: tasks.errback_old_style_with_args.s('stored'),
+        lambda: tasks.errback_old_style_with_args.s(label='stored'),
+        lambda: tasks.errback_new_style_with_args.s('stored'),
+    ], ids=['old-style-args', 'old-style-kwargs', 'new-style-args'])
+    def test_mutable_errback_with_stored_arguments(self, make_errback, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        fail_sig = fail.s()
+        fail_sig_id = fail_sig.freeze().id
+        get_redis_connection().delete(fail_sig_id)
+        fail_sig.link_error(make_errback())
+        with pytest.raises(ExpectedException):
+            fail_sig.delay().get(timeout=TIMEOUT)
+        await_redis_echo({'stored'}, redis_key=fail_sig_id)
+
     @flaky
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
