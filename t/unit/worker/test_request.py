@@ -962,6 +962,57 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
+    def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def test_on_failure_WorkerLostError_backend_unavailable(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.get_state.side_effect = ConnectionError()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once()
+
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:
             raise WorkerLostError()
