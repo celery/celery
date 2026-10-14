@@ -16,6 +16,7 @@ from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_
                            xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
+from t.canvas_helpers import ids_in_as_tuple
 
 SIG = Signature({
     'task': 'TASK',
@@ -1427,9 +1428,12 @@ class test_chain(CanvasCase):
         assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
         assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
 
-    def test_group_in_center_of_chain(self):
+    @pytest.mark.parametrize('options', [{}, {'task_id': 'last-task-id'}])
+    def test_group_in_center_of_chain(self, options):
+        # With an option, chain() keeps its steps and the group is upgraded
+        # in prepare_steps, which must not link the body's result twice.
         t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
-                   self.add.si(1, 1) | self.add.si(1, 1))
+                   self.add.si(1, 1) | self.add.si(1, 1), **options)
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
@@ -1465,6 +1469,48 @@ class test_chain(CanvasCase):
             _group_result_sizes_on_spine(restored),
         ):
             assert sizes.count(n) >= 2, sizes
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    @pytest.mark.parametrize('method', ['apply_async', 'freeze'])
+    @pytest.mark.parametrize('task_id', [None, 'last-task-id'])
+    def test_groups_in_chain_as_tuple_holds_each_task_once(self, task_id, method, task_protocol):
+        # Regression for #9608: as_tuple() must hold every task of the chain
+        # once, with or without a task_id. The task after a group becomes the
+        # body of a chord, and the rest of the chain must be linked to the
+        # chord's result only, not to the body's result as well.
+        self.app.conf.task_protocol = task_protocol
+        n = 3
+        options = {'task_id': task_id} if task_id else {}
+        canvas = chain(
+            self.add.si(0, 0),
+            group([chain(self.add.si(i, 0), self.add.si(0, i)) for i in range(n)]),
+            group([chain(self.add.si(i, 1), self.add.si(1, i)) for i in range(n)]),
+            self.add.si(2, 0),
+            self.add.s(3),
+            **options,
+        )
+        ids = ids_in_as_tuple(getattr(canvas, method)().as_tuple())
+
+        # The first task, 2 * n tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 1 + 2 * (2 * n + 1) + 2, ids
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_group_before_chord_in_chain_as_tuple_holds_each_task_once(self, task_protocol):
+        # Regression for #9608: here the rest of the chain is linked to the
+        # task after the group through the GroupResult of the next chord.
+        self.app.conf.task_protocol = task_protocol
+        canvas = chain(
+            self.add.si(0, 0),
+            group(self.add.si(1, 1), self.add.si(1, 2)),
+            self.add.si(2, 2),
+            chord([self.add.si(3, 3), self.add.si(3, 4)], self.add.si(4, 4)),
+            self.add.si(5, 5),
+            task_id='last-task-id',
+        )
+        ids = ids_in_as_tuple(canvas.apply_async().as_tuple())
+
+        # Eight tasks and two GroupResults.
+        assert len(ids) == len(set(ids)) == 10, ids
 
     def test_upgrade_to_chord_on_chain(self):
         group1 = group(self.add.si(10, 10), self.add.si(10, 10))
