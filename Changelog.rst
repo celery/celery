@@ -9,6 +9,16 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- ``task.map()`` / ``task.starmap()`` signatures now apply the options stored on
+  them when called directly, as other signatures do. Options set with
+  ``.set()`` (such as ``queue`` and ``countdown``), callbacks added with
+  ``.link()`` / ``.on_error()``, and the task id from ``freeze()`` were silently
+  ignored, so the result from ``freeze()`` never resolved (#10782).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
