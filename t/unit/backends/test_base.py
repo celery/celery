@@ -2292,3 +2292,16 @@ class test_backend_retries:
         self.app.conf.result_backend_thread_safe = False
         b = BaseBackend(app=self.app)
         assert b.thread_safe is False
+
+
+class test_failure_expires_support:
+
+    def test_warns_when_the_backend_does_not_support_it(self):
+        self.app.conf.result_failure_expires = 600
+        with pytest.warns(UserWarning,
+                          match='does not support result_failure_expires'):
+            KVBackend(app=self.app)
+
+    def test_no_warning_when_unset(self, recwarn):
+        KVBackend(app=self.app)
+        assert not [w for w in recwarn if 'result_failure_expires' in str(w.message)]
