@@ -220,6 +220,7 @@ NAMESPACES = Namespace(
             type='float', old={'celery_task_result_expires'},
         ),
         chord_expires=Option(None, type='float'),
+        failure_expires=Option(None, type='float'),
         persistent=Option(None, type='bool'),
         extended=Option(False, type='bool'),
         serializer=Option('json'),
