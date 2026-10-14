@@ -66,6 +66,12 @@ def self_termination_sigkill():
     os.kill(os.getpid(), SIGKILL)
 
 
+@shared_task(default_retry_delay=0, max_retries=2)
+def self_termination_sigkill_with_retries():
+    """Forceful termination, with a limited number of retries."""
+    os.kill(os.getpid(), SIGKILL)
+
+
 @shared_task
 def self_termination_system_exit():
     """Triggers a system exit to simulate a critical stop of the Celery worker."""
