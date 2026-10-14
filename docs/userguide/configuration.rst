@@ -1066,6 +1066,25 @@ header task, is then never removed.
 
     For the moment this only works with the Redis backend.
 
+.. setting:: result_failure_expires
+
+``result_failure_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
+the results of failed tasks will be deleted. Use it to keep failures longer,
+or shorter, than other results. A value of 0 means failed results never expire.
+
+Only results in the ``FAILURE`` state use this setting.
+
+.. note::
+
+    For the moment this only works with the Redis backend.
+
 .. setting:: result_cache_max
 
 ``result_cache_max``

@@ -47,6 +47,13 @@ class WorkerComponent(bootsteps.StartStopStep):
         )
         return scaler if not w.use_eventloop else None
 
+    def start(self, w):
+        if not w.use_eventloop:
+            on_task_received = getattr(w.autoscaler, 'on_task_received', None)
+            if on_task_received is not None:
+                w.consumer.on_task_message.add(on_task_received)
+        super().start(w)
+
     def register_with_event_loop(self, w, hub):
         w.consumer.on_task_message.add(w.autoscaler.maybe_scale)
         hub.call_repeatedly(
@@ -71,6 +78,7 @@ class Autoscaler(bgThread):
         self.min_concurrency = min_concurrency
         self.keepalive = keepalive
         self._last_scale_up = None
+        self._last_task_received = None
         self.worker = worker
 
         assert self.keepalive, 'cannot scale down too fast.'
@@ -92,8 +100,13 @@ class Autoscaler(bgThread):
             return True
 
     def maybe_scale(self, req=None):
+        if req is not None:
+            self.on_task_received(req)
         if self._maybe_scale(req):
             self.pool.maintain_pool()
+
+    def on_task_received(self, req):
+        self._last_task_received = monotonic()
 
     def update(self, max=None, min=None):
         with self.mutex:
@@ -113,8 +126,13 @@ class Autoscaler(bgThread):
         return self._grow(n)
 
     def scale_down(self, n):
-        if self._last_scale_up and (
-                monotonic() - self._last_scale_up > self.keepalive):
+        last_active = self._last_scale_up
+        last_received = self._last_task_received
+        if last_received is not None and (
+                last_active is None or last_received > last_active):
+            last_active = last_received
+        if last_active is not None and (
+                monotonic() - last_active > self.keepalive):
             return self._shrink(n)
 
     def _grow(self, n):
