@@ -389,6 +389,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     supports_native_join = True
     # Redis preserves binary payloads; response decoding disables compression.
     supports_result_compression = True
+    supports_failure_expires = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -399,6 +400,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                  connection_pool=None, **kwargs):
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
+        self._chord_expires = _get('result_chord_expires')
+        failure_expires = _get('result_failure_expires')
+        self.failure_expires = (
+            self.expires if failure_expires is None
+            else self.prepare_expires(failure_expires, type=int))
         if self.redis is None:
             raise ImproperlyConfigured(E_REDIS_MISSING.strip())
 
@@ -697,16 +703,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
-    def set(self, key, value, **retry_policy):
+    def _set_with_state(self, key, value, state):
+        if state == states.FAILURE:
+            return self.set(key, value, expires=self.failure_expires)
+        return self.set(key, value)
+
+    def set(self, key, value, expires=None, **retry_policy):
         if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
             raise BackendStoreError('value too large for Redis backend')
 
-        return self.ensure(self._set, (key, value), **retry_policy)
+        return self.ensure(self._set, (key, value, expires), **retry_policy)
 
-    def _set(self, key, value):
+    def _set(self, key, value, expires=None):
+        if expires is None:
+            expires = self.expires
         with self.client.pipeline() as pipe:
-            if self.expires:
-                pipe.setex(key, self.expires, value)
+            if expires:
+                pipe.setex(key, expires, value)
             else:
                 pipe.set(key, value)
             pipe.publish(key, value)
@@ -741,8 +754,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             raise chord_error
         return retval
 
+    @property
+    def chord_expires(self):
+        if self._chord_expires is None:
+            return self.expires
+        return self.prepare_expires(self._chord_expires, type=int)
+
+    def _set_chord_key(self, key, value):
+        if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
+            raise BackendStoreError('value too large for Redis backend')
+        set_key = partial(self.client.set, ex=self.chord_expires or None)
+        return self.ensure(set_key, (key, value))
+
     def set_chord_size(self, group_id, chord_size):
-        self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+        self._set_chord_key(self.get_key_for_group(group_id, '.s'), chord_size)
 
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group
@@ -754,7 +779,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if not isinstance(header_result_args[1], _regen):
             header_result = self.app.GroupResult(*header_result_args)
             if any(isinstance(nr, GroupResult) for nr in header_result.results):
-                header_result.save(backend=self)
+                self._set_chord_key(
+                    self.get_key_for_group(header_result.id),
+                    self.encode({'result': header_result.as_tuple()}))
 
     @cached_property
     def _chord_zset(self):
@@ -785,11 +812,17 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 if self._chord_zset
                 else pipe.rpush(jkey, encoded).llen(jkey)
             ).get(tkey).get(skey)
-            if self.expires:
+            expires = self.chord_expires
+            if expires:
                 pipeline = pipeline \
-                    .expire(jkey, self.expires) \
-                    .expire(tkey, self.expires) \
-                    .expire(skey, self.expires)
+                    .expire(jkey, expires) \
+                    .expire(tkey, expires) \
+                    .expire(skey, expires)
+                if self.expires:
+                    # The group key can also hold a GroupResult the user
+                    # saved, so never shorten it below result_expires.
+                    pipeline = pipeline.expire(
+                        self.get_key_for_group(gid), max(expires, self.expires))
 
             _, readycount, totaldiff, chord_size_bytes = pipeline.execute()[:4]
 
