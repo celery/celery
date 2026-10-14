@@ -1353,6 +1353,24 @@ class test_AsynPool:
         handler = make_result_handler(3, proc)
         assert handler._finish_partial_read(3, proc) is False
 
+    @t.skip.if_win32
+    def test_help_stuff_finish_skips_exited_processes(self):
+        # A child killed between reading the 4-byte length and the body of
+        # its None sentinel leaves only the pickle body in its inqueue.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        exited = proc(15, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([exited, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (exited, alive):
+                p.inq.close()
+
 
 class test_TaskPool:
 

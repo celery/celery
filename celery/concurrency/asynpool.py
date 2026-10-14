@@ -1468,6 +1468,8 @@ class AsynPool(_pool.Pool):
         fileno_to_proc = {}
         inqR = set()
         for w in pool:
+            if w.exitcode is not None:
+                continue  # nothing will ever read this inqueue again
             try:
                 fd = w.inq._reader.fileno()
                 inqR.add(fd)
