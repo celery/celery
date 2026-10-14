@@ -1238,6 +1238,35 @@ class test_chain(CanvasCase):
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
 
+    def test_chain_link_fires_once_in_eager(self):
+        # A chain-level link must fire once, on the last task, mirroring
+        # _chain.run (worker path extends it onto the last task only).
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(4, 4) | self.add.s(8)
+        res = c.apply_async(link=record.s())
+        assert res.get() == 16
+        assert fired == [16]
+
+    def test_chain_link_option_fires_once_in_eager(self):
+        # Same as above, but with the link set as a chain option.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = (self.add.s(4, 4) | self.add.s(8)).set(link=record.s())
+        res = c.apply_async()
+        assert res.get() == 16
+        assert fired == [16]
+
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
         res = x.apply()
