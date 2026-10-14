@@ -14,7 +14,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -306,14 +306,16 @@ class AsyncResult(ResultBase):
             def pow2(i):
                 return i ** 2
 
+        To collect only the values returned by leaf tasks, unpack each pair
+        and select results with no children:
+
         .. code-block:: pycon
 
-            >>> from celery.result import ResultBase
             >>> from proj.tasks import A
 
             >>> result = A.delay(10)
-            >>> [v for v in result.collect()
-            ...  if not isinstance(v, (ResultBase, tuple))]
+            >>> [value for child, value in result.collect()
+            ...  if not child.children]
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         Note:
@@ -1050,7 +1052,8 @@ class EagerResult(AsyncResult):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return (self.id, self._result, self._state, self._traceback)
+        return (self.id, self._result, self._state, self._traceback,
+                self._name)
 
     def __copy__(self):
         cls, args = self.__reduce__()
@@ -1077,7 +1080,35 @@ class EagerResult(AsyncResult):
         pass
 
     def revoke(self, *args, **kwargs):
+        """Mark the result as revoked.
+
+        An eager task has already finished by the time its result exists,
+        so nothing is cancelled.  The state is set to ``REVOKED`` and the
+        task's return value or exception is intentionally replaced by a
+        :exc:`~celery.exceptions.TaskRevokedError`, which is what the result
+        backend stores for a task revoked on a worker.  :meth:`get` then
+        raises that error, and :attr:`result` and ``get(propagate=False)``
+        return it.
+
+        Note:
+            This differs from revoking an already finished task through a
+            result backend, where the stored result is left untouched.
+            The original return value or exception is no longer available
+            from this instance afterwards.
+
+        .. versionchanged:: 5.7.0
+
+            The previous result is replaced by a
+            :exc:`~celery.exceptions.TaskRevokedError` and the traceback is
+            cleared.  Before, the state changed to ``REVOKED`` but the
+            return value was kept, so :meth:`get` raised it wrapped in a
+            bare :exc:`Exception`.
+        """
         self._state = states.REVOKED
+        # Same as what the backend stores for a revoked task
+        # (see ``Backend.mark_as_revoked``), so that get() raises it.
+        self._result = TaskRevokedError('revoked')
+        self._traceback = None
 
     def __repr__(self):
         return f'<EagerResult: {self.id}>'

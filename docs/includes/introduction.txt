@@ -1,4 +1,4 @@
-:Version: 5.7.0a1 (Collider)
+:Version: 5.7.0b1 (Collider)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/

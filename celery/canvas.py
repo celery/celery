@@ -73,6 +73,88 @@ def _is_empty_group(task):
     )
 
 
+def _merge_chain_step(steps, other, clone_other=True):
+    """Add *other* to *steps*, applying the same rules as `_chain.__or__`.
+
+    `_chain.__or__` rebuilds the chain on every step, cloning every task it
+    already holds, so folding N signatures with `|` performs O(N^2) clones.
+    The rules only ever inspect the last step, so they can be applied to a
+    list in place instead.
+
+    Returns *steps*, or a replacement result for the rules that yield
+    something which is not a chain.
+    """
+    if _is_empty_group(other):
+        return steps
+    if isinstance(other, group):
+        other = maybe_unroll_group(other)
+        if not isinstance(other, group):
+            return _merge_chain_step(steps, other, clone_other)
+        if not steps:
+            return other
+        if isinstance(steps[-1], chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone() if clone_other else other)
+        return steps
+    if isinstance(other, _chain):
+        inner = other.unchain_tasks()
+        remaining = iter(inner)
+        for position, task in enumerate(remaining):
+            result = _merge_chain_step(
+                steps, task,
+                clone_other or position != len(inner) - 1)
+            if result is NotImplemented:
+                return result
+            if result is not steps:
+                # The rest of this chain composes with the new result
+                # through its own operator, as `_chain.__or__` would.
+                return reduce(operator.or_, remaining, result)
+        return steps
+    if isinstance(other, Signature):
+        if steps and isinstance(steps[-1], group):
+            # `_chain.__or__` also collapses a chord that is immediately
+            # followed by another one. That cannot arise here: a group is
+            # only appended when the step before it is not a chord, and
+            # nothing later turns that step into one.
+            steps[-1] = chord(steps[-1], other.clone() if clone_other else other)
+            return steps
+        if steps and isinstance(steps[-1], chord) and not isinstance(other, chord):
+            steps[-1].body = steps[-1].body | other
+            return steps
+        steps.append(other.clone() if clone_other else other)
+        return steps
+    return NotImplemented
+
+
+def _fold_chain(tasks):
+    """Build the chain for ``chain(X, Y, Z)`` in a single pass.
+
+    Equivalent to ``reduce(operator.or_, tasks, _chain())`` but linear in the
+    number of tasks rather than quadratic. Anything the single pass cannot
+    express is handed back to `|`.
+    """
+    tasks = list(tasks)
+    steps = []
+    remaining = iter(tasks)
+    for position, task in enumerate(remaining):
+        # `|` never clones the task on its right-hand side, so the last
+        # one ends up in the chain as the caller passed it.
+        result = _merge_chain_step(steps, task, position != len(tasks) - 1)
+        if result is NotImplemented:
+            return reduce(operator.or_, tasks, _chain())
+        if result is not steps:
+            # The accumulator stopped being a chain -- an empty chain
+            # followed by a group yields the group, which composes with
+            # the remaining tasks through its own operator.
+            return reduce(operator.or_, remaining, result)
+    # `unchain_tasks()` hands the same errback object to every task of an
+    # inner chain. Folding with `|` separated those copies as a side effect
+    # of re-cloning the chain on each step; clone the steps that are not
+    # last so a visitor stamping per signature still sees one errback each.
+    return _chain([step.clone() for step in steps[:-1]] + steps[-1:])
+
+
 def _is_chain_led_by_task(body):
     """Return True if the body is a chain whose first step is not a group.
 
@@ -1091,6 +1173,29 @@ class _chain(Signature):
                 task.link_error(sig)
         return tasks
 
+    def _unroll_chords(self, app=None):
+        """Split nested chord bodies before freezing.
+
+        This mutates the chain in place; call it only on an execution copy.
+        """
+        app = app or self.app
+        if self._use_link or (self._use_link is None and app.conf.task_protocol == 1):
+            # A failed header needs the whole body to reach the final result
+            # when callbacks, rather than the chain message field, link tasks.
+            return
+        pending = deque(self.tasks)
+        tasks = []
+        while pending:
+            task = pending.popleft()
+            if isinstance(task, _chain):
+                task = task.clone()
+                task._unroll_chords(app)
+            if isinstance(task, _chord) and _is_chain_led_by_task(task.body):
+                pending.extendleft(reversed(task._unroll_body()))
+            else:
+                tasks.append(task)
+        self.tasks = tasks
+
     def apply_async(self, args=None, kwargs=None, **options):
         # python is best at unpacking kwargs, so .run is here to do that.
         args = args if args else ()
@@ -1232,7 +1337,11 @@ class _chain(Signature):
         # popped: nested chains are spliced in place, and empty groups are
         # stripped as long as another step follows them.  A chain made up of
         # empty groups only keeps a single one, matching the in-loop skip
-        # below, so that it still yields an (empty) group result.
+        # below, so that it still yields an (empty) group result.  The same
+        # goes for empty groups followed by nothing but empty chains: the
+        # step that follows them is spliced away, so the last stripped group
+        # is put back.
+        stripped_group = None
         while steps:
             head = steps[0]
             if not isinstance(head, abstract.CallableSignature):
@@ -1251,9 +1360,11 @@ class _chain(Signature):
                     isinstance(head.tasks, (list, tuple)) and
                     not head.tasks
                 ):
-                    steps.popleft()
+                    stripped_group = steps.popleft()
                     continue
             break
+        if stripped_group is not None and not steps:
+            steps.append(stripped_group)
 
         # optimization: now the pop func is a local variable
         steps_pop = steps.pop
@@ -1284,15 +1395,9 @@ class _chain(Signature):
                     continue
 
             if clone and isinstance(task, chord) and _is_chain_led_by_task(task.body):
-                # chord(header, chain(a, b, c)) -> chord(header, a), b, c
-                # Every header task carries a copy of the body, so a body
-                # holding the rest of the chain is copied once per header
-                # task, at every chord. Freezing (clone=False) assigns ids
-                # to the tasks in place and keeps the chain as written.
-                task = task.clone()
-                body_tasks = task.body.unchain_tasks()
-                task.body = body_tasks[0].clone(**_first_task_options(task.body))
-                steps_extend([task, *body_tasks[1:]])
+                # Freezing (clone=False) assigns ids to the tasks in place
+                # and keeps the chain as written.
+                steps_extend(task._unroll_body())
                 continue
 
             # first task gets partial args from chain
@@ -1315,7 +1420,7 @@ class _chain(Signature):
                 # for chords we freeze by pretending it's a normal
                 # signature instead of a group.
                 tasks.pop()
-                results.pop()
+                body_res = results.pop()
                 try:
                     task = chord(
                         task, body=prev_task,
@@ -1330,10 +1435,20 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
-                # But we must reset prev_task after the pop so we don't link a chord to its own body
-                # when use_link/task_protocol==1.
+                # Reset prev_task after the pop so we don't link a chord to
+                # its own body when use_link/task_protocol==1.
                 prev_task = tasks[-1] if tasks else None
+                # The rest of the chain is linked to the body's result,
+                # directly or through the GroupResult of a following chord.
+                # Unlink it so it is linked to the chord's result below;
+                # otherwise the body's id is in the result tree twice
+                # (#9608), which chord.freeze() rejects (#8890).
+                node = results[-1] if results else None
+                while node is not None and node.parent is not body_res:
+                    node = node.parent
+                if node is not None:
+                    node.parent = None
+                    prev_res = node
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -1410,8 +1525,10 @@ class _chain(Signature):
         app = self._app
         if app is None:
             try:
-                app = self.tasks[0]._app
-            except LookupError:
+                app = self.tasks[0].app
+            except (LookupError, AttributeError):
+                # An empty chain, or a nested chain or group whose first task
+                # is still a dict and cannot resolve an app until it is frozen.
                 pass
         return app or current_app
 
@@ -1479,7 +1596,7 @@ class chain(_chain):
                 tasks = tasks[0] if len(tasks) == 1 else tasks
                 # if is_list(tasks) and len(tasks) == 1:
                 #     return super(chain, cls).__new__(cls, tasks, **kwargs)
-                new_instance = reduce(operator.or_, tasks, _chain())
+                new_instance = _fold_chain(tasks)
                 if cls != chain and isinstance(new_instance, _chain) and not isinstance(new_instance, cls):
                     return super().__new__(cls, new_instance.tasks, **kwargs)
                 return new_instance
@@ -1760,7 +1877,11 @@ class group(Signature):
         if not self.tasks:
             return self.freeze()  # empty group returns GroupResult
         options, group_id, root_id = self._freeze_gid(options)
-        tasks = self._prepared(self.tasks, [], group_id, root_id, app)
+        # Freezing a chain that ends in a group builds a GroupResult that
+        # subscribes to the result backend, which eager apply never uses.
+        tasks = self._prepared(
+            self.tasks, [], group_id, root_id, app, freeze=False,
+        )
         return app.GroupResult(group_id, [
             sig.apply(args=args, kwargs=kwargs, **options) for sig, _, _ in tasks
         ])
@@ -1818,7 +1939,7 @@ class group(Signature):
     def _prepared(self, tasks, partial_args, group_id, root_id, app,
                   CallableSignature=abstract.CallableSignature,
                   from_dict=Signature.from_dict,
-                  isinstance=isinstance, tuple=tuple):
+                  isinstance=isinstance, tuple=tuple, *, freeze=True):
         """Recursively unroll the group into a generator of its tasks.
 
         This is used by :meth:`apply_async` and :meth:`apply` to
@@ -1840,6 +1961,8 @@ class group(Signature):
             isinstance (fun): Function to check if an object is an instance
                 of a class.
             tuple (class): A tuple-like class.
+            freeze (bool): Freeze each task to get its result.  When false,
+                the generator yields ``None`` in place of the result.
 
         Returns:
             generator: A generator for the unrolled group tasks.
@@ -1857,6 +1980,7 @@ class group(Signature):
                 # needs yield_from :(
                 unroll = task._prepared(
                     task.tasks, partial_args, group_id, root_id, app,
+                    freeze=freeze,
                 )
                 yield from unroll
             elif isinstance(task, _chain) and not task.tasks:
@@ -1867,7 +1991,10 @@ class group(Signature):
             else:
                 if partial_args and not task.immutable:
                     task.args = tuple(partial_args) + tuple(task.args)
-                yield task, task.freeze(group_id=group_id, root_id=root_id, group_index=index), group_id
+                result = task.freeze(
+                    group_id=group_id, root_id=root_id, group_index=index,
+                ) if freeze else None
+                yield task, result, group_id
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
@@ -2398,6 +2525,11 @@ class _chord(Signature):
             options.pop('task_id', None)
             body.options.update(self._body_options(options))
 
+        # Freezing a nested chain first would embed its whole remaining tail
+        # in every inner chord header, before prepare_steps can split it.
+        # apply_async has already cloned the body; public freeze stays in place.
+        if isinstance(body, _chain):
+            body._unroll_chords(app)
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
 
@@ -2432,6 +2564,19 @@ class _chord(Signature):
 
         bodyres.parent = header_result
         return bodyres
+
+    def _unroll_body(self):
+        """Return this chord followed by the tail of its task-led chain body.
+
+        chord(header, chain(a, b, c)) -> chord(header, a), b, c
+
+        Every header task carries a copy of the body, so a body holding the
+        rest of the chain would be copied once per header task, at every chord.
+        """
+        task = self.clone()
+        body_tasks = task.body.unchain_tasks()
+        task.body = body_tasks[0].clone(**_first_task_options(task.body))
+        return [task, *body_tasks[1:]]
 
     def clone(self, *args, **kwargs):
         signature = super().clone(*args, **kwargs)
@@ -2526,10 +2671,29 @@ class _chord(Signature):
             except AttributeError:
                 tasks = self.tasks
             if tasks:
-                app = tasks[0]._app
+                app = self._app_of(tasks[0])
             if app is None and body is not None:
-                app = body._app
+                app = self._app_of(body)
         return app if app is not None else current_app
+
+    @staticmethod
+    def _app_of(task):
+        """Return the app of a task, None if it would fall back to current_app.
+
+        A chain, group or chord built from task signatures has no app of its
+        own but resolves one through its tasks.
+        """
+        app = task._app
+        if app is None:
+            try:
+                app = task.app
+            except AttributeError:
+                # A nested chain or group whose first task is still a dict
+                # cannot resolve an app until it is frozen.
+                return None
+            if app is current_app:
+                app = None
+        return app
 
     tasks = getitem_property('kwargs.header', 'Tasks in chord header.')
     body = getitem_property('kwargs.body', 'Body task of chord.')

@@ -4,6 +4,7 @@ import pickle
 import socket
 import sys
 import time
+from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from threading import Event
@@ -814,6 +815,217 @@ def create_persistent_scheduler_w_call_logging(shelv=None):
                               'options': options})
             return self.app.AsyncResult(uuid())
     return MockPersistentScheduler, shelv
+
+
+class test_SchedulerShutdown:
+
+    @pytest.fixture(params=[beat.Scheduler, beat.PersistentScheduler])
+    def scheduler(self, request):
+        if request.param is beat.PersistentScheduler:
+            return create_persistent_scheduler()[0](
+                app=self.app, schedule_filename='schedule',
+            )
+        return beat.Scheduler(app=self.app, lazy=True)
+
+    def test_close_releases_connection_and_channel(self, scheduler):
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            assert connection.connected
+            assert not channel.closed
+
+            with patch.object(
+                connection, 'release', wraps=connection.release,
+            ) as release:
+                scheduler.close()
+
+                assert not connection.connected
+                assert channel.closed
+                assert 'connection' not in scheduler.__dict__
+                assert 'producer' not in scheduler.__dict__
+                if isinstance(scheduler, beat.PersistentScheduler):
+                    assert scheduler._store.synced
+                    assert scheduler._store.closed
+                scheduler.close()
+                release.assert_called_once_with()
+
+    def test_close_releases_plain_subclass_attributes(self):
+        class CustomScheduler(beat.Scheduler):
+            connection = None
+            producer = None
+
+        scheduler = CustomScheduler(app=self.app, lazy=True)
+        with self.app.connection_for_write() as connection:
+            scheduler.connection = connection
+            scheduler.producer = scheduler.Producer(connection)
+            channel = scheduler.producer.channel
+
+            scheduler.close()
+
+            assert not connection.connected
+            assert channel.closed
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+
+    def test_base_publishing_resources_recreated_after_close(self):
+        scheduler = beat.Scheduler(app=self.app, lazy=True)
+        with scheduler.connection as old_connection:
+            old_producer = scheduler.producer
+            old_channel = old_producer.channel
+            scheduler.close()
+
+            with scheduler.connection as connection:
+                producer = scheduler.producer
+                channel = producer.channel
+                try:
+                    producer.publish({'probe': True})
+                    assert connection is not old_connection
+                    assert producer is not old_producer
+                    assert channel is not old_channel
+                    assert connection.connected
+                    assert not channel.closed
+                    assert not old_connection.connected
+                    assert old_channel.closed
+                finally:
+                    scheduler.close()
+
+    def test_persistent_close_twice_with_real_shelf(self, tmp_path):
+        scheduler = beat.PersistentScheduler(
+            app=self.app, schedule_filename=str(tmp_path / 'schedule'),
+        )
+        scheduler.close()
+        with patch.object(scheduler, '_open_schedule') as open_schedule, \
+                patch.object(self.app, 'connection_for_write') as connect:
+            scheduler.close()
+        open_schedule.assert_not_called()
+        connect.assert_not_called()
+
+    def test_close_does_not_create_broker_resources(self, scheduler):
+        with patch.object(self.app, 'connection_for_write') as connect, \
+                patch.object(scheduler, 'Producer') as producer:
+            scheduler.close()
+        connect.assert_not_called()
+        producer.assert_not_called()
+
+    @pytest.mark.parametrize('use_connection', [False, True])
+    def test_persistent_close_before_schedule_setup(self, use_connection):
+        scheduler = beat.PersistentScheduler(app=self.app, lazy=True)
+        with ExitStack() as resources:
+            if use_connection:
+                connection = resources.enter_context(scheduler.connection)
+                channel = scheduler.producer.channel
+            with patch.object(scheduler, '_open_schedule') as open_schedule, \
+                    patch.object(self.app, 'connection_for_write') as connect:
+                scheduler.close()
+            assert scheduler._store is None
+            open_schedule.assert_not_called()
+            connect.assert_not_called()
+            if use_connection:
+                assert not connection.connected
+                assert channel.closed
+
+    def test_close_releases_connection_after_producer_creation_fails(
+        self, scheduler,
+    ):
+        with scheduler.connection as connection:
+            with patch.object(
+                scheduler, 'Producer',
+                side_effect=RuntimeError('producer failed'),
+            ):
+                with pytest.raises(RuntimeError, match='producer failed'):
+                    scheduler.producer
+            assert connection.connected
+
+            scheduler.close()
+
+            assert not connection.connected
+
+    def test_close_releases_resources_when_sync_fails(self, scheduler):
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            with patch.object(
+                scheduler, 'sync', side_effect=RuntimeError('sync failed'),
+            ):
+                with pytest.raises(RuntimeError, match='sync failed'):
+                    scheduler.close()
+
+            assert not connection.connected
+            assert channel.closed
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize(
+        'error_type', ['connection_errors', 'channel_errors'],
+    )
+    def test_close_ignores_broker_errors(self, scheduler, error_type):
+        with scheduler.connection as connection:
+            scheduler.producer.channel
+            error = getattr(connection, error_type)[0]('broker unavailable')
+            with patch.object(
+                connection, 'release', side_effect=error,
+            ) as release:
+                scheduler.close()
+            release.assert_called_once_with()
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize('sync_fails', [False, True])
+    def test_close_prioritizes_sync_over_unexpected_release_error(
+        self, scheduler, sync_fails,
+    ):
+        sync_error = RuntimeError('sync failed')
+        release_error = RuntimeError('unexpected release failure')
+        with scheduler.connection as connection:
+            scheduler.producer.channel
+            with patch.object(
+                connection, 'release', side_effect=release_error,
+            ) as release, patch.object(
+                scheduler, 'sync', wraps=scheduler.sync,
+                side_effect=sync_error if sync_fails else None,
+            ), patch('celery.beat.error') as log_error:
+                with pytest.raises(RuntimeError) as exc:
+                    scheduler.close()
+            assert exc.value is (sync_error if sync_fails else release_error)
+            release.assert_called_once_with()
+            if sync_fails:
+                log_error.assert_called_once()
+                assert log_error.call_args.kwargs['exc_info']
+            else:
+                log_error.assert_not_called()
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize('sync_fails', [False, True])
+    def test_persistent_close_releases_connection_when_store_close_fails(
+        self, sync_fails,
+    ):
+        scheduler = create_persistent_scheduler()[0](
+            app=self.app, schedule_filename='schedule',
+        )
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            sync_error = RuntimeError('sync failed')
+            store_error = RuntimeError('store close failed')
+            with patch.object(
+                scheduler._store, 'close',
+                side_effect=store_error,
+            ), patch.object(
+                scheduler, 'sync', wraps=scheduler.sync,
+                side_effect=sync_error if sync_fails else None,
+            ), patch('celery.beat.error') as log_error:
+                with pytest.raises(RuntimeError) as exc:
+                    scheduler.close()
+            assert exc.value is (sync_error if sync_fails else store_error)
+            if sync_fails:
+                log_error.assert_called_once()
+                assert log_error.call_args.kwargs['exc_info']
+            else:
+                log_error.assert_not_called()
+            assert not connection.connected
+            assert channel.closed
 
 
 class test_PersistentScheduler:
