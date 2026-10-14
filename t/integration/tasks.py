@@ -507,6 +507,16 @@ def errback_new_style(request, exc, tb):
 
 
 @shared_task
+def errback_old_style_with_args(request_id, label):
+    redis_echo(label, redis_key=request_id)
+
+
+@shared_task
+def errback_new_style_with_args(request, exc, tb, label):
+    redis_echo(label, redis_key=request.id)
+
+
+@shared_task
 def replaced_with_me():
     return True
 
