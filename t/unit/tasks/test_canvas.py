@@ -1933,6 +1933,16 @@ class test_group(CanvasCase):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
 
+    def test_repr_keeps_unrelated_module_names(self):
+        x = group([
+            signature('app.tasks.a', args=(1,), app=self.app),
+            signature('webapp.tasks.b', args=(2,), app=self.app),
+            signature('my-app.tasks.c', args=(3,), app=self.app),
+        ])
+        assert repr(x) == (
+            'group([app.tasks.a(1), webapp.tasks.b(2), my-app.tasks.c(3)])'
+        )
+
     def test_repr_empty_group(self):
         x = group([])
         assert repr(x) == 'group(<empty>)'
