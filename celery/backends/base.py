@@ -355,6 +355,20 @@ class Backend:
                 if chord_body is not None:
                     chain_elems.append(chord_body)
 
+    def _errback_arity_greater(self, errback, n):
+        header = errback.type.__header__
+        if not errback.immutable and (errback.args or errback.kwargs):
+            try:
+                # Only count remaining arguments; task_id precedes stored args
+                # at invocation, although partial binds them from the left.
+                return arity_greater(
+                    partial(header, *errback.args, **errback.kwargs), n,
+                )
+            except (TypeError, ValueError):
+                # Keep invalid calls isolated by the original classification.
+                return arity_greater(header, n)
+        return arity_greater(header, n)
+
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
         for errback in request.errbacks:
@@ -374,7 +388,9 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        self._errback_arity_greater(errback, 1)
                 ):
                     try:
                         errback(request, exc, traceback)
