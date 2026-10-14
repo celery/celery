@@ -65,8 +65,12 @@ def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
     if S is None:
         return '???'
     if len(S) > max:
-        return isinstance(ellipsis, str) and (
-            S[: max - len(ellipsis)] + ellipsis) or S[: max]
+        if isinstance(ellipsis, str) and max >= len(ellipsis):
+            return S[: max - len(ellipsis)] + ellipsis
+        # An ellipsis that does not fit in max chars must not push the
+        # slice into negative territory (which silently takes characters
+        # from the END of the string instead of the beginning).
+        return S[:max] if max >= 0 else ''
     return S
 
 
