@@ -729,7 +729,43 @@ worker.
 .. warning::
 
     Enabling this can cause message loops; make sure you know
-    what you're doing.
+    what you're doing. See :setting:`task_retry_on_worker_lost` for a way
+    to limit how many times a task is sent again.
+
+.. setting:: task_retry_on_worker_lost
+
+``task_retry_on_worker_lost``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+When the worker process executing a task exits abruptly (e.g. it's killed
+by the OOM killer), send the task again the same way
+:meth:`Task.retry() <celery.app.task.Task.retry>` would, instead of
+re-queuing the original message. This means
+:attr:`~celery.app.task.Task.max_retries` and
+:attr:`~celery.app.task.Task.default_retry_delay` apply, and once the
+retries run out the task is marked as failed.
+
+This takes precedence over :setting:`task_reject_on_worker_lost`. If
+sending the retry fails, the task falls back to the normal
+:setting:`task_reject_on_worker_lost` behaviour.
+
+A few things to keep in mind:
+
+- The task is sent again after
+  :attr:`~celery.app.task.Task.default_retry_delay` (180 seconds by
+  default), not right away.
+- These retries count towards the same
+  :attr:`~celery.app.task.Task.max_retries` as calls to
+  :meth:`Task.retry() <celery.app.task.Task.retry>` made by the task itself.
+- It also applies when :setting:`task_acks_late` is disabled.
+- It only covers a pool child process dying while the main worker process
+  keeps running. If the whole worker is killed (for example the container
+  is OOM-killed), nothing is left to retry the task, so this setting has
+  no effect.
 
 .. setting:: task_default_rate_limit
 
@@ -1071,6 +1107,25 @@ header task, is then never removed.
 
     Memcached reads an expiry over 30 days as an absolute time, so keep this
     setting at 30 days or less with the cache backend.
+
+.. setting:: result_failure_expires
+
+``result_failure_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
+the results of failed tasks will be deleted. Use it to keep failures longer,
+or shorter, than other results. A value of 0 means failed results never expire.
+
+Only results in the ``FAILURE`` state use this setting.
+
+.. note::
+
+    For the moment this only works with the Redis backend.
 
 .. setting:: result_cache_max
 
