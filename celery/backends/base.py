@@ -88,6 +88,11 @@ The {0} result backend cannot store compressed payloads, so the
 result_compression setting is ignored and results are stored uncompressed.
 """
 
+W_FAILURE_EXPIRES_UNSUPPORTED = """\
+The {0} result backend does not support result_failure_expires, so failed
+results expire like any other result.
+"""
+
 
 def compress_payload(payload, compression):
     """Compress an encoded result payload.
@@ -201,6 +206,10 @@ class Backend:
     #: :setting:`result_compression` setting is ignored for them.
     supports_result_compression = False
 
+    #: If true the backend applies :setting:`result_failure_expires` to the
+    #: results of failed tasks.
+    supports_failure_expires = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -228,6 +237,13 @@ class Backend:
         self.accept = conf.result_accept_content if accept is None else accept
         self.accept = conf.accept_content if self.accept is None else self.accept
         self.accept = prepare_accept_content(self.accept)
+
+        if (conf.get('result_failure_expires') is not None
+                and not self.supports_failure_expires):
+            warnings.warn(
+                W_FAILURE_EXPIRES_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
 
         self.always_retry = conf.get('result_backend_always_retry', False)
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
@@ -339,6 +355,20 @@ class Backend:
                 if chord_body is not None:
                     chain_elems.append(chord_body)
 
+    def _errback_arity_greater(self, errback, n):
+        header = errback.type.__header__
+        if not errback.immutable and (errback.args or errback.kwargs):
+            try:
+                # Only count remaining arguments; task_id precedes stored args
+                # at invocation, although partial binds them from the left.
+                return arity_greater(
+                    partial(header, *errback.args, **errback.kwargs), n,
+                )
+            except (TypeError, ValueError):
+                # Keep invalid calls isolated by the original classification.
+                return arity_greater(header, n)
+        return arity_greater(header, n)
+
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
         for errback in request.errbacks:
@@ -358,7 +388,9 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        self._errback_arity_greater(errback, 1)
                 ):
                     try:
                         errback(request, exc, traceback)
