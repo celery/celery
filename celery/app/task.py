@@ -363,7 +363,8 @@ class Task:
     #: :attr:`default_retry_delay` apply.  Once the retries run out the
     #: task fails instead of being re-queued.
     #:
-    #: Takes precedence over :attr:`reject_on_worker_lost`.
+    #: Takes precedence over :attr:`reject_on_worker_lost`, which is still
+    #: used if sending the retry fails.
     #: The default is taken from the :setting:`task_retry_on_worker_lost`
     #: setting.
     retry_on_worker_lost = None

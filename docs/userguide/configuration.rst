@@ -749,7 +749,23 @@ re-queuing the original message. This means
 :attr:`~celery.app.task.Task.default_retry_delay` apply, and once the
 retries run out the task is marked as failed.
 
-This takes precedence over :setting:`task_reject_on_worker_lost`.
+This takes precedence over :setting:`task_reject_on_worker_lost`. If
+sending the retry fails, the task falls back to the normal
+:setting:`task_reject_on_worker_lost` behaviour.
+
+A few things to keep in mind:
+
+- The task is sent again after
+  :attr:`~celery.app.task.Task.default_retry_delay` (180 seconds by
+  default), not right away.
+- These retries count towards the same
+  :attr:`~celery.app.task.Task.max_retries` as calls to
+  :meth:`Task.retry() <celery.app.task.Task.retry>` made by the task itself.
+- It also applies when :setting:`task_acks_late` is disabled.
+- It only covers a pool child process dying while the main worker process
+  keeps running. If the whole worker is killed (for example the container
+  is OOM-killed), nothing is left to retry the task, so this setting has
+  no effect.
 
 .. setting:: task_default_rate_limit
 

@@ -144,6 +144,7 @@ class test_retry_on_worker_lost:
             res.get(timeout=RESULT_TIMEOUT)
 
         assert worker.logs().count(f"{sig.name}[{res.id}] received") == 3
+        assert worker.logs().count(f"{sig.name}[{res.id}] retry:") == 2
 
 
 class test_replace:

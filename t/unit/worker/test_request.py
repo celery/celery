@@ -448,8 +448,14 @@ class test_Request(RequestCase):
     def test_on_failure_WorkerLostError_retry_on_worker_lost(self):
         req, einfo = self._worker_lost_request(retries=1)
 
-        with patch('celery.canvas.Signature.apply_async') as apply_async:
-            req.on_failure(einfo)
+        retry_handler = Mock()
+        task_retry.connect(retry_handler)
+        try:
+            with patch('celery.canvas.Signature.apply_async') as apply_async, \
+                    patch.object(req.task, 'on_retry') as on_retry:
+                req.on_failure(einfo)
+        finally:
+            task_retry.disconnect(retry_handler)
 
         apply_async.assert_called_once()
         req.on_ack.assert_called_once()
@@ -460,6 +466,11 @@ class test_Request(RequestCase):
             c.args and c.args[0] == 'task-retried'
             for c in req.eventer.send.call_args_list
         )
+        on_retry.assert_called_once()
+        assert isinstance(on_retry.call_args.args[0], WorkerLostError)
+        assert on_retry.call_args.args[1] == req.id
+        retry_handler.assert_called_once()
+        assert isinstance(retry_handler.call_args.kwargs['reason'], Retry)
 
     def test_on_failure_WorkerLostError_retry_on_worker_lost_options(self):
         req, einfo = self._worker_lost_request(retries=1)
@@ -492,6 +503,21 @@ class test_Request(RequestCase):
                    side_effect=ConnectionError('broker down')):
             req.on_failure(einfo)
 
+        # Falls back to reject_on_worker_lost, so the task isn't lost.
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_send_fails_no_reject(self):
+        req, einfo = self._worker_lost_request()
+        req.task.reject_on_worker_lost = False
+
+        with patch('celery.canvas.Signature.apply_async',
+                   side_effect=ConnectionError('broker down')):
+            req.on_failure(einfo)
+
+        req.on_reject.assert_not_called()
         req.task.backend.mark_as_retry.assert_not_called()
         req.task.backend.mark_as_failure.assert_called_once()
 

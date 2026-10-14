@@ -703,9 +703,16 @@ class Request:
             return self.on_retry(exc_info)
 
         is_worker_lost = isinstance(exc, WorkerLostError)
-        retry_on_worker_lost = is_worker_lost and self.task.retry_on_worker_lost
-        if retry_on_worker_lost and self._retry_worker_lost(exc, exc_info):
-            return
+        max_retries_exceeded = False
+        if is_worker_lost and self.task.retry_on_worker_lost:
+            max_retries = self.task.max_retries
+            max_retries_exceeded = (
+                max_retries is not None and self._context.retries >= max_retries
+            )
+            # If sending the retry fails, fall through so the message is
+            # still rejected/requeued as it would be without this setting.
+            if not max_retries_exceeded and self._retry_worker_lost(exc, exc_info):
+                return
 
         # (acks_late) acknowledge after result stored.
         requeue = False
@@ -714,7 +721,7 @@ class Request:
             ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
                 (self.task.reject_on_worker_lost and is_worker_lost
-                 and not retry_on_worker_lost)
+                 and not max_retries_exceeded)
                 or (is_timeout and not ack_flag)
             )
             if reject:
@@ -770,12 +777,10 @@ class Request:
         """Retry the task after its worker was lost, return False if not retried."""
         task = self.task
         request = self._context
-        retries = request.retries + 1
-        if task.max_retries is not None and retries > task.max_retries:
-            return False
+        countdown = task.default_retry_delay
         try:
             task.signature_from_request(
-                request, countdown=task.default_retry_delay, retries=retries,
+                request, countdown=countdown, retries=request.retries + 1,
             ).apply_async()
         except Exception as send_exc:
             error('Failed to retry task %s[%s] after worker was lost: %r',
@@ -790,6 +795,15 @@ class Request:
         self.send_event('task-retried',
                         exception=safe_repr(exc),
                         traceback=safe_str(exc_info.traceback))
+
+        reason = Retry(exc=exc, when=countdown)
+        task.request_stack.push(request)
+        try:
+            task.on_retry(exc, self.id, self.args, self.kwargs, exc_info)
+            send_retry(task, request=request, reason=reason, einfo=exc_info)
+        finally:
+            task.request_stack.pop()
+        info('Task %s[%s] retry: %s', self.task_name, self.id, reason)
         return True
 
     def _worker_lost_info(self, exc):
