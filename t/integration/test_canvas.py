@@ -1654,6 +1654,25 @@ class test_group:
         assert res.children[0].get(timeout=TIMEOUT) == expected_result[0]
         assert res.get(timeout=TIMEOUT) == expected_result
 
+    def test_group_ending_a_chain_in_a_group_gets_its_own_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/10856.
+
+        The inner group must not take the outer group's id as its own.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        res = group(
+            identity.si(1),
+            chain(identity.si(2), group(identity.si(3), identity.si(4))),
+        ).apply_async()
+        assert res.get(timeout=TIMEOUT) == [1, [3, 4]]
+        ids = ids_in_as_tuple(res.as_tuple())
+        # Two GroupResults and four tasks.
+        assert len(ids) == len(set(ids)) == 6, ids
+
     def test_callback_called_by_group(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
             raise pytest.skip("Requires redis result backend.")
@@ -2583,6 +2602,22 @@ class test_chord:
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
+
+    def test_group_body_does_not_take_the_header_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/10856."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        res = chord(
+            group(identity.si(1), identity.si(2)),
+            group(identity.si(3), identity.si(4)),
+        ).apply_async()
+        assert res.get(timeout=TIMEOUT) == [3, 4]
+        ids = ids_in_as_tuple(res.as_tuple())
+        # The header and body GroupResults and four tasks.
+        assert len(ids) == len(set(ids)) == 6, ids
 
     @pytest.mark.xfail(TEST_BACKEND.startswith('redis://'), reason="Issue #6437")
     def test_error_propagates_from_chord(self, manager):
