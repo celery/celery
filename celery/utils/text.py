@@ -173,16 +173,22 @@ def remove_repeating(substr: str, s: str) -> str:
     """
     # find the first occurrence of substr in the string.
     index = s.find(substr)
-    if index >= 0:
-        return ''.join([
-            # leave the first occurrence of substr untouched.
-            s[:index + len(substr)],
-            # strip seen substr from the rest of the string, but only where
-            # it starts a name (so ``app.`` is not removed from ``webapp.``).
-            re.sub(r'(?<![\w.-])' + re.escape(substr), '',
-                   s[index + len(substr):]),
-        ])
-    return s
+    if index < 0:
+        return s
+    # leave the first occurrence of substr untouched.
+    head, rest = s[:index + len(substr)], s[index + len(substr):]
+    if substr not in rest:
+        return s
+    # strip seen substr from the rest of the string, but only where it starts
+    # a name (so ``app.`` is not removed from ``webapp.`` or ``my-app.``).
+    parts = rest.split(substr)
+    out = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        # character just before this occurrence in ``rest`` (none for the first
+        # occurrence when ``rest`` starts with it).
+        before = parts[i][-1:] or (substr[-1:] if i else '')
+        out.append(substr + part if before.isalnum() or before in ('_', '.', '-') else part)
+    return head + ''.join(out)
 
 
 StringIO = io.StringIO
