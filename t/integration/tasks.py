@@ -30,6 +30,13 @@ def get_redis_connection():
 
 logger = get_task_logger(__name__)
 
+TASK_REGISTRATION_COLLISION_NAME = 'celery.integration.task_registration_collision'
+
+
+@shared_task(name=TASK_REGISTRATION_COLLISION_NAME)
+def task_registration_collision_original():
+    return 'original'
+
 
 @control_command(visible=False)
 def pidbox_reset_error(state, **kwargs):
