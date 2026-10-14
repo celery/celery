@@ -180,7 +180,8 @@ class schedule(BaseSchedule):
             next_s = self.seconds
             if self.relative:
                 # The next rounded deadline can differ from the interval,
-                # especially across DST. Do not queue a check past it.
+                # especially across DST or after a late run / restart. Realign
+                # to the next rounded clock boundary and do not check past it.
                 now = self.maybe_make_aware(self.now())
                 now = now.astimezone(last_run_at.tzinfo)
                 next_s = self.remaining_estimate(now).total_seconds()

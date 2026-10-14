@@ -265,6 +265,10 @@ Available Fields
     If midnight occurs twice, the first occurrence after the previous run
     is used.
 
+    When an entry runs late, such as after a :program:`celery beat` restart,
+    the next check aligns to the next rounded clock boundary rather than
+    drifting from the actual execution time.
+
     By default `relative` is false, the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
 

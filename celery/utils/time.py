@@ -240,6 +240,10 @@ def remaining(
 
     For example, "how many seconds left for 30 seconds after start?"
 
+    For relative schedules, the deadline is the last rounded local boundary at
+    or before ``start + ends_in`` in real time, never at or before ``start``;
+    day intervals use calendar days.
+
     Arguments:
         start (~datetime.datetime): Starting date.
         ends_in (~datetime.timedelta, ~celery.utils.time.ffwd): The end delta.

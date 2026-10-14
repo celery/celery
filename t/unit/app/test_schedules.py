@@ -271,6 +271,21 @@ class test_schedule:
                       else max(interval.total_seconds(), 0))
         assert s.is_due(now - timedelta(seconds=10)) == (True, next_check)
 
+    @pytest.mark.parametrize('relative,expected_next', [
+        (True, 30),
+        (False, 3600),
+    ])
+    def test_next_check_realigns_after_late_run(self, relative, expected_next):
+        # When an hourly task runs late at 10:59:30, relative=True realigns
+        # to the next hour boundary (11:00:00) in 30 seconds.
+        last_run_at = datetime(2026, 1, 1, 9, 0, 0, tzinfo=timezone.utc)
+        now = datetime(2026, 1, 1, 10, 59, 30, tzinfo=timezone.utc)
+        s = schedule(
+            timedelta(hours=1), relative=relative, nowfun=lambda: now,
+            app=self.app,
+        )
+        assert s.is_due(last_run_at) == (True, expected_next)
+
     @pytest.mark.parametrize('tz_factory', [
         pytest.param(ZoneInfo, id='zoneinfo'),
         pytest.param(dateutil_tz.gettz, id='dateutil'),
