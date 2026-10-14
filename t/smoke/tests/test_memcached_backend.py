@@ -10,9 +10,9 @@ from __future__ import annotations
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryBackendCluster, CeleryTestSetup, MemcachedTestBackend
 
-from celery import states
+from celery import Celery, states
 from celery.canvas import chord, group
-from t.integration.tasks import add, identity, tsum
+from t.integration.tasks import add, identity, sleeping, tsum
 
 # Larger than the default memcached item size limit (1 MB).
 TOO_LARGE_RESULT_SIZE = 2 * 1024 * 1024
@@ -45,3 +45,19 @@ class test_memcached_backend:
         with pytest.raises(Exception):
             res.get(timeout=RESULT_TIMEOUT)
         assert res.state == states.FAILURE
+
+
+class test_memcached_backend_chord_expires:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.result_expires = 2
+        app.conf.result_chord_expires = 60
+        return app
+
+    def test_chord_outlives_result_expires(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        header = group(sleeping.si(4).set(queue=queue) for _ in range(3))
+        sig = chord(header, identity.s().set(queue=queue))
+        res = sig.apply_async(queue=queue)
+        assert res.get(timeout=RESULT_TIMEOUT) == [None, None, None]
