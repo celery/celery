@@ -8,6 +8,7 @@ from functools import reduce
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
+from kombu.serialization import dumps, loads
 
 from celery import _state, states
 from celery._state import _task_stack
@@ -212,6 +213,24 @@ class test_Signature(CanvasCase):
     def test_json(self):
         x = Signature('TASK', link=Signature('B', app=self.app), app=self.app)
         assert x.__json__() == dict(x)
+
+    @pytest.mark.parametrize('make_canvas', [
+        lambda case: case.add.si(2, 2),
+        lambda case: case.add.s(2, 2) | case.mul.s(4),
+        lambda case: group(case.add.s(2, 2), case.mul.s(4, 4)),
+        lambda case: chord([case.add.s(2, 2), case.mul.s(4, 4)], case.xsum.s()),
+    ], ids=['signature', 'chain', 'group', 'chord'])
+    def test_yaml_serialization(self, make_canvas):
+        # https://github.com/celery/celery/issues/6901
+        pytest.importorskip('yaml')
+        canvas = make_canvas(self)
+        payload = {'canvas': [canvas]}
+
+        def round_trip(serializer):
+            content_type, encoding, body = dumps(payload, serializer=serializer)
+            return loads(body, content_type, encoding, accept=[content_type])
+
+        assert round_trip('yaml') == round_trip('json')
 
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_reduce(self):
