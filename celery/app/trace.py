@@ -633,7 +633,23 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
                         if task_on_success:
-                            task_on_success(retval, uuid, args, kwargs)
+                            try:
+                                task_on_success(retval, uuid, args, kwargs)
+                            except Reject:
+                                raise
+                            except Exception as exc:
+                                # The outcome is already stored: recording a
+                                # failure now would fire the errbacks for a
+                                # task that succeeded. Eager callers (tests,
+                                # task_always_eager) still see the error.
+                                if eager:
+                                    raise
+                                logger.exception(
+                                    'Task %s[%s] on_success handler raised: %r',
+                                    get_task_name(task_request, name),
+                                    uuid, exc,
+                                )
+                                traceback_clear(exc)
                         if success_receivers:
                             send_success(sender=task, result=retval, runtime=T)
                         if _does_info:
@@ -649,9 +665,23 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -* POST *-
                 if state not in IGNORE_STATES:
                     if task_after_return:
-                        task_after_return(
-                            state, retval, uuid, args, kwargs, None,
-                        )
+                        try:
+                            task_after_return(
+                                state, retval, uuid, args, kwargs, None,
+                            )
+                        except Reject:
+                            raise
+                        except Exception as exc:
+                            # Same as on_success: the outcome is already
+                            # recorded, so don't record a second one.
+                            if eager:
+                                raise
+                            logger.exception(
+                                'Task %s[%s] after_return handler raised: %r',
+                                get_task_name(task_request, name),
+                                uuid, exc,
+                            )
+                            traceback_clear(exc)
             finally:
                 try:
                     if postrun_receivers:
