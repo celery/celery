@@ -8,6 +8,7 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
+from freezegun import freeze_time
 from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
@@ -18,6 +19,7 @@ from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
+from celery.utils.time import maybe_make_aware
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -266,6 +268,41 @@ class test_Request(RequestCase):
     def test_maybe_expire_when_expires_is_None(self):
         req = self.get_request(self.add.s(2, 2))
         assert not req.maybe_expire()
+
+    @pytest.mark.parametrize('now,expires,should_expire', [
+        pytest.param(
+            datetime(2026, 11, 1, 5, 45, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            False,
+            id='valid-until-second-occurrence',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 15, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 5, 45, tzinfo=timezone.utc),
+            True,
+            id='expired-in-first-occurrence',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            False,
+            id='exact-expiration',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 30, microsecond=1, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            True,
+            id='just-after-expiration',
+        ),
+    ])
+    def test_maybe_expire_across_dst(self, now, expires, should_expire):
+        self.app.conf.timezone = 'America/New_York'
+        expires = maybe_make_aware(expires.replace(tzinfo=None), 'America/New_York')
+        job = self.xRequest(expires=expires)
+
+        with freeze_time(now):
+            assert bool(job.maybe_expire()) is should_expire
+            assert (job.id in revoked) is should_expire
 
     def test_on_retry_acks_if_late(self):
         self.add.acks_late = True
