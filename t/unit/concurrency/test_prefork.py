@@ -1371,6 +1371,24 @@ class test_AsynPool:
             for p in (exited, alive):
                 p.inq.close()
 
+    @t.skip.if_win32
+    def test_help_stuff_finish_survives_truncated_message_from_live_process(self):
+        # A child can still look alive when its exitcode is checked and then
+        # die mid-way through reading its sentinel, leaving only the body.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        dying = proc(None, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([dying, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (dying, alive):
+                p.inq.close()
+
 
 class test_TaskPool:
 

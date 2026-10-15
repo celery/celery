@@ -1483,7 +1483,11 @@ class AsynPool(_pool.Pool):
             if not readable:
                 break
             for fd in readable:
-                fileno_to_proc[fd].inq._reader.recv()
+                try:
+                    fileno_to_proc[fd].inq._reader.recv()
+                except (EOFError, OSError):
+                    # the child died mid-message; nothing will read this pipe again
+                    inqR.discard(fd)
             sleep(0)
 
     @property
