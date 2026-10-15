@@ -1914,6 +1914,16 @@ class test_group(CanvasCase):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
 
+    def test_repr_keeps_unrelated_module_names(self):
+        x = group([
+            signature('app.tasks.a', args=(1,), app=self.app),
+            signature('webapp.tasks.b', args=(2,), app=self.app),
+            signature('my-app.tasks.c', args=(3,), app=self.app),
+        ])
+        assert repr(x) == (
+            'group([app.tasks.a(1), webapp.tasks.b(2), my-app.tasks.c(3)])'
+        )
+
     def test_repr_empty_group(self):
         x = group([])
         assert repr(x) == 'group(<empty>)'
@@ -2030,6 +2040,19 @@ class test_group(CanvasCase):
                 self.add.pop_request()
         finally:
             _task_stack.pop()
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_group_ending_a_chain_in_a_group_gets_its_own_id(self, task_protocol):
+        # group_id names the group a signature belongs to, so the inner
+        # group must not adopt the outer group's id as its own.
+        self.app.conf.task_protocol = task_protocol
+        res = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        ).apply_async()
+        inner = res.results[1]
+        assert isinstance(inner, GroupResult)
+        assert inner.id != res.id
 
     @pytest.mark.parametrize("group_type", (group, group_subclass))
     def test_from_dict(self, group_type):
@@ -2488,6 +2511,14 @@ class test_chord(CanvasCase):
                 assert apply_call.kwargs.get(key) == value
         # chord.unlock retries keep their own default countdown
         assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
+    def test_group_body_does_not_take_the_header_id(self):
+        res = chord(
+            group(self.add.si(1, 1), self.add.si(2, 2)),
+            group(self.add.si(3, 3), self.add.si(4, 4)),
+        ).apply_async()
+        assert isinstance(res, GroupResult)
+        assert res.id != res.parent.id
 
     def test_group_or_task_apply_async_countdown_delays_header(self):
         """countdown on group|task must delay the header, not only the body.

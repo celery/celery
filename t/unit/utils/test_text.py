@@ -1,6 +1,7 @@
 import pytest
 
-from celery.utils.text import abbr, abbrtask, ensure_newlines, indent, pretty, simple_format, truncate
+from celery.utils.text import (abbr, abbrtask, ensure_newlines, indent, pretty, remove_repeating_from_task,
+                               simple_format, truncate)
 
 RANDTEXT = """\
 The quick brown
@@ -96,3 +97,27 @@ def test_simple_format_percent_escape(value, expected):
 def test_simple_format_unknown_key():
     with pytest.raises(ValueError, match='Unknown format %x'):
         simple_format('%x', {})
+
+
+@pytest.mark.parametrize('task_name,s,expected', [
+    ('tasks.add',
+     'tasks.add(2, 2), tasks.mul(3), tasks.div(4)',
+     'tasks.add(2, 2), mul(3), div(4)'),
+    ('x.tasks.add',
+     'x.tasks.add(2, 2) | x.tasks.add(4) | x.tasks.mul(8)',
+     'x.tasks.add(2, 2) | add(4) | mul(8)'),
+    # Only whole module prefixes are removed, not the module name appearing
+    # at the end of another module name.
+    ('app.tasks.add',
+     'app.tasks.add(2, 2) | webapp.tasks.mul(3)',
+     'app.tasks.add(2, 2) | webapp.tasks.mul(3)'),
+    ('app.tasks.add',
+     'app.tasks.add(2, 2) | my-app.tasks.mul(3)',
+     'app.tasks.add(2, 2) | my-app.tasks.mul(3)'),
+    # A task name without a module must not strip every dot from the string.
+    ('add',
+     'add(1.5) | proj.tasks.mul(2.5)',
+     'add(1.5) | proj.tasks.mul(2.5)'),
+])
+def test_remove_repeating_from_task(task_name, s, expected):
+    assert remove_repeating_from_task(task_name, s) == expected
