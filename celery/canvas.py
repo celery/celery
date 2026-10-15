@@ -1527,7 +1527,13 @@ class _chain(Signature):
                 continue
             clone = task.clone()
             if link and index == last_index:
-                clone.extend_list_option('link', link)
+                if isinstance(clone, _chord):
+                    # _chord.apply never reads the chord's own link option,
+                    # it only applies the body, so route the callback there.
+                    for sig in maybe_list(link):
+                        clone.link(sig)
+                else:
+                    clone.extend_list_option('link', link)
             res = clone.apply(
                 (last.get(),) if last else fargs, fkwargs,
                 **task_options)

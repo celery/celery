@@ -1267,6 +1267,22 @@ class test_chain(CanvasCase):
         assert res.get() == 16
         assert fired == [16]
 
+    def test_chain_link_fires_once_on_trailing_chord_in_eager(self):
+        # A chain ending in a chord routes the link to the chord body,
+        # since _chord.apply only applies the body.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(1, 1) | chord(
+            [self.add.s(10), self.add.s(20)], self.xsum.s())
+        res = c.apply_async(link=record.s())
+        assert res.get() == 34
+        assert fired == [34]
+
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
         res = x.apply()
