@@ -741,7 +741,10 @@ class Backend:
                 }
                 if getattr(request, 'stamps', None):
                     request_meta['stamped_headers'] = request.stamped_headers
-                    request_meta.update(request.stamps)
+                    request_meta.update({
+                        k: v for k, v in request.stamps.items()
+                        if k in (request.stamped_headers or ())
+                    })
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
