@@ -402,6 +402,10 @@ class Task:
 
     _exec_options = None
 
+    #: Set for tasks created with ``pydantic=True``: dumps the models passed
+    #: by the caller that the task gets back as equal models.
+    _dump_pydantic_arguments = None
+
     __bound__ = False
 
     from_config = (
@@ -697,6 +701,10 @@ class Task:
 
         preopts = self._get_exec_options()
         options = dict(preopts, **options)
+
+        # Pickle can send models as they are, so only dump them for other serializers.
+        if self._dump_pydantic_arguments is not None and options.get('serializer') != 'pickle':
+            args, kwargs = self._dump_pydantic_arguments(args, kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
         if self.priority:
