@@ -1420,7 +1420,7 @@ class _chain(Signature):
                 # for chords we freeze by pretending it's a normal
                 # signature instead of a group.
                 tasks.pop()
-                results.pop()
+                body_res = results.pop()
                 try:
                     task = chord(
                         task, body=prev_task,
@@ -1435,10 +1435,20 @@ class _chain(Signature):
                         task, body=prev_task,
                         root_id=root_id, app=app,
                     )
-                # Do not overwrite prev_res here; it may intentionally be a GroupResult (see #8903).
-                # But we must reset prev_task after the pop so we don't link a chord to its own body
-                # when use_link/task_protocol==1.
+                # Reset prev_task after the pop so we don't link a chord to
+                # its own body when use_link/task_protocol==1.
                 prev_task = tasks[-1] if tasks else None
+                # The rest of the chain is linked to the body's result,
+                # directly or through the GroupResult of a following chord.
+                # Unlink it so it is linked to the chord's result below;
+                # otherwise the body's id is in the result tree twice
+                # (#9608), which chord.freeze() rejects (#8890).
+                node = results[-1] if results else None
+                while node is not None and node.parent is not body_res:
+                    node = node.parent
+                if node is not None:
+                    node.parent = None
+                    prev_res = node
 
             if is_last_task:
                 # chain(task_id=id) means task id is set for the last task
@@ -2079,7 +2089,7 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = group_id or uuid()
+            gid = opts['task_id'] = uuid()
         if group_id:
             opts['group_id'] = group_id
         if chord:
@@ -2529,6 +2539,7 @@ class _chord(Signature):
         options.pop('chord', None)
         options.pop('task_id', None)
 
+        header.options['task_id'] = group_id
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 
         if header.tasks:

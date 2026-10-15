@@ -694,6 +694,72 @@ class test_BaseBackend_dict:
         b.mark_as_failure('id', exc, request=request)
         assert self.errback.last_result == 5
 
+    @pytest.mark.parametrize('use_kwargs', [False, True])
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_old_style_errback_with_partial_arguments(self, use_kwargs, eager):
+        calls = []
+
+        @self.app.task(shared=False)
+        def old_errback(task_id, foo, bar, baz):
+            calls.append((task_id, foo, bar, baz))
+
+        self.app.conf.task_always_eager = eager
+        errback = (old_errback.s(foo=1, bar=2, baz=3) if use_kwargs
+                   else old_errback.s(1, 2, 3))
+        request = Context(id='failed-id', root_id='root-id',
+                          errbacks=[errback], delivery_info={})
+        if eager:
+            self.b._call_task_errbacks(request, ValueError(), None)
+            assert calls == [('failed-id', 1, 2, 3)]
+        else:
+            with patch('celery.backends.base.group') as mock_group:
+                self.b._call_task_errbacks(request, ValueError(), None)
+            mock_group.assert_called_once_with([errback], app=self.app)
+            mock_group.return_value.apply_async.assert_called_once_with(
+                ('failed-id',), parent_id='failed-id', root_id='root-id')
+            assert calls == []
+
+    @pytest.mark.parametrize('args,kwargs', [
+        ((1, 2, 3), {}),
+        ((), {'nope': 1}),
+        ((1,), {'task_id': 2}),
+    ])
+    def test_invalid_partial_errback_does_not_halt_other_errbacks(self, args, kwargs):
+        calls = []
+
+        @self.app.task(shared=False)
+        def bad_errback(task_id, foo):
+            raise AssertionError('invalid errback must not execute')
+
+        @self.app.task(shared=False)
+        def other_errback(task_id):
+            calls.append(task_id)
+
+        self.b._store_result = Mock()
+        bad = bad_errback.s(*args, **kwargs)
+        other = other_errback.s()
+        request = Context(id='failed-id', root_id='root-id',
+                          errbacks=[bad, other], delivery_info={})
+        with patch('celery.backends.base.group') as mock_group:
+            self.b.mark_as_failure('failed-id', ValueError(), request=request)
+        # The original header is new-style: a bad call is logged in isolation.
+        mock_group.assert_called_once_with([other], app=self.app)
+        mock_group.return_value.apply_async.assert_called_once_with(
+            ('failed-id',), parent_id='failed-id', root_id='root-id')
+
+    def test_new_style_errback_with_partial_arguments(self):
+        calls = []
+
+        @self.app.task(shared=False)
+        def new_errback(request, exc, traceback, label):
+            calls.append((request, exc, traceback, label))
+
+        request = Context(id='failed-id', errbacks=[new_errback.s('label')],
+                          delivery_info={})
+        exc = ValueError('failed')
+        self.b._call_task_errbacks(request, exc, 'traceback')
+        assert calls == [(request, exc, 'traceback', 'label')]
+
     @patch('celery.backends.base.group')
     def test_class_based_task_can_be_used_as_error_callback(self, mock_group):
         b = BaseBackend(app=self.app)
@@ -1744,6 +1810,7 @@ class test_KeyValueStoreBackend:
             deps = GR.restore.return_value = Mock(name='DEPS')
             deps.__len__ = Mock()
             deps.__len__.return_value = 10
+            deps.results = []
             b.incr = Mock()
             b.incr.return_value = 10
             b.expire = Mock()
@@ -2345,3 +2412,16 @@ class test_backend_retries:
         self.app.conf.result_backend_thread_safe = False
         b = BaseBackend(app=self.app)
         assert b.thread_safe is False
+
+
+class test_failure_expires_support:
+
+    def test_warns_when_the_backend_does_not_support_it(self):
+        self.app.conf.result_failure_expires = 600
+        with pytest.warns(UserWarning,
+                          match='does not support result_failure_expires'):
+            KVBackend(app=self.app)
+
+    def test_no_warning_when_unset(self, recwarn):
+        KVBackend(app=self.app)
+        assert not [w for w in recwarn if 'result_failure_expires' in str(w.message)]
