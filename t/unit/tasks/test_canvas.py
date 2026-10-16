@@ -1057,6 +1057,59 @@ class test_chain(CanvasCase):
             f"First message grows geometrically with the number of groups: {sizes}"
         )
 
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('frozen', [False, True])
+    @pytest.mark.parametrize('as_chord_body', [False, True])
+    def test_chain_of_groups_message_size_linear(self, serialized, frozen, as_chord_body):
+        sizes = []
+        for n_groups in (3, 6):
+            workflow = chain(
+                group(self.add.si(i, j) for j in range(3))
+                for i in range(n_groups)
+            )
+            if as_chord_body:
+                workflow = chord([self.add.si(0, 0), self.add.si(1, 1)], workflow)
+            if frozen:
+                workflow.freeze()
+            if serialized:
+                workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+
+            with patch.object(self.app.amqp, 'send_task_message') as send:
+                workflow.apply_async()
+
+            messages = [
+                call.args[2].body for call in send.call_args_list
+                if call.args[1] == self.add.name
+            ]
+            assert len(messages) == (2 if as_chord_body else 3)
+            sizes.append(len(json.dumps(messages[0])))
+
+        assert sizes[-1] < 3 * sizes[0], (
+            f"Doubling the number of groups multiplies the message size: {sizes}"
+        )
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('wrapped', ['direct', 'chain', 'header'])
+    def test_dispatch_preserves_frozen_nested_chord(self, serialized, wrapped):
+        workflow = chord(
+            [self.add.si(1, 2), self.add.si(3, 4)],
+            chord([self.add.si(5, 6), self.add.si(7, 8)], self.add.s(9)),
+            app=self.app,
+        )
+        if wrapped == 'chain':
+            workflow = chain(self.add.si(0, 0), workflow)
+        elif wrapped == 'header':
+            workflow = chord([workflow, self.add.si(0, 0)], self.add.s(10))
+        workflow.freeze()
+        if serialized:
+            workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+        before = json.dumps(workflow)
+
+        with patch.object(self.app.amqp, 'send_task_message'):
+            workflow.apply_async()
+
+        assert json.dumps(workflow) == before
+
     def test_split_chord_body_keeps_the_chain_options_on_its_first_task(self):
         body = chain(self.add.s(10), self.add.s(100)).set(queue="q2", priority=7)
         c = chain(self.add.s(0, 0), chord([self.add.s(3, 3), self.add.s(4, 4)], body, app=self.app))
