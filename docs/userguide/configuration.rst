@@ -3858,6 +3858,27 @@ Example:
 
     worker_max_memory_per_child = 12288  # 12 * 1024 = 12 MB
 
+.. setting:: worker_max_idle
+
+``worker_max_idle``
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+Type: float (seconds)
+
+Shut down the worker (warm shutdown, exit code 0) once it has had no running,
+reserved or scheduled (ETA/countdown) tasks for this many seconds. This lets an
+idle worker give its memory back; a process manager such as systemd,
+supervisord or Kubernetes can start a new worker when one is needed.
+
+Example:
+
+.. code-block:: python
+
+    worker_max_idle = 120  # shut down after 2 minutes without tasks
+    
 .. setting:: worker_disable_rate_limits
 
 ``worker_disable_rate_limits``
