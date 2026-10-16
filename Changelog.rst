@@ -9,6 +9,18 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- ``chord.link_error()`` now links the errback to chords nested in the header
+  after the chord has been frozen, as it does before (#9580). This includes
+  every chain with ``on_error()`` / ``link_error``, which freezes each step
+  first. An inner chord header failure in such a chain called no errback.
+  With ``task_allow_error_cb_on_chord_header`` enabled, a nested chord's body
+  no longer gets the errback twice. ``chord.set_immutable()`` no longer raises
+  ``AttributeError`` after ``freeze()`` (#10783).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
