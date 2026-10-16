@@ -158,6 +158,16 @@ class UnpickleableExceptionWrapper(Exception):
         return res
 
 
+def _is_exception_group(exc):
+    """Return True for exception groups (PEP 654).
+
+    Both the builtin :exc:`BaseExceptionGroup`/:exc:`ExceptionGroup`
+    and the ``exceptiongroup`` backport expose the grouped exceptions
+    through an ``exceptions`` tuple attribute.
+    """
+    return isinstance(getattr(exc, 'exceptions', None), tuple)
+
+
 def get_pickleable_exception(exc):
     """Make sure exception is pickleable."""
     try:
@@ -166,6 +176,15 @@ def get_pickleable_exception(exc):
         pass
     else:
         return exc
+    if _is_exception_group(exc):
+        # The group itself cannot be pickled (e.g. one of its members
+        # cannot), so fall back to the first pickleable exception it
+        # contains instead of losing every member to an
+        # UnpickleableExceptionWrapper.
+        for subexc in exc.exceptions:
+            pickleable = get_pickleable_exception(subexc)
+            if not isinstance(pickleable, UnpickleableExceptionWrapper):
+                return pickleable
     nearest = find_pickleable_exception(exc)
     if nearest:
         return nearest

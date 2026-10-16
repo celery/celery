@@ -8,7 +8,20 @@ import pytest
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
-                                        get_pickleable_etype, jsonify, strtobool)
+                                        get_pickleable_exception, get_pickleable_etype, jsonify, strtobool)
+
+try:
+    ExceptionGroup
+except NameError:  # Python < 3.11
+    from exceptiongroup import ExceptionGroup
+
+
+class UnpickleableError(Exception):
+    """Exception that cannot be pickled (it holds a lambda)."""
+
+    def __init__(self, message='unpickleable'):
+        super().__init__(message)
+        self.callback = lambda x: x
 
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
@@ -49,6 +62,44 @@ class test_UnpickleExceptionWrapper:
         x = UnpickleableExceptionWrapper('foo', 'Bar', [10, lambda x: x])
         assert x.exc_args
         assert len(x.exc_args) == 2
+
+
+class test_get_pickleable_exception:
+
+    def test_pickleable_exception_returned_unchanged(self):
+        exc = ValueError('foo')
+        assert get_pickleable_exception(exc) is exc
+
+    def test_unpickleable_exception_wrapped(self):
+        result = get_pickleable_exception(UnpickleableError())
+        assert isinstance(result, UnpickleableExceptionWrapper)
+
+    def test_pickleable_exception_group_returned_unchanged(self):
+        exc = ExceptionGroup('group', [ValueError('foo'), TypeError('bar')])
+        assert get_pickleable_exception(exc) is exc
+
+    def test_unpickleable_group_uses_first_pickleable_member(self):
+        member = ValueError('foo')
+        exc = ExceptionGroup('group', [UnpickleableError(), member])
+        result = get_pickleable_exception(exc)
+        assert result is member
+        # The returned exception must round-trip through pickle.
+        restored = pickle.loads(pickle.dumps(result))
+        assert type(restored) is ValueError
+        assert restored.args == member.args
+
+    def test_unpickleable_group_searches_nested_groups(self):
+        member = KeyError('foo')
+        exc = ExceptionGroup('group', [
+            ExceptionGroup('nested', [UnpickleableError(), member]),
+        ])
+        assert get_pickleable_exception(exc) is member
+
+    def test_group_without_pickleable_members_is_wrapped(self):
+        exc = ExceptionGroup('group', [UnpickleableError(), UnpickleableError()])
+        result = get_pickleable_exception(exc)
+        assert isinstance(result, UnpickleableExceptionWrapper)
+        assert result.exc_cls_name == 'ExceptionGroup'
 
 
 class test_get_pickleable_etype:
