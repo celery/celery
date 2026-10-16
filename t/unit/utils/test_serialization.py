@@ -8,7 +8,7 @@ import pytest
 from kombu import Queue
 
 from celery.utils.serialization import (STRTOBOOL_DEFAULT_TABLE, UnpickleableExceptionWrapper, ensure_serializable,
-                                        get_pickleable_exception, get_pickleable_etype, jsonify, strtobool)
+                                        get_pickleable_etype, get_pickleable_exception, jsonify, strtobool)
 
 try:
     ExceptionGroup
