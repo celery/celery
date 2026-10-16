@@ -269,6 +269,14 @@ class test_Request(RequestCase):
         req = self.get_request(self.add.s(2, 2))
         assert not req.maybe_expire()
 
+    def test_maybe_expire_with_naive_expires(self):
+        job = self.xRequest()
+        job.expires = datetime(2026, 11, 1, 6, 30)
+
+        with freeze_time('2026-11-01 06:31:00'):
+            assert job.maybe_expire()
+            assert job.id in revoked
+
     @pytest.mark.parametrize('now,expires,should_expire', [
         pytest.param(
             datetime(2026, 11, 1, 5, 45, tzinfo=timezone.utc),
