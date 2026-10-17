@@ -9,6 +9,15 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- Non-eager ``chord.apply_async()`` no longer writes generated task IDs
+  back to the original list-backed header (e.g., ``c.tasks[0].id`` remains
+  ``None``). Re-dispatching the same chord generates fresh header task IDs
+  unless IDs were explicitly assigned or the chord was frozen (#10873).
+
+
 .. _version-5.7.0b1:
 
 5.7.0b1
