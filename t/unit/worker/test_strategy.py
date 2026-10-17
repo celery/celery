@@ -324,6 +324,27 @@ class test_default_strategy_proto2:
         finally:
             state.revoked.discard(task.id)
 
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_rejects_without_executing(self, exception_type):
+        # Regression test: when ETA timestamp conversion raises OverflowError
+        # or ValueError, the worker must reject the message and NOT execute
+        # the task.
+        with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+            mock_to_timestamp.side_effect = exception_type(
+                "timestamp conversion failed"
+            )
+
+            with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                C()
+
+            mock_to_timestamp.assert_called_once()
+
+            C.message.reject.assert_called_once()
+            assert C.message.reject.call_args[0][2] is False
+
+            assert not C.was_reserved()
+            C.consumer.on_task_request.assert_not_called()
+
 
 class test_default_strategy_proto1(test_default_strategy_proto2):
 

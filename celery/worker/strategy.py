@@ -187,6 +187,7 @@ def default(task, app, consumer,
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
                 req.reject(requeue=False)
+                return
         if rate_limits_enabled:
             bucket = get_bucket(task.name)
 
