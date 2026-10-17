@@ -988,6 +988,29 @@ class test_tasks(TasksCase):
             add.delay(1, kw=2)
             add.delay(1, 2, foobar=3)
 
+    @pytest.mark.parametrize('configured,task_typing,expected', [
+        (False, None, False),
+        (True, None, True),
+        (False, True, True),
+        (True, False, False),
+    ])
+    def test_typing__from_config(self, configured, task_typing, expected):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object({'strict_typing': configured})
+
+            @app.task(typing=task_typing, shared=False)
+            def add(x, y):
+                return x + y
+
+            with patch.object(app, 'send_task') as send_task:
+                if expected:
+                    with pytest.raises(TypeError):
+                        add.delay(1)
+                    send_task.assert_not_called()
+                else:
+                    add.delay(1)
+                    send_task.assert_called_once()
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_unpickle_task(self):
         import pickle
