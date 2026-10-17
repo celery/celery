@@ -1506,15 +1506,39 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         tasks = list(self.tasks)
+        # A chain-level link fires once, on the last executed task,
+        # mirroring _chain.run (which extends it onto the last prepared
+        # task only).  link_error stays per-task, as on the worker.
+        task_options = dict(self.options, **options)
+        link = task_options.pop('link', None)
+        # Empty groups are skipped below unless the chain consists of a
+        # single one, so the last executed task is the last non-empty
+        # task, defaulting to the final task.
+        last_index = max(
+            (index for index, task in enumerate(tasks)
+             if not _is_empty_group(task)),
+            default=len(tasks) - 1,
+        )
         for index, task in enumerate(tasks):
             if _is_empty_group(task) and (
                     index < len(tasks) - 1 or last is not None):
                 # Skip empty groups, mirroring _chain.prepare_steps:
                 # an empty group is a no-op, unless it is the only task.
                 continue
-            res = task.clone().apply(
+            clone = task.clone()
+            if link and index == last_index:
+                if isinstance(clone, _chord):
+                    # _chord.apply never reads the chord's own link option,
+                    # it only applies the body: put the link on the cloned
+                    # body's options.  (chord.link() would append to the
+                    # body's first task, mutating the caller's canvas when
+                    # the body is a group.)
+                    clone.body.extend_list_option('link', link)
+                else:
+                    clone.extend_list_option('link', link)
+            res = clone.apply(
                 (last.get(),) if last else fargs, fkwargs,
-                **dict(self.options, **options))
+                **task_options)
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
             if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
                 break
