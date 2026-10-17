@@ -7,6 +7,7 @@ from kombu import Exchange, Queue
 from celery import signals, uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.utils.time import to_utc
+from t.unit.utils.test_dispatcher import garbage_collect
 
 
 class test_TaskConsumer:
@@ -793,6 +794,34 @@ class test_AMQP(test_AMQP_Base):
         q = qmap["auto"]
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
+
+    @pytest.mark.parametrize('signal', [
+        signals.before_task_publish,
+        signals.after_task_publish,
+    ], ids=lambda signal: signal.name)
+    def test_send_publish_works_after_receivers_disconnect_and_connect(self, signal):
+        call_count = 0
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(**kwargs):
+            nonlocal call_count
+            call_count += 1
+
+        signal.connect(temporary_receiver)
+        try:
+            send_task_message = self.app.amqp.send_task_message
+            signal.disconnect(temporary_receiver)
+            del temporary_receiver
+            garbage_collect()
+
+            signal.connect(receiver)
+            send_task_message(Mock(), 'foo', self.simple_message_no_sent_event)
+        finally:
+            signal.disconnect(receiver)
+
+        assert call_count == 1
 
 
 class test_as_task_v2(test_AMQP_Base):
