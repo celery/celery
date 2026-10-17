@@ -1027,6 +1027,29 @@ arguments as shown above. An errback that accepts a single argument, and
 a bound errback declared with ``@app.task(bind=True)``, is dispatched as
 a task and receives the id of the failed chord callback instead.
 
+To run the callback even when some header tasks fail, pass
+``propagate=False`` to the chord. The callback then gets every header
+result in order, with each failed task's exception in its place, stored
+the way the result backend stores exceptions: the exception itself with
+the ``pickle`` serializer, or a dictionary of ``exc_type``,
+``exc_message`` and ``exc_module`` with ``json``, which
+:meth:`~celery.backends.base.Backend.exception_to_python` turns back into
+an exception:
+
+.. code-block:: python
+
+    @app.task
+    def summary(results):
+        failed = [r for r in results if isinstance(r, dict) and 'exc_type' in r]
+        return len(results) - len(failed), len(failed)
+
+.. code-block:: pycon
+
+    >>> c = chord([add.s(4, 4), raising_task.s(), add.s(8, 8)],
+    ...           summary.s(), propagate=False)
+    >>> c().get()
+    (2, 1)
+
 Chords may have callback and errback signatures linked to them, which addresses
 some of the issues with linking signatures to groups.
 Doing so will link the provided signature to the chord's body which can be

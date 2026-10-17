@@ -146,6 +146,19 @@ class test_unlock_chord_task(ChordCase):
             assert isinstance(fail_current.call_args[1]['exc'], ChordError)
             assert 'some_id' in str(fail_current.call_args[1]['exc'])
 
+    def test_unlock_ready_failed_without_propagate(self):
+
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        with self._chord_context(Failed, propagate=False) as (cb, retry, fail_current):
+            fail_current.assert_not_called()
+            cb.type.apply_async.assert_called_with(
+                ([2, self.app.backend.prepare_exception(KeyError('foo')), 8, 6],),
+                {}, task_id=cb.id,
+            )
+
     def test_unlock_ready_failed_no_culprit(self):
         class Failed(TSRNoReport):
             is_ready = True
@@ -157,7 +170,7 @@ class test_unlock_chord_task(ChordCase):
             assert isinstance(fail_current.call_args[1]['exc'], ChordError)
 
     @contextmanager
-    def _chord_context(self, ResultCls, setup=None, **kwargs):
+    def _chord_context(self, ResultCls, setup=None, propagate=True, **kwargs):
         @self.app.task(shared=False)
         def callback(*args, **kwargs):
             pass
@@ -167,6 +180,8 @@ class test_unlock_chord_task(ChordCase):
         callback.apply_async = Mock()
         callback_s = callback.s()
         callback_s.id = 'callback_id'
+        if not propagate:
+            callback_s['chord_propagate'] = False
         fail_current = self.app.backend.fail_from_current_stack = Mock()
         try:
             with patch_unlock_retry(self.app) as (unlock, retry):
