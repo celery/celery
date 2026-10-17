@@ -11,9 +11,9 @@ import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_chain_step, _merge_dictionaries,
-                           chain, chord, chunks, group, maybe_signature, maybe_unroll_group, signature, xmap,
-                           xstarmap)
+from celery.canvas import (Signature, _chain, _clear_chord_option, _fold_chain, _maybe_group, _merge_chain_step,
+                           _merge_dictionaries, _strip_chord_header_links, chain, chord, chunks, group,
+                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 from t.canvas_helpers import ids_in_as_tuple
@@ -2519,6 +2519,36 @@ class test_group(CanvasCase):
         res = g.freeze()
         assert isinstance(res, GroupResult)
         assert len(res.results) == 1
+
+
+class test_chord_header_links(CanvasCase):
+    def test_clear_outer_callback_preserves_nested_chord_header(self):
+        outer_body = self.xsum.s()
+        errback = self.add.s(9)
+        body = self.xsum.s().set(queue='callbacks', link_error=[errback])
+        nested = chord([self.add.si(1, 2), self.add.si(3, 4)], body, app=self.app)
+        result = nested.freeze(chord=outer_body)
+        header_before = [(task.id, task.args) for task in nested.tasks.tasks]
+        assert nested.body.options['chord'] == outer_body
+
+        _clear_chord_option(nested)
+
+        assert 'chord' not in nested.body.options
+        assert nested.body.id == result.id
+        assert nested.body.options['queue'] == 'callbacks'
+        assert nested.body.options['link_error'] == [errback]
+        assert [(task.id, task.args) for task in nested.tasks.tasks] == header_before
+        assert all(task.options['chord'] is nested.body for task in nested.tasks.tasks)
+
+    def test_strip_header_links_preserves_chord_without_body(self):
+        pending = chord([self.add.si(1, 2), self.add.si(3, 4)], app=self.app)
+        pending.freeze()
+        before = json.dumps(pending)
+
+        _strip_chord_header_links(pending)
+
+        assert pending.body is None
+        assert json.dumps(pending) == before
 
 
 class test_chord(CanvasCase):
