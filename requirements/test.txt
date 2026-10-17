@@ -5,6 +5,7 @@ pytest-subtests==0.15.0
 pytest-timeout==2.4.0
 pytest-click==1.1.0
 pytest-order==1.5.0
+freezegun==1.5.5
 boto3>=1.43.108
 moto==5.2.3
 # type checking
