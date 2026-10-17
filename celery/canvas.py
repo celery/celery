@@ -1529,9 +1529,11 @@ class _chain(Signature):
             if link and index == last_index:
                 if isinstance(clone, _chord):
                     # _chord.apply never reads the chord's own link option,
-                    # it only applies the body, so route the callback there.
-                    for sig in maybe_list(link):
-                        clone.link(sig)
+                    # it only applies the body: put the link on the cloned
+                    # body's options.  (chord.link() would append to the
+                    # body's first task, mutating the caller's canvas when
+                    # the body is a group.)
+                    clone.body.extend_list_option('link', link)
                 else:
                     clone.extend_list_option('link', link)
             res = clone.apply(
