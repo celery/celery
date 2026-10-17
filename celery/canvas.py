@@ -181,6 +181,36 @@ def _first_task_options(chain_):
     return {k: v for k, v in chain_.options.items() if k not in _CHAIN_RUN_OPTIONS}
 
 
+def _clear_chord_option(sig):
+    """Remove the chord callback from the terminal tasks of a signature."""
+    sig.options.pop('chord', None)
+    if isinstance(sig, group):
+        for task in sig.tasks:
+            _clear_chord_option(task)
+    elif isinstance(sig, _chain) and sig.tasks:
+        _clear_chord_option(sig.tasks[-1])
+    elif isinstance(sig, _chord) and sig.body is not None:
+        _clear_chord_option(sig.body)
+
+
+def _strip_chord_header_links(sig):
+    """Remove redundant header callbacks from an execution copy.
+
+    A pending chord already carries its body in kwargs. Freezing also puts
+    that body on every header task, multiplying JSON message sizes for
+    nested chords. run() restores these callbacks when the header is sent.
+    Keep public freeze() unchanged and only strip copies being dispatched.
+    """
+    if isinstance(sig, _chord):
+        _clear_chord_option(sig.tasks)
+        _strip_chord_header_links(sig.tasks)
+        if sig.body is not None:
+            _strip_chord_header_links(sig.body)
+    elif isinstance(sig, (group, _chain)):
+        for task in sig.tasks:
+            _strip_chord_header_links(task)
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1499,6 +1529,9 @@ class _chain(Signature):
                 prev_res = node
         # Use the last task's actual ID, not the input parameter.
         self.id = results[0].id if results else last_task_id
+        if clone:
+            for task in tasks:
+                _strip_chord_header_links(task)
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -2436,8 +2469,15 @@ class _chord(Signature):
                 header_delay[key] = options.pop(key)
         body = body.clone(**self._body_options(options))
         app = self._get_app(body)
-        tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
+        tasks = self.tasks
+        if isinstance(tasks, group):
+            tasks = tasks.clone()
+        else:
+            # Freezing replaces mutable header lists in place. Copy the list
+            # without adding another layer of lookahead to lazy generators.
+            if isinstance(tasks, MutableSequence) and not isinstance(tasks, _regen):
+                tasks = tasks[:]
+            tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs,
@@ -2556,6 +2596,7 @@ class _chord(Signature):
             body._unroll_chords(app)
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
+        _strip_chord_header_links(body)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
@@ -2564,6 +2605,8 @@ class _chord(Signature):
         options.pop('task_id', None)
 
         header.options['task_id'] = group_id
+        # Reattach the callback stripped by _strip_chord_header_links before
+        # publishing the header.
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 
         if header.tasks:

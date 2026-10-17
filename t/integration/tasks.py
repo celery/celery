@@ -141,6 +141,15 @@ def xsum(nums):
 
 
 @shared_task(bind=True)
+def sum_and_record(self, values, redis_key):
+    """Sum the preceding group's results and record this execution."""
+    result = sum(values)
+    with get_redis_connection() as connection:
+        connection.rpush(redis_key, self.request.id)
+    return result
+
+
+@shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))

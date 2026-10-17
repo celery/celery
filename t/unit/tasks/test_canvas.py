@@ -11,9 +11,9 @@ import pytest
 
 from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _fold_chain, _maybe_group, _merge_chain_step, _merge_dictionaries,
-                           chain, chord, chunks, group, maybe_signature, maybe_unroll_group, signature, xmap,
-                           xstarmap)
+from celery.canvas import (Signature, _chain, _clear_chord_option, _fold_chain, _maybe_group, _merge_chain_step,
+                           _merge_dictionaries, _strip_chord_header_links, chain, chord, chunks, group,
+                           maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 from t.canvas_helpers import ids_in_as_tuple
@@ -1056,6 +1056,59 @@ class test_chain(CanvasCase):
         assert sizes[-1] < 3 * sizes[0], (
             f"First message grows geometrically with the number of groups: {sizes}"
         )
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('frozen', [False, True])
+    @pytest.mark.parametrize('as_chord_body', [False, True])
+    def test_chain_of_groups_message_size_linear(self, serialized, frozen, as_chord_body):
+        sizes = []
+        for n_groups in (3, 6):
+            workflow = chain(
+                group(self.add.si(i, j) for j in range(3))
+                for i in range(n_groups)
+            )
+            if as_chord_body:
+                workflow = chord([self.add.si(0, 0), self.add.si(1, 1)], workflow)
+            if frozen:
+                workflow.freeze()
+            if serialized:
+                workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+
+            with patch.object(self.app.amqp, 'send_task_message') as send:
+                workflow.apply_async()
+
+            messages = [
+                call.args[2].body for call in send.call_args_list
+                if call.args[1] == self.add.name
+            ]
+            assert len(messages) == (2 if as_chord_body else 3)
+            sizes.append(len(json.dumps(messages[0])))
+
+        assert sizes[-1] < 3 * sizes[0], (
+            f"Doubling the number of groups multiplies the message size: {sizes}"
+        )
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('wrapped', ['direct', 'chain', 'header'])
+    def test_dispatch_preserves_frozen_nested_chord(self, serialized, wrapped):
+        workflow = chord(
+            [self.add.si(1, 2), self.add.si(3, 4)],
+            chord([self.add.si(5, 6), self.add.si(7, 8)], self.add.s(9)),
+            app=self.app,
+        )
+        if wrapped == 'chain':
+            workflow = chain(self.add.si(0, 0), workflow)
+        elif wrapped == 'header':
+            workflow = chord([workflow, self.add.si(0, 0)], self.add.s(10))
+        workflow.freeze()
+        if serialized:
+            workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+        before = json.dumps(workflow)
+
+        with patch.object(self.app.amqp, 'send_task_message'):
+            workflow.apply_async()
+
+        assert json.dumps(workflow) == before
 
     def test_split_chord_body_keeps_the_chain_options_on_its_first_task(self):
         body = chain(self.add.s(10), self.add.s(100)).set(queue="q2", priority=7)
@@ -2534,6 +2587,36 @@ class test_group(CanvasCase):
         assert len(res.results) == 1
 
 
+class test_chord_header_links(CanvasCase):
+    def test_clear_outer_callback_preserves_nested_chord_header(self):
+        outer_body = self.xsum.s()
+        errback = self.add.s(9)
+        body = self.xsum.s().set(queue='callbacks', link_error=[errback])
+        nested = chord([self.add.si(1, 2), self.add.si(3, 4)], body, app=self.app)
+        result = nested.freeze(chord=outer_body)
+        header_before = [(task.id, task.args) for task in nested.tasks.tasks]
+        assert nested.body.options['chord'] == outer_body
+
+        _clear_chord_option(nested)
+
+        assert 'chord' not in nested.body.options
+        assert nested.body.id == result.id
+        assert nested.body.options['queue'] == 'callbacks'
+        assert nested.body.options['link_error'] == [errback]
+        assert [(task.id, task.args) for task in nested.tasks.tasks] == header_before
+        assert all(task.options['chord'] is nested.body for task in nested.tasks.tasks)
+
+    def test_strip_header_links_preserves_chord_without_body(self):
+        pending = chord([self.add.si(1, 2), self.add.si(3, 4)], app=self.app)
+        pending.freeze()
+        before = json.dumps(pending)
+
+        _strip_chord_header_links(pending)
+
+        assert pending.body is None
+        assert json.dumps(pending) == before
+
+
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
@@ -2689,6 +2772,21 @@ class test_chord(CanvasCase):
                 ThreadPoolExecutor(max_workers=1) as executor:
             result = executor.submit(apply).result()
         assert isinstance(result.parent, GroupResult)
+
+    @pytest.mark.parametrize('options,expected_id,uuid_calls', [
+        ({'task_id': 'existing-id'}, 'existing-id', 0),
+        ({'task_id': None}, 'generated-id', 1),
+        ({}, 'generated-id', 1),
+    ])
+    def test_apply_async_header_id(self, options, expected_id, uuid_calls):
+        workflow = chord([self.add.s(1, 2)], self.xsum.s(), app=self.app).set(**options)
+        with patch('celery.canvas.uuid', return_value='generated-id') as uuid, \
+                patch.object(workflow, 'run') as run:
+            workflow.apply_async()
+
+        header = run.call_args.args[0]
+        assert header.options['task_id'] == expected_id
+        assert uuid.call_count == uuid_calls
 
     def test_freeze_empty_group_body_returns_result(self):
         """An empty group body still exists and should be frozen.
