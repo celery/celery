@@ -1520,6 +1520,25 @@ class test_IdleShutdown:
             step.check()
         assert worker_state.should_stop == EX_OK
 
+    def test_short_task_between_checks_is_not_idle(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=100.0):
+            step.start(c)
+        request = Mock(id='task-2')
+        worker_state.task_accepted(request)
+        worker_state.task_ready(request)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=112.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=121.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=122.0):
+            step.check()
+        assert worker_state.should_stop == EX_OK
+
 
 class test_Heart:
 

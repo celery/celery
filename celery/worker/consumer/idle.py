@@ -21,10 +21,12 @@ class IdleShutdown(bootsteps.StartStopStep):
         self.enabled = bool(self.max_idle)
         self.tref = None
         self.last_busy = None
+        self.last_count = None
         super().__init__(c, **kwargs)
 
     def start(self, c):
         self.last_busy = monotonic()
+        self.last_count = state.all_total_count[0]
         self.tref = c.timer.call_repeatedly(min(self.max_idle, 1.0), self.check)
 
     def stop(self, c):
@@ -34,7 +36,10 @@ class IdleShutdown(bootsteps.StartStopStep):
     shutdown = stop
 
     def check(self):
-        if state.active_requests or state.reserved_requests or state.scheduled_requests:
+        count = state.all_total_count[0]
+        if (count != self.last_count or state.active_requests
+                or state.reserved_requests or state.scheduled_requests):
+            self.last_count = count
             self.last_busy = monotonic()
         elif monotonic() - self.last_busy >= self.max_idle:
             logger.info('Worker has been idle for %s seconds, shutting down.', self.max_idle)
