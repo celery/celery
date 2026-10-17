@@ -13,7 +13,7 @@ from click_plugins import with_plugins
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
 from celery.bin.amqp import amqp
-from celery.bin.base import CeleryCommand, CeleryOption, CLIContext
+from celery.bin.base import CeleryCommand, CeleryOption, CLIContext, consume_preload_options
 from celery.bin.beat import beat
 from celery.bin.call import call
 from celery.bin.control import control, inspect, status
@@ -159,8 +159,13 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
     beat.params.extend(ctx.obj.app.user_options.get('beat', []))
     events.params.extend(ctx.obj.app.user_options.get('events', []))
 
+    # Plugin callbacks such as Flower do not declare these options. Take
+    # them off the keyword arguments before Click calls the callback (#7894).
+    preload_options = ctx.obj.app.user_options.get('preload', ())
     for command in celery.commands.values():
-        command.params.extend(ctx.obj.app.user_options.get('preload', []))
+        command.params.extend(preload_options)
+        if preload_options:
+            command.callback = consume_preload_options(command.callback)
 
 
 @celery.command(cls=CeleryCommand)

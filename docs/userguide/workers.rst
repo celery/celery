@@ -919,6 +919,12 @@ based on load:
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
 
+Before removing processes, it waits for the keepalive period (30 seconds
+by default) to pass since the last task was accepted for immediate execution
+or the pool was grown. Tasks routed through ETA/countdown or rate-limit
+scheduling do not reset this timer.
+Set the ``AUTOSCALE_KEEPALIVE`` environment variable to change this period.
+
 It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
 which needs two numbers: the maximum and minimum number of pool processes:
 
@@ -1276,9 +1282,10 @@ There are two types of remote control commands:
     Performs side effects, like adding a new queue to consume from.
 
 Remote control commands are registered in the control panel and
-they take a single argument: the current
-:class:`!celery.worker.control.ControlDispatch` instance.
-From there you have access to the active
+they take a ``state`` object as their first argument, followed by
+any arguments sent with the command.
+``state`` holds the worker's ``app``, ``hostname`` and ``consumer``,
+so from it you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:

@@ -159,7 +159,17 @@ be sent in 30 second intervals (the first task will be sent 30 seconds
 after `celery beat` starts, and then every 30 seconds
 after the last run).
 
-A Crontab like schedule also exists, see the section on `Crontab schedules`_.
+.. note::
+
+    With the default ``relative=False``, numeric and
+    :class:`~datetime.timedelta` schedules use elapsed time across daylight
+    saving time (DST) changes. For example, ``timedelta(days=1)`` is a
+    24-hour interval. When the clock changes by one hour, a task last run
+    at noon becomes due at 13:00 the next day across spring-forward, or
+    11:00 across fall-back.
+
+    To run a task at the same local time every day, use :ref:`beat-crontab`.
+    For example, ``crontab(hour=12, minute=0)`` schedules a task at noon.
 
 Like with :command:`cron`, the tasks may overlap if the first task doesn't complete
 before the next. If that's a concern you should use a locking
@@ -246,6 +256,18 @@ Available Fields
     "by the clock." This means the frequency is rounded to the nearest
     second, minute, hour or day depending on the period of the
     :class:`~datetime.timedelta`.
+
+    Intervals of a day or more advance by local calendar days before
+    rounding to midnight. For example, ``timedelta(days=1)`` becomes due
+    at the next midnight even when a DST change makes the day 23 or 25
+    hours long. If midnight falls in a DST gap, the deadline moves forward
+    by the change in UTC offset to an existing local time.
+    If midnight occurs twice, the first occurrence after the previous run
+    is used.
+
+    When an entry runs late, such as after a :program:`celery beat` restart,
+    the next check aligns to the next rounded clock boundary rather than
+    drifting from the actual execution time.
 
     By default `relative` is false, the frequency isn't rounded and will be
     relative to the time when :program:`celery beat` was started.
