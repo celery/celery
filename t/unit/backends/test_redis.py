@@ -1892,6 +1892,15 @@ class test_RedisBackend(basetest_RedisBackend):
         self.b.exception_to_python.assert_called_with(exc)
         assert ret is self.b.exception_to_python()
 
+    def test_unpack_chord_result_without_propagate(self):
+        self.b.exception_to_python = Mock(name='etp')
+        decode = Mock(name='decode')
+        exc = KeyError()
+        tup = decode.return_value = (1, 'id1', states.FAILURE, exc)
+        ret = self.b._unpack_chord_result(tup, decode, propagate=False)
+        self.b.exception_to_python.assert_called_with(exc)
+        assert ret is self.b.exception_to_python()
+
     def test_on_chord_part_return_no_gid_or_tid(self):
         request = Mock(name='request')
         request.id = request.group = request.group_index = None
@@ -2337,6 +2346,28 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             self.b.on_chord_part_return(request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
+    def test_on_chord_part_return__failure(self):
+        with self.chord_context(2) as (_, request, callback):
+            task = self.app._tasks['add'] = Mock(name='add_task')
+            self.b.on_chord_part_return(request, states.FAILURE, KeyError('x'))
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            callback.delay.assert_not_called()
+            task.backend.fail_from_current_stack.assert_called_with(
+                callback.id, exc=ANY,
+            )
+
+    def test_on_chord_part_return__failure_without_propagate(self):
+        with self.chord_context(2) as (_, request, callback):
+            request.chord = {'chord_propagate': False}
+            self.b.on_chord_part_return(request, states.FAILURE, KeyError('x'))
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            (results,), _ = callback.delay.call_args
+            assert sorted(results, key=repr) == sorted([
+                {'exc_type': 'KeyError', 'exc_message': ('x',), 'exc_module': 'builtins'},
+                20,
+            ], key=repr)
+
     def test_on_chord_part_return__success__unordered(self):
         self.app.conf.result_backend_transport_options = dict(
             result_chord_ordered=False,
@@ -2576,6 +2607,20 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         else:
             expected_join = mock_result_obj.join
         callback.delay.assert_called_once_with(expected_join())
+
+    def test_on_chord_part_return_without_propagate(self, complex_header_result):
+        mock_result_obj = complex_header_result.return_value
+        mock_result_obj.supports_native_join = True
+        mock_result_obj.join_native.return_value = [42, KeyError('x')]
+
+        with self.chord_context(2) as (tasks, request, callback):
+            for task in tasks:
+                task.request.chord['chord_propagate'] = False
+                self.b.on_chord_part_return(task.request, states.SUCCESS, 42)
+        mock_result_obj.join_native.assert_called_once_with(timeout=3.0, propagate=False)
+        callback.delay.assert_called_once_with([
+            42, {'exc_type': 'KeyError', 'exc_message': ('x',), 'exc_module': 'builtins'},
+        ])
 
 
 class test_SentinelBackend:
