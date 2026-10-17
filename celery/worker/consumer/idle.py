@@ -16,8 +16,8 @@ class IdleShutdown(bootsteps.StartStopStep):
 
     label = 'idle shutdown'
 
-    def __init__(self, c, **kwargs):
-        self.max_idle = c.app.conf.worker_max_idle
+    def __init__(self, c, max_idle=None, **kwargs):
+        self.max_idle = c.app.either('worker_max_idle', max_idle)
         self.enabled = bool(self.max_idle)
         self.tref = None
         self.last_busy = None

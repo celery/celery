@@ -1485,6 +1485,13 @@ class test_IdleShutdown:
         c = Mock(app=self.app)
         assert not IdleShutdown(c).enabled
 
+    def test_max_idle_option_overrides_setting(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c, max_idle=5)
+        assert step.enabled
+        assert step.max_idle == 5
+
     def test_shuts_down_after_max_idle(self):
         self.app.conf.worker_max_idle = 10
         c = Mock(app=self.app)
