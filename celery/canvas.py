@@ -2477,7 +2477,7 @@ class _chord(Signature):
             # without adding another layer of lookahead to lazy generators.
             if isinstance(tasks, MutableSequence) and not isinstance(tasks, _regen):
                 tasks = tasks[:]
-            tasks = group(tasks, app=app, task_id=self.options.get('task_id', uuid()))
+            tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
             with allow_join_result():
                 return self.apply(args, kwargs,
@@ -2605,6 +2605,8 @@ class _chord(Signature):
         options.pop('task_id', None)
 
         header.options['task_id'] = group_id
+        # Reattach the callback stripped by _strip_chord_header_links before
+        # publishing the header.
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 
         if header.tasks:

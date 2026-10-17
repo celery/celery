@@ -2773,6 +2773,21 @@ class test_chord(CanvasCase):
             result = executor.submit(apply).result()
         assert isinstance(result.parent, GroupResult)
 
+    @pytest.mark.parametrize('options,expected_id,uuid_calls', [
+        ({'task_id': 'existing-id'}, 'existing-id', 0),
+        ({'task_id': None}, 'generated-id', 1),
+        ({}, 'generated-id', 1),
+    ])
+    def test_apply_async_header_id(self, options, expected_id, uuid_calls):
+        workflow = chord([self.add.s(1, 2)], self.xsum.s(), app=self.app).set(**options)
+        with patch('celery.canvas.uuid', return_value='generated-id') as uuid, \
+                patch.object(workflow, 'run') as run:
+            workflow.apply_async()
+
+        header = run.call_args.args[0]
+        assert header.options['task_id'] == expected_id
+        assert uuid.call_count == uuid_calls
+
     def test_freeze_empty_group_body_returns_result(self):
         """An empty group body still exists and should be frozen.
 
