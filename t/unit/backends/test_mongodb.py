@@ -5,6 +5,8 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 import dns.version
 import pymongo
 import pytest
+from bson import BSON
+from dateutil import tz as dateutil_tz
 from kombu.exceptions import EncodeError
 
 try:
@@ -711,6 +713,171 @@ class test_MongoBackend:
 
         self.backend.cleanup()
         mock_collection.delete_many.assert_not_called()
+
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
+    @pytest.mark.parametrize('zone,now,expires,expected_cutoff', [
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=0), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='fall-back-first-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fall-back-repeated-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1), 30.125,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fractional-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1),
+            datetime.timedelta(seconds=30.125),
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='timedelta-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 2, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='across-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 8, 3, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 5, 30),
+            id='across-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 9, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='elapsed-day-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 2, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='elapsed-day-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 4, 5, 1, 45, fold=1), 30,
+            datetime.datetime(2026, 4, 4, 15, 14, 30),
+            id='half-hour-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 10, 4, 2, 45), 60 * 60,
+            datetime.datetime(2026, 10, 3, 14, 45),
+            id='half-hour-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 3, 8, 1, 30), 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 11, 1, 0, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='repeated-midnight',
+        ),
+        pytest.param(
+            'Asia/Kathmandu', datetime.datetime(1986, 1, 1, 0, 30), 60 * 60,
+            datetime.datetime(1985, 12, 31, 17, 45),
+            id='quarter-hour-midnight-gap',
+        ),
+        pytest.param(
+            'Pacific/Apia', datetime.datetime(2011, 12, 31, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2011, 12, 29, 10, 30),
+            id='elapsed-day-skipped-date',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 6, 15, 12), 30,
+            datetime.datetime(2026, 6, 15, 15, 59, 30),
+            id='away-from-transitions',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_across_timezones(self, tz_factory, zone, now, expires, expected_cutoff):
+        self.app.conf.timezone = tz_factory(zone)
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now.replace(tzinfo=self.app.timezone))
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('now,expires,expected_cutoff', [
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='naive-utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 12, tzinfo=datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fixed-offset',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=125000, tzinfo=datetime.timezone.utc),
+            0.125,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='fractional-seconds',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=1001, tzinfo=datetime.timezone.utc),
+            0.0005,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='bson-millisecond-precision',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            -30,
+            datetime.datetime(2026, 11, 1, 6, 30, 30),
+            id='negative-expiration',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_without_dst(self, now, expires, expected_cutoff):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now)
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('expires', [None, 0])
+    def test_cleanup_without_expiration(self, expires):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock()
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        self.backend.app.now.assert_not_called()
+        self.backend.collection.delete_many.assert_not_called()
+        self.backend.group_collection.delete_many.assert_not_called()
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):

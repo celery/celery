@@ -23,9 +23,9 @@ from . import local
 # See: https://github.com/celery/celery/issues/10083
 _original_os_write = os.write
 
-SERIES = 'recovery'
+SERIES = 'collider'
 
-__version__ = '5.7.0a1'
+__version__ = '5.7.0b1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'
