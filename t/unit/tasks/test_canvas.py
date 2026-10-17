@@ -3287,6 +3287,9 @@ class test_chord(CanvasCase):
             c.apply().get()
         with pytest.raises(ZeroDivisionError):
             chord([self.add.s(1, 1), self.div.s(1, 0)], self.xsum.s()).apply().get()
+        with pytest.raises(ZeroDivisionError):
+            # an explicit argument wins over the chord's option
+            c.apply(propagate=True).get()
 
     def test_chord_run_does_not_pass_parent_id_to_body(self):
         header = group([self.add.s(1, 1), self.add.s(2, 2)])
