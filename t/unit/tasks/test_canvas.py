@@ -1238,6 +1238,72 @@ class test_chain(CanvasCase):
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
 
+    def test_chain_link_fires_once_in_eager(self):
+        # A chain-level link must fire once, on the last task, mirroring
+        # _chain.run (worker path extends it onto the last task only).
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(4, 4) | self.add.s(8)
+        res = c.apply_async(link=record.s())
+        assert res.get() == 16
+        assert fired == [16]
+
+    def test_chain_link_option_fires_once_in_eager(self):
+        # Same as above, but with the link set as a chain option.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = (self.add.s(4, 4) | self.add.s(8)).set(link=record.s())
+        res = c.apply_async()
+        assert res.get() == 16
+        assert fired == [16]
+
+    def test_chain_link_fires_once_on_trailing_chord_in_eager(self):
+        # A chain ending in a chord routes the link to the chord body,
+        # since _chord.apply only applies the body.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(1, 1) | chord(
+            [self.add.s(10), self.add.s(20)], self.xsum.s())
+        res = c.apply_async(link=record.s())
+        assert res.get() == 34
+        assert fired == [34]
+
+    def test_chain_link_does_not_leak_into_canvas(self):
+        # The link must not mutate the caller's canvas: rerunning the
+        # same chain, with or without a link, must not refire callbacks
+        # from earlier runs.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value, tag):
+            fired.append((tag, value))
+
+        c = self.add.s(1, 1) | chord(
+            [self.add.s(10), self.add.s(20)],
+            group(self.xsum.s(), self.xsum.s()))
+        c.apply_async(link=record.s(tag='L'))
+        assert fired == [('L', 34), ('L', 34)]
+        c.apply_async()
+        assert fired == [('L', 34), ('L', 34)]
+        c.apply_async(link=record.s(tag='M'))
+        assert fired == [('L', 34), ('L', 34), ('M', 34), ('M', 34)]
+
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
         res = x.apply()
