@@ -65,8 +65,13 @@ def abbr(S: str, max: int, ellipsis: str | bool = '...') -> str:
     if S is None:
         return '???'
     if len(S) > max:
-        return isinstance(ellipsis, str) and (
-            S[: max - len(ellipsis)] + ellipsis) or S[: max]
+        # `max` can be smaller than the ellipsis, and abbrtask() passes a
+        # negative one. `S[:max - len(ellipsis)]` would then slice from the end
+        # and return more characters than were asked for - for a small enough
+        # `max`, more than the input had to begin with.
+        if isinstance(ellipsis, str) and max >= len(ellipsis):
+            return S[: max - len(ellipsis)] + ellipsis
+        return S[: max] if max > 0 else ''
     return S
 
 
