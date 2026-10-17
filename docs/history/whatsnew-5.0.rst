@@ -123,6 +123,23 @@ Instead, they must be positioned as an option for the `celery` command like so::
 If you were using our :ref:`daemonizing` guide to deploy Celery in production,
 you should revisit it for updates.
 
+.. warning::
+
+    If you use gevent or Eventlet workers, you must explicitly select the pool
+    using the worker command line option in Celery 5.x.
+
+    Do not rely only on ``gevent.monkey.patch_all()`` or
+    ``eventlet.monkey_patch()`` in your application code. Celery applies its
+    eventlet/gevent setup during CLI bootstrap only when ``-P``/``--pool`` is
+    present, and app-level monkey patching does not select the worker pool.
+
+    Example::
+
+        celery -A app.celery worker --loglevel=info --pool=gevent
+
+    Without explicitly selecting the pool, the worker may not start correctly
+    and may never log the ``celery@... ready.`` message.
+
 Step 2: Update your configuration with the new setting names
 ------------------------------------------------------------
 

@@ -45,6 +45,19 @@ worker option.
 
     $ celery -A proj worker -P gevent -c 1000
 
+.. note::
+
+    When using the gevent pool via the Celery CLI (``-P gevent``/``--pool=gevent``),
+    Celery applies gevent monkey-patching early during startup.
+    If you need to monkey-patch manually (e.g., when embedding a worker), do it at the very start of the process
+    (before importing task modules or standard library I/O modules):
+
+    .. code-block:: python
+
+        from gevent import monkey
+        monkey.patch_all()
+
+
 .. _eventlet-examples:
 
 Examples

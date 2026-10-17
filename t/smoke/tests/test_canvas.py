@@ -4,8 +4,9 @@ import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
 
 from celery.canvas import chain, chord, group, signature
+from t.canvas_helpers import ids_in_as_tuple
 from t.integration.conftest import get_redis_connection
-from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo
+from t.integration.tasks import ExpectedException, add, fail, identity, redis_echo, tsum
 
 
 class test_signature:
@@ -66,6 +67,63 @@ class test_chain:
         assert actual.count(b"a") == 5
         assert actual.count(b"b") == 1
         redis_connection.delete(redis_key)
+
+    def test_chain_of_implicit_chords_runs_each_step_once_in_order(self, celery_setup: CeleryTestSetup):
+        redis_key = str(uuid.uuid4())
+        queue = celery_setup.worker.worker_queue
+
+        def echo(label):
+            return redis_echo.si(label, redis_key).set(queue=queue)
+
+        steps = [echo("start")]
+        for stage in range(4):
+            steps.append(group(echo(f"branch{stage}a"), echo(f"branch{stage}b")))
+            steps.append(echo(f"rejoin{stage}"))
+        chain(*steps).apply_async(queue=queue).get(timeout=RESULT_TIMEOUT)
+
+        redis_connection = get_redis_connection()
+        actual = [item.decode() for item in redis_connection.lrange(redis_key, 0, -1)]
+        redis_connection.delete(redis_key)
+
+        assert len(actual) == 13
+        assert actual[0] == "start"
+        for stage in range(4):
+            branches = actual[1 + stage * 3:3 + stage * 3]
+            assert sorted(branches) == [f"branch{stage}a", f"branch{stage}b"]
+            assert actual[3 + stage * 3] == f"rejoin{stage}"
+
+    def test_chain_skips_empty_group_on_worker(self, celery_setup: CeleryTestSetup):
+        """Empty groups are no-ops: the worker runs the surrounding tasks."""
+        queue = celery_setup.worker.worker_queue
+        sig = chain(
+            add.s(2, 2).set(queue=queue),
+            group().set(queue=queue),
+            add.s(2).set(queue=queue),
+        )
+        res = sig.apply_async()
+        assert res.get(timeout=RESULT_TIMEOUT) == 6
+
+    @pytest.mark.parametrize("with_task_id", [False, True])
+    def test_chain_of_two_groups_as_tuple_holds_each_task_once(
+        self, celery_setup: CeleryTestSetup, with_task_id: bool
+    ):
+        """https://github.com/celery/celery/issues/9608"""
+        queue = celery_setup.worker.worker_queue
+        options = {"task_id": str(uuid.uuid4())} if with_task_id else {}
+        sig = chain(
+            add.si(1, 0).set(queue=queue),
+            group(add.s(1).set(queue=queue), add.s(2).set(queue=queue)),
+            group(tsum.s().set(queue=queue), tsum.s().set(queue=queue)),
+            tsum.s().set(queue=queue),
+            add.s(1).set(queue=queue),
+            **options,
+        )
+        res = sig.apply_async(queue=queue)
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        # The first task, two tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 9, ids
+        assert res.get(timeout=RESULT_TIMEOUT) == 11
 
 
 class test_chord:
@@ -179,3 +237,15 @@ class test_chord:
         # The chord should fail with the expected exception from the failing task
         with pytest.raises(ExpectedException):
             result.get(timeout=RESULT_TIMEOUT)
+
+
+class test_complex_workflow:
+    def test_pending_tasks_released_on_forget(self, celery_setup: CeleryTestSetup):
+        sig = add.si(1, 1) | group(
+            add.s(1) | group(add.si(1, 1), add.si(2, 2)) | add.si(2, 2),
+            add.s(1) | group(add.si(1, 1), add.si(2, 2)) | add.si(2, 2)
+        ) | add.si(1, 1)
+        res = sig.apply_async(queue=celery_setup.worker.worker_queue)
+        assert not all(len(mapping) == 0 for mapping in res.backend._pending_results)
+        res.forget()
+        assert all(len(mapping) == 0 for mapping in res.backend._pending_results)

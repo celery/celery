@@ -2,7 +2,6 @@
 from datetime import datetime, timezone
 
 import sqlalchemy as sa
-from sqlalchemy.types import PickleType
 
 from celery import states
 
@@ -11,31 +10,50 @@ from .session import ResultModelBase
 __all__ = ('Task', 'TaskExtended', 'TaskSet')
 
 
+DialectSpecificInteger = sa.Integer().with_variant(sa.BigInteger, 'mssql')
+
+
+def _get_utc_now():
+    """Return current UTC datetime.
+
+    This helper is used as a callable for SQLAlchemy column defaults
+    to ensure the timestamp is evaluated at INSERT/UPDATE time,
+    not at module import time.
+    """
+    return datetime.now(timezone.utc)
+
+
 class Task(ResultModelBase):
     """Task result/status."""
 
     __tablename__ = 'celery_taskmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('task_id_sequence'),
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('task_id_sequence'),
                    primary_key=True, autoincrement=True)
     task_id = sa.Column(sa.String(155), unique=True)
     status = sa.Column(sa.String(50), default=states.PENDING)
-    result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          onupdate=datetime.now(timezone.utc), nullable=True)
+    result = sa.Column(sa.LargeBinary, nullable=True)
+    date_done = sa.Column(sa.DateTime, default=_get_utc_now,
+                          onupdate=_get_utc_now, nullable=True, index=True)
     traceback = sa.Column(sa.Text, nullable=True)
+    children = sa.Column(sa.LargeBinary, nullable=True)
 
     def __init__(self, task_id):
         self.task_id = task_id
 
     def to_dict(self):
+        try:
+            children = self.children
+        except Exception:
+            children = None
         return {
             'task_id': self.task_id,
             'status': self.status,
             'result': self.result,
             'traceback': self.traceback,
             'date_done': self.date_done,
+            'children': children,
         }
 
     def __repr__(self):
@@ -60,9 +78,14 @@ class TaskExtended(Task):
     worker = sa.Column(sa.String(155), nullable=True)
     retries = sa.Column(sa.Integer, nullable=True)
     queue = sa.Column(sa.String(155), nullable=True)
+    stamps = sa.Column(sa.LargeBinary, nullable=True)
 
     def to_dict(self):
         task_dict = super().to_dict()
+        try:
+            stamps = self.stamps
+        except Exception:
+            stamps = None
         task_dict.update({
             'name': self.name,
             'args': self.args,
@@ -70,6 +93,7 @@ class TaskExtended(Task):
             'worker': self.worker,
             'retries': self.retries,
             'queue': self.queue,
+            'stamps': stamps,
         })
         return task_dict
 
@@ -80,12 +104,12 @@ class TaskSet(ResultModelBase):
     __tablename__ = 'celery_tasksetmeta'
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = sa.Column(sa.Integer, sa.Sequence('taskset_id_sequence'),
+    id = sa.Column(DialectSpecificInteger, sa.Sequence('taskset_id_sequence'),
                    autoincrement=True, primary_key=True)
     taskset_id = sa.Column(sa.String(155), unique=True)
-    result = sa.Column(PickleType, nullable=True)
-    date_done = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),
-                          nullable=True)
+    result = sa.Column(sa.LargeBinary, nullable=True)
+    date_done = sa.Column(sa.DateTime, default=_get_utc_now,
+                          nullable=True, index=True)
 
     def __init__(self, taskset_id, result):
         self.taskset_id = taskset_id

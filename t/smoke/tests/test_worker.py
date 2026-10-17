@@ -1,13 +1,19 @@
 from time import sleep
+from types import ModuleType
 
 import pytest
-from pytest_celery import CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker
+from pytest_celery import CeleryTestSetup, CeleryTestWorker, RabbitMQTestBroker, RedisTestBroker
+from pytest_docker_tools.wrappers.container import wait_for_callable
 
 import celery
 from celery import Celery
 from celery.canvas import chain, group
+from celery.exceptions import TimeLimitExceeded
+from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
 from t.smoke.tasks import long_running_task
+from t.smoke.workers import alias as alias_worker_app
+from t.smoke.workers.dev import SmokeWorkerContainer
 
 RESULT_TIMEOUT = 30
 
@@ -23,6 +29,36 @@ def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIM
 
     worker.container.reload()
     assert worker.container.status == "exited"
+
+
+class test_pool_start_method_spawn:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_pool_start_method = "spawn"
+        return app
+
+    def test_tasks_run_in_spawned_children(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
+        celery_setup.worker.assert_log_exists("SpawnPoolWorker-")
+
+    def test_child_is_replaced_after_hard_time_limit(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(30, verbose=True).set(queue=queue, time_limit=3)
+        with pytest.raises(TimeLimitExceeded):
+            sig.delay().get(RESULT_TIMEOUT)
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
+
+    def test_spawn_worker_executes_task_with_explicit_lazy_option(self, celery_setup: CeleryTestSetup):
+        result = celery_setup.app.send_task(
+            "t.smoke.tasks.add_with_explicit_lazy_option",
+            args=(2, 3),
+            queue=celery_setup.worker.worker_queue,
+        )
+        assert result.get(timeout=RESULT_TIMEOUT) == 5
 
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))
@@ -142,6 +178,41 @@ class test_worker_shutdown(SuiteOperations):
 
         assert_container_exited(worker)
 
+    class test_heartbeat_during_shutdown(SuiteOperations):
+        """Heartbeat maintenance during prefork shutdown with long-running tasks.
+
+        With broker_heartbeat=2, AMQP closes the connection after ~4 seconds
+        (2 missed heartbeats). Tasks running 10 seconds must not lose the
+        broker connection during graceful shutdown.
+
+        See https://github.com/celery/celery/pull/9986
+        """
+
+        @pytest.fixture
+        def default_worker_app(self, default_worker_app: Celery) -> Celery:
+            app = default_worker_app
+            app.conf.broker_heartbeat = 2
+            app.conf.task_acks_late = True
+            return app
+
+        def test_shutdown_with_long_running_tasks(self, celery_setup: CeleryTestSetup):
+            queue = celery_setup.worker.worker_queue
+            worker = celery_setup.worker
+
+            results = []
+            for _ in range(3):
+                sig = long_running_task.si(10, verbose=True).set(queue=queue)
+                results.append(sig.delay())
+
+            worker.assert_log_exists("Starting long running task")
+            self.kill_worker(worker, WorkerKill.Method.SIGTERM)
+            worker.assert_log_exists("worker: Warm shutdown (MainProcess)")
+
+            assert_container_exited(worker)
+            for res in results:
+                assert res.get(RESULT_TIMEOUT)
+                assert res.state == 'SUCCESS'
+
     class test_REMAP_SIGTERM(SuiteOperations):
         @pytest.fixture
         def default_worker_env(self, default_worker_env: dict) -> dict:
@@ -214,6 +285,68 @@ class test_worker_shutdown(SuiteOperations):
             self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
 
             assert_container_exited(worker)
+
+        def test_task_completes_during_soft_shutdown(self, celery_setup: CeleryTestSetup):
+            app = celery_setup.app
+            queue = celery_setup.worker.worker_queue
+            worker = celery_setup.worker
+
+            task_duration = app.conf.worker_soft_shutdown_timeout // 2
+            sig = long_running_task.si(task_duration, verbose=True).set(queue=queue)
+            res = sig.delay()
+
+            worker.assert_log_exists("Starting long running task")
+            self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+            worker.assert_log_exists(
+                f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+            )
+            worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+
+            assert_container_exited(worker)
+            assert res.get(RESULT_TIMEOUT)
+            assert res.state == 'SUCCESS'
+
+        class test_time_limit(SuiteOperations):
+            @pytest.fixture
+            def default_worker_app(self, default_worker_app: Celery) -> Celery:
+                app = default_worker_app
+                app.conf.worker_soft_shutdown_timeout = 16
+                app.conf.task_time_limit = 15
+                app.conf.task_soft_time_limit = 10
+                return app
+
+            def test_task_completes_during_soft_shutdown_with_time_limit(self, celery_setup: CeleryTestSetup):
+                app = celery_setup.app
+                queue = celery_setup.worker.worker_queue
+                worker = celery_setup.worker
+
+                task_duration = 8
+                sig = long_running_task.si(task_duration, verbose=True).set(queue=queue)
+                res = sig.delay()
+
+                worker.assert_log_exists("Starting long running task")
+                self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+
+                worker.assert_log_exists(
+                    f"Initiating Soft Shutdown, terminating in {app.conf.worker_soft_shutdown_timeout} seconds"
+                )
+
+                worker.assert_log_exists("Finished long running task")
+                worker.assert_log_exists(f"long_running_task[{res.id}] succeeded")
+
+                worker.assert_log_does_not_exist(
+                    f"Task handler raised error: TimeLimitExceeded({app.conf.task_time_limit})",
+                    timeout=RESULT_TIMEOUT,
+                )
+                worker.assert_log_does_not_exist(
+                    f"Hard time limit ({app.conf.task_time_limit}s) exceeded for {long_running_task.name}[{res.id}]",
+                    timeout=RESULT_TIMEOUT,
+                )
+                worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+
+                assert_container_exited(worker)
+                assert res.get(RESULT_TIMEOUT)
+                assert res.state == 'SUCCESS'
 
         class test_REMAP_SIGTERM(SuiteOperations):
             @pytest.fixture
@@ -438,3 +571,116 @@ class test_worker_shutdown(SuiteOperations):
                     assert_container_exited(worker)
                     worker.restart()
                     assert res.get(RESULT_TIMEOUT)
+
+
+class test_worker_queue_alias_reconnect:
+    @pytest.fixture
+    def default_worker_container_cls(self) -> type[SmokeWorkerContainer]:
+        class AliasQueueWorkerContainer(SmokeWorkerContainer):
+            @classmethod
+            def worker_queue(cls) -> str:
+                return "alias,celery"
+
+            @classmethod
+            def app_module(cls) -> ModuleType:
+                return alias_worker_app
+
+        return AliasQueueWorkerContainer
+
+    def test_cancel_consumer_by_alias_stops_consuming(self, celery_setup: CeleryTestSetup):
+        worker = celery_setup.worker
+        assert identity.si("consumed").apply_async(queue="real_name").get(timeout=RESULT_TIMEOUT) == "consumed"
+
+        replies = celery_setup.app.control.cancel_consumer(
+            "alias",
+            destination=[worker.hostname()],
+            reply=True,
+            timeout=RESULT_TIMEOUT,
+        )
+        assert replies == [{worker.hostname(): {"ok": "no longer consuming from alias"}}]
+
+        inspect = celery_setup.app.control.inspect(destination=[worker.hostname()], timeout=2)
+        wait_for_callable(
+            message="Waiting for the worker to cancel the queue consumer",
+            func=lambda: {
+                queue["name"] for queue in (inspect.active_queues() or {}).get(worker.hostname(), [])
+            } == {"celery"},
+            timeout=RESULT_TIMEOUT,
+        )
+        with pytest.raises(celery.exceptions.TimeoutError):
+            identity.si("ignored").apply_async(queue="real_name").get(timeout=10)
+
+    @pytest.mark.parametrize("cancel_queue", ["real_name", "alias"])
+    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_and_reconnect(
+        self,
+        celery_setup: CeleryTestSetup,
+        cancel_queue: str,
+    ):
+        worker = celery_setup.worker
+        assert identity.si("consumed").apply_async(queue="real_name").get(timeout=RESULT_TIMEOUT) == "consumed"
+
+        replies = celery_setup.app.control.cancel_consumer(
+            cancel_queue,
+            destination=[worker.hostname()],
+            reply=True,
+            timeout=RESULT_TIMEOUT,
+        )
+        assert replies == [{worker.hostname(): {"ok": f"no longer consuming from {cancel_queue}"}}]
+
+        # Sever all broker connections so the worker reconnects and rebuilds
+        # its consumers from _consume_from
+        connections = worker.logs().count("Connected to")
+        broker = celery_setup.broker
+        if isinstance(broker, RabbitMQTestBroker):
+            disconnect_cmd = ["rabbitmqctl", "close_all_connections", "forced reconnect"]
+        elif isinstance(broker, RedisTestBroker):
+            disconnect_cmd = ["redis-cli", "CLIENT", "KILL", "TYPE", "normal"]
+        else:
+            pytest.fail(f"Unsupported broker: {type(broker).__name__}")
+        exit_code, output = broker.container.exec_run(disconnect_cmd)
+        assert exit_code == 0, f"Failed to close broker-side connections: {output!r}"
+        worker.assert_log_exists("consumer: Connection to broker lost")
+        wait_for_callable(
+            message="Waiting for the worker to reconnect to the broker",
+            func=lambda: worker.logs().count("Connected to") > connections,
+            timeout=RESULT_TIMEOUT,
+        )
+
+        retry_policy = {"max_retries": 20, "interval_start": 1, "interval_step": 1, "interval_max": 2}
+        sanity = identity.si("sanity").apply_async(queue="celery", retry=True, retry_policy=retry_policy)
+        assert sanity.get(timeout=RESULT_TIMEOUT) == "sanity"
+
+        with pytest.raises(celery.exceptions.TimeoutError):
+            identity.si("ignored").apply_async(
+                queue="real_name",
+                retry=True,
+                retry_policy=retry_policy,
+            ).get(timeout=10)
+
+
+class test_explicit_routing_without_default_queue:
+    @pytest.fixture
+    def default_worker_container_cls(self) -> type[SmokeWorkerContainer]:
+        class NonDefaultQueueWorkerContainer(SmokeWorkerContainer):
+            @classmethod
+            def worker_queue(cls) -> str:
+                return "non_default_queue"
+
+        return NonDefaultQueueWorkerContainer
+
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.task_create_missing_queues = False
+        app.conf.task_queues = {"non_default_queue": {}}
+        return app
+
+    def test_apply_async_succeeds_with_missing_queue_creation_disabled(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        app = celery_setup.app
+        app.conf.task_create_missing_queues = False
+        app.conf.task_queues = {"non_default_queue": {}}
+        result = add.apply_async((1, 2), queue="non_default_queue")
+        assert result.get(timeout=RESULT_TIMEOUT) == 3

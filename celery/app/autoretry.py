@@ -45,8 +45,9 @@ def add_autoretry_behaviour(task, **options):
             except dont_autoretry_for:
                 raise
             except autoretry_for as exc:
+                retry_kwargs_for_attempt = retry_kwargs.copy()
                 if retry_backoff:
-                    retry_kwargs['countdown'] = \
+                    retry_kwargs_for_attempt['countdown'] = \
                         get_exponential_backoff_interval(
                             factor=int(max(1.0, retry_backoff)),
                             retries=task.request.retries,
@@ -54,10 +55,9 @@ def add_autoretry_behaviour(task, **options):
                             full_jitter=retry_jitter)
                 # Override max_retries
                 if hasattr(task, 'override_max_retries'):
-                    retry_kwargs['max_retries'] = getattr(task,
-                                                          'override_max_retries',
-                                                          task.max_retries)
-                ret = task.retry(exc=exc, **retry_kwargs)
+                    retry_kwargs_for_attempt['max_retries'] = getattr(
+                        task, 'override_max_retries', task.max_retries)
+                ret = task.retry(exc=exc, **retry_kwargs_for_attempt)
                 # Stop propagation
                 if hasattr(task, 'override_max_retries'):
                     delattr(task, 'override_max_retries')

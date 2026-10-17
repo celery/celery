@@ -15,9 +15,10 @@ from functools import partial
 
 from billiard.common import REMAP_SIGTERM
 from billiard.process import current_process
+from kombu.common import ignore_errors
 from kombu.utils.encoding import safe_str
 
-from celery import VERSION_BANNER, platforms, signals
+from celery import VERSION_BANNER, _original_os_write, platforms, signals
 from celery.app import trace
 from celery.loaders.app import AppLoader
 from celery.platforms import EX_FAILURE, EX_OK, check_privileges, isatty
@@ -26,7 +27,10 @@ from celery.utils.debug import cry
 from celery.utils.imports import qualname
 from celery.utils.log import get_logger, in_sighandler, set_in_sighandler
 from celery.utils.text import pluralize
+from celery.utils.threads import bound_open_broker_sockets
+from celery.utils.time import humanize_seconds
 from celery.worker import WorkController
+from celery.worker.worker import SHUTDOWN_SOCKET_TIMEOUT
 
 __all__ = ('Worker',)
 
@@ -78,8 +82,14 @@ def active_thread_count():
 
 
 def safe_say(msg, f=sys.__stderr__):
+    """
+    Uses the original (unpatched) os.write to avoid issues with eventlet/gevent
+    monkey-patching. When using eventlet>=0.37.0, the patched os.write calls
+    hubs.trampoline() which raises RuntimeError if called from within the
+    hub's event loop (e.g., during signal handling).
+    """
     if hasattr(f, 'fileno') and f.fileno() is not None:
-        os.write(f.fileno(), f'\n{msg}\n'.encode())
+        _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
 
 
 class Worker(WorkController):
@@ -104,7 +114,6 @@ class Worker(WorkController):
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = self.app.either(
             'worker_redirect_stdouts_level', redirect_stdouts_level)
-        super().setup_defaults(**kwargs)
         self.purge = purge
         self.no_color = no_color
         self._isatty = isatty(sys.stdout)
@@ -183,8 +192,36 @@ class Worker(WorkController):
             redirect_stdouts=False, colorize=colorize, hostname=self.hostname,
         )
 
+    def _ensure_connected(self, connection):
+        """Connect to the broker, retrying if the app is configured to.
+
+        The connection is lazy, so without this the first thing to touch it
+        raises straight away. ``--purge`` runs from :meth:`on_start`, which
+        makes ``broker_connection_retry_on_startup`` the setting that decides
+        whether to retry, falling back to ``broker_connection_retry`` for apps
+        that predate it.
+        """
+        retry = self.app.conf.broker_connection_retry_on_startup
+        if retry is None:
+            retry = self.app.conf.broker_connection_retry
+
+        if not retry:
+            connection.connect()
+            return connection
+
+        def _error_handler(exc, interval):
+            logger.error(
+                'purge: Connection error: %s. Trying again %s...',
+                exc, humanize_seconds(interval, 'in', ' '),
+            )
+
+        return connection.ensure_connection(
+            _error_handler, self.app.conf.broker_connection_max_retries,
+        )
+
     def purge_messages(self):
         with self.app.connection_for_write() as connection:
+            connection = self._ensure_connected(connection)
             count = self.app.control.purge(connection=connection)
             if count:  # pragma: no cover
                 print(f"purge: Erased {count} {pluralize(count, 'message')} from the queue.\n", flush=True)
@@ -350,7 +387,7 @@ def during_soft_shutdown(worker: Worker):
     install_worker_term_hard_handler(worker, sig='SIGQUIT', callback=on_hard_shutdown)
 
     # Cancel all unacked requests and allow the worker to terminate naturally
-    worker.consumer.cancel_all_unacked_requests()
+    worker.consumer.cancel_active_requests()
 
     # We get here if the worker was in the middle of the soft (cold) shutdown process,
     # and the matching signal was received. This can typically happen when the worker is
@@ -409,11 +446,28 @@ def on_cold_shutdown(worker: Worker):
     # Initiate soft shutdown process (if enabled and tasks are running)
     worker.wait_for_soft_shutdown()
 
+    # Bound the broker socket before cancel(): on amqp that is a basic_cancel
+    # waiting for a reply a silent broker never sends (Issue 975).
+    # terminate() bounds again for cold paths that skip this handler; warm
+    # shutdown is deliberately left unbounded, see WorkController._shutdown.
+    connection = getattr(worker.consumer, 'connection', None)
+    if connection is not None:
+        bound_open_broker_sockets(connection, SHUTDOWN_SOCKET_TIMEOUT)
+
+    # Stop consuming new tasks to prevents requeued messages from being immediately redelivered.
+    # A bounded socket makes cancel() raise on a silent peer; that must not abort the shutdown.
+    if worker.consumer.task_consumer:
+        ignore_errors(worker.consumer, worker.consumer.task_consumer.cancel)
+
     # Cancel all unacked requests and allow the worker to terminate naturally
-    worker.consumer.cancel_all_unacked_requests()
+    worker.consumer.cancel_active_requests()
+
+    from celery.worker import state
+    state.should_terminate = True
 
     # Stop the pool to allow successful tasks call on_success()
-    worker.consumer.pool.stop()
+    if worker.consumer.pool:
+        worker.consumer.pool.stop()
 
 
 # Allow SIGTERM to be remapped to SIGQUIT to initiate cold shutdown instead of warm shutdown using SIGTERM

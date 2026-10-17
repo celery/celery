@@ -1,7 +1,7 @@
 import collections
+import sys
 
 import pytest
-import pytest_subtests  # noqa
 from kombu.utils.functional import lazy
 
 from celery.utils.functional import (DummyContext, first, firstmethod, fun_accepts_kwargs, fun_takes_argument,
@@ -48,6 +48,15 @@ class test_firstmethod:
             A(), A(), A(), A('four'), A('five')])
         assert 'four' == firstmethod('m')([
             A(), A(), A(), lazy(lambda: A('four')), A('five')])
+
+    def test_propagates_method_attribute_error(self):
+        class A:
+
+            def m(self):
+                return self.missing_attribute
+
+        with pytest.raises(AttributeError, match='missing_attribute'):
+            firstmethod('m')([A()])
 
 
 def test_first():
@@ -137,6 +146,41 @@ class test_regen:
         assert g.data == list(range(10))
 
         assert list(iter(g)) == list(range(10))
+
+    def test_gen__index_type(self, g):
+        class Index:
+            def __index__(self):
+                return 2
+
+        # anything list accepts, _regen accepts
+        assert g[Index()] == 2
+        assert g[True] == 1
+
+        for bad_index in ('x', None, 1.0):
+            with pytest.raises(TypeError):
+                g[bad_index]
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice(self, g):
+        assert g[:3] == [0, 1, 2]
+        assert g[2:5] == [2, 3, 4]
+        assert g[7:] == [7, 8, 9]
+        assert g[::2] == [0, 2, 4, 6, 8]
+        assert g[-3:] == [7, 8, 9]
+        assert g[::-1] == list(reversed(range(10)))
+        assert g[:] == list(range(10))
+        assert g[5:2] == []
+
+        assert list(iter(g)) == list(range(10))
+
+    def test_gen__slice_matches_list(self):
+        source = list(range(10))
+        for index in (slice(3), slice(2, 5), slice(7, None), slice(None, None, 2),
+                      slice(-3, None), slice(None, None, -1), slice(5, 2)):
+            assert regen(iter(source))[index] == source[index]
+            # regen returns lists untouched, so both paths have to agree
+            assert regen(source)[index] == source[index]
 
     def test_nonzero__does_not_consume_more_than_first_item(self):
         def build_generator():
@@ -229,6 +273,65 @@ class test_regen:
             assert getattr(g, "_regen__done") is (i == len_g - 1)
         # Just for sanity, check against a specific `bool` here
         assert getattr(g, "_regen__done") is True
+
+    def test_iter_does_not_look_ahead_over_concretised_items(self):
+        pulled = []
+
+        def build_generator():
+            for i in range(5):
+                pulled.append(i)
+                yield i
+
+        g = regen(build_generator())
+        assert g[0] == 0
+        assert pulled == [0, 1]
+        it = iter(g)
+        assert next(it) == 0
+        assert next(it) == 1
+        # Yielding what's already concretised must not pull any further from
+        # the generator, chord headers rely on this being lazy (#3021).
+        assert pulled == [0, 1]
+        assert next(it) == 2
+        assert pulled == [0, 1, 2, 3]
+
+    def test_iter_survives_len_during_iteration(self, g):
+        # `len()` concretises the rest of the generator midway through the
+        # loop, which must not cut the in-progress iteration short.
+        assert [(x, len(g)) for x in g] == [(i, 10) for i in range(10)]
+
+    def test_iter_survives_getitem_during_iteration(self, g):
+        assert [(x, g[-1]) for x in g] == [(i, 9) for i in range(10)]
+
+    def test_map_during_cached_iteration(self):
+        g = regen(i for i in range(4))
+        if g:  # Primes the cache.
+            for value in g:
+                if value == 0:
+                    g.map(lambda x: x + 10)
+        assert list(g) == [10, 11, 12, 13]
+
+    def test_iter_survives_source_iter_consuming_cache(self):
+        class Iterator:
+            def __init__(self):
+                self.values = iter([1, 2])
+                self.started = False
+
+            def __iter__(self):
+                if not self.started:
+                    self.started = True
+                    len(g)
+                return self
+
+            def __next__(self):
+                return next(self.values)
+
+        g = regen(Iterator())
+        assert list(iter(g)) == [1, 2]
+
+    def test_nested_iter(self, g):
+        assert [(a, b) for a in g for b in g] == [
+            (a, b) for a in range(10) for b in range(10)
+        ]
 
     def test_lookahead_consume(self, subtests):
         """
@@ -369,6 +472,46 @@ class test_head_from_fun:
 
         g(b=3)
 
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Functions with
+        # annotations referencing TYPE_CHECKING-only types must not raise NameError.
+        local = {}
+        exec('def f(args: Sequence[str], x: int = 0): return args', {}, local)
+        f = local['f']
+
+        g = head_from_fun(f)
+        with pytest.raises(TypeError):
+            g()
+        g(1)
+        g(1, 2)
+
+    def test_wraps_variadic_wrapper(self):
+        # Regression test: head_from_fun should introspect the callable it was
+        # handed, not the original function referenced via __wrapped__. This
+        # matters for tasks defined via functools.wraps over a variadic wrapper
+        # (a common pattern for DI decorators that inject extra kwargs at call
+        # time). inspect.getfullargspec ignores __wrapped__; inspect.signature
+        # follows it by default, so the Python 3.14 _getfullargspec shim must
+        # pass follow_wrapped=False to preserve the documented behaviour.
+        from functools import wraps
+
+        def inner(x, y, app, sa_session, kwarg=1):
+            pass
+
+        @wraps(inner)
+        def wrapper(*args, **kwds):
+            pass
+
+        g = head_from_fun(wrapper)
+        # The wrapper accepts anything; head_from_fun should see its signature,
+        # not inner's (which would require app/sa_session as positional args).
+        g()
+        g(1)
+        g(1, 2, 3)
+        g(anything=1, at=2, all=3)
+
 
 class test_fun_takes_argument:
 
@@ -471,6 +614,25 @@ class test_fun_accepts_kwargs:
     ])
     def test_rejects(self, fun):
         assert not fun_accepts_kwargs(fun)
+
+    @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
+    def test_type_checking_annotation(self):
+        # Regression test for https://github.com/celery/celery/discussions/10099
+        # On Python 3.14+, annotations are deferred (PEP 649). Calling
+        # fun_accepts_kwargs on a function whose annotations reference
+        # TYPE_CHECKING-only types must not raise NameError.
+        #
+        # This reproduces the failure seen with on_after_finalize.connect:
+        #   def setup_periodic_tasks(sender: Celery, **kwargs: object) -> None: ...
+        # where 'Celery' is only imported under TYPE_CHECKING.
+        local = {}
+        exec('def f(sender: Celery, **kwargs: object) -> None: pass', {}, local)
+        f = local['f']
+        assert fun_accepts_kwargs(f) is True
+
+        exec('def g(sender: Celery) -> None: pass', {}, local)
+        g = local['g']
+        assert fun_accepts_kwargs(g) is False
 
 
 @pytest.mark.parametrize('value,expected', [

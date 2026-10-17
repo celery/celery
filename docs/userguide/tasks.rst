@@ -348,8 +348,24 @@ The request defines the following attributes:
 :called_directly: This flag is set to true if the task wasn't
                   executed by the worker.
 
-:timelimit: A tuple of the current ``(soft, hard)`` time limits active for
-            this task (if any).
+:timelimit: A 2-item sequence ``(hard, soft)`` of the current time limits
+            active for this task (if any).
+
+:time_limit: The hard time limit (in seconds) active for this task, or :const:`None`
+             if no hard limit is set. This value is unpacked from :attr:`timelimit`
+             and reflects limits configured via :setting:`task_time_limit`,
+             task-level ``time_limit``, or the ``time_limit`` argument passed to
+             :meth:`~@Task.apply_async`.
+
+             .. versionadded:: 5.7
+
+:soft_time_limit: The soft time limit (in seconds) active for this task, or :const:`None`
+                  if no soft limit is set. This value is unpacked from :attr:`timelimit`
+                  and reflects limits configured via :setting:`task_soft_time_limit`,
+                  task-level ``soft_time_limit``, or the ``soft_time_limit`` argument
+                  passed to :meth:`~@Task.apply_async`.
+
+                  .. versionadded:: 5.7
 
 :callbacks: A list of signatures to be called if this task returns successfully.
 
@@ -792,7 +808,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.dont_autoretry_for
 
     A list/tuple of exception classes.  These exceptions won't be autoretried.
-	This allows to exclude some exceptions that match `autoretry_for
+	This allows excluding some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
 .. _task-pydantic:
@@ -807,8 +823,52 @@ results based on typehints by passing ``pydantic=True``.
 
 .. NOTE::
 
-   Argument validation only covers arguments/return values on the task side. You still have
-   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+   Argument validation only covers arguments/return values on the task side. You still have to
+   serialize arguments yourself in the cases listed below.
+
+.. versionchanged:: 5.7
+
+   Models can be passed directly to ``delay()`` and ``apply_async()``.
+
+A model passed when calling a task is sent dumped with ``pydantic_dump_kwargs``
+only if the task gets an equal model back: before sending, the caller validates
+the dump the way the worker will, running the model's validators with the task's
+context, and compares the result with ``==``. Otherwise, or if dumping or
+validating raises an error on the caller, the model is left as it is, so the
+serializer raises ``EncodeError`` as it did before. Models are sent as they are
+for tasks using the ``pickle`` serializer and for models that define kombu's
+``__json__()`` hook.
+
+In these cases you still have to pass a dict, as passing a model raises ``EncodeError``:
+
+* models inside lists or dicts
+* models in ``link`` and ``link_error`` signatures
+* models for a later task of a chain, the body of a chord, or ``map()``,
+  ``starmap()`` and ``chunks()``
+* tasks called by name with ``send_task()``
+* models the task wouldn't get back as an equal model, for example:
+
+  * a model with a ``SecretStr`` field, which is dumped as ``'**********'``
+  * a model whose private attributes differ from those a new model gets, as
+    private attributes aren't sent
+  * a model with a computed field and ``extra='forbid'``
+  * a subclass passed for a parameter annotated with its base class
+  * a model for a parameter that isn't annotated with a model
+  * with ``pydantic_strict=True``, a model with fields like ``datetime`` or
+    ``UUID`` that ``mode='json'`` turns into strings
+
+An equal model can still differ in a few ways:
+
+* The task's model counts every dumped field as set. If the task uses
+  ``model_fields_set`` or ``model_dump(exclude_unset=True)``, add
+  ``exclude_unset=True`` to ``pydantic_dump_kwargs``.
+* Aware datetimes arrive with a fixed UTC offset instead of their time zone,
+  such as a ``ZoneInfo``.
+* The check uses the model's own ``__eq__``. If a model defines one, anything
+  it ignores can still change, such as a ``SecretStr`` field.
+* With the default ``mode='json'``, the dump is what the worker gets. With
+  ``mode='python'``, the serializer can still change it, for example tuples
+  arrive as lists, which ``pydantic_strict=True`` rejects on the worker.
 
 For example:
 
@@ -830,11 +890,14 @@ For example:
         # The returned model will be converted to a dict automatically
         return ReturnModel(value=f"example: {arg.value}")
 
-The task can then be called using a dict matching the model, and you'll receive
+The task can then be called using a model or a dict matching the model, and you'll receive
 the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
 
 .. code-block:: python
 
+   >>> result = x.delay(ArgModel(value=1))
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
    >>> result = x.delay({'value': 1})
    >>> result.get(timeout=1)
    {'value': 'example: 1'}
@@ -904,8 +967,12 @@ There are a few more options influencing Pydantic behavior:
 
 .. attribute:: Task.pydantic_dump_kwargs
 
-   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
-   By default, only ``mode='json'`` is passed.
+   When serializing a result or a model passed as an argument, pass these additional
+   arguments to ``model_dump()``. By default, only ``mode='json'`` is passed. If your
+   models use field aliases, add ``by_alias=True`` so models passed as arguments can be sent.
+   With ``pydantic_strict=True``, fields that ``mode='json'`` turns into strings, such as
+   ``datetime`` or ``UUID``, don't validate, so call those tasks with ``model.model_dump()``
+   instead of the model.
 
 
 .. _task-options:
@@ -1018,6 +1085,28 @@ General
     maximum number of  requests per second), you must restrict to a given
     queue.
 
+    If a task is called with ``countdown`` or ``eta``, the ETA takes
+    precedence: the task will not start before its ETA, and the rate
+    limit is enforced afterwards, once the ETA has passed. In other
+    words, the task starts at the later of the two: its ETA, or the
+    next slot allowed by the rate limit.
+
+.. warning::
+
+    A rate-limited task still counts against the worker's prefetch count
+    while it waits to run. Once all of a worker's prefetched slots are occupied
+    by rate-limited tasks, the worker stops fetching new messages from the broker
+    entirely, including messages for tasks that have no rate limit of their own.
+
+    For example, consider a worker that handles two tasks, ``A`` and ``B``,
+    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
+    can fill the worker's prefetch slots, and ``B`` messages will sit on
+    the broker untouched until those rate-limited ``A`` tasks drain, even
+    though ``B`` has no rate limit of its own.
+
+    To avoid this, rate-limited tasks should be routed to their own
+    dedicated workers (see :ref:`guide-routing`).
+
 .. attribute:: Task.time_limit
 
     The hard time limit, in seconds, for this task.
@@ -1027,6 +1116,32 @@ General
 
     The soft time limit for this task.
     When not set the workers default is used.
+
+.. note::
+
+    **Hard vs soft time limit failure semantics**
+
+    When a *soft* time limit fires, a :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    exception is raised inside the worker child process. If this exception
+    propagates and causes the task attempt to fail,
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are all invoked as for any other task failure.
+    Task code may also catch :exc:`~celery.exceptions.SoftTimeLimitExceeded`
+    and exit normally, in which case these failure hooks are not triggered.
+
+    When a *hard* time limit fires the child process is killed and the
+    timeout is handled in the parent (main worker) process.
+    :meth:`~celery.app.task.Task.on_failure`, errbacks, and the
+    :signal:`task_failure` signal are also invoked from the parent process
+    so that cleanup hooks fire consistently for both limit types.
+
+    .. versionchanged:: 5.7
+
+        Hard time limits now invoke :meth:`~celery.app.task.Task.on_failure`,
+        errbacks, and :signal:`task_failure` in the parent worker process,
+        matching the behavior of soft time limits.
+        Previously only :meth:`~celery.backends.base.BaseBackend.mark_as_failure`
+        was called.
 
 .. attribute:: Task.ignore_result
 
@@ -1041,6 +1156,13 @@ General
 
     If :const:`True`, errors will be stored even if the task is configured
     to ignore results.
+
+    .. versionchanged:: 5.7
+        Previously, if the ``ignore_result`` key was missing from the request
+        message, ``store_errors`` would default to ``True``, ignoring the
+        task's own ``ignore_result`` setting. The worker now correctly
+        falls back to ``Task.ignore_result`` when no per-request override
+        is present.
 
 .. attribute:: Task.serializer
 
@@ -1409,8 +1531,20 @@ messages are redelivered to.
 
 .. _`Dead Letter Exchanges`: http://www.rabbitmq.com/dlx.html
 
+When a task raises :exc:`~@Reject` without re-queuing (``requeue=False``) it
+will never run again, so its result is stored in the :state:`FAILURE` state
+and the :signal:`task_failure` signal is sent, just like any other failed
+task. This means :meth:`AsyncResult.failed() <celery.result.AsyncResult.failed>`
+returns :const:`True` and the rejection reason is available as the result.
+This terminal result is recorded regardless of :attr:`Task.acks_late`; the
+broker-level ``basic_reject`` (and therefore re-queuing) is the part that only
+takes effect when ``acks_late`` is enabled.
+
 Reject can also be used to re-queue messages, but please be very careful
 when using this as it can easily result in an infinite message loop.
+Re-queuing (``requeue=True``) only takes effect when :attr:`Task.acks_late`
+is enabled; the message is then redelivered and executed again, so no terminal
+result is stored for it.
 
 Example using reject when a task causes an out of memory condition:
 
@@ -1596,17 +1730,20 @@ The following diagram shows the exact order of execution:
     │  4. on_success() OR     ← Outcome-specific handler            │
     │     on_retry() OR       │                                     │
     │     on_failure()        │                                     │
-    │  5. after_return()      ← Always runs last                    │
+    │  5. after_return()      ← Runs last on terminal states        │
+    │                       (skipped for RETRY/REJECTED/IGNORED)    │
     └───────────────────────────────────────────────────────────────┘
 
 .. important::
-   
+
    **Key points:**
-   
+
    - All handlers run in the **same worker process** as your task
    - ``before_start`` **blocks** the task - ``run()`` won't start until it completes
    - Result backend is updated **before** ``on_success``/``on_failure`` - other clients can see the task as finished while handlers are still running
-   - ``after_return`` **always** executes, regardless of task outcome
+   - ``after_return`` executes when the task reaches a terminal state.
+     It does not run for ``RETRY``, ``REJECTED``, or ``IGNORED``. If you need
+     a hook that fires on every attempt, use the :signal:`task_postrun` signal.
 
 Available handlers
 ~~~~~~~~~~~~~~~~~~
@@ -1687,8 +1824,13 @@ Available handlers
     Handler called after the task returns.
 
     .. note::
-       Executes **after** ``on_success``/``on_retry``/``on_failure``. This is the
-       final hook in the task lifecycle and **always** runs, regardless of outcome.
+        Executes after the outcome-specific handler when the task reaches a
+        terminal state.
+
+        In practice, this means it runs after ``on_success`` or ``on_failure``.
+        It is not executed for ``RETRY``, ``REJECTED``, or ``IGNORED`` states.
+        If a hook is needed for every attempt, consider using the
+        :signal:`task_postrun` signal.
 
     :param status: Current task state.
     :param retval: Task return value/exception.
@@ -1708,19 +1850,19 @@ Example usage
     from celery import Task
 
     class MyTask(Task):
-        
+
         def before_start(self, task_id, args, kwargs):
             print(f"Task {task_id} starting with args {args}")
             # This blocks - run() won't start until this returns
-            
+
         def on_success(self, retval, task_id, args, kwargs):
             print(f"Task {task_id} succeeded with result: {retval}")
             # Result is already visible to clients at this point
-            
+
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             print(f"Task {task_id} failed: {exc}")
             # Task state is already FAILURE in backend
-            
+
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             print(f"Task {task_id} finished with status: {status}")
             # Always runs last
@@ -1749,8 +1891,9 @@ strongly recommend to inherit from `celery.worker.request.Request`:class:.
 When using the `pre-forking worker <worker-concurrency>`:ref:, the methods
 `~celery.worker.request.Request.on_timeout`:meth: and
 `~celery.worker.request.Request.on_failure`:meth: are executed in the main
-worker process.  An application may leverage such facility to detect failures
-which are not detected using `celery.app.task.Task.on_failure`:meth:.
+worker process.  An application may leverage this facility to add extra
+observability or side-effects around task failures and timeouts beyond what
+`celery.app.task.Task.on_failure`:meth: provides.
 
 As an example, the following custom request detects and logs hard time
 limits, and other failures.
@@ -1927,16 +2070,17 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
+    @app.task
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @app.task()
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @app.task()
+    @app.task
     def parse_page(page):
         return myparser.parse_document(page)
 

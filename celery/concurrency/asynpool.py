@@ -19,6 +19,7 @@ import os
 import select
 import time
 from collections import Counter, deque, namedtuple
+from inspect import isgenerator
 from io import BytesIO
 from numbers import Integral
 from pickle import HIGHEST_PROTOCOL
@@ -222,9 +223,9 @@ def iterate_file_descriptors_safely(fds_iter, source_data,
         hub_args, hub_kwargs = _meta_fd_argument_maker(), kwargs
         try:  # Call the hub method
             hub_method(fd, *hub_args, **hub_kwargs)
-        except (OSError, FileNotFoundError):
+        except (OSError, FileNotFoundError, AttributeError):
             logger.warning(
-                "Encountered OSError when accessing fd %s ",
+                "Encountered error when accessing fd %s",
                 fd, exc_info=True)
             stale_fds.append(fd)  # take note of stale fd
     # Remove now defunct fds from the managed list
@@ -252,6 +253,19 @@ class Worker(_pool.Worker):
 
 class ResultHandler(_pool.ResultHandler):
     """Handles messages from the pool processes."""
+
+    #: Seconds to wait for a child to finish writing a result message that
+    #: the event loop had only partly read when the worker began shutting
+    #: down, before checking whether the child is still alive.
+    partial_read_timeout = 1.0
+
+    #: Seconds to keep waiting in total for such a message before giving it
+    #: up and dropping the pipe.  A live child resumes its write as soon as
+    #: the pipe has room again, so only a stopped child takes longer.
+    partial_read_deadline = 10.0
+
+    #: Set by :meth:`register_with_event_loop`.
+    _hub = None
 
     def __init__(self, *args, **kwargs):
         self.fileno_to_outq = kwargs.pop('fileno_to_outq')
@@ -342,6 +356,7 @@ class ResultHandler(_pool.ResultHandler):
         return on_result_readable
 
     def register_with_event_loop(self, hub):
+        self._hub = hub
         self.handle_event = self._make_process_result(hub)
 
     def handle_event(self, *args):
@@ -377,6 +392,58 @@ class ResultHandler(_pool.ResultHandler):
                     return
             outqueues.difference_update(pending_remove_fd)
 
+    def _finish_partial_read(self, fd, proc):
+        """Complete a result message the event loop had only partly read.
+
+        The event loop reads results with a resumable generator
+        (:meth:`_recv_message`).  When the worker shuts down while a
+        message is in flight the generator stays registered on the hub and
+        the pipe holds the rest of the body.  Reading the pipe afresh would
+        interpret those body bytes as a message header and block forever,
+        so resume the generator until the message completes.
+
+        Arguments:
+            fd (int): Descriptor of the process outqueue.
+            proc (Process): The pool process owning ``fd``.
+
+        Returns:
+            bool: True if the message can no longer be completed (the
+                process is gone, or it did not finish writing within
+                :attr:`partial_read_deadline`), in which case the caller
+                must drop ``fd``.
+        """
+        hub = self._hub
+        if hub is None:
+            return False
+        registered = hub.readers.get(fd)
+        if registered is None:
+            return False
+        callback, _ = registered
+        if not isgenerator(callback):
+            return False
+        reader = proc.outq._reader
+        deadline = time.monotonic() + self.partial_read_deadline
+        while True:
+            try:
+                next(callback)
+            except StopIteration:
+                return False
+            except (OSError, EOFError):
+                return True
+            try:
+                readable = reader.poll(self.partial_read_timeout)
+            except OSError:
+                return True
+            if readable:
+                continue
+            if not proc._is_alive():
+                return True
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    '%r did not finish writing a result within %ss, '
+                    'dropping it', proc, self.partial_read_deadline)
+                return True
+
     def _flush_outqueue(self, fd, remove, process_index, on_state_change):
         try:
             proc = process_index[fd]
@@ -386,19 +453,28 @@ class ResultHandler(_pool.ResultHandler):
             # by the worker lost handler.
             return remove(fd)
 
+        if self._finish_partial_read(fd, proc):
+            return remove(fd)
+
         reader = proc.outq._reader
         try:
             setblocking(reader, 1)
         except OSError:
             return remove(fd)
+        result = None
         try:
             if reader.poll(0):
+                # A child that dies between this poll and the end of its
+                # write leaves a partial message that this recv() blocks on:
+                # the parent holds the pipe's write end, so no EOF arrives.
+                # Only a message the event loop had already started reading
+                # is recovered, by _finish_partial_read above.
                 task = reader.recv()
             else:
                 task = None
                 sleep(0.5)
         except (OSError, EOFError):
-            return remove(fd)
+            result = remove(fd)
         else:
             if task:
                 on_state_change(task)
@@ -406,7 +482,8 @@ class ResultHandler(_pool.ResultHandler):
             try:
                 setblocking(reader, 0)
             except OSError:
-                return remove(fd)
+                result = remove(fd)
+        return result
 
 
 class AsynPool(_pool.Pool):
@@ -470,7 +547,7 @@ class AsynPool(_pool.Pool):
 
         self.write_stats = Counter()
 
-        super().__init__(processes, *args, **kwargs)
+        super().__init__(processes, *args, synack=synack, **kwargs)
 
         for proc in self._pool:
             # create initial mappings, these will be updated
@@ -511,10 +588,11 @@ class AsynPool(_pool.Pool):
             self._event_process_exit, hub, proc)
 
     def _untrack_child_process(self, proc, hub):
-        if proc._sentinel_poll is not None:
-            fd, proc._sentinel_poll = proc._sentinel_poll, None
-            hub.remove(fd)
-            os.close(fd)
+        sentinel_poll = getattr(proc, '_sentinel_poll', None)
+        if sentinel_poll is not None:
+            proc._sentinel_poll = None
+            hub.remove(sentinel_poll)
+            os.close(sentinel_poll)
 
     def register_with_event_loop(self, hub):
         """Register the async pool with the current event loop."""
@@ -915,7 +993,7 @@ class AsynPool(_pool.Pool):
                         errors += 1
                         if errors > 100:
                             on_not_recovering(proc, fd, job, exc)
-                            raise StopIteration()
+                            return
                         yield
                     else:
                         errors = 0
@@ -931,7 +1009,7 @@ class AsynPool(_pool.Pool):
                         errors += 1
                         if errors > 100:
                             on_not_recovering(proc, fd, job, exc)
-                            raise StopIteration()
+                            return
                         yield
                     else:
                         errors = 0
@@ -965,7 +1043,7 @@ class AsynPool(_pool.Pool):
                 except KeyError:
                     # process died, we can safely discard the ack at this
                     # point.
-                    raise StopIteration()
+                    return
                 send = proc.send_syn_offset
 
                 Hw = Bw = 0
@@ -997,11 +1075,14 @@ class AsynPool(_pool.Pool):
         if self._state == TERMINATE:
             return
         # cancel all tasks that haven't been accepted so that NACK is sent
-        # if synack is enabled.
-        if self.synack:
-            for job in self._cache.values():
-                if not job._accepted:
+        # if synack is enabled, otherwise discard them from the cache
+        # since they will be redelivered by the broker.
+        for job in tuple(self._cache.values()):
+            if not job._accepted:
+                if self.synack:
                     job._cancel()
+                else:
+                    job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
         # the broker anyway.
@@ -1018,44 +1099,52 @@ class AsynPool(_pool.Pool):
                 # flush outgoing buffers
                 intervals = fxrange(0.01, 0.1, 0.01, repeatlast=True)
 
-                # TODO: Rewrite this as a dictionary comprehension once we drop support for Python 3.7
-                #       This dict comprehension requires the walrus operator which is only available in 3.8.
-                owned_by = {}
-                for job in self._cache.values():
-                    writer = _get_job_writer(job)
-                    if writer is not None:
-                        owned_by[writer] = job
+                owned_by = {
+                    writer: job
+                    for job in self._cache.values() if (writer := _get_job_writer(job)) is not None
+                }
 
-                if not self._active_writers:
-                    self._cache.clear()
-                else:
-                    while self._active_writers:
-                        writers = list(self._active_writers)
-                        for gen in writers:
-                            if (gen.__name__ == '_write_job' and
-                                    gen_not_started(gen)):
-                                # hasn't started writing the job so can
-                                # discard the task, but we must also remove
-                                # it from the Pool._cache.
-                                try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
-                                else:
-                                    # removes from Pool._cache
-                                    job.discard()
-                                self._active_writers.discard(gen)
+                while self._active_writers:
+                    writers = list(self._active_writers)
+                    for gen in writers:
+                        if (gen.__name__ == '_write_job' and
+                                gen_not_started(gen)):
+                            # hasn't started writing the job so can
+                            # discard the task, but we must also remove
+                            # it from the Pool._cache.
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                pass
                             else:
+                                # removes from Pool._cache
+                                job.discard()
+                            self._active_writers.discard(gen)
+                        else:
+                            try:
+                                job = owned_by[gen]
+                            except KeyError:
+                                # Generator not in owned_by — not a _write_job
+                                # (e.g. a _write_ack coroutine added by send_ack()).
+                                # These *MUST* complete or the worker process will
+                                # hang waiting for the ack.  Advance it one step;
+                                # the generator raises StopIteration/OSError when
+                                # done or when the peer process has already died.
                                 try:
-                                    job = owned_by[gen]
-                                except KeyError:
-                                    pass
+                                    next(gen)
+                                except (StopIteration, OSError, EOFError):
+                                    self._active_writers.discard(gen)
+                            else:
+                                job_proc = job._write_to
+                                if job_proc._is_alive():
+                                    # _flush_writer calls
+                                    # _active_writers.discard(gen) in its finally.
+                                    self._flush_writer(job_proc, gen)
                                 else:
-                                    job_proc = job._write_to
-                                    if job_proc._is_alive():
-                                        self._flush_writer(job_proc, gen)
-
+                                    # Process is dead, job will never
+                                    # complete - discard from cache.
                                     job.discard()
+                                    self._active_writers.discard(gen)
                     # workers may have exited in the meantime.
                     self.maintain_pool()
                     sleep(next(intervals))  # don't busyloop
@@ -1063,7 +1152,38 @@ class AsynPool(_pool.Pool):
             self.outbound_buffer.clear()
             self._active_writers.clear()
             self._active_writes.clear()
-            self._busy_workers.clear()
+
+            # Trim _busy_workers down to the workers still executing an
+            # accepted (running) job instead of clearing it outright, so the
+            # fair scheduler keeps avoiding mid-task workers across a broker
+            # reconnect. A worker is marked busy keyed on
+            # job._scheduled_for.inqW_fd at write time; once the body has been
+            # written job._write_to points at the same process, so prefer it
+            # (the process actually executing the job) and fall back to
+            # _scheduled_for.
+            #
+            # intersection_update only ever removes fds from _busy_workers,
+            # never adds one (it filters the existing set rather than
+            # repopulating it), so this trim can't fabricate a phantom-busy
+            # entry that would permanently sideline a healthy worker. Avoiding
+            # double-booking (writing a second task onto a still-running
+            # worker) instead depends on still_busy including every accepted
+            # job's executing fd, which is why we source it from
+            # _write_to/_scheduled_for of the running job above.
+            #
+            # The proc._is_alive() guard keeps the set limited to workers that
+            # are actually still executing: a genuinely running accepted job
+            # always has a live worker, while a worker that died (whose fd may
+            # since have been reused by a fresh replacement) must not be
+            # re-counted as busy.
+            still_busy = set()
+            for job in self._cache.values():
+                if not job._accepted:
+                    continue
+                proc = job._write_to or job._scheduled_for
+                if proc is not None and proc._is_alive():
+                    still_busy.add(proc.inqW_fd)
+            self._busy_workers.intersection_update(still_busy)
 
     def _flush_writer(self, proc, writer):
         fds = {proc.inq._writer}
@@ -1348,6 +1468,8 @@ class AsynPool(_pool.Pool):
         fileno_to_proc = {}
         inqR = set()
         for w in pool:
+            if w.exitcode is not None:
+                continue  # nothing will ever read this inqueue again
             try:
                 fd = w.inq._reader.fileno()
                 inqR.add(fd)
@@ -1361,7 +1483,11 @@ class AsynPool(_pool.Pool):
             if not readable:
                 break
             for fd in readable:
-                fileno_to_proc[fd].inq._reader.recv()
+                try:
+                    fileno_to_proc[fd].inq._reader.recv()
+                except (EOFError, OSError):
+                    # the child died mid-message; nothing will read this pipe again
+                    inqR.discard(fd)
             sleep(0)
 
     @property

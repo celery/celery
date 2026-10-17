@@ -114,16 +114,42 @@ class test_TaskPool(EventletCase):
     def test_grow(self):
         x = TaskPool(10)
         x._pool = Mock(name='_pool')
+        x._pool.sem.release = Mock()
         x.grow(2)
         assert x.limit == 12
-        x._pool.resize.assert_called_with(12)
+        assert x._pool.size == 12
+        assert x._pool.sem.release.call_count == 2
 
     def test_shrink(self):
         x = TaskPool(10)
         x._pool = Mock(name='_pool')
+        x._pool.sem.counter = 8
+        x._pool.size = 10
         x.shrink(2)
         assert x.limit == 8
-        x._pool.resize.assert_called_with(8)
+        assert x._pool.size == 8
+        assert x._pool.sem.counter == 6
+
+    def test_num_processes_reports_capacity_for_autoscale(self):
+        x = TaskPool(5)
+        x._pool = Mock(name='_pool')
+        x._pool.running.return_value = 1
+
+        assert x.num_processes == 5
+
+    def test_autoscaler_scales_from_capacity_not_running_greenlets(self):
+        from celery.worker import autoscale
+
+        x = TaskPool(3)
+        x._pool = Mock(name='_pool')
+        x.grow = Mock()
+        scaler = autoscale.Autoscaler(x, 10, 3, worker=Mock())
+        reserved = [Mock() for _ in range(5)]
+
+        with patch('celery.worker.autoscale.state.reserved_requests', reserved):
+            assert scaler._maybe_scale()
+
+        x.grow.assert_called_once_with(2)
 
     def test_get_info(self):
         x = TaskPool(10)
@@ -163,3 +189,42 @@ class test_TaskPool(EventletCase):
         testMap = {'1': None}
         TaskPool._cleanup_after_job_finish(None, testMap, '1')
         assert len(testMap) == 0
+
+
+class test_TaskPool_eventlet:
+
+    def test_grow_wakes_spawn_waiter(self):
+        import eventlet
+
+        pool = TaskPool(1)
+        pool.on_start()
+        first_started = eventlet.Event()
+        release_first = eventlet.Event()
+        second_started = eventlet.Event()
+        waiter = None
+
+        def first():
+            first_started.send(True)
+            release_first.wait()
+
+        def second():
+            second_started.send(True)
+
+        try:
+            pool._pool.spawn(first)
+            with eventlet.Timeout(1):
+                first_started.wait()
+
+            waiter = eventlet.spawn(pool._pool.spawn, second)
+            eventlet.sleep(0)
+            assert not second_started.ready()
+
+            pool.grow()
+
+            with eventlet.Timeout(1):
+                second_started.wait()
+        finally:
+            release_first.send(True)
+            pool._pool.waitall()
+            if waiter is not None:
+                waiter.wait()

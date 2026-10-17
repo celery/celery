@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from celery.concurrency.gevent import TaskPool, Timer, apply_timeout
 
@@ -62,7 +62,7 @@ class test_TaskPool:
         self.Pool = self.patching('gevent.pool.Pool')
 
     def test_pool(self):
-        x = TaskPool()
+        x = TaskPool(1)
         x.on_start()
         x.on_stop()
         x.on_apply(Mock())
@@ -70,17 +70,70 @@ class test_TaskPool:
         x.on_stop()
 
         x._pool = Mock()
-        x._pool._semaphore.counter = 1
+        semaphore = x._pool._semaphore
+        semaphore.counter = 1
+
+        def release():
+            semaphore.counter += 1
+
+        semaphore.release = Mock(side_effect=release)
         x._pool.size = 1
         x.grow()
         assert x._pool.size == 2
-        assert x._pool._semaphore.counter == 2
+        assert x.limit == 2
+        semaphore.release.assert_called_once_with()
         x.shrink()
-        assert x._pool.size, 1
+        assert x._pool.size == 1
+        assert semaphore.counter == 1
+        assert x.limit == 1
+
+        x.limit = 3
+        assert x.num_processes == 3
+
+    def test_grow_updates_capacity_and_notifies_waiters(self):
+        x = TaskPool(1)
+        x._pool = Mock()
+        x._pool._semaphore.release = Mock()
+        x._pool.size = 1
+
+        x.grow(4)
+
+        assert x.limit == 5
+        assert x._pool.size == 5
+        assert x._pool._semaphore.release.call_count == 4
+
+    def test_shrink_updates_capacity(self):
+        x = TaskPool(5)
+        x._pool = Mock()
+        x._pool._semaphore.counter = 4
+        x._pool.size = 5
+
+        x.shrink(3)
+
+        assert x.limit == 2
+        assert x._pool.size == 2
         assert x._pool._semaphore.counter == 1
 
-        x._pool = [4, 5, 6]
-        assert x.num_processes == 3
+    def test_num_processes_reports_capacity_for_autoscale(self):
+        x = TaskPool(5)
+        x._pool = [object()]
+
+        assert len(x._pool) == 1
+        assert x.num_processes == 5
+
+    def test_autoscaler_scales_from_capacity_not_running_greenlets(self):
+        from celery.worker import autoscale
+
+        x = TaskPool(3)
+        x._pool = [object()]
+        x.grow = Mock()
+        scaler = autoscale.Autoscaler(x, 10, 3, worker=Mock())
+        reserved = [Mock() for _ in range(5)]
+
+        with patch('celery.worker.autoscale.state.reserved_requests', reserved):
+            assert scaler._maybe_scale()
+
+        x.grow.assert_called_once_with(2)
 
     def test_terminate_job(self):
         func = Mock()

@@ -3,9 +3,12 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
+from kombu.utils.encoding import ensure_bytes
 
 from celery.exceptions import SecurityError
 from celery.security.certificate import Certificate, CertStore, FSCertStore
+from celery.security.key import PrivateKey
+from celery.security.utils import get_digest_algorithm
 from t.unit import conftest
 
 from . import CERT1, CERT2, CERT_ECDSA, KEY1
@@ -53,6 +56,22 @@ class test_Certificate(SecurityCase):
         x._cert.not_valid_after_utc = time_after
 
         assert x.has_expired() is False
+
+    def test_verify_rejects_expired_certificate(self):
+        """Test that expired certificates cannot verify signatures."""
+        cert = Certificate(CERT1)
+        pkey = PrivateKey(KEY1)
+
+        data = ensure_bytes('test data')
+        digest = get_digest_algorithm()
+        signature = pkey.sign(data, digest)
+
+        with patch.object(cert, 'has_expired', return_value=False):
+            cert.verify(data, signature, digest)
+
+        with patch.object(cert, 'has_expired', return_value=True):
+            with pytest.raises(SecurityError, match='Expired certificate'):
+                cert.verify(data, signature, digest)
 
 
 class test_CertStore(SecurityCase):

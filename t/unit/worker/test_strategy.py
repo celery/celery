@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from contextlib import contextmanager
 from unittest.mock import ANY, Mock, patch
 
@@ -65,6 +64,12 @@ class test_default_strategy_proto2:
 
         self.add = add
 
+    def teardown_method(self):
+        # ETA/countdown strategies register requests in the real global
+        # `state.requests`/`state.scheduled_requests`, so clear them here to
+        # avoid leaking strongly-referenced requests into later tests.
+        state.reset_state()
+
     def get_message_class(self):
         return self.TaskMessage
 
@@ -99,8 +104,8 @@ class test_default_strategy_proto2:
             assert not self.was_reserved()
             called = self.consumer.timer.call_at.called
             if called:
-                assert self.consumer.timer.call_at.call_args[0][1] == \
-                    self.consumer._limit_post_eta
+                callback = self.consumer.timer.call_at.call_args[0][1]
+                assert callback == self.consumer._limit_post_eta
             return called
 
         def was_scheduled(self):
@@ -128,10 +133,15 @@ class test_default_strategy_proto2:
 
         reserved = Mock()
         consumer = Mock()
-        consumer.task_buckets = defaultdict(lambda: None)
+        # Create a proper mock for task_buckets that supports __getitem__
+        task_buckets_mock = Mock()
+        task_buckets_mock.__getitem__ = Mock(side_effect=lambda key: None)
+        consumer.task_buckets = task_buckets_mock
         if limit:
             bucket = TokenBucket(rate(limit), capacity=1)
-            consumer.task_buckets[sig.task] = bucket
+            task_buckets_mock.__getitem__.side_effect = (
+                lambda key: bucket if key == sig.task else None
+            )
         consumer.controller.state.revoked = set()
         consumer.disable_rate_limits = not rate_limits
         consumer.event_dispatcher.enabled = events
@@ -245,6 +255,36 @@ class test_default_strategy_proto2:
             C()
             assert C.was_scheduled()
             C.consumer.qos.increment_eventually.assert_called_with()
+
+    def test_eta_task_registers_request_in_state(self):
+        # Regression test for #5321: a task with an ETA/countdown must be
+        # discoverable via `state.requests` (e.g. by the `query_task` remote
+        # control command) before its ETA elapses, not only afterwards.
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            assert state.requests[req.id] is req
+            assert req not in state.reserved_requests
+
+    def test_eta_task_timer_entry_attached_before_scheduled_visible(self):
+        # Regression test: task_scheduled() must run *after* the timer
+        # entry is attached to the request, not before. Otherwise a
+        # concurrent on_close() (the timer runs on its own thread for
+        # non-eventloop pools) could observe the request in
+        # scheduled_requests with no entry to cancel yet.
+        seen_entry_when_scheduled = []
+
+        def fake_task_scheduled(request):
+            seen_entry_when_scheduled.append(
+                getattr(request, '_eta_timer_entry', None))
+
+        with patch('celery.worker.strategy.task_scheduled',
+                   side_effect=fake_task_scheduled):
+            with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                C()
+
+        assert seen_entry_when_scheduled
+        assert seen_entry_when_scheduled[0] is not None
 
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:

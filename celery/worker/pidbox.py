@@ -65,6 +65,9 @@ class Pidbox:
         self.start(self.c)
 
     def _close_channel(self, c):
+        if self.consumer:
+            ignore_errors(c, self.consumer.cancel)
+            self.consumer = None
         if self.node and self.node.channel:
             ignore_errors(c, self.node.channel.close)
 
@@ -73,6 +76,7 @@ class Pidbox:
         if self.consumer:
             debug('Canceling broadcast consumer...')
             ignore_errors(c, self.consumer.cancel)
+            self.consumer = None
         self.stop(self.c)
 
 

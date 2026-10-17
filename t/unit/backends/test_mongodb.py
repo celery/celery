@@ -5,6 +5,8 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 import dns.version
 import pymongo
 import pytest
+from bson import BSON
+from dateutil import tz as dateutil_tz
 from kombu.exceptions import EncodeError
 
 try:
@@ -22,6 +24,7 @@ else:
 
 from celery import states, uuid
 from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
+from celery.contrib.abortable import ABORTED
 from celery.exceptions import ImproperlyConfigured
 from t.unit import conftest
 
@@ -130,17 +133,21 @@ class test_MongoBackend:
                'celerydatabase?replicaSet=rs0')
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs0',
-        )
+        if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+            replicaset_option = 'replicaSet'
+        else:  # pragma: no cover  # pymongo < 4.14
+            replicaset_option = 'replicaset'
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs0',
+        }
         assert mb.user == CELERY_USER
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == CELERY_DATABASE
 
         # same uri, change some parameters in backend settings
         self.app.conf.mongodb_backend_settings = {
-            'replicaset': 'rs1',
+            replicaset_option: 'rs1',
             'user': 'backenduser',
             'database': 'another_db',
             'options': {
@@ -149,11 +156,11 @@ class test_MongoBackend:
         }
         mb = MongoBackend(app=self.app, url=uri)
         assert mb.mongo_host == MONGODB_BACKEND_HOST
-        assert mb.options == dict(
-            mb._prepare_client_options(),
-            replicaset='rs1',
-            socketKeepAlive=True,
-        )
+        assert mb.options == {
+            **mb._prepare_client_options(),
+            replicaset_option: 'rs1',
+            'socketKeepAlive': True,
+        }
         assert mb.user == 'backenduser'
         assert mb.password == CELERY_PASSWORD
         assert mb.database_name == 'another_db'
@@ -222,11 +229,15 @@ class test_MongoBackend:
 
         with patch('dns.resolver.resolve', side_effect=resolver):
             mb = self.perform_seedlist_assertions()
-            assert mb.options == dict(
-                mb._prepare_client_options(),
-                replicaset='rs0',
-                tls=True
-            )
+            if 'replicaSet' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                replicaset_option = 'replicaSet'
+            else:  # pragma: no cover  # pymongo < 4.14
+                replicaset_option = 'replicaset'
+            assert mb.options == {
+                **mb._prepare_client_options(),
+                replicaset_option: 'rs0',
+                'tls': True,
+            }
 
     def perform_seedlist_assertions(self):
         mb = MongoBackend(app=self.app, url=MONGODB_SEEDLIST_URI)
@@ -299,12 +310,15 @@ class test_MongoBackend:
             mb = MongoBackend(app=self.app, url=uri)
             mock_Connection.return_value = sentinel.connection
             connection = mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
                 username=CELERY_USER,
                 password=CELERY_PASSWORD,
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
             assert sentinel.connection == connection
 
@@ -319,10 +333,13 @@ class test_MongoBackend:
                 'SCRAM-SHA-256 requires a username.')
             with pytest.raises(ConfigurationError):
                 mb._get_connection()
+            if 'authMechanism' in mb.options:  # pragma: no cover  # pymongo >= 4.14
+                authmechanism_option = 'authMechanism'
+            else:  # pragma: no cover  # pymongo < 4.14
+                authmechanism_option = 'authmechanism'
             mock_Connection.assert_called_once_with(
                 host=['localhost:27017'],
-                authmechanism='SCRAM-SHA-256',
-                **mb._prepare_client_options()
+                **{**mb._prepare_client_options(), authmechanism_option: 'SCRAM-SHA-256'}
             )
 
     @patch('celery.backends.mongodb.MongoBackend._get_connection')
@@ -376,7 +393,7 @@ class test_MongoBackend:
                                                             upsert=True)
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -403,7 +420,7 @@ class test_MongoBackend:
         assert parameters['parent_id'] == sentinel.parent_id
         assert sentinel.result == ret_val
 
-        mock_collection.replace_one.side_effect = InvalidDocument()
+        mock_collection.replace_one.side_effect = InvalidDocument("bad")
         with pytest.raises(EncodeError):
             self.backend._store_result(
                 sentinel.task_id, sentinel.result, sentinel.status)
@@ -451,6 +468,101 @@ class test_MongoBackend:
         ])) == list(sorted(ret_val.keys()))
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_with_request(
+            self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {
+            '_id': sentinel.task_id,
+            'name': 'proj.tasks.add',
+            'args': sentinel.args,
+            'queue': 'celery',
+            'kwargs': sentinel.kwargs,
+            'status': states.SUCCESS,
+            'worker': 'worker1@example.com',
+            'retries': 2,
+            'children': [],
+            'date_done': sentinel.date_done,
+            'traceback': None,
+            'result': sentinel.result,
+        }
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['name'] == 'proj.tasks.add'
+        assert ret_val['args'] is sentinel.args
+        assert ret_val['queue'] == 'celery'
+        assert ret_val['kwargs'] is sentinel.kwargs
+        assert ret_val['status'] == states.SUCCESS
+        assert ret_val['worker'] == 'worker1@example.com'
+        assert ret_val['retries'] == 2
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_without_request(
+            self, mock_get_database):
+        # A result stored without a request (as AbortableAsyncResult.abort
+        # does) has no request-derived fields, see
+        # https://github.com/celery/celery/issues/8877
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {
+            '_id': sentinel.task_id,
+            'status': ABORTED,
+            'result': sentinel.result,
+            'traceback': None,
+            'children': None,
+            'date_done': None,
+        }
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['status'] == ABORTED
+        for key in ('name', 'args', 'queue', 'kwargs', 'worker', 'retries'):
+            assert ret_val[key] is None
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_get_task_meta_for_result_extended_aborted_roundtrip(
+            self, mock_get_database):
+        # End to end: store an aborted result the way
+        # AbortableAsyncResult.abort does, then read the stored document
+        # back through _get_task_meta_for.
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        self.app.conf.result_extended = True
+        self.backend.store_result(
+            sentinel.task_id, result=None, state=ABORTED, traceback=None,
+        )
+
+        stored = mock_collection.replace_one.call_args[0][1]
+        assert 'name' not in stored
+
+        mock_collection.find_one.return_value = stored
+        ret_val = self.backend._get_task_meta_for(sentinel.task_id)
+
+        assert ret_val['task_id'] is sentinel.task_id
+        assert ret_val['status'] == ABORTED
+        assert ret_val['name'] is None
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_get_task_meta_for_no_result(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -466,6 +578,30 @@ class test_MongoBackend:
         mock_get_database.assert_called_once_with()
         mock_database.__getitem__.assert_called_once_with(MONGODB_COLLECTION)
         assert {'status': states.PENDING, 'result': None} == ret_val
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {'_id': sentinel.task_id, 'status': 'SUCCESS'}
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is True
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_task_result_exists_not_found(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = None
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        assert self.backend.task_result_exists(sentinel.task_id) is False
+        mock_collection.find_one.assert_called_once_with({"_id": sentinel.task_id})
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_save_group(self, mock_get_database):
@@ -577,6 +713,171 @@ class test_MongoBackend:
 
         self.backend.cleanup()
         mock_collection.delete_many.assert_not_called()
+
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
+    @pytest.mark.parametrize('zone,now,expires,expected_cutoff', [
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=0), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='fall-back-first-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fall-back-repeated-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1), 30.125,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fractional-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1),
+            datetime.timedelta(seconds=30.125),
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='timedelta-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 2, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='across-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 8, 3, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 5, 30),
+            id='across-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 9, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='elapsed-day-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 2, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='elapsed-day-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 4, 5, 1, 45, fold=1), 30,
+            datetime.datetime(2026, 4, 4, 15, 14, 30),
+            id='half-hour-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 10, 4, 2, 45), 60 * 60,
+            datetime.datetime(2026, 10, 3, 14, 45),
+            id='half-hour-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 3, 8, 1, 30), 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 11, 1, 0, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='repeated-midnight',
+        ),
+        pytest.param(
+            'Asia/Kathmandu', datetime.datetime(1986, 1, 1, 0, 30), 60 * 60,
+            datetime.datetime(1985, 12, 31, 17, 45),
+            id='quarter-hour-midnight-gap',
+        ),
+        pytest.param(
+            'Pacific/Apia', datetime.datetime(2011, 12, 31, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2011, 12, 29, 10, 30),
+            id='elapsed-day-skipped-date',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 6, 15, 12), 30,
+            datetime.datetime(2026, 6, 15, 15, 59, 30),
+            id='away-from-transitions',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_across_timezones(self, tz_factory, zone, now, expires, expected_cutoff):
+        self.app.conf.timezone = tz_factory(zone)
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now.replace(tzinfo=self.app.timezone))
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('now,expires,expected_cutoff', [
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='naive-utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 12, tzinfo=datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fixed-offset',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=125000, tzinfo=datetime.timezone.utc),
+            0.125,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='fractional-seconds',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=1001, tzinfo=datetime.timezone.utc),
+            0.0005,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='bson-millisecond-precision',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            -30,
+            datetime.datetime(2026, 11, 1, 6, 30, 30),
+            id='negative-expiration',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_without_dst(self, now, expires, expected_cutoff):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now)
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('expires', [None, 0])
+    def test_cleanup_without_expiration(self, expires):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock()
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        self.backend.app.now.assert_not_called()
+        self.backend.collection.delete_many.assert_not_called()
+        self.backend.group_collection.delete_many.assert_not_called()
 
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):

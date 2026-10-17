@@ -8,7 +8,7 @@ from signal import SIGKILL
 from time import sleep
 
 import celery.utils
-from celery import Task, shared_task, signature
+from celery import Task, current_app, shared_task, signature
 from celery.canvas import Signature
 from t.integration.tasks import *  # noqa
 from t.integration.tasks import replaced_with_me
@@ -17,6 +17,11 @@ from t.integration.tasks import replaced_with_me
 @shared_task
 def noop(*args, **kwargs) -> None:
     return celery.utils.noop(*args, **kwargs)
+
+
+@current_app.task(lazy=True)
+def add_with_explicit_lazy_option(x, y):
+    return x + y
 
 
 @shared_task
@@ -61,10 +66,38 @@ def self_termination_sigkill():
     os.kill(os.getpid(), SIGKILL)
 
 
+@shared_task(default_retry_delay=0, max_retries=2)
+def self_termination_sigkill_with_retries():
+    """Forceful termination, with a limited number of retries."""
+    os.kill(os.getpid(), SIGKILL)
+
+
 @shared_task
 def self_termination_system_exit():
     """Triggers a system exit to simulate a critical stop of the Celery worker."""
     sys.exit(1)
+
+
+@shared_task(bind=True, default_retry_delay=3, max_retries=1)
+def countdown_task_with_retry(self):
+    """Task that fails once then succeeds. For cycle detection tests."""
+    if self.request.retries < 1:
+        raise self.retry(exc=Exception("Simulated failure"))
+    return self.request.retries
+
+
+@shared_task(bind=True, max_retries=2)
+def non_eta_task_with_retries(self):
+    """Task that fails twice then succeeds. For cycle detection tests."""
+    if self.request.retries < 2:
+        raise self.retry(exc=Exception("Simulated failure"), countdown=3)
+    return self.request.retries
+
+
+@shared_task
+def summarize_results(results):
+    """Sum a list of results. For chord callback tests."""
+    return sum(results)
 
 
 @shared_task(time_limit=2)

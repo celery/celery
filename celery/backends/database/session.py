@@ -2,11 +2,12 @@
 import time
 
 from kombu.utils.compat import register_after_fork
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DatabaseError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
+from celery.utils.log import get_logger
 from celery.utils.time import get_exponential_backoff_interval
 
 try:
@@ -21,6 +22,8 @@ __all__ = ('SessionManager',)
 
 PREPARE_MODELS_MAX_RETRIES = 10
 
+logger = get_logger(__name__)
+
 
 def _after_fork_cleanup_session(session):
     session._after_fork()
@@ -29,11 +32,12 @@ def _after_fork_cleanup_session(session):
 class SessionManager:
     """Manage SQLAlchemy sessions."""
 
-    def __init__(self):
+    def __init__(self, engine_callback=None):
         self._engines = {}
         self._sessions = {}
         self.forked = False
         self.prepared = False
+        self.engine_callback = engine_callback
         if register_after_fork is not None:
             register_after_fork(self, _after_fork_cleanup_session)
 
@@ -45,12 +49,21 @@ class SessionManager:
             try:
                 return self._engines[dburi]
             except KeyError:
-                engine = self._engines[dburi] = create_engine(dburi, **kwargs)
+                engine = create_engine(dburi, **kwargs)
+                if self.engine_callback is not None:
+                    self.engine_callback(engine)
+                self._engines[dburi] = engine
                 return engine
         else:
-            kwargs = {k: v for k, v in kwargs.items() if
-                      not k.startswith('pool')}
-            return create_engine(dburi, poolclass=NullPool, **kwargs)
+            unsupported_nullpool_kwargs = {'max_overflow', 'echo_pool'}
+            kwargs = {
+                k: v for k, v in kwargs.items()
+                if not k.startswith('pool') and k not in unsupported_nullpool_kwargs
+            }
+            engine = create_engine(dburi, poolclass=NullPool, **kwargs)
+            if self.engine_callback is not None:
+                self.engine_callback(engine)
+            return engine
 
     def create_session(self, dburi, short_lived_sessions=False, **kwargs):
         engine = self.get_engine(dburi, **kwargs)
@@ -59,6 +72,13 @@ class SessionManager:
                 self._sessions[dburi] = sessionmaker(bind=engine)
             return engine, self._sessions[dburi]
         return engine, sessionmaker(bind=engine)
+
+    def invalidate(self, dburi):
+        """Dispose cached engine/session state for a database URI."""
+        self._sessions.pop(dburi, None)
+        engine = self._engines.pop(dburi, None)
+        if engine is not None:
+            engine.dispose()
 
     def prepare_models(self, engine):
         if not self.prepared:
@@ -81,7 +101,39 @@ class SessionManager:
                         raise
                 else:
                     break
+            self._migrate_missing_columns(engine)
             self.prepared = True
+
+    def _migrate_missing_columns(self, engine):
+        """Add missing nullable columns to existing tables if needed."""
+        try:
+            inspector = inspect(engine)
+            preparer = engine.dialect.identifier_preparer
+            for table in ResultModelBase.metadata.tables.values():
+                actual_name = table.name
+                schema = table.schema
+                if not inspector.has_table(actual_name, schema=schema):
+                    continue
+                existing_cols = {
+                    col['name'] for col in inspector.get_columns(actual_name, schema=schema)
+                }
+                for col in table.columns:
+                    if col.name not in existing_cols and col.nullable:
+                        col_type = col.type.compile(engine.dialect)
+                        table_name = preparer.format_table(table)
+                        col_name = preparer.quote_identifier(col.name)
+                        alter_stmt = f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"
+                        try:
+                            with engine.begin() as conn:
+                                conn.execute(text(alter_stmt))
+                        except Exception as exc:
+                            logger.warning(
+                                "Failed to add missing column %r to table %r. "
+                                "To enable storing task children, execute: %s. Error: %s",
+                                col.name, actual_name, alter_stmt, exc,
+                            )
+        except Exception as exc:
+            logger.warning("Failed to inspect or migrate database tables: %s", exc)
 
     def session_factory(self, dburi, **kwargs):
         engine, session = self.create_session(dburi, **kwargs)

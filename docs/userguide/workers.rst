@@ -47,6 +47,7 @@ The ``hostname`` argument can expand the following variables:
     - ``%h``:  Hostname, including domain name.
     - ``%n``:  Hostname only.
     - ``%d``:  Domain name only.
+    - ``%%``:  Literal percent sign.
 
 If the current hostname is *george.example.com*, these will expand to:
 
@@ -59,6 +60,24 @@ If the current hostname is *george.example.com*, these will expand to:
 +----------+----------------+------------------------------+
 | ``%d``   | ``worker1@%d`` | *worker1@example.com*        |
 +----------+----------------+------------------------------+
+
+When starting ``celery worker`` directly, use ``%%`` for a literal percent
+sign in a node or host format string. For example, ``logs/%%n-%n.log`` keeps
+``%n`` literal before the hyphen and expands the worker name after it.
+
+``celery multi`` formats option values before passing them to the worker. The
+worker formats log and pid file paths again, so a literal percent sign in these
+paths needs ``%%%%`` when passed through ``multi``. For example,
+``--logfile=logs/%%%%n-%n.log`` becomes ``logs/%n-worker.log`` for a worker named
+``worker``. Similarly, ``--pidfile=%%%%n-%n.pid`` becomes ``%n-worker.pid``;
+``multi stop`` and ``multi stopwait`` look up that same final path.
+The process-index placeholders ``%i`` and ``%I`` are preserved by
+``multi`` for the worker to expand.
+
+.. versionadded:: 5.7
+
+    Leading ``~`` in path options (such as ``--workdir``, ``--pidfile``, and ``--logfile``)
+    is expanded for the user running ``celery multi`` (not the user specified by ``--uid``).
 
 .. admonition:: Note for :pypi:`supervisor` users
 
@@ -108,7 +127,7 @@ Worker Shutdown
 
 We will use the terms *Warm, Soft, Cold, Hard* to describe the different stages of worker shutdown.
 The worker will initiate the shutdown process when it receives the :sig:`TERM` or :sig:`QUIT` signal.
-The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the 
+The :sig:`INT` (Ctrl-C) signal is also handled during the shutdown process and always triggers the
 next stage of the shutdown process.
 
 .. _worker-warm-shutdown:
@@ -125,6 +144,18 @@ and will call :func:`WorkController.stop() <celery.worker.worker.WorkController.
 
 - Additional :sig:`TERM` signals will be ignored during the warm shutdown process.
 - The next :sig:`INT` signal will trigger the next stage of the shutdown process.
+
+.. versionchanged:: 5.6
+    In previous versions of Celery, when the prefork pool was in use, heartbeats to the broker were not sent during
+    warm shutdown. This caused the broker to terminate the connection, which meant that tasks were not able to complete.
+    As of version 5.6, when the prefork pool is in use, heartbeats are now maintained during warm shutdown and tasks are
+    able to complete before the worker terminates.
+
+.. versionchanged:: 5.7
+    When using the thread pool (``--pool threads``), pending futures are now cancelled during warm shutdown
+    using ``cancel_futures=True``. Previously, the thread pool would wait for all submitted tasks to complete,
+    including those that had not yet started executing. This change ensures that only currently running tasks
+    are allowed to finish, while queued tasks are cancelled immediately for a faster and cleaner shutdown.
 
 .. _worker-cold-shutdown:
 
@@ -146,6 +177,29 @@ and will call :func:`WorkController.terminate() <celery.worker.worker.WorkContro
 
 If the warm shutdown already started, the transition to cold shutdown will run a signal handler ``on_cold_shutdown``
 to cancel all currently executing tasks from the MainProcess and potentially trigger the :ref:`worker-soft-shutdown`.
+
+.. warning::
+
+    Cold shutdown forcibly terminates running tasks. The exact mechanism depends on the worker
+    pool. In the prefork pool, termination is performed by raising a :exc:`SystemExit` exception
+    from inside a signal handler (via :mod:`billiard`), which can interrupt Python execution at
+    any bytecode boundary. In all pools, tasks may either run to completion or be interrupted,
+    depending on timing and the pool implementation.
+
+    Any code that assumes Python-level atomicity may leave application state inconsistent. For
+    example, some database drivers (like psycopg3) implement their commit protocol entirely in
+    Python bytecode; in the prefork pool, when Celery's signal handler interrupts such a process,
+    the Python exception-handling path has no way to distinguish a failed commit from a
+    successful one interrupted during cleanup. See `issue #10271`_ for a full analysis.
+
+    Prefer :ref:`worker-warm-shutdown` to allow tasks to complete cleanly. If cold shutdown is
+    unavoidable, avoid constructs such as Django's ``on_commit`` which rely on guarantees that
+    forced termination can violate. Consider the transactional outbox pattern for hard atomicity
+    between a commit and task dispatch, or add precondition checks in downstream tasks to avoid
+    acting on inconsistent state.
+
+.. _issue #10271: https://github.com/celery/celery/issues/10271
+
 
 .. _worker-soft-shutdown:
 
@@ -173,6 +227,12 @@ The soft shutdown will be skipped if there are no tasks running. To force the so
     during the cold shutdown. When using ETA tasks, it is recommended to enable the soft shutdown on idle.
     Experiment which :setting:`worker_soft_shutdown_timeout` value works best for your setup to reduce the risk
     of task loss to a minimum.
+
+.. note::
+
+    When the soft shutdown timeout expires, the worker initiates a cold shutdown, which carries the same
+    signal-safety implications as a direct cold shutdown. See the :ref:`worker-cold-shutdown` warning for
+    details and mitigations.
 
 For example, when setting ``worker_soft_shutdown_timeout=3``, the worker will allow 3 seconds for all currently
 executing tasks to finish before it terminates. If the time limit is reached, the worker will initiate a cold shutdown
@@ -393,6 +453,15 @@ of worker processes/threads can be changed using the
 :option:`--concurrency <celery worker --concurrency>` argument and defaults
 to the number of CPUs available on the machine.
 
+.. versionadded:: 5.7
+   ``--concurrency=auto``.
+
+Inside a container or a systemd unit with a CPU limit the host CPU count
+overstates what the worker may use. Passing ``--concurrency=auto`` sizes
+the prefork pool from the cgroup CPU quota and the CPU affinity mask
+instead (Linux only); for the threads, gevent, eventlet and solo pools it
+is a no-op. See :setting:`worker_concurrency` for details.
+
 .. admonition:: Number of processes (multiprocessing/prefork pool)
 
     More pool processes are usually better, but there's a cut-off point where
@@ -538,6 +607,14 @@ Library.
 
 Terminating a task also revokes it.
 
+.. versionchanged:: 5.6
+
+   When a task is revoked, the result backend is now immediately updated
+   to reflect the ``REVOKED`` status. Previously, the backend was only
+   updated when a worker attempted to process the revoked task, which
+   could leave tasks with ETA/countdown in ``PENDING`` status indefinitely
+   if the worker was shut down before the scheduled time.
+
 **Example**
 
 .. code-block:: pycon
@@ -587,12 +664,16 @@ Persistent revokes
 
 Revoking tasks works by sending a broadcast message to all the workers,
 the workers then keep a list of revoked tasks in memory. When a worker starts
-up it will synchronize revoked tasks with other workers in the cluster.
+up it will synchronize revoked tasks with other workers in the cluster: the
+ids received this way count as revoked from that moment on, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later.
 
 The list of revoked tasks is in-memory so if all workers restart the list
 of revoked ids will also vanish. If you want to preserve this list between
 restarts you need to specify a file for these to be stored in by using the `--statedb`
-argument to :program:`celery worker`:
+argument to :program:`celery worker` (the ids read from the file count as
+revoked from the start of the worker, and expire
+``CELERY_WORKER_REVOKE_EXPIRES`` seconds later):
 
 .. code-block:: console
 
@@ -837,6 +918,12 @@ based on load:
 
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
+
+Before removing processes, it waits for the keepalive period (30 seconds
+by default) to pass since the last task was accepted for immediate execution
+or the pool was grown. Tasks routed through ETA/countdown or rate-limit
+scheduling do not reset this timer.
+Set the ``AUTOSCALE_KEEPALIVE`` environment variable to change this period.
 
 It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
 which needs two numbers: the maximum and minimum number of pool processes:
@@ -1195,9 +1282,10 @@ There are two types of remote control commands:
     Performs side effects, like adding a new queue to consume from.
 
 Remote control commands are registered in the control panel and
-they take a single argument: the current
-:class:`!celery.worker.control.ControlDispatch` instance.
-From there you have access to the active
+they take a ``state`` object as their first argument, followed by
+any arguments sent with the command.
+``state`` holds the worker's ``app``, ``hostname`` and ``consumer``,
+so from it you have access to the active
 :class:`~celery.worker.consumer.Consumer` if needed.
 
 Here's an example control command that increments the task prefetch count:

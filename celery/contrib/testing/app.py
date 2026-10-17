@@ -110,3 +110,8 @@ def setup_default_app(app, use_trap=False):
             app.close()
         _state._on_app_finalizers = prev_finalizers
         _state._apps = prev_apps
+        # Clear the app's backend references so GC can reclaim backend connections.
+        # (https://github.com/celery/celery/issues/6382).
+        if app._backend is not None:
+            app._backend_cache = None
+            app._local.backend = None

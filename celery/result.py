@@ -2,6 +2,7 @@
 
 import datetime
 import time
+import types
 from collections import deque
 from contextlib import contextmanager
 from weakref import proxy
@@ -13,7 +14,7 @@ from vine import Thenable, barrier, promise
 from . import current_app, states
 from ._state import _set_task_join_will_block, task_join_will_block
 from .app import app_or_default
-from .exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
+from .exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
 
 try:
@@ -137,6 +138,8 @@ class AsyncResult(ResultBase):
         self._cache = None
         if self.parent:
             self.parent.forget()
+
+        self.backend.remove_pending_result(self)
         self.backend.forget(self.id)
 
     def revoke(self, connection=None, terminate=False, signal=None,
@@ -229,6 +232,13 @@ class AsyncResult(ResultBase):
                 `timeout` seconds.
             Exception: If the remote call raised an exception then that
                 exception will be re-raised in the caller process.
+
+        Returns:
+            Any: The task's return value on success. If the task failed and
+                ``propagate`` is false, the raised exception instance is
+                returned instead of being re-raised. If the task is configured
+                with ``ignore_result=True``, ``None`` is returned without
+                waiting.
         """
         if self.ignored:
             return
@@ -257,7 +267,7 @@ class AsyncResult(ResultBase):
             callback=callback,
             on_message=on_message,
         )
-    wait = get  # deprecated alias to :meth:`get`.
+    wait = get  # deprecated alias to :meth:`get` (remove 6.0).
 
     def _maybe_reraise_parent_error(self):
         for node in reversed(list(self._parents())):
@@ -296,14 +306,16 @@ class AsyncResult(ResultBase):
             def pow2(i):
                 return i ** 2
 
+        To collect only the values returned by leaf tasks, unpack each pair
+        and select results with no children:
+
         .. code-block:: pycon
 
-            >>> from celery.result import ResultBase
             >>> from proj.tasks import A
 
             >>> result = A.delay(10)
-            >>> [v for v in result.collect()
-            ...  if not isinstance(v, (ResultBase, tuple))]
+            >>> [value for child, value in result.collect()
+            ...  if not child.children]
             [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 
         Note:
@@ -337,6 +349,24 @@ class AsyncResult(ResultBase):
             else:
                 if is_incomplete_stream:
                     raise IncompleteStream()
+
+    def exists(self):
+        """Return :const:`True` if a result exists in the backend for this task.
+
+        This can be used to distinguish between a task that is truly
+        pending (waiting for execution) and a task ID that has never
+        been submitted or whose result has been forgotten/expired.
+
+        Without this method, both cases return ``PENDING`` as the state,
+        making them indistinguishable.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result stored for
+                this task ID, :const:`False` otherwise.
+        """
+        return self.backend.task_result_exists(self.id)
 
     def ready(self):
         """Return :const:`True` if the task has executed.
@@ -381,6 +411,8 @@ class AsyncResult(ResultBase):
             if parent:
                 graph.add_edge(parent, node)
         return graph
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
     def __str__(self):
         """`str(self) -> self.id`."""
@@ -501,15 +533,15 @@ class AsyncResult(ResultBase):
                 then contains the tasks return value.
         """
         return self._get_task_meta()['status']
-    status = state  # XXX compat
+    status = state  # XXX compat (remove 6.0)
 
     @property
-    def task_id(self):
+    def task_id(self):  # XXX compat (remove 6.0)
         """Compat. alias to :attr:`id`."""
         return self.id
 
     @task_id.setter
-    def task_id(self, id):
+    def task_id(self, id):  # XXX compat (remove 6.0)
         self.id = id
 
     @property
@@ -555,7 +587,7 @@ class ResultSet(ResultBase):
 
     _app = None
 
-    #: List of results in in the set.
+    #: List of results in the set.
     results = None
 
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
@@ -755,6 +787,17 @@ class ResultSet(ResultBase):
             celery.exceptions.TimeoutError: if ``timeout`` isn't
                 :const:`None` and the operation takes longer than ``timeout``
                 seconds.
+
+        Returns:
+            list: A list of task return values in the same order as the
+                results in this set. If ``callback`` is provided, the
+                callback handles each value and no aggregated results are
+                returned (``join()`` returns an empty list; note that
+                :meth:`join_native`, which :meth:`get` may delegate to,
+                returns ``None`` in that case). If any task failed and
+                ``propagate`` is false, the corresponding position in the
+                list contains the exception instance instead of a return
+                value.
         """
         if disable_sync_subtasks:
             assert_will_not_block()
@@ -768,10 +811,10 @@ class ResultSet(ResultBase):
         results = []
         for result in self.results:
             remaining = None
-            if timeout:
-                remaining = timeout - (time.monotonic() - time_start)
-                if remaining <= 0.0:
-                    raise TimeoutError('join operation timed out')
+            if timeout is not None:
+                # A budget of 0, or one already spent, means "do not block":
+                # each result is polled once and raises if it is not ready.
+                remaining = max(timeout - (time.monotonic() - time_start), 0.0)
             value = result.get(
                 timeout=remaining, propagate=propagate,
                 interval=interval, no_ack=no_ack, on_interval=on_interval,
@@ -798,6 +841,7 @@ class ResultSet(ResultBase):
         This is currently only supported by the amqp, Redis and cache
         result backends.
         """
+        self._on_full.finalize()
         return self.backend.iter_native(
             self,
             timeout=timeout, interval=interval, no_ack=no_ack,
@@ -829,7 +873,10 @@ class ResultSet(ResultBase):
             if isinstance(meta, list):
                 value = []
                 for children_result in meta:
-                    value.append(children_result.get())
+                    value.append(children_result.get(
+                        propagate=propagate,
+                        disable_sync_subtasks=disable_sync_subtasks,
+                    ))
             else:
                 value = meta['result']
                 if propagate and meta['status'] in states.PROPAGATE_STATES:
@@ -1005,7 +1052,8 @@ class EagerResult(AsyncResult):
         return self.__class__, self.__reduce_args__()
 
     def __reduce_args__(self):
-        return (self.id, self._result, self._state, self._traceback)
+        return (self.id, self._result, self._state, self._traceback,
+                self._name)
 
     def __copy__(self):
         cls, args = self.__reduce__()
@@ -1026,13 +1074,41 @@ class EagerResult(AsyncResult):
                 raise self.result if isinstance(
                     self.result, Exception) else Exception(self.result)
             return self.result
-    wait = get  # XXX Compat (remove 5.0)
+    wait = get  # XXX Compat (remove 6.0)
 
     def forget(self):
         pass
 
     def revoke(self, *args, **kwargs):
+        """Mark the result as revoked.
+
+        An eager task has already finished by the time its result exists,
+        so nothing is cancelled.  The state is set to ``REVOKED`` and the
+        task's return value or exception is intentionally replaced by a
+        :exc:`~celery.exceptions.TaskRevokedError`, which is what the result
+        backend stores for a task revoked on a worker.  :meth:`get` then
+        raises that error, and :attr:`result` and ``get(propagate=False)``
+        return it.
+
+        Note:
+            This differs from revoking an already finished task through a
+            result backend, where the stored result is left untouched.
+            The original return value or exception is no longer available
+            from this instance afterwards.
+
+        .. versionchanged:: 5.7.0
+
+            The previous result is replaced by a
+            :exc:`~celery.exceptions.TaskRevokedError` and the traceback is
+            cleared.  Before, the state changed to ``REVOKED`` but the
+            return value was kept, so :meth:`get` raised it wrapped in a
+            bare :exc:`Exception`.
+        """
         self._state = states.REVOKED
+        # Same as what the backend stores for a revoked task
+        # (see ``Backend.mark_as_revoked``), so that get() raises it.
+        self._result = TaskRevokedError('revoked')
+        self._traceback = None
 
     def __repr__(self):
         return f'<EagerResult: {self.id}>'
@@ -1056,7 +1132,7 @@ class EagerResult(AsyncResult):
     def state(self):
         """The tasks state."""
         return self._state
-    status = state
+    status = state  # XXX compat (remove 6.0)
 
     @property
     def traceback(self):

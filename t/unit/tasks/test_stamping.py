@@ -663,7 +663,6 @@ class test_stamping_mechanism(CanvasCase):
 
         class CustomStampingVisitor(StampingVisitor):
             def on_signature(self, actual_sig, **headers) -> dict:
-                nonlocal expected_sig
                 assert actual_sig == expected_sig
                 return {"header": "value"}
 
@@ -1314,3 +1313,33 @@ class test_stamping_mechanism(CanvasCase):
             canvas = chain(tasks())
             canvas.link_error(s("chain_link_error"))
             canvas.stamp(CustomStampingVisitor())
+
+    def test_nested_dict_stamp_respects_append_stamps(self, subtests):
+        """Nested dict stamps must honor append_stamps, like flat stamps do.
+
+        Regression test: the recursive _merge_dictionaries() call dropped its
+        aggregate_duplicates argument, so a stamp whose value is a dict was
+        always aggregated into a list, even when append_stamps=False.
+        """
+
+        class NestedStampVisitor(StampingVisitor):
+            def on_signature(self, sig: Signature, **headers) -> dict:
+                return {"nested_stamp": {"shared": 2}}
+
+        with subtests.test("append_stamps=False does not aggregate nested values"):
+            sig = self.add.s(1, 1)
+            sig.stamp(
+                NestedStampVisitor(),
+                append_stamps=False,
+                nested_stamp={"shared": 1, "only_sig": 1},
+            )
+            assert sig.options["nested_stamp"] == {"shared": 1, "only_sig": 1}
+
+        with subtests.test("append_stamps=True aggregates nested values"):
+            sig = self.add.s(1, 1)
+            sig.stamp(
+                NestedStampVisitor(),
+                append_stamps=True,
+                nested_stamp={"shared": 1, "only_sig": 1},
+            )
+            assert sig.options["nested_stamp"] == {"shared": [1, 2], "only_sig": 1}

@@ -126,7 +126,14 @@ and creating Celery applications.
 
     .. data:: on_after_finalize
 
-        Signal sent after app has been finalized.
+        Signal sent after the app has been finalized — that is, after all
+        pending task decorators have been evaluated, built-in tasks loaded,
+        and every task registered at that point has been bound to the app.
+        At this stage the task registry is initialized and stable enough to
+        import and inspect task objects reliably.
+
+        See :meth:`~celery.Celery.finalize` for more details on what
+        finalization does.
 
     .. data:: on_after_fork
 

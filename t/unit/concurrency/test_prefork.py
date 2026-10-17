@@ -1,20 +1,28 @@
 import errno
 import os
+import pickle
+import select
 import socket
 import tempfile
+import threading
 from itertools import cycle
-from unittest.mock import Mock, patch
+from struct import pack
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from billiard.pool import ApplyResult
 from kombu.asynchronous import Hub
+from kombu.message import Message
+from vine import promise
 
 import t.skip
+from celery.app import base as app_base
 from celery.app.defaults import DEFAULTS
 from celery.concurrency.asynpool import iterate_file_descriptors_safely
 from celery.utils.collections import AttributeDict
 from celery.utils.functional import noop
 from celery.utils.objects import Bunch
+from t.unit.conftest import restore_execv_state
 
 try:
     from celery.concurrency import asynpool
@@ -55,6 +63,79 @@ class MockResult:
         return self.value
 
 
+class PipeReader:
+    """Stand-in for ``proc.outq._reader`` backed by a real pipe fd.
+
+    ``poll`` reports real readiness so the test sees exactly what
+    ``_flush_outqueue`` would see, and ``recv`` fails loudly instead of
+    blocking: a blocking ``recv`` on a half-read message is the bug.
+    """
+
+    def __init__(self, fd):
+        self._fd = fd
+
+    def fileno(self):
+        return self._fd
+
+    def poll(self, timeout=0.0):
+        readable, _, _ = select.select([self._fd], [], [], timeout)
+        return bool(readable)
+
+    def recv(self):
+        raise AssertionError(
+            'recv() on a pipe holding the tail of a partly read message '
+            'would block forever')
+
+
+@pytest.fixture
+def result_pipe():
+    r, w = os.pipe()
+    os.set_blocking(r, False)
+    yield r, w
+    for fd in (r, w):
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+
+def make_result_handler(fd, proc):
+    handler = asynpool.ResultHandler(
+        Mock(), Mock(), {}, Mock(),
+        Mock(), Mock(), Mock(), Mock(),
+        fileno_to_outq={fd: proc},
+        on_process_alive=Mock(),
+        on_job_ready=Mock(),
+    )
+    handler.on_state_change = Mock(name='on_state_change')
+    return handler
+
+
+def start_partial_read(handler, hub, r, w, message):
+    """Register a ``_recv_message`` generator on ``hub`` for ``r`` that has
+    read the header and the first half of ``message``'s body.
+
+    Returns the body bytes still to be written.
+    """
+    body = pickle.dumps(message, pickle.HIGHEST_PROTOCOL)
+    half = len(body) // 2
+    os.write(w, pack('>i', len(body)) + body[:half])
+    handler.register_with_event_loop(hub)
+    handler.handle_event(r)
+    callback, _ = hub.readers[r]
+    assert asynpool.gen_not_started(callback) is False
+    return body[half:]
+
+
+def ack_promise(name, side_effect=None):
+    """What the consumer leaves in ``hub._ready`` once a request acks:
+    a promise around a bound ``Message`` method."""
+    method = Mock(name=name, side_effect=side_effect)
+    method.__self__ = Mock(spec=Message)
+    method.__name__ = name
+    return promise(method), method
+
+
 @patch('celery.platforms.set_mp_process_title')
 class test_process_initializer:
 
@@ -66,7 +147,8 @@ class test_process_initializer:
         return loader
 
     @patch('celery.platforms.signals')
-    def test_process_initializer(self, _signals, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer(self, _get_start_method, _signals, set_mp_process_title, restore_logging):
         from celery import signals
         from celery._state import _tls
         from celery.concurrency.prefork import WORKER_SIGIGNORE, WORKER_SIGRESET, process_initializer
@@ -80,18 +162,17 @@ class test_process_initializer:
             _signals.reset.assert_any_call(*WORKER_SIGRESET)
             assert app.loader.init_worker.call_count
             on_worker_process_init.assert_called()
+            assert on_worker_process_init.call_args.kwargs['sender'] == 'awesome.worker.com'
             assert _tls.current_app is app
             set_mp_process_title.assert_called_with(
                 'celeryd', hostname='awesome.worker.com',
             )
 
-            with patch('celery.app.trace.setup_worker_optimizations') as S:
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
                 os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-                try:
-                    process_initializer(app, 'luke.worker.com')
-                    S.assert_called_with(app, 'luke.worker.com')
-                finally:
-                    os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                process_initializer(app, 'luke.worker.com')
+                S.assert_called_with(app, 'luke.worker.com')
 
             os.environ['CELERY_LOG_FILE'] = 'worker%I.log'
             app.log.setup = Mock(name='log_setup')
@@ -100,8 +181,46 @@ class test_process_initializer:
             finally:
                 os.environ.pop('CELERY_LOG_FILE', None)
 
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='spawn')
+    def test_process_initializer_spawned_child(self, _get_start_method, _signals, set_mp_process_title,
+                                               restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'spawned.worker.com')
+                assert os.environ['FORKED_BY_MULTIPROCESSING'] == '1'
+                # base was imported before the child knew it was spawned, so
+                # the flag has to be set too, not just the variable.
+                assert app_base.USING_EXECV
+                S.assert_called_with(app, 'spawned.worker.com')
+            assert app.loader.init_worker.call_count
+
+    @patch('celery.platforms.signals')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_process_initializer_forked_child(self, _get_start_method, _signals, set_mp_process_title,
+                                              restore_logging):
+        from celery.concurrency.prefork import process_initializer
+
+        with self.Celery(loader=self.Loader) as app:
+            app.conf = AttributeDict(DEFAULTS)
+            with restore_execv_state(), \
+                    patch('celery.app.trace.setup_worker_optimizations') as S:
+                os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+                app_base.USING_EXECV = None
+                process_initializer(app, 'forked.worker.com')
+                assert 'FORKED_BY_MULTIPROCESSING' not in os.environ
+                assert not app_base.USING_EXECV
+                S.assert_not_called()
+
     @patch('celery.platforms.set_pdeathsig')
-    def test_pdeath_sig(self, _set_pdeathsig, set_mp_process_title, restore_logging):
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_pdeath_sig(self, _get_start_method, _set_pdeathsig, set_mp_process_title, restore_logging):
         from celery import signals
         on_worker_process_init = Mock()
         signals.worker_process_init.connect(on_worker_process_init)
@@ -112,14 +231,42 @@ class test_process_initializer:
             process_initializer(app, 'awesome.worker.com')
         _set_pdeathsig.assert_called_once_with('SIGKILL')
 
+    @patch('celery.platforms.set_pdeathsig')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_worker_process_init_sender_is_hostname(self, _get_start_method, _set_pdeathsig,
+                                                    set_mp_process_title, restore_logging):
+        from celery import signals
+        from celery.concurrency.prefork import process_initializer
+        on_db_worker = Mock()
+        signals.worker_process_init.connect(on_db_worker, sender='db@example.com')
+        try:
+            with self.Celery(loader=self.Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'web@example.com')
+                on_db_worker.assert_not_called()
+                process_initializer(app, 'db@example.com')
+                on_db_worker.assert_called_once()
+                assert mp._process_hostname == 'db@example.com'
+        finally:
+            signals.worker_process_init.disconnect(on_db_worker, sender='db@example.com')
+
 
 class test_process_destructor:
 
+    @patch('celery.concurrency.prefork._process_hostname', None)
     @patch('celery.concurrency.prefork.signals')
     def test_process_destructor(self, signals):
         mp.process_destructor(13, -3)
         signals.worker_process_shutdown.send.assert_called_with(
             sender=None, pid=13, exitcode=-3,
+        )
+
+    @patch('celery.concurrency.prefork._process_hostname', 'db@example.com')
+    @patch('celery.concurrency.prefork.signals')
+    def test_process_destructor_sender_is_hostname(self, signals):
+        mp.process_destructor(13, 0)
+        signals.worker_process_shutdown.send.assert_called_with(
+            sender='db@example.com', pid=13, exitcode=0,
         )
 
 
@@ -366,6 +513,23 @@ class test_AsynPool:
         # Then: all items were removed from the managed data source
         assert fd_iter == {}, "Expected all items removed from managed dict"
 
+    def test_iterate_file_descriptors_safely_handles_attribute_error(self):
+        # Given: fd objects whose underlying socket has been set to None
+        # after a connection loss (hub_method raises AttributeError on .fileno())
+        fd_iter = [1, 2, 3]
+
+        def _fake_hub(*args, **kwargs):
+            raise AttributeError("'NoneType' object has no attribute 'fileno'")
+
+        # When: iterating — must not propagate AttributeError as Unrecoverable
+        iterate_file_descriptors_safely(
+            fd_iter, fd_iter, _fake_hub,
+            "arg1", kw1="kw1",
+        )
+
+        # Then: stale fds are cleaned up, not raised
+        assert fd_iter == [], "Expected stale None-socket fds removed from managed list"
+
     def _get_hub(self):
         hub = Hub()
         hub.readers = {}
@@ -464,6 +628,83 @@ class test_AsynPool:
         assert 2 in hub.readers
 
     @t.skip.if_pypy
+    @pytest.mark.parametrize('header_written', [False, True])
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_write_job_stops_when_inqueue_not_recovering(
+            self, _create_worker_process, header_written):
+        """_write_job must end cleanly when the inqueue stays unwritable.
+
+        After more than 100 consecutive EAGAIN errors writing the header or
+        the body, on_not_recovering() terminates the process and puts the
+        job back.  The generator must then end with StopIteration, which the
+        event loop expects: under PEP 479 a ``raise StopIteration()`` in the
+        generator becomes RuntimeError and stops the worker.
+        """
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = self._get_hub()
+
+        fd = 2
+        written = [4] if header_written else []
+
+        def send_job_offset(buf, offset):
+            if written:
+                return written.pop()
+            raise OSError(errno.EAGAIN, 'Resource temporarily unavailable')
+
+        proc = Mock(name='proc', index=0, exitcode=None)
+        proc._is_alive.return_value = True
+        proc.send_job_offset.side_effect = send_job_offset
+        pool._all_inqueues = {fd}
+        pool._fileno_to_inq[fd] = proc
+        pool._create_write_handlers(hub)
+
+        job = ApplyResult({}, lambda x: True)
+        job._payload = (memoryview(b'\0\0\0\x04'), memoryview(b'body'), 4)
+        pool.outbound_buffer.append(job)
+
+        with patch.object(asynpool, 'logger') as logger:
+            # schedule_writes() takes the first step and registers the
+            # generator as the writer for fd; the event loop drives the rest.
+            hub.consolidate_callback(ready_fds=[fd])
+            cor = job._writer()
+            assert hub.writers[fd] == (cor, ())
+            with pytest.raises(StopIteration):
+                for _ in range(200):
+                    next(cor)
+
+        logger.exception.assert_called_once()
+        assert logger.exception.call_args[0][0].startswith(
+            'Process inqueue damaged')
+        proc.terminate.assert_called_once_with()
+        assert list(pool.outbound_buffer) == [job]
+        assert fd not in hub.writers
+        assert fd not in pool._active_writes
+        assert cor not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_write_ack_stops_when_process_gone(self, _create_worker_process):
+        """_write_ack must end cleanly when the synq has no process anymore.
+
+        The ack is discarded and the generator must end with StopIteration,
+        not RuntimeError (PEP 479).
+        """
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        hub = self._get_hub()
+        pool._create_write_handlers(hub)
+
+        fd = 3
+        pool.send_ack(asynpool.ACK, 1234, Mock(name='job'), fd)
+        cor, _ = hub.writers[fd]
+        assert cor in pool._active_writers
+
+        with pytest.raises(StopIteration):
+            next(cor)
+
+        assert fd not in pool._active_writes
+        assert cor not in pool._active_writers
+
+    @t.skip.if_pypy
     def test_register_with_event_loop__no_on_tick_dupes(self):
         """Ensure AsynPool's register_with_event_loop only registers
         on_poll_start in the event loop the first time it's called. This
@@ -488,12 +729,424 @@ class test_AsynPool:
             sender=pool,
         )
 
+    def test_untrack_child_process_without_sentinel_poll(self):
+        """_untrack_child_process must not raise when proc lacks _sentinel_poll.
 
-@t.skip.if_win32
-class test_ResultHandler:
-
-    def setup_method(self):
+        Race condition during cold shutdown can cause _untrack_child_process to
+        be called with a process that never had _sentinel_poll set or had it
+        cleared. Use getattr for safe access.
+        """
         pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        proc = object()  # No _sentinel_poll attribute
+        pool._untrack_child_process(proc, hub)  # Should not raise AttributeError
+        hub.remove.assert_not_called()
+
+    def test_untrack_child_process_with_sentinel_poll(self):
+        """_untrack_child_process cleans up when proc has _sentinel_poll set."""
+        pytest.importorskip('multiprocessing')
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        hub = Mock(name='hub')
+        fd = os.open(os.devnull, os.O_RDONLY)
+        proc = Mock(_sentinel_poll=fd)
+        pool._untrack_child_process(proc, hub)
+        hub.remove.assert_called_once_with(fd)
+        assert proc._sentinel_poll is None
+
+    @t.skip.if_pypy
+    def test_flush_no_synack_discards_unaccepted_jobs(self):
+        """flush() should discard unaccepted jobs when synack is disabled.
+
+        Previously, flush() only handled the synack case. Without synack,
+        unaccepted jobs were never cleaned from the cache, leading to stale
+        entries.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        job1 = Mock(name='job1')
+        job1._accepted = False
+        job1._writer.return_value = None
+        job2 = Mock(name='job2')
+        job2._accepted = True
+        job2._writer.return_value = None
+
+        pool._cache = {1: job1, 2: job2}
+        pool.outbound_buffer.clear()
+        pool._active_writers.clear()
+
+        pool.flush()
+
+        job1.discard.assert_called_once()
+        job2.discard.assert_not_called()
+
+    @t.skip.if_pypy
+    def test_flush_synack_cancels_unaccepted_jobs(self):
+        """flush() should call _cancel() on unaccepted jobs when synack is enabled."""
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        job1 = Mock(name='job1')
+        job1._accepted = False
+        job1._writer.return_value = None
+        job2 = Mock(name='job2')
+        job2._accepted = True
+        job2._writer.return_value = None
+
+        pool._cache = {1: job1, 2: job2}
+        pool.outbound_buffer.clear()
+        pool._active_writers.clear()
+
+        pool.flush()
+
+        job1._cancel.assert_called_once()
+        job1.discard.assert_not_called()
+        job2._cancel.assert_not_called()
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_dead_process_discards_active_writer(self, _create_worker_process):
+        """flush() must discard generator from _active_writers when process is dead.
+
+        Previously, when a process was dead, the generator was never removed
+        from _active_writers, causing an infinite loop in the while loop.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Create a mock generator (already started, so not gen_not_started)
+        gen = Mock(name='gen')
+        gen.__name__ = '_write_job'
+        # Simulate a started generator
+        with patch.object(asynpool, 'gen_not_started', return_value=False):
+            proc = Mock(name='proc')
+            proc._is_alive.return_value = False  # Process is dead
+
+            job = Mock(name='job')
+            job._accepted = True
+            job._write_to = proc
+            job._writer.return_value = gen
+
+            pool._cache = {1: job}
+            pool._active_writers = {gen}
+            pool.outbound_buffer.clear()
+
+            pool.flush()
+
+        # Generator should have been removed from active_writers
+        assert gen not in pool._active_writers
+        # Job should have been discarded since process is dead
+        job.discard.assert_called()
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_alive_process_flushes_writer(self, _create_worker_process):
+        """flush() should call _flush_writer when process is still alive."""
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        gen = Mock(name='gen')
+        gen.__name__ = '_write_job'
+
+        with patch.object(asynpool, 'gen_not_started', return_value=False):
+            proc = Mock(name='proc')
+            proc._is_alive.return_value = True
+
+            job = Mock(name='job')
+            job._accepted = True
+            job._write_to = proc
+            job._writer.return_value = gen
+
+            pool._cache = {1: job}
+            pool._active_writers = {gen}
+            pool.outbound_buffer.clear()
+
+            with patch.object(pool, '_flush_writer') as mock_flush:
+                # _flush_writer removes from _active_writers in its finally
+                def side_effect(p, g):
+                    pool._active_writers.discard(g)
+                mock_flush.side_effect = side_effect
+
+                pool.flush()
+
+            mock_flush.assert_called_once_with(proc, gen)
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_is_advanced_not_dropped(self, _create_worker_process):
+        """flush() must not silently drop _write_ack generators (synack mode).
+
+        _write_ack coroutines are added to _active_writers by send_ack() but
+        are NOT mapped in owned_by (which is built from _cache job writers only).
+        Dropping them mid-write leaves a partially-written ack on the synq pipe
+        and hangs the worker process waiting for the ack that never arrives.
+        flush() must advance them to completion instead.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Simulate a _write_ack generator (name != '_write_job', not in owned_by)
+        ack_gen = Mock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        # First call to next() returns normally (still writing),
+        # second raises StopIteration (write complete).
+        ack_gen.__next__ = Mock(side_effect=[None, StopIteration()])
+
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # Generator should have been advanced (not just silently discarded)
+        assert ack_gen.__next__.called
+        # And removed once it signalled completion
+        assert ack_gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_handles_oserror(self, _create_worker_process):
+        """flush() should discard the coroutine if OSError is raised during next()."""
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        ack_gen = MagicMock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        ack_gen.__next__.side_effect = OSError()
+
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+        pool.flush()
+
+        assert ack_gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_write_ack_coroutine_handles_eoferror(self, _create_worker_process):
+        """flush() should discard the coroutine if EOFError is raised during next()."""
+        pool = asynpool.AsynPool(processes=1, synack=True, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        ack_gen = MagicMock(name='ack_gen')
+        ack_gen.__name__ = '_write_ack'
+        ack_gen.__next__.side_effect = EOFError()
+
+        pool._cache = {}
+        pool._active_writers = {ack_gen}
+        pool.outbound_buffer.clear()
+        pool.flush()
+
+        assert ack_gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_not_started_write_job_is_discarded(self, _create_worker_process):
+        """flush() should discard a _write_job generator that has not started yet.
+
+        When gen_not_started() returns True the job has not been written to the
+        pipe at all, so it is safe to discard it and let the broker redeliver.
+        """
+        pool = asynpool.AsynPool(processes=1, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        gen = Mock(name='gen')
+        gen.__name__ = '_write_job'
+
+        with patch.object(asynpool, 'gen_not_started', return_value=True):
+            job = Mock(name='job')
+            job._accepted = True
+            job._writer.return_value = gen
+
+            pool._cache = {1: job}
+            pool._active_writers = {gen}
+            pool.outbound_buffer.clear()
+
+            pool.flush()
+
+        job.discard.assert_called_once()
+        assert gen not in pool._active_writers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_for_accepted_job(self, _create_worker_process):
+        """flush() must keep a worker marked busy while it runs an accepted job.
+
+        On a broker reconnect Consumer.on_close calls pool.flush(). A worker
+        still executing an accepted (running) task is genuinely busy, so its
+        inqueue write-fd must remain in _busy_workers. Clearing it would
+        desynchronize the fair scheduler from reality and let a new task be
+        written onto the busy worker, blocking it behind the long-running task
+        even while another worker is idle.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        # Worker still running an accepted job, dispatched to fd 7. Once the
+        # body is written job._write_to points at the executing process, so it
+        # is the preferred source of truth for the busy fd.
+        proc = Mock(name='proc')
+        proc.inqW_fd = 7
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {7}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        # The busy worker must still be marked busy after the flush.
+        assert 7 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_busy_worker_via_scheduled_for_fallback(self, _create_worker_process):
+        """flush() falls back to _scheduled_for when _write_to is unset.
+
+        A job can be accepted before its body finished writing, leaving
+        _write_to unset while _scheduled_for already identifies the worker the
+        task was dispatched to. The busy fd must still be preserved.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 5
+        proc._is_alive.return_value = True
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = None
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {5}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 5 in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_unaccepted_job(self, _create_worker_process):
+        """flush() must free a worker whose job was not accepted yet.
+
+        Unaccepted jobs are discarded/redelivered by the broker, so the worker
+        they were tentatively scheduled to is no longer busy and its fd must be
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 9
+        job = Mock(name='job')
+        job._accepted = False
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_preserves_accepted_and_releases_unaccepted_together(self, _create_worker_process):
+        """flush() must resolve a mixed _busy_workers set in a single call.
+
+        When one worker runs an accepted job and another only had an
+        unaccepted job tentatively scheduled to it, the same flush() must keep
+        the accepted worker busy while releasing the unaccepted one, rather
+        than treating the set all-or-nothing.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        accepted_proc = Mock(name='accepted_proc')
+        accepted_proc.inqW_fd = 7
+        accepted_proc._is_alive.return_value = True
+        accepted_job = Mock(name='accepted_job')
+        accepted_job._accepted = True
+        accepted_job._write_to = accepted_proc
+        accepted_job._scheduled_for = accepted_proc
+        accepted_job._writer.return_value = None
+
+        unaccepted_proc = Mock(name='unaccepted_proc')
+        unaccepted_proc.inqW_fd = 9
+        unaccepted_job = Mock(name='unaccepted_job')
+        unaccepted_job._accepted = False
+        unaccepted_job._write_to = unaccepted_proc
+        unaccepted_job._scheduled_for = unaccepted_proc
+        unaccepted_job._writer.return_value = None
+
+        pool._cache = {1: accepted_job, 2: unaccepted_job}
+        pool._busy_workers = {7, 9}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 7 in pool._busy_workers
+        assert 9 not in pool._busy_workers
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_flush_releases_busy_worker_for_dead_process(self, _create_worker_process):
+        """flush() must not keep an accepted job's fd if its worker died.
+
+        If the worker executing an accepted job has exited, its inqueue
+        write-fd may be reused by a replacement process. Keeping the fd marked
+        busy would sideline that healthy replacement, so a dead worker's fd is
+        dropped from _busy_workers.
+        """
+        pool = asynpool.AsynPool(processes=2, synack=False, threads=False)
+        pool._state = asynpool.RUN
+        pool.maintain_pool = Mock(name='maintain_pool')
+
+        proc = Mock(name='proc')
+        proc.inqW_fd = 3
+        proc._is_alive.return_value = False
+        job = Mock(name='job')
+        job._accepted = True
+        job._write_to = proc
+        job._scheduled_for = proc
+        job._writer.return_value = None
+
+        pool._cache = {1: job}
+        pool._busy_workers = {3}
+        pool._active_writers.clear()
+        pool.outbound_buffer.clear()
+
+        pool.flush()
+
+        assert 3 not in pool._busy_workers
 
     def test_process_result(self):
         x = asynpool.ResultHandler(
@@ -517,6 +1170,224 @@ class test_ResultHandler:
         x._recv_message.assert_called_with(
             hub.add_reader, 3, x.on_state_change,
         )
+
+    def test_flush_outqueue_completes_partial_message_instead_of_recv(
+            self, result_pipe):
+        """A message half-read by the event loop is finished by resuming
+        the hub's generator, not by a blocking ``recv()`` on the pipe."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        message = ('ready', 42)
+        rest = start_partial_read(handler, hub, r, w, message)
+
+        os.write(w, rest)
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.sleep'):
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            hub.close()
+
+        handler.on_state_change.assert_called_once_with(message)
+        remove.assert_not_called()
+        assert (hub.readers.get(r) is None or
+                hub.readers[r][0] is handler.handle_event)
+
+    def test_flush_outqueue_waits_for_a_live_child_still_writing(
+            self, result_pipe):
+        """The tail arrives only after the first resume: a live child is
+        polled for and the message is completed, not handed to recv()."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        message = ('ready', 42)
+        rest = start_partial_read(handler, hub, r, w, message)
+        writer = threading.Timer(0.05, os.write, args=(w, rest))
+        writer.start()
+
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.sleep'):
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            writer.join()
+            hub.close()
+
+        handler.on_state_change.assert_called_once_with(message)
+        remove.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_process_dies_mid_message(
+            self, result_pipe):
+        """If the child never finishes writing and is dead, the fd is
+        removed rather than waited on forever."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = False
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_a_live_child_stalls(self, result_pipe):
+        """A child that is alive but never finishes its write is given up
+        on once ``partial_read_deadline`` has passed."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        handler.partial_read_timeout = 0.01
+        handler.partial_read_deadline = 0.05
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            with patch('celery.concurrency.asynpool.logger') as logger:
+                handler._flush_outqueue(
+                    r, remove, handler.fileno_to_outq,
+                    handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+        logger.warning.assert_called_once()
+
+    def test_flush_outqueue_drops_fd_on_eof_mid_message(self, result_pipe):
+        """The write end closes before the rest of the body arrives: the
+        resumed generator raises and the fd is dropped."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        proc.outq._reader = PipeReader(r)
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+        os.close(w)
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_flush_outqueue_drops_fd_when_poll_fails(self, result_pipe):
+        """The pipe can no longer be polled (e.g. closed under us): the fd
+        is dropped instead of retried."""
+        r, w = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        reader = PipeReader(r)
+        reader.poll = Mock(name='poll', side_effect=OSError(errno.EBADF, 'closed'))
+        proc.outq._reader = reader
+        proc._is_alive.return_value = True
+        handler = make_result_handler(r, proc)
+        start_partial_read(handler, hub, r, w, ('ready', 42))
+
+        remove = Mock(name='remove')
+        try:
+            handler._flush_outqueue(
+                r, remove, handler.fileno_to_outq, handler.on_state_change)
+        finally:
+            hub.close()
+
+        reader.poll.assert_called_once_with(handler.partial_read_timeout)
+        remove.assert_called_once_with(r)
+        handler.on_state_change.assert_not_called()
+
+    def test_finish_partial_read_fd_not_on_hub(self, result_pipe):
+        r, _ = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        handler = make_result_handler(r, proc)
+        handler.register_with_event_loop(hub)
+        try:
+            assert handler._finish_partial_read(r, proc) is False
+        finally:
+            hub.close()
+        proc.outq._reader.poll.assert_not_called()
+
+    def test_finish_partial_read_no_generator_registered(self, result_pipe):
+        r, _ = result_pipe
+        hub = Hub()
+        proc = Mock(name='proc')
+        handler = make_result_handler(r, proc)
+        handler.register_with_event_loop(hub)
+        hub.add_reader(r, handler.handle_event, r)
+        try:
+            assert handler._finish_partial_read(r, proc) is False
+        finally:
+            hub.close()
+        proc.outq._reader.poll.assert_not_called()
+
+    def test_finish_partial_read_not_registered_with_event_loop(self):
+        proc = Mock(name='proc')
+        handler = make_result_handler(3, proc)
+        assert handler._finish_partial_read(3, proc) is False
+
+    @t.skip.if_win32
+    def test_help_stuff_finish_skips_exited_processes(self):
+        # A child killed between reading the 4-byte length and the body of
+        # its None sentinel leaves only the pickle body in its inqueue.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        exited = proc(15, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([exited, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (exited, alive):
+                p.inq.close()
+
+    @t.skip.if_win32
+    def test_help_stuff_finish_survives_truncated_message_from_live_process(self):
+        # A child can still look alive when its exitcode is checked and then
+        # die mid-way through reading its sentinel, leaving only the body.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        dying = proc(None, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([dying, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (dying, alive):
+                p.inq.close()
 
 
 class test_TaskPool:
@@ -572,6 +1443,173 @@ class test_TaskPool:
         pool.on_close()
         pool._pool.close.assert_not_called()
 
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    def test_on_stop_with_hub_fires_timers(self, mock_thread, mock_get_event_loop):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_get_event_loop.return_value = mock_hub
+        mock_timer_thread = Mock(name='timer_thread')
+        mock_thread.return_value = mock_timer_thread
+
+        pool.on_stop()
+
+        mock_pool.close.assert_called_with()
+        mock_pool.join.assert_called_with()
+        mock_get_event_loop.assert_called_once()
+        mock_thread.assert_called_once()
+        assert mock_thread.call_args[1]['daemon'] is True
+        mock_timer_thread.start.assert_called_once()
+        mock_timer_thread.join.assert_called_once_with(timeout=1.0)
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    @patch('celery.concurrency.prefork.threading.Event')
+    def test_on_stop_timer_thread_handles_exceptions(
+        self,
+        mock_event_class,
+        mock_thread,
+        mock_get_event_loop,
+    ):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_hub.fire_timers.side_effect = [Exception("Hub error"), None]
+        mock_hub._pop_ready.return_value = set()
+        mock_get_event_loop.return_value = mock_hub
+
+        mock_shutdown_event = Mock(name='shutdown_event')
+        # Simulate two loop iterations and then shutdown
+        mock_shutdown_event.is_set.side_effect = [False, False, True]
+        mock_event_class.return_value = mock_shutdown_event
+
+        thread_target = None
+
+        def capture_thread(*args, **kwargs):
+            nonlocal thread_target
+            thread_target = kwargs['target']
+            mock_timer_thread = Mock(name='timer_thread')
+            return mock_timer_thread
+
+        mock_thread.side_effect = capture_thread
+
+        pool.on_stop()
+
+        with patch('celery.concurrency.prefork.time.sleep'):
+            thread_target()
+
+        # Should match number of loop iterations allowed by mock_shutdown_event.is_set.side_effect
+        assert mock_hub.fire_timers.call_count == 2
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    @patch('celery.concurrency.prefork.threading.Event')
+    def test_on_stop_timer_thread_runs_ready_callbacks(
+        self,
+        mock_event_class,
+        mock_thread,
+        mock_get_event_loop,
+    ):
+        """Callbacks queued with ``hub.call_soon`` (e.g. late acks) run on
+        every tick of the shutdown timer thread; one failing callback is
+        reported through ``hub.on_callback_error`` and does not stop the
+        others."""
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        error = RuntimeError('ack failed')
+        failing_ack, _ = ack_promise('ack_log_error', side_effect=error)
+        ack, ack_method = ack_promise('reject_log_error')
+        socket_read = Mock(name='socket_read')
+        socket_reader = promise(socket_read)
+        mock_hub = Mock(name='hub')
+        mock_hub._pop_ready.side_effect = [
+            set(), {failing_ack, ack, socket_reader}, set()]
+        mock_get_event_loop.return_value = mock_hub
+
+        mock_shutdown_event = Mock(name='shutdown_event')
+        mock_shutdown_event.is_set.side_effect = [False, False, True]
+        mock_event_class.return_value = mock_shutdown_event
+
+        thread_target = None
+
+        def capture_thread(*args, **kwargs):
+            nonlocal thread_target
+            thread_target = kwargs['target']
+            timer_thread = Mock(name='timer_thread')
+            timer_thread.is_alive.return_value = False
+            return timer_thread
+
+        mock_thread.side_effect = capture_thread
+
+        pool.on_stop()
+        # the acks queued by the results the join waited for are drained
+        # once more on the main thread after the timer thread has exited
+        assert mock_hub._pop_ready.call_count == 1
+
+        with patch('celery.concurrency.prefork.time.sleep'):
+            thread_target()
+
+        assert mock_hub.fire_timers.call_count == 2
+        assert mock_hub._pop_ready.call_count == 3
+        ack_method.assert_called_once_with()
+        mock_hub.on_callback_error.assert_called_once_with(failing_ack, error)
+        # the transport reader re-queues itself after every read and would
+        # feed deliveries to the closed pool: it is put back for hub.close()
+        socket_read.assert_not_called()
+        mock_hub.call_soon.assert_called_once_with(socket_reader)
+
+    @patch('celery.concurrency.prefork.logger')
+    @patch('celery.concurrency.prefork.get_event_loop')
+    @patch('celery.concurrency.prefork.threading.Thread')
+    def test_on_stop_ready_callbacks_error_after_join_is_logged(
+        self, mock_thread, mock_get_event_loop, mock_logger,
+    ):
+        """A failure in the post-join drain (e.g. a hub without
+        ``_pop_ready``) is logged and does not escape ``on_stop``."""
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_hub = Mock(name='hub')
+        mock_hub._pop_ready.side_effect = AttributeError('_pop_ready')
+        mock_get_event_loop.return_value = mock_hub
+        timer_thread = Mock(name='timer_thread')
+        timer_thread.is_alive.return_value = False
+        mock_thread.return_value = timer_thread
+
+        pool.on_stop()
+
+        mock_pool.join.assert_called_once_with()
+        mock_hub._pop_ready.assert_called_once_with()
+        mock_logger.warning.assert_called_once()
+        assert mock_logger.warning.call_args[1]['exc_info'] is True
+
+    @patch('celery.concurrency.prefork.get_event_loop')
+    def test_on_stop_no_hub(self, mock_get_event_loop):
+        pool = TaskPool(10)
+        mock_pool = Mock(name='pool')
+        mock_pool._state = mp.RUN
+        pool._pool = mock_pool
+
+        mock_get_event_loop.return_value = None
+
+        pool.on_stop()
+
+        mock_pool.close.assert_called_with()
+        mock_pool.join.assert_called_with()
+        mock_get_event_loop.assert_called_once()
+
     def test_apply_async(self):
         pool = TaskPool(10)
         pool.start()
@@ -623,3 +1661,28 @@ class test_TaskPool:
         pool = TaskPool(4, app=app)
         pool.on_start()
         assert pool._pool._proc_alive_timeout == 8.0
+
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_fork(self, _forking_enable, _set_start_method):
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=True)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _forking_enable.assert_called_once_with(True)
+        _set_start_method.assert_not_called()
+
+    @patch.dict(os.environ, clear=False)
+    @patch('celery.concurrency.prefork.set_start_method')
+    @patch('celery.concurrency.prefork.forking_enable')
+    def test_on_start_spawn(self, _forking_enable, _set_start_method):
+        os.environ.pop('FORKED_BY_MULTIPROCESSING', None)
+        app = Mock(conf=AttributeDict(DEFAULTS))
+        pool = TaskPool(4, app=app, forking_enable=False)
+        pool.BlockingPool = Mock()
+        pool.on_start()
+        _set_start_method.assert_called_once_with('spawn', force=True)
+        _forking_enable.assert_not_called()
+        # spawned children must be flagged as fresh interpreters so they
+        # re-run setup_worker_optimizations in process_initializer.
+        assert os.environ.get('FORKED_BY_MULTIPROCESSING') == '1'

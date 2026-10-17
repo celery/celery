@@ -166,7 +166,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if key is None:
             return
         self.db.AQLQuery(
-            "REMOVE {_key: @key} IN @@collection",
+            "REMOVE {_key: @key} IN @@collection OPTIONS { ignoreErrors: true }",
             bindVars={
                 "@collection": self.collection,
                 "key": key,

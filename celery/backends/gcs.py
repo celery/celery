@@ -1,6 +1,6 @@
 """Google Cloud Storage result store backend for Celery."""
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from os import getpid
 from threading import RLock
 
@@ -67,7 +67,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         self.project = conf.get('gcs_project')
         if not self.project:
             raise ImproperlyConfigured(
-                'Missing project:specify gcs_project to use gcs backend'
+                'Missing project: specify gcs_project to use gcs backend'
             )
         self.base_path = conf.get('gcs_base_path', '').strip('/')
         self._threadpool_maxsize = int(conf.get('gcs_threadpool_maxsize', 10))
@@ -95,7 +95,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         key = bytes_to_str(key)
         blob = self._get_blob(key)
         if self.ttl:
-            blob.custom_time = datetime.utcnow() + timedelta(seconds=self.ttl)
+            blob.custom_time = datetime.now(timezone.utc) + timedelta(seconds=self.ttl)
         blob.upload_from_string(value, retry=self._retry_policy)
 
     def delete(self, key):
@@ -167,6 +167,9 @@ class GCSBackend(GCSBackendBase):
     implements_incr = True
     supports_native_join = True
 
+    # Blobs are uploaded from and downloaded to bytes.
+    supports_result_compression = True
+
     # Firestore parameters
     _collection_name = 'celery'
     _field_count = 'chord_count'
@@ -181,6 +184,7 @@ class GCSBackend(GCSBackendBase):
 
         self._firestore_lock = RLock()
         self._firestore_client = None
+        self._firestore_pid = getpid()
 
         self.firestore_project = self.app.conf.get(
             'firestore_project', self.project
@@ -198,13 +202,13 @@ class GCSBackend(GCSBackendBase):
 
         # make sure it's thread-safe, as creating a new client is expensive
         with self._firestore_lock:
-            if self._firestore_client and self._pid == getpid():
+            if self._firestore_client and self._firestore_pid == getpid():
                 return self._firestore_client
             # make sure each process gets its own connection after a fork
             self._firestore_client = firestore.Client(
                 project=self.firestore_project
             )
-            self._pid = getpid()
+            self._firestore_pid = getpid()
         return self._firestore_client
 
     def _is_firestore_ttl_policy_enabled(self):
@@ -344,7 +348,7 @@ class GCSBackend(GCSBackendBase):
         Firestore ttl data is typically deleted within 24 hours after its
         expiration date.
         """
-        val_expires = datetime.utcnow() + timedelta(seconds=expires)
+        val_expires = datetime.now(timezone.utc) + timedelta(seconds=expires)
         doc = self._firestore_document(key)
         doc.set({self._field_expires: val_expires}, merge=True)
 

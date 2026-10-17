@@ -22,7 +22,6 @@ __all__ = (
     'cached_property',
     'chunks',
     'gen_task_name',
-    'gen_task_name',
     'gen_unique_id',
     'get_cls_by_name',
     'get_full_cls_name',

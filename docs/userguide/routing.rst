@@ -225,6 +225,13 @@ RabbitMQ Message Priorities
 
 .. versionadded:: 4.0
 
+With RabbitMQ, **higher priority numbers denote higher priority**: a task
+with ``priority=9`` will generally be delivered ahead of a task with
+``priority=0``. This matches RabbitMQ's native ``x-max-priority``
+semantics and is the opposite of how Redis handles priorities (see
+:ref:`redis-message-priorities`); it describes broker ordering rather than
+a strict guarantee about worker processing order.
+
 Queues can be configured to support priorities by setting the
 ``x-max-priority`` argument:
 
@@ -251,12 +258,16 @@ A default priority for all tasks can also be specified using the
 
     app.conf.task_default_priority = 5
 
-.. _amqp-primer:
-
+.. _redis-message-priorities:
 
 Redis Message Priorities
 ------------------------
 :supported transports: Redis
+
+With Redis, **priority 0 is the highest priority** and priority 9 is the
+lowest. This is the reverse of RabbitMQ (see
+:ref:`routing-options-rabbitmq-priorities`) and is a consequence of how the
+priority queues are implemented on top of Redis lists.
 
 While the Celery Redis transport does honor the priority field, Redis itself has
 no notion of priorities. Please read this note before attempting to implement
@@ -276,7 +287,7 @@ This means that even though there are 10 (0-9) priority levels, these are
 consolidated into 4 levels by default to save resources. This means that a
 queue named celery will really be split into 4 queues.
 
-The highest priority queue will be named celery, and the the other queues will
+The highest priority queue will be named celery, and the other queues will
 have a separator (by default `\x06\x16`) and their priority number appended to
 the queue name.
 
@@ -307,6 +318,8 @@ That said, note that this will never be as good as priorities implemented at the
 broker server level, and may be approximate at best. But it may still be good
 enough for your application.
 
+
+.. _amqp-primer:
 
 AMQP Primer
 ===========
@@ -758,8 +771,9 @@ default priority.
     responsiveness of your system without the costs of disabling prefetching
     entirely.
 
-    Note that priorities values are sorted in reverse when
-    using the redis broker: 0 being highest priority.
+    The priority number is interpreted differently depending on the broker:
+    see :ref:`routing-options-rabbitmq-priorities` and
+    :ref:`redis-message-priorities`.
 
 
 Broadcast

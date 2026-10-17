@@ -8,12 +8,16 @@
 import sys
 import time
 import warnings
-from collections import namedtuple
+from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
+from uuid import UUID
 from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
+from kombu.compression import compress, decompress
+from kombu.compression import encoders as compression_encoders
+from kombu.compression import get_encoder as get_compression_encoder
 from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
@@ -37,6 +41,21 @@ __all__ = ('BaseBackend', 'KeyValueStoreBackend', 'DisabledBackend')
 
 EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 
+#: Marker prepended to compressed result payloads.
+#:
+#: Unlike a task message, a stored result has nowhere to keep the
+#: ``compression`` header that Kombu uses to tell a consumer how a body was
+#: compressed, because backends store the payload as a single opaque value.
+#: The compression type therefore travels in-band, in front of the compressed
+#: body: ``MAGIC + content-type + b'\0' + body``.
+#:
+#: The leading NUL byte cannot start the output of any serializer Celery
+#: ships with (JSON and YAML are text, pickle starts with an opcode, and
+#: msgpack encodes a mapping with a byte in the ``0x80``-``0xdf`` range), so a
+#: payload written before compression was turned on is never mistaken for a
+#: compressed one.
+COMPRESSED_PAYLOAD_MAGIC = b'\x00celery-compressed\x00'
+
 logger = get_logger(__name__)
 
 MESSAGE_BUFFER_MAX = 8192
@@ -58,6 +77,58 @@ as this pattern requires synchronization.
 
 Result backends that supports chords: Redis, Database, Memcached, and more.
 """
+
+E_UNKNOWN_COMPRESSION = """\
+Unknown compression method {0!r} configured in result_compression.
+Available methods are: {1}.
+"""
+
+W_COMPRESSION_UNSUPPORTED = """\
+The {0} result backend cannot store compressed payloads, so the
+result_compression setting is ignored and results are stored uncompressed.
+"""
+
+W_FAILURE_EXPIRES_UNSUPPORTED = """\
+The {0} result backend does not support result_failure_expires, so failed
+results expire like any other result.
+"""
+
+
+def compress_payload(payload, compression):
+    """Compress an encoded result payload.
+
+    The returned payload describes its own compression method, so
+    :func:`decompress_payload` can undo this without being told which
+    method was used.
+
+    Arguments:
+        payload (AnyStr): An encoded result payload.
+        compression (str): Name of a method in the Kombu compression
+            registry, for example ``'gzip'``.
+    """
+    body, content_type = compress(payload, compression)
+    return b''.join([
+        COMPRESSED_PAYLOAD_MAGIC, content_type.encode('utf-8'), b'\x00', body,
+    ])
+
+
+def decompress_payload(payload):
+    """Decompress a payload written by :func:`compress_payload`.
+
+    Payloads that don't carry the marker are returned as they are, so
+    results stored before compression was enabled are still readable, and
+    payloads that do carry it are decompressed even when the reader has no
+    compression of its own configured.
+    """
+    if isinstance(payload, memoryview):
+        payload = payload.tobytes()
+    if not isinstance(payload, (bytes, bytearray)):
+        return payload
+    if not payload.startswith(COMPRESSED_PAYLOAD_MAGIC):
+        return payload
+    content_type, _, body = payload[
+        len(COMPRESSED_PAYLOAD_MAGIC):].partition(b'\x00')
+    return decompress(body, content_type.decode('utf-8'))
 
 
 def unpickle_backend(cls, args, kwargs):
@@ -128,6 +199,17 @@ class Backend:
     #: Set to true if the backend is persistent by default.
     persistent = True
 
+    #: If true the backend can store a result payload that has been
+    #: compressed, which means storing and returning arbitrary bytes
+    #: unchanged.  Backends that put the payload inside a JSON document, or
+    #: that decode it to text on the way out, can't, and the
+    #: :setting:`result_compression` setting is ignored for them.
+    supports_result_compression = False
+
+    #: If true the backend applies :setting:`result_failure_expires` to the
+    #: results of failed tasks.
+    supports_failure_expires = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -144,6 +226,8 @@ class Backend:
         (self.content_type,
          self.content_encoding,
          self.encoder) = serializer_registry._encoders[self.serializer]
+        self.compression = self.prepare_compression(
+            conf.get('result_compression'))
         cmax = max_cached_results or conf.result_cache_max
         self._cache = _nulldict() if cmax == -1 else LRUCache(limit=cmax)
 
@@ -153,6 +237,13 @@ class Backend:
         self.accept = conf.result_accept_content if accept is None else accept
         self.accept = conf.accept_content if self.accept is None else self.accept
         self.accept = prepare_accept_content(self.accept)
+
+        if (conf.get('result_failure_expires') is not None
+                and not self.supports_failure_expires):
+            warnings.warn(
+                W_FAILURE_EXPIRES_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
 
         self.always_retry = conf.get('result_backend_always_retry', False)
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
@@ -200,46 +291,83 @@ class Backend:
             # It might also have chained tasks which need to be propagated to,
             # this is most likely to be exclusive with being a direct part of a
             # chord but we'll handle both cases separately.
-            #
-            # The `chain_data` try block here is a bit tortured since we might
-            # have non-iterable objects here in tests and it's easier this way.
-            try:
-                chain_data = iter(request.chain)
-            except (AttributeError, TypeError):
-                chain_data = tuple()
-            for chain_elem in chain_data:
-                # Reconstruct a `Context` object for the chained task which has
-                # enough information to for backends to work with
-                chain_elem_ctx = Context(chain_elem)
-                chain_elem_ctx.update(chain_elem_ctx.options)
-                chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
-                chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
-                # If the state should be propagated, we'll do so for all
-                # elements of the chain. This is only truly important so
-                # that the last chain element which controls completion of
-                # the chain itself is marked as completed to avoid stalls.
-                #
-                # Some chained elements may be complex signatures and have no
-                # task ID of their own, so we skip them hoping that not
-                # descending through them is OK. If the last chain element is
-                # complex, we assume it must have been uplifted to a chord by
-                # the canvas code and therefore the condition below will ensure
-                # that we mark something as being complete as avoid stalling.
-                if (
-                    store_result and state in states.PROPAGATE_STATES and
-                    chain_elem_ctx.task_id is not None
-                ):
-                    self.store_result(
-                        chain_elem_ctx.task_id, exc, state,
-                        traceback=traceback, request=chain_elem_ctx,
-                    )
-                # If the chain element is a member of a chord, we also need
-                # to call `on_chord_part_return()` as well to avoid stalls.
-                if 'chord' in chain_elem_ctx.options:
-                    self.on_chord_part_return(chain_elem_ctx, state, exc)
+            self._fail_chain(getattr(request, 'chain', None), exc, traceback,
+                             store_result=store_result, state=state)
             # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
+
+    def _fail_chain(self, chain, exc, traceback=None,
+                    store_result=True, state=states.FAILURE):
+        """Propagate a failure to the tasks chained after a failed one."""
+        # a request's chain may be None or a non-iterable placeholder
+        try:
+            chain_data = iter(chain)
+        except TypeError:
+            chain_data = tuple()
+        chain_elems = deque(chain_data)
+        while chain_elems:
+            chain_elem = chain_elems.popleft()
+            # Reconstruct a `Context` object for the chained task which has
+            # enough information for backends to work with
+            chain_elem_ctx = Context(chain_elem)
+            chain_elem_ctx.update(chain_elem_ctx.options)
+            chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
+            chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            # Only check state for chord members to avoid requiring a result backend
+            # for ordinary chains. The already_failed check is only used when
+            # calling on_chord_part_return() for chord members below.
+            already_failed = (
+                'chord' in chain_elem_ctx.options and
+                chain_elem_ctx.id is not None and
+                self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
+            )
+            # If the state should be propagated, we'll do so for all
+            # elements of the chain. This is only truly important so
+            # that the last chain element which controls completion of
+            # the chain itself is marked as completed to avoid stalls.
+            #
+            # Some chained elements may be complex signatures and have no
+            # task ID of their own, so we skip them hoping that not
+            # descending through them is OK. If the last chain element is
+            # complex, we assume it must have been uplifted to a chord by
+            # the canvas code and therefore the condition below will ensure
+            # that we mark something as being complete as avoid stalling.
+            if (
+                store_result and state in states.PROPAGATE_STATES and
+                chain_elem_ctx.id is not None
+            ):
+                self.store_result(
+                    chain_elem_ctx.id, exc, state,
+                    traceback=traceback, request=chain_elem_ctx,
+                )
+            # If the chain element is a member of a chord, we also need
+            # to call `on_chord_part_return()` as well to avoid stalls.
+            # An element that already failed has returned its part.
+            if 'chord' in chain_elem_ctx.options and not already_failed:
+                self.on_chord_part_return(chain_elem_ctx, state, exc)
+            # A chord step completes only when its body does, so the
+            # result that later steps and any enclosing chord wait on is
+            # the chord body, not the chord's own id. Descend into it so
+            # the failure reaches that result (see issue #9674).
+            if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
+                chord_body = (chain_elem_ctx.kwargs or {}).get('body')
+                if chord_body is not None:
+                    chain_elems.append(chord_body)
+
+    def _errback_arity_greater(self, errback, n):
+        header = errback.type.__header__
+        if not errback.immutable and (errback.args or errback.kwargs):
+            try:
+                # Only count remaining arguments; task_id precedes stored args
+                # at invocation, although partial binds them from the left.
+                return arity_greater(
+                    partial(header, *errback.args, **errback.kwargs), n,
+                )
+            except (TypeError, ValueError):
+                # Keep invalid calls isolated by the original classification.
+                return arity_greater(header, n)
+        return arity_greater(header, n)
 
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
@@ -260,9 +388,17 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        self._errback_arity_greater(errback, 1)
                 ):
-                    errback(request, exc, traceback)
+                    try:
+                        errback(request, exc, traceback)
+                    except Exception:
+                        logger.exception(
+                            'Errback %r raised an exception',
+                            errback.name,
+                        )
                 else:
                     old_signature.append(errback)
             except NotRegistered:
@@ -308,6 +444,8 @@ class Backend:
 
     def chord_error_from_stack(self, callback, exc=None):
         app = self.app
+        if exc is None:
+            exc = sys.exc_info()[1]
 
         try:
             backend = app._tasks[callback.task].backend
@@ -316,7 +454,16 @@ class Backend:
 
         # Handle group callbacks specially to prevent hanging body tasks
         if isinstance(callback, group):
-            return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            exception_info = self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            backend._fail_chain(callback.options.get("chain"), exc)
+            return exception_info
+
+        # Generate an ID if missing so the error can be stored.
+        callback_id = callback.id
+        if not callback_id:
+            from kombu.utils.uuid import uuid
+            callback_id = callback.options['task_id'] = uuid()
+
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the
         # chord part(s) which failed. This request is constructed as a best
@@ -330,9 +477,12 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback.id, exc=eb_exc)
+            exc = eb_exc
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
         else:
-            return backend.fail_from_current_stack(callback.id, exc=exc)
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
+        backend._fail_chain(callback.options.get("chain"), exc)
+        return exception_info
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.
@@ -356,8 +506,8 @@ class Backend:
             frozen_group = group_callback.freeze()
 
             if isinstance(frozen_group, GroupResult):
-                # revoke all tasks in the group to prevent execution
-                frozen_group.revoke()
+                # Store the failures before broadcasting the revoke, so the
+                # revoke handler finds them and keeps them (see _revoke()).
 
                 # Handle each task in the group individually
                 for result in frozen_group.results:
@@ -390,6 +540,7 @@ class Backend:
                 frozen_group_id = getattr(frozen_group, 'id', None)
                 if frozen_group_id:
                     backend.mark_as_failure(frozen_group_id, original_exc)
+                frozen_group.revoke()
 
             return None
 
@@ -510,6 +661,8 @@ class Backend:
 
     def encode(self, data):
         _, _, payload = self._encode(data)
+        if self.compression:
+            payload = compress_payload(payload, self.compression)
         return payload
 
     def _encode(self, data):
@@ -527,10 +680,38 @@ class Backend:
         if payload is None:
             return payload
         payload = payload or str(payload)
+        # Driven by the payload itself rather than by ``self.compression`` so
+        # that a result stays readable after the setting is turned off again,
+        # and so that a reader that never had it turned on can still read a
+        # result written by a worker that did.
+        payload = decompress_payload(payload)
         return loads(payload,
                      content_type=self.content_type,
                      content_encoding=self.content_encoding,
                      accept=self.accept)
+
+    def prepare_compression(self, compression):
+        """Return the compression method to encode results with.
+
+        Returns :const:`None` when results should be stored uncompressed,
+        either because nothing was configured or because this backend can't
+        hold a compressed payload.
+        """
+        if not compression:
+            return None
+        if not self.supports_result_compression:
+            warnings.warn(
+                W_COMPRESSION_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
+            return None
+        try:
+            get_compression_encoder(compression)
+        except KeyError as e:
+            raise ImproperlyConfigured(E_UNKNOWN_COMPRESSION.format(
+                compression,
+                ', '.join(sorted(compression_encoders())))) from e
+        return compression
 
     def prepare_expires(self, value, type=None):
         if value is None:
@@ -548,7 +729,7 @@ class Backend:
         return self.persistent if persistent is None else persistent
 
     def encode_result(self, result, state):
-        if state in self.EXCEPTION_STATES and isinstance(result, Exception):
+        if state in self.EXCEPTION_STATES and isinstance(result, BaseException):
             return self.prepare_exception(result)
         return self.prepare_value(result)
 
@@ -592,7 +773,10 @@ class Backend:
                 }
                 if getattr(request, 'stamps', None):
                     request_meta['stamped_headers'] = request.stamped_headers
-                    request_meta.update(request.stamps)
+                    request_meta.update({
+                        k: v for k, v in request.stamps.items()
+                        if k in (request.stamped_headers or ())
+                    })
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
@@ -609,6 +793,44 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+        """Helper to execute a function with the backend's retry policy."""
+        retries = 0
+        while True:
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if self.always_retry and self.exception_safe_to_retry(exc):
+                    if retries < self.max_retries:
+                        retries += 1
+                        logger.warning(
+                            'Failed operation %s. Retrying %s more times.',
+                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            exc_info=True)
+                        try:
+                            self.on_backend_retryable_error(exc)
+                        except Exception:
+                            logger.exception(
+                                "on_backend_retryable_error hook failed; continuing retry loop",
+                            )
+
+                        # get_exponential_backoff_interval computes integers
+                        # and time.sleep accept floats for sub second sleep
+                        sleep_amount = get_exponential_backoff_interval(
+                            self.base_sleep_between_retries_ms, retries,
+                            self.max_sleep_between_retries_ms, True) / 1000
+                        self._sleep(sleep_amount)
+                    else:
+                        if fallback_exc:
+                            exc_kwargs = {}
+                            for key in ("task_id", "state"):
+                                if key in kwargs:
+                                    exc_kwargs[key] = kwargs[key]
+                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                        raise
+                else:
+                    raise
+
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
         """Update task state and result.
@@ -618,34 +840,22 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        retries = 0
+        kwargs.update({'task_id': task_id, 'state': state})
 
-        while True:
-            try:
-                self._store_result(task_id, result, state, traceback,
-                                   request=request, **kwargs)
-                return result
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
-
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendStoreError("failed to store result on the backend", task_id=task_id, state=state),
-                        )
-                else:
-                    raise
+        self._ensure_retryable(
+            self._store_result,
+            fallback_exc=BackendStoreError,
+            fallback_msg="failed to store result on the backend",
+            result=result,
+            traceback=traceback,
+            request=request,
+            **kwargs
+        )
+        return result
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._forget(task_id)
+        self._ensure_retryable(self._forget, task_id=task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -676,7 +886,8 @@ class Backend:
             warnings.warn(
                 "Results are not stored in backend and should not be retrieved when "
                 "task_always_eager is enabled, unless task_store_eager_result is enabled.",
-                RuntimeWarning
+                RuntimeWarning,
+                stacklevel=2,
             )
 
     def exception_safe_to_retry(self, exc):
@@ -688,6 +899,10 @@ class Backend:
         to define which exceptions are safe.
         """
         return False
+
+    def on_backend_retryable_error(self, exc):
+        """Hook called before retrying a recoverable backend exception."""
+        return None
 
     def get_task_meta(self, task_id, cache=True):
         """Get task meta from backend.
@@ -701,28 +916,13 @@ class Backend:
                 return self._cache[task_id]
             except KeyError:
                 pass
-        retries = 0
-        while True:
-            try:
-                meta = self._get_task_meta_for(task_id)
-                break
-            except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
-                        retries += 1
 
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        raise_with_context(
-                            BackendGetMetaError("failed to get meta", task_id=task_id),
-                        )
-                else:
-                    raise
+        meta = self._ensure_retryable(
+            self._get_task_meta_for,
+            fallback_exc=BackendGetMetaError,
+            fallback_msg="failed to get meta",
+            task_id=task_id
+        )
 
         if cache and meta.get('status') == states.SUCCESS:
             self._cache[task_id] = meta
@@ -731,6 +931,17 @@ class Backend:
     def reload_task_result(self, task_id):
         """Reload task result, even if it has been previously fetched."""
         self._cache[task_id] = self.get_task_meta(task_id, cache=False)
+
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return self._get_task_meta_for(task_id)["status"] != states.PENDING
 
     def reload_group_result(self, group_id):
         """Reload group result, even if it has been previously fetched."""
@@ -744,7 +955,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._restore_group(group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -757,11 +968,15 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._save_group(group_id, result)
+        return self._ensure_retryable(
+            self._save_group,
+            group_id=group_id,
+            result=result
+        )
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._delete_group(group_id)
+        return self._ensure_retryable(self._delete_group, group_id=group_id)
 
     def cleanup(self):
         """Backend cleanup."""
@@ -797,11 +1012,32 @@ class Backend:
             queue = self.app.amqp.router.route(kwargs, body.name)['queue'].name
 
         priority = body.options.get('priority', getattr(body_type, 'priority', 0))
+
+        stamps = body.options.get('stamped_headers', ())
+        routing_options = {}
+        for option in ('exchange', 'exchange_type', 'routing_key', 'headers'):
+            if option in stamps:
+                continue
+            value = body.options.get(option)
+            if value is not None:
+                routing_options[option] = value
+
+        if 'exchange_type' not in routing_options:
+            try:
+                queue_obj = self.app.amqp.queues[queue] if isinstance(queue, str) else queue
+                routing_options['exchange_type'] = queue_obj.exchange.type
+            except (AttributeError, KeyError):
+                pass
+        if 'exchange_type' in routing_options:
+            # unlock_chord needs this for retries.
+            kwargs['_chord_unlock_exchange_type'] = routing_options['exchange_type']
+
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
             countdown=countdown,
             queue=queue,
             priority=priority,
+            **routing_options,
         )
 
     def ensure_chords_allowed(self):
@@ -883,11 +1119,15 @@ class SyncBackendMixin:
                 return meta
             if on_interval:
                 on_interval()
-            # avoid hammering the CPU checking status.
-            time.sleep(interval)
-            time_elapsed += interval
-            if timeout and time_elapsed >= timeout:
+            if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
+            # avoid hammering the CPU checking status. Never sleep past the
+            # deadline: with the sleep first, timeout=0 blocked for a whole
+            # interval before giving up, and any timeout below interval
+            # overshot to interval.
+            nap = interval if timeout is None else min(interval, timeout - time_elapsed)
+            time.sleep(nap)
+            time_elapsed += nap
 
     def add_pending_result(self, result, weak=False):
         return result
@@ -918,10 +1158,26 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         super().__init__(*args, **kwargs)
+        self._chord_expires = self.app.conf.get('result_chord_expires')
         self._add_global_keyprefix()
         self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    @property
+    def chord_expires(self):
+        if self._chord_expires is None:
+            return self.expires
+        return self.prepare_expires(self._chord_expires, type=int)
+
+    @property
+    def _chord_result_expires(self):
+        # Header results and a saved GroupResult are also read by users, so
+        # never keep them for less than result_expires (0 means no expiry).
+        expires = self.chord_expires
+        if not expires or not self.expires:
+            return 0
+        return max(expires, self.expires)
 
     def _add_global_keyprefix(self):
         """
@@ -984,6 +1240,8 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
+        if isinstance(id, UUID):
+            id = str(id)
 
         return key_t('').join([
             prefix, key_t(id), key_t(key),
@@ -1037,6 +1295,7 @@ class BaseKeyValueStoreBackend(Backend):
 
         ids.difference_update(cached_ids)
         iterations = 0
+        time_elapsed = 0.0
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
@@ -1047,11 +1306,22 @@ class BaseKeyValueStoreBackend(Backend):
                 if on_message is not None:
                     on_message(value)
                 yield bytes_to_str(key), value
-            if timeout and iterations * interval >= timeout:
+            if not ids:
+                # everything asked for has been handed back, so there is
+                # nothing left to time out on. wait_for checks the same way,
+                # returning a ready result before it looks at the deadline.
+                break
+            if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
-            time.sleep(interval)  # don't busy loop.
+            # don't busy loop, and never sleep past the deadline: with the
+            # deadline counted in whole intervals, timeout=0 waited forever
+            # and any timeout below interval overshot to interval.
+            nap = interval if timeout is None else min(interval,
+                                                       timeout - time_elapsed)
+            time.sleep(nap)
+            time_elapsed += nap
             iterations += 1
             if max_iterations and iterations >= max_iterations:
                 break
@@ -1098,6 +1368,22 @@ class BaseKeyValueStoreBackend(Backend):
             return {'status': states.PENDING, 'result': None}
         return self.decode_result(meta)
 
+    def task_result_exists(self, task_id):
+        """Check if a result exists in the backend for the given task ID.
+
+        This overrides the base implementation to directly check for
+        the existence of the key in the store, which is more accurate
+        than checking the status since tasks stored with PENDING status
+        would still be detected.
+
+        .. versionadded:: 5.7.0
+
+        Returns:
+            bool: :const:`True` if the backend has a result for the task,
+                :const:`False` otherwise.
+        """
+        return bool(self.get(self.get_key_for_task(task_id)))
+
     def _restore_group(self, group_id):
         """Get task meta-data for a task by id."""
         meta = self.get(self.get_key_for_group(group_id))
@@ -1114,6 +1400,8 @@ class BaseKeyValueStoreBackend(Backend):
         self.ensure_chords_allowed()
         header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
+        self.expire(self.get_key_for_group(header_result.id),
+                    self._chord_result_expires)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
@@ -1182,8 +1470,16 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                # The chord is done: give the header results back their
+                # normal lifetime.
+                for dep in deps.results:
+                    self.expire(self.get_key_for_task(dep.id), self.expires)
         else:
-            self.expire(key, self.expires)
+            self.expire(key, self.chord_expires)
+            # The last part joins every header result, so keep this one too.
+            self.expire(self.get_key_for_group(gid), self._chord_result_expires)
+            self.expire(self.get_key_for_task(request.id),
+                        self._chord_result_expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

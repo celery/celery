@@ -145,8 +145,12 @@ Commands
 
 * **inspect query_task**: Show information about task(s) by id.
 
-    Any worker having a task in this set of ids reserved/active will respond
-    with status and information.
+    Any worker having a task in this set of ids that is scheduled, reserved, or active
+    will respond with status and information.
+
+    .. versionchanged:: 5.7
+        Scheduled tasks (with an ETA/countdown that hasn't elapsed yet) are
+        now included; previously only reserved/active tasks were found.
 
     .. code-block:: console
 
@@ -459,6 +463,18 @@ The default queue is named `celery`. To get all available queues, invoke:
     database numbers to separate Celery applications from each other (virtual
     hosts), but this won't affect the monitoring events used by for example
     Flower as Redis pub/sub commands are global rather than database based.
+
+.. _monitoring-prometheus:
+
+Prometheus
+=========
+
+While Prometheus monitoring is not a native part of Celery,
+you can easily monitor your Celery workers using Prometheus via Flower.
+Flower also provides pre-made Grafana dashboards to easily graph the amount
+of tasks, workers and other instrumental statistics.
+
+To set up Prometheus, refer to the Flower documentation: https://flower.readthedocs.io/en/latest/prometheus-integration.html
 
 .. _monitoring-munin:
 
@@ -814,3 +830,24 @@ worker-offline
 :signature: ``worker-offline(hostname, timestamp, freq, sw_ident, sw_ver, sw_sys)``
 
 The worker has disconnected from the broker.
+
+Mailbox Configuration (Advanced)
+--------------------------------
+
+Celery uses `kombu.pidbox.Mailbox` internally to send control and broadcast commands
+to workers.
+
+.. versionadded:: Kombu 5.6.0
+
+Advanced users can configure the behavior of this mailbox by customizing how it is created.
+The following parameters are now supported by `Mailbox`:
+
+- ``durable`` (default: ``False``): If set to ``True``, the control exchanges will survive broker restarts.
+- ``exclusive`` (default: ``True``): If set to ``True``, the exchanges will be usable by only one connection.
+
+.. warning::
+
+    Setting both ``durable=True`` and ``exclusive=True`` is not permitted and will
+    raise an error, as these two options are mutually incompatible in AMQP.
+
+See :setting:`event_queue_durable` and :setting:`event_queue_exclusive` for advanced configuration.

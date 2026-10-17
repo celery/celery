@@ -1,10 +1,13 @@
 import socket
+import threading
 from unittest.mock import Mock, call
 
 import pytest
 
 from celery.events import Event
+from celery.events.dispatcher import EventDispatcher
 from celery.events.receiver import CLIENT_CLOCK_SKEW
+from celery.exceptions import ImproperlyConfigured
 
 
 class MockProducer:
@@ -118,7 +121,7 @@ class test_EventDispatcher:
         eventer.send('task-received', uuid=1)
         assert not eventer._group_buffer['task']
         eventer._publish.assert_has_calls([
-            call([], eventer.producer, 'task.multi'),
+            call(buf_received[0], eventer.producer, 'task.multi'),
         ])
         # clear in place
         assert eventer._group_buffer['task'] is prev_buffer
@@ -130,6 +133,206 @@ class test_EventDispatcher:
         eventer = self.app.events.Dispatcher(Mock())
         eventer.flush(errors=False, groups=False)
 
+    @pytest.mark.parametrize('flush_kwargs', [
+        {'groups': False},
+        {'errors': False},
+    ])
+    def test_flush_after_close_is_noop(self, flush_kwargs):
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False)
+        eventer._publish = Mock()
+        error_event = Event('worker-heartbeat')
+        group_event = Event('task-received', uuid='buffered-task')
+        eventer._outbound_buffer.append((error_event, 'worker.heartbeat'))
+        eventer._group_buffer['task'].append(group_event)
+
+        eventer.close()
+        eventer.flush(**flush_kwargs)
+
+        eventer._publish.assert_not_called()
+        assert list(eventer._outbound_buffer) == [
+            (error_event, 'worker.heartbeat'),
+        ]
+        assert eventer._group_buffer['task'] == [group_event]
+
+        eventer.enable()
+        eventer.flush()
+
+        assert eventer._publish.call_args_list == [
+            call(error_event, eventer.producer, 'worker.heartbeat'),
+            call([group_event], eventer.producer, 'task.multi'),
+        ]
+        assert not eventer._outbound_buffer
+        assert not eventer._group_buffer['task']
+
+    def test_send_skipped_after_close_when_producer_is_none(self):
+        # Regression for #10273. After close() during a broker reconnect
+        # the dispatcher's producer is cleared but ``enabled`` stays True,
+        # so stale heartbeat timers still call send(). That must be a
+        # no-op, not an AttributeError buffered into _outbound_buffer.
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.enabled = True
+        eventer.producer = None
+        eventer.send('worker-heartbeat')
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_buffered_entries_do_not_retain_exception(self):
+        # Follow-up for #10273. The buffer used to hold
+        # (event, routing_key, exc); the retained exception kept its
+        # traceback and ~6 frames alive per failed publish, leaking
+        # hundreds of MiB in long-lived workers. flush() already
+        # discards the exception, so the entry is now 2-tuple only.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._outbound_buffer) == 1
+        entry = eventer._outbound_buffer[0]
+        assert len(entry) == 2
+        event, routing_key = entry
+        assert routing_key == 'task.received'
+        assert event['type'] == 'task-received'
+
+    def test_flush_replays_buffered_entries_after_tuple_shape_change(self):
+        # flush() must still successfully replay events buffered during
+        # an outage once the producer is restored. Guards the unpack
+        # change in flush() against regressions.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            eventer.send(name)
+        assert len(eventer._outbound_buffer) == 3
+        producer.raise_on_publish = False
+        eventer.flush()
+        for name in ('Event 1', 'Event 2', 'Event 3'):
+            assert producer.has_event(name)
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_events_when_republish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True)
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('Event 1')
+        assert len(eventer._outbound_buffer) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert producer.has_event('Event 1')
+        assert len(eventer._outbound_buffer) == 0
+
+    def test_flush_rebuffers_group_events_when_publish_fails(self):
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=True,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        assert len(eventer._group_buffer['task']) == 1
+
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 1
+        batch, routing_key = eventer._outbound_buffer[0]
+        assert routing_key == 'task.multi'
+        assert len(batch) == 1
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert len(eventer._outbound_buffer) == 0
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1]
+
+    def test_flush_keeps_group_events_when_publish_raises(self):
+        # With buffer_while_offline off, _publish re-raises instead of
+        # re-buffering. The live group buffer must only be cleared after a
+        # successful publish, otherwise the events are lost when it raises.
+        producer = MockProducer()
+        producer.connection = self.app.connection_for_write()
+        producer.raise_on_publish = True
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = self.app.events.Dispatcher(connection, enabled=False,
+                                             buffer_while_offline=False,
+                                             buffer_group={'task'})
+        eventer.producer = producer
+        eventer.enabled = True
+        eventer.send('task-received', uuid=1)
+        eventer.send('task-received', uuid=2)
+        assert len(eventer._group_buffer['task']) == 2
+
+        with pytest.raises(KeyError):
+            eventer.flush()
+        # events stay buffered for the next flush instead of being dropped
+        assert len(eventer._group_buffer['task']) == 2
+        assert len(eventer._outbound_buffer) == 0
+
+        producer.raise_on_publish = False
+        eventer.flush()
+        assert [event['uuid'] for batch in producer.sent for event in batch] == [1, 2]
+        assert not eventer._group_buffer['task']
+
+    def test_flush_keeps_group_events_appended_during_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+        published = []
+
+        def publish_then_append(batch, producer, routing_key):
+            published.extend(batch)
+            buffer.append('during-publish')
+
+        eventer._publish = publish_then_append
+        eventer.flush()
+
+        assert published == ['first', 'second']
+        assert buffer == ['during-publish']
+
+    def test_flush_keeps_events_appended_during_failed_publish(self):
+        eventer = self.app.events.Dispatcher(Mock(), enabled=False,
+                                             buffer_group={'task'})
+        buffer = eventer._group_buffer['task']
+        buffer.extend(['first', 'second'])
+
+        def append_then_raise(batch, producer, routing_key):
+            buffer.append('during-publish')
+            raise KeyError()
+
+        eventer._publish = append_then_raise
+        with pytest.raises(KeyError):
+            eventer.flush()
+
+        assert buffer == ['first', 'second', 'during-publish']
+
     def test_enter_exit(self):
         with self.app.connection_for_write() as conn:
             d = self.app.events.Dispatcher(conn)
@@ -137,6 +340,137 @@ class test_EventDispatcher:
             with d as _d:
                 assert _d
             d.close.assert_called_with()
+
+    @pytest.mark.parametrize('explicit_producer', [False, True])
+    def test_close_waits_for_in_flight_publish(self, explicit_producer):
+        publish_started = threading.Event()
+        finish_publish = threading.Event()
+        close_started = threading.Event()
+        close_finished = threading.Event()
+        errors = []
+
+        class BlockingProducer(MockProducer):
+            def publish(self, msg, *args, **kwargs):
+                publish_started.set()
+                if not finish_publish.wait(5):
+                    raise TimeoutError('publish was not allowed to finish')
+                super().publish(msg, *args, **kwargs)
+
+        producer = BlockingProducer()
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = EventDispatcher(connection, enabled=False,
+                                  buffer_while_offline=False, app=self.app)
+        eventer.producer = producer
+        eventer.enabled = True
+
+        def send():
+            try:
+                if explicit_producer:
+                    eventer.publish('task-sent', {}, producer)
+                else:
+                    eventer.send('task-sent')
+            except Exception as exc:  # pragma: no cover - asserted below
+                errors.append(exc)
+
+        def close():
+            close_started.set()
+            try:
+                eventer.close()
+            except Exception as exc:  # pragma: no cover - asserted below
+                errors.append(exc)
+            finally:
+                close_finished.set()
+
+        publisher = threading.Thread(target=send)
+        publisher.start()
+        assert publish_started.wait(5)
+
+        closer = threading.Thread(target=close)
+        closer.start()
+        assert close_started.wait(5)
+        close_was_blocked = not close_finished.wait(0.1)
+
+        finish_publish.set()
+        publisher.join(5)
+        closer.join(5)
+
+        assert close_was_blocked
+        assert not publisher.is_alive()
+        assert not closer.is_alive()
+        assert not errors
+        assert producer.has_event('task-sent')
+        assert eventer.producer is None
+
+    def test_close_prevents_send_prepared_before_shutdown(self):
+        event_started = threading.Event()
+        finish_event = threading.Event()
+        errors = []
+        producer = MockProducer()
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = EventDispatcher(connection, enabled=False,
+                                  buffer_while_offline=False, app=self.app)
+        eventer.producer = producer
+        eventer.enabled = True
+
+        def blocking_event(*args, **kwargs):
+            event_started.set()
+            if not finish_event.wait(5):
+                raise TimeoutError('event creation was not allowed to finish')
+            return Event(*args, **kwargs)
+
+        def publish():
+            try:
+                eventer.send('task-sent', Event=blocking_event)
+            except Exception as exc:  # pragma: no cover - asserted below
+                errors.append(exc)
+
+        publisher = threading.Thread(target=publish)
+        publisher.start()
+        assert event_started.wait(5)
+
+        eventer.close()
+        finish_event.set()
+        publisher.join(5)
+
+        assert not publisher.is_alive()
+        assert not errors
+        assert not producer.sent
+
+    def test_publish_with_explicit_producer_after_close(self):
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = EventDispatcher(connection, enabled=False,
+                                  buffer_while_offline=False, app=self.app)
+        own_producer = eventer.producer = MockProducer()
+        eventer.enabled = True
+        producer = MockProducer()
+
+        eventer.close()
+        eventer.publish('task-sent', {'uuid': 'caller-task'}, producer)
+        eventer.send('task-sent', uuid='dispatcher-task')
+
+        event = producer.has_event('task-sent')
+        assert event
+        assert event['uuid'] == 'caller-task'
+        assert not own_producer.sent
+        assert eventer.producer is None
+
+    def test_enable_reopens_closed_dispatcher(self):
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        eventer = EventDispatcher(connection, enabled=False, app=self.app)
+
+        eventer.close()
+        assert eventer._closed
+        assert eventer.producer is None
+
+        eventer.enable()
+        assert eventer.enabled
+        assert not eventer._closed
+        assert eventer.producer is not None
+        eventer.close()
 
     def test_enable_disable_callbacks(self):
         on_enable = Mock()
@@ -326,6 +660,39 @@ class test_EventReceiver:
         finally:
             channel.close()
             connection.close()
+
+    def test_event_queue_exclusive(self):
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=False
+        )
+
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.exclusive is True
+        assert q.durable is False
+        assert q.auto_delete is True
+
+    def test_event_queue_durable_and_validation(self):
+        self.app.conf.update(
+            event_queue_exclusive=False,
+            event_queue_durable=True
+        )
+        ev_recv = self.app.events.Receiver(Mock(name='connection'))
+        q = ev_recv.queue
+
+        assert q.durable is True
+        assert q.exclusive is False
+        assert q.auto_delete is False
+
+        self.app.conf.update(
+            event_queue_exclusive=True,
+            event_queue_durable=True
+        )
+
+        with pytest.raises(ImproperlyConfigured):
+            self.app.events.Receiver(Mock(name='connection'))
 
 
 def test_State(app):
