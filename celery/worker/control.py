@@ -6,6 +6,7 @@ from collections import UserDict, defaultdict, namedtuple
 from billiard.common import TERM_SIGNAME
 from kombu.utils.encoding import safe_repr
 
+from celery import states
 from celery.exceptions import WorkerShutdown
 from celery.platforms import EX_OK
 from celery.platforms import signals as _signals
@@ -228,6 +229,10 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
         # Tasks may override their backend.
         backend = request.task.backend if request else state.app.backend
         try:
+            if backend.get_state(task_id) in states.READY_STATES:
+                # The task already has a result (or the chord error handler
+                # failed it on its behalf); a revoke must not overwrite it.
+                continue
             backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:
             logger.warning('Failed to mark task %s as revoked in backend: %s', task_id, exc)
@@ -396,11 +401,13 @@ def hello(state, from_node, revoked=None, **kwargs):
     if from_node != state.hostname:
         logger.info('sync with %s', from_node)
         if revoked:
-            worker_state.revoked.update(revoked)
+            worker_state.merge_revoked(revoked)
         # Do not send expired items to the other worker.
         worker_state.revoked.purge()
         return {
-            'revoked': worker_state.revoked._data,
+            # The ids only, see merge_revoked(): oldest first, so that
+            # a receiver whose set is full evicts our oldest ids first.
+            'revoked': list(worker_state.revoked),
             'clock': state.app.clock.forward(),
         }
 

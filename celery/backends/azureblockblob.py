@@ -3,6 +3,7 @@ from kombu.transport.azurestoragequeues import Transport as AzureStorageQueuesTr
 from kombu.utils import cached_property
 from kombu.utils.encoding import bytes_to_str
 
+from celery.app.utils import _redact_azure_connection_string
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.log import get_logger
 
@@ -40,7 +41,7 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
 
         if azurestorage is None or azurestorage.__version__ < '12':
             raise ImproperlyConfigured(
-                "You need to install the azure-storage-blob v12 library to"
+                "You need to install the azure-storage-blob v12 library to "
                 "use the AzureBlockBlob backend")
 
         conf = self.app.conf
@@ -56,6 +57,15 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             'azureblockblob_connection_timeout', 20
         )
         self._read_timeout = conf.get('azureblockblob_read_timeout', 120)
+
+    def __reduce__(self, args=(), kwargs=None):
+        kwargs = {} if not kwargs else kwargs
+        return super().__reduce__(args, dict(
+            kwargs,
+            expires=self.expires,
+            url=AZURE_BLOCK_BLOB_CONNECTION_PREFIX + self._connection_string,
+            container_name=self._container_name,
+        ))
 
     @classmethod
     def _parse_url(cls, url, prefix=AZURE_BLOCK_BLOB_CONNECTION_PREFIX):
@@ -165,7 +175,12 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
             blob=f'{self.base_path}{key}',
         )
 
-        blob_client.delete_blob()
+        try:
+            blob_client.delete_blob()
+        except ResourceNotFoundError:
+            # deleting an already-expired, already-forgotten or never-stored
+            # result must keep forget() idempotent, like the other KV backends
+            pass
 
     def as_uri(self, include_password=False):
         if include_password:
@@ -174,17 +189,12 @@ class AzureBlockBlobBackend(KeyValueStoreBackend):
                 f'{self._connection_string}'
             )
 
-        # Azure matches connection string keys case-insensitively, and a
-        # SharedAccessSignature is as much a secret as an AccountKey.
-        secret_keys = {'accountkey', 'sharedaccesssignature'}
-        redacted_connection_string_parts = []
-        for part in self._connection_string.split(';'):
-            key, sep, _ = part.partition('=')
-            if sep and key.strip().lower() in secret_keys:
-                part = f'{key}=**'
-            redacted_connection_string_parts.append(part)
+        # Use shared helper to redact Azure connection string secrets
+        redacted_connection_string = _redact_azure_connection_string(
+            self._connection_string, mask='**'
+        )
 
         return (
             f'{AZURE_BLOCK_BLOB_CONNECTION_PREFIX}'
-            f'{";".join(redacted_connection_string_parts)}'
+            f'{redacted_connection_string}'
         )

@@ -283,6 +283,38 @@ class test_ControlPanel:
         })
         assert 'expired_in_past' not in x['revoked']
 
+    def test_hello_stamps_received_revoked_items_locally(self):
+        # The set of the other worker comes with its own monotonic stamps,
+        # counting from the boot of its host.  Merged as they are, stamps
+        # ahead of the local clock would never expire, and once they fill
+        # the set every id revoked here would be purged as the oldest one
+        # the moment it is added (#4300).
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        panel.state.hostname = 'elaine@vandelay.com'
+        ahead = time.monotonic() + 10 ** 6
+        try:
+            panel.handle('hello', {
+                'from_node': 'george@vandelay.com',
+                'revoked': {
+                    'ahead1': [ahead, 0, 'ahead1'],
+                    'ahead2': [ahead, 1, 'ahead2'],
+                },
+            })
+            assert 'ahead1' in worker_state.revoked
+            assert 'ahead2' in worker_state.revoked
+            stamps = worker_state.revoked.as_dict()
+            assert stamps['ahead1'] <= time.monotonic()
+            assert stamps['ahead2'] <= time.monotonic()
+            worker_state.revoked.purge(
+                now=time.monotonic() + REVOKE_EXPIRES + 1
+            )
+            assert 'ahead1' not in worker_state.revoked
+            assert 'ahead2' not in worker_state.revoked
+        finally:
+            worker_state.revoked.discard('ahead1')
+            worker_state.revoked.discard('ahead2')
+
     def test_conf(self):
         consumer = Consumer(self.app)
         panel = self.create_panel(consumer=consumer)
@@ -1064,6 +1096,42 @@ class test_ControlPanel:
         calls = self.app.backend.mark_as_revoked.call_args_list
         assert calls[0] == (('task-1',), {'reason': 'revoked', 'store_result': True})
         assert calls[1] == (('task-2',), {'reason': 'revoked', 'store_result': True})
+
+    @pytest.mark.parametrize('ready_state', sorted(states.READY_STATES))
+    def test_revoke_keeps_finished_result(self, ready_state):
+        # A chord header failure marks the body tasks FAILURE and revokes
+        # them; the REVOKED write must not replace a result that is ready.
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.side_effect = lambda tid: (
+                ready_state if tid == 'task-1' else states.PENDING)
+            state = self.create_state()
+
+            control._revoke(state, ['task-1', 'task-2'])
+
+            assert 'task-1' in worker_state.revoked
+            assert 'task-2' in worker_state.revoked
+            self.app.backend.mark_as_revoked.assert_called_once_with(
+                'task-2', reason='revoked', store_result=True)
+
+    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES))
+    def test_revoke_marks_unfinished_task(self, unready_state):
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.return_value = unready_state
+            state = self.create_state()
+
+            control._revoke(state, ['task-1'])
+
+            self.app.backend.mark_as_revoked.assert_called_once_with(
+                'task-1', reason='revoked', store_result=True)
+
+    @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
+    def test_revoke_state_lookup_failure_defensive(self):
+        self.app.backend.get_state.side_effect = Exception('Backend error')
+        state = self.create_state()
+
+        control._revoke(state, ['task-1'])
+
+        assert 'task-1' in worker_state.revoked
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_failure_defensive(self):

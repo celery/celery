@@ -8,7 +8,7 @@ from celery import Signature, Task, chain, chord, group, shared_task
 from celery.canvas import signature
 from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
-from celery.worker.control import control_command
+from celery.worker.control import add_consumer, cancel_consumer, control_command, inspect_command
 
 LEGACY_TASKS_DISABLED = True
 try:
@@ -34,6 +34,20 @@ logger = get_task_logger(__name__)
 @control_command(visible=False)
 def pidbox_reset_error(state, **kwargs):
     raise RuntimeError('pidbox reset integration test')
+
+
+@control_command(args=[('queue', str)], visible=False)
+def schedule_add_then_cancel_consumer(state, queue, **kwargs):
+    """Schedule two queue operations in one pidbox callback."""
+    add_consumer(state, queue)
+    cancel_consumer(state, queue)
+    return {"scheduled": queue}
+
+
+@inspect_command(visible=False)
+def pending_operations_count(state, **kwargs):
+    """Return the number of deferred consumer operations."""
+    return len(state.consumer._pending_operations)
 
 
 @shared_task
@@ -124,6 +138,15 @@ def tsum(nums):
 def xsum(nums):
     """Sum of ints and lists."""
     return sum(sum(num) if isinstance(num, Iterable) else num for num in nums)
+
+
+@shared_task(bind=True)
+def sum_and_record(self, values, redis_key):
+    """Sum the preceding group's results and record this execution."""
+    result = sum(values)
+    with get_redis_connection() as connection:
+        connection.rpush(redis_key, self.request.id)
+    return result
 
 
 @shared_task(bind=True)
@@ -394,6 +417,12 @@ def return_priority(self, *_args):
 
 
 @shared_task(bind=True)
+def return_request_eta(self):
+    """Return this task's ETA so countdown/eta forwarding can be asserted."""
+    return self.request.eta
+
+
+@shared_task(bind=True)
 def return_properties(self):
     return self.request.properties
 
@@ -484,6 +513,16 @@ def errback_old_style(request_id):
 def errback_new_style(request, exc, tb):
     redis_count(request.id)
     return request.id
+
+
+@shared_task
+def errback_old_style_with_args(request_id, label):
+    redis_echo(label, redis_key=request_id)
+
+
+@shared_task
+def errback_new_style_with_args(request, exc, tb, label):
+    redis_echo(label, redis_key=request.id)
 
 
 @shared_task

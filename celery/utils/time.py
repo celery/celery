@@ -34,6 +34,7 @@ __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
+    'add_seconds_to_datetime', 'subtract_datetimes',
     'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
@@ -211,20 +212,41 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
     args = dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second
     for res, predicate in resolutions:
         if predicate(delta) >= 1.0:
-            return datetime(*args[:res], tzinfo=dt.tzinfo)
+            # Keep the same occurrence when rounding a repeated local time.
+            return datetime(*args[:res], tzinfo=dt.tzinfo, fold=dt.fold)
     return dt
 
 
+def _relative_end_dates(dt: datetime, delta: timedelta) -> list[datetime]:
+    """Return UTC occurrences of a rounded local deadline."""
+    rounded = delta_resolution(dt, delta).replace(microsecond=0)
+    dates = []
+    for fold in (0, 1):
+        candidate = rounded.replace(fold=fold)
+        if _is_imaginary(candidate, candidate.tzinfo):
+            resolved = dateutil_tz.resolve_imaginary(candidate)
+            # Some timezone implementations misidentify rollback times as
+            # gaps. A genuine gap must resolve forwards, never backwards.
+            if resolved > candidate:
+                candidate = resolved
+        dates.append(candidate.astimezone(timezone.utc))
+    return dates
+
+
 def remaining(
-        start: datetime, ends_in: timedelta, now: datetime | None = None,
+        start: datetime, ends_in: timedelta | ffwd, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
 
+    For relative schedules, the deadline is the last rounded local boundary at
+    or before ``start + ends_in`` in real time, never at or before ``start``;
+    day intervals use calendar days.
+
     Arguments:
         start (~datetime.datetime): Starting date.
-        ends_in (~datetime.timedelta): The end delta.
+        ends_in (~datetime.timedelta, ~celery.utils.time.ffwd): The end delta.
         relative (bool): If enabled the end time will be calculated
             using :func:`delta_resolution` (i.e., rounded to the
             resolution of `ends_in`).
@@ -235,9 +257,40 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    end_date = start + ends_in
+    if isinstance(ends_in, timedelta) and not (
+            relative and ends_in >= timedelta(days=1)):
+        end_date = add_seconds_to_datetime(start, ends_in.total_seconds())
+    else:
+        # Day-resolution relative schedules advance by local calendar days.
+        # An elapsed-time addition can land on the wrong date across DST.
+        end_date = start + ends_in
     if relative:
-        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
+        candidates = _relative_end_dates(end_date, ends_in)
+        start_utc = start.astimezone(timezone.utc)
+        if ends_in >= timedelta(days=1):
+            # Use the first midnight after start, including a repeated
+            # midnight whose first occurrence has already passed.
+            future = [dt for dt in candidates if dt > start_utc]
+            end_date = min(future, default=end_date.astimezone(timezone.utc))
+        else:
+            end_utc = start_utc + ends_in
+            # Rounding may enter an ambiguous period even when the
+            # unrounded time is outside it. Choose by the UTC occurrence.
+            before_end = [dt for dt in candidates if dt <= end_utc]
+            rounded = max(before_end) if before_end else min(candidates)
+            if ends_in >= timedelta(minutes=1) and rounded <= start_utc:
+                # A partial-hour rollback can put the rounded boundary
+                # before start. Consider both the next clock boundary and
+                # the calendar boundary, including both occurrences.
+                unit = (timedelta(hours=1) if ends_in >= timedelta(hours=1)
+                        else timedelta(minutes=1))
+                candidates += _relative_end_dates(end_date + unit, ends_in)
+                candidates += _relative_end_dates(start + ends_in, ends_in)
+                future = [dt for dt in candidates if dt > start_utc]
+                before_end = [dt for dt in future if dt <= end_utc]
+                rounded = (max(before_end) if before_end
+                           else min(future, default=end_utc))
+            end_date = rounded
 
     # Using UTC to calculate real time difference.
     # Python by default uses wall time in arithmetic between datetimes with
@@ -331,6 +384,21 @@ def maybe_iso8601(dt: datetime | str | None) -> None | datetime:
 def is_naive(dt: datetime) -> bool:
     """Return True if :class:`~datetime.datetime` is naive, meaning it doesn't have timezone info set."""
     return dt.tzinfo is None or dt.tzinfo.utcoffset(dt) is None
+
+
+def add_seconds_to_datetime(dt: datetime, seconds: float) -> datetime:
+    """Add elapsed seconds, preserving naive datetime behavior."""
+    delta = timedelta(seconds=seconds)
+    if is_naive(dt):
+        return dt + delta
+    return (dt.astimezone(datetime_timezone.utc) + delta).astimezone(dt.tzinfo)
+
+
+def subtract_datetimes(end: datetime, start: datetime) -> timedelta:
+    """Return the elapsed time between two datetimes, treating naive datetimes as UTC."""
+    end_utc = maybe_make_aware(end).astimezone(datetime_timezone.utc)
+    start_utc = maybe_make_aware(start).astimezone(datetime_timezone.utc)
+    return end_utc - start_utc
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:
@@ -453,12 +521,20 @@ def utcoffset(
         time: ModuleType = _time,
         localtime: Callable[..., _time.struct_time] = _time.localtime) -> float:
     """Return the current offset to UTC in hours."""
+    # Use true division, not floor division: `time.timezone`/`time.altzone`
+    # are seconds *west* of UTC, and for a fractional-hour zone (e.g.
+    # India/Sri Lanka at UTC+5:30, seconds = -19800) floor-dividing rounds
+    # the magnitude *up* (-19800 // 3600 == -6) while the same fractional
+    # offset on the west-of-UTC side is unaffected (floor and truncation
+    # agree for positive dividends). Either kind of rounding is wrong for
+    # some fractional-hour zone or other -- `adjust_timestamp()` below is
+    # pure arithmetic on this value, so keep it exact instead.
     if localtime().tm_isdst:
-        return time.altzone // 3600
-    return time.timezone // 3600
+        return time.altzone / 3600
+    return time.timezone / 3600
 
 
-def adjust_timestamp(ts: float, offset: int,
+def adjust_timestamp(ts: float, offset: float,
                      here: Callable[..., float] = utcoffset) -> float:
     """Adjust timestamp based on provided utcoffset."""
     return ts - (offset - here()) * 3600

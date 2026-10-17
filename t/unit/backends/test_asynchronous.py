@@ -470,40 +470,6 @@ class DrainerTests:
         assert not p.ready, 'Promise should remain un-fulfilled'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
-    def test_drain_catches_and_logs_oserror(self):
-        p = promise()
-
-        def fulfill():
-            self.sleep(self.interval * 2)
-            p('done')
-
-        t = self.schedule_thread(fulfill)
-
-        state = {'n': 0}
-
-        def flaky(*args, **kwargs):
-            state['n'] += 1
-            if state['n'] == 1:
-                raise OSError('simulated broker restart')
-            # Yield to hub so the promise thread can run.
-            self.result_consumer_drain_events(
-                timeout=kwargs.get('timeout', None),
-            )
-
-        with patch.object(
-            self.drainer.result_consumer, 'drain_events',
-            side_effect=flaky,
-        ):
-            with patch('logging.warning') as mock_warn:
-                for _ in self.drainer.drain_events_until(
-                        p, interval=self.interval,
-                        timeout=self.MAX_TIMEOUT):
-                    pass
-
-        self.teardown_thread(t)
-        assert p.ready
-        assert mock_warn.called
-
 
 class GreenletDrainerTests(DrainerTests):
     def test_drain_raises_when_greenlet_already_exited(self):
@@ -623,6 +589,34 @@ class test_Drainer(DrainerTests):
 
     def teardown_thread(self, thread):
         thread.join()
+
+    def test_drain_catches_and_logs_oserror(self):
+        result = promise()
+        calls = 0
+
+        def wait(timeout=None):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise OSError('simulated broker restart')
+            result('done')
+
+        with patch(
+            'celery.backends.asynchronous.logging.warning',
+        ) as mock_warn, patch(
+            'celery.backends.asynchronous.time.sleep',
+        ) as mock_sleep:
+            list(self.drainer.drain_events_until(
+                result,
+                wait=wait,
+                interval=0.01,
+                timeout=1,
+            ))
+
+        assert result.ready
+        mock_warn.assert_called_once()
+        assert 'connection error during drain_events' in mock_warn.call_args.args[0]
+        mock_sleep.assert_called_once_with(0.01)
 
 
 class test_GeventDrainer(GreenletDrainerTests):

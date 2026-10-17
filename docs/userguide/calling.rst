@@ -267,6 +267,13 @@ a shortcut to set ETA by seconds into the future.
     >>> result.get()    # this takes at least 3 seconds to return
     4
 
+.. note::
+
+    ``countdown`` and numeric ``expires`` values use elapsed seconds across
+    daylight saving time (DST) changes. A value of ``86400`` means 24 hours.
+    When the clock changes by one hour, an interval starting at noon ends
+    at 13:00 the next day across spring-forward, or 11:00 across fall-back.
+
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
@@ -407,12 +414,13 @@ and can contain the following keys:
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries. Default is 0.2.
+    retries. Default is 1.
 
 - `retry_errors`
 
     `retry_errors` is a tuple of exception classes that should be retried.
-    It will be ignored if not specified. Default is None (ignored).
+    It will be ignored if not specified. Default is None (ignored). These configuration
+    keys are passed through to `kombu.Connection.ensure`, where retry_errors is defined and handled.
 
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
@@ -436,11 +444,11 @@ For example, the default policy correlates to:
         'max_retries': 3,
         'interval_start': 0,
         'interval_step': 0.2,
-        'interval_max': 0.2,
+        'interval_max': 1,
         'retry_errors': None,
     })
 
-the maximum time spent retrying will be 0.4 seconds. It's set relatively
+the maximum time spent retrying will be 0.6 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down -- For example, many web server processes waiting
 to retry, blocking other incoming requests.

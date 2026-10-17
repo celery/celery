@@ -2,7 +2,7 @@ import os
 import pickle
 import sys
 from importlib import import_module
-from time import time
+from time import monotonic, time
 from unittest.mock import Mock, patch
 
 import pytest
@@ -89,6 +89,28 @@ class test_maybe_shutdown:
 
 
 @pytest.mark.usefixtures('reset_state')
+class test_merge_revoked:
+
+    def test_nothing(self):
+        size = len(state.revoked)
+        state.merge_revoked(None)
+        state.merge_revoked([])
+        state.merge_revoked({})
+        assert len(state.revoked) == size
+
+    def test_ids_only(self):
+        ahead = monotonic() + 10 ** 6
+        try:
+            state.merge_revoked({'from-dict': [ahead, 0, 'from-dict']})
+            state.merge_revoked(['from-list'])
+            stamps = state.revoked.as_dict()
+            assert stamps['from-dict'] <= monotonic()
+            assert stamps['from-list'] <= monotonic()
+        finally:
+            state.revoked.discard('from-dict')
+            state.revoked.discard('from-list')
+
+
 class test_Persistent:
 
     @pytest.fixture
@@ -118,6 +140,17 @@ class test_Persistent:
         p.merge()
         for item in data:
             assert item in state.revoked
+
+    def test_merge_stamps_saved_items_locally(self, p):
+        # The stamps in the state db count from the boot of the host the
+        # worker ran on; after a reboot they are ahead of the clock.
+        saved = LimitedSet()
+        saved.add('rebooted', now=monotonic() + 10 ** 6)
+        p.db['zrevoked'] = p.compress(p._dumps(saved))
+        p.merge()
+        assert 'rebooted' in state.revoked
+        assert state.revoked.as_dict()['rebooted'] <= monotonic()
+        state.revoked.discard('rebooted')
 
     def test_merge_dict(self, p):
         p.clock = Mock()

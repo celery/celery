@@ -9,6 +9,7 @@ import types
 import typing
 import warnings
 from collections import UserDict, defaultdict, deque
+from collections.abc import Mapping
 from datetime import datetime
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
@@ -38,7 +39,7 @@ from celery.utils.functional import first, head_from_fun, maybe_list
 from celery.utils.imports import gen_task_name, instantiate, qualname, symbol_by_name
 from celery.utils.log import get_logger
 from celery.utils.objects import FallbackContext, mro_lookup
-from celery.utils.time import maybe_make_aware, timezone, to_utc
+from celery.utils.time import subtract_datetimes, timezone, to_utc
 
 from ..utils.annotations import annotation_is_class, annotation_issubclass, get_optional_arg
 from ..utils.quorum_queues import detect_quorum_queues
@@ -183,9 +184,8 @@ def pydantic_wrapper(
 
     if context is None:
         context = {}
-    if dump_kwargs is None:
-        dump_kwargs = {}
-    dump_kwargs.setdefault('mode', 'json')
+    # A new dict, so the caller's dict isn't changed.
+    dump_kwargs = {'mode': 'json', **(dump_kwargs or {})}
 
     # If a file uses `from __future__ import annotations`, all annotations will
     # be strings. `typing.get_type_hints()` can turn these back into real
@@ -199,26 +199,36 @@ def pydantic_wrapper(
         # Fall back to raw annotations from inspect if get_type_hints fails
         type_hints = None
 
+    def get_argument_model(arg_name, arg_value):
+        """Return the model the wrapper validates this argument with, or ``None``."""
+        if type_hints and arg_name in type_hints:
+            arg_annotation = type_hints[arg_name]
+        else:
+            arg_annotation = task_signature.parameters[arg_name].annotation
+
+        optional_arg = get_optional_arg(arg_annotation)
+        if optional_arg is not None and arg_value is not None:
+            arg_annotation = optional_arg
+
+        if annotation_issubclass(arg_annotation, BaseModel):
+            return arg_annotation
+        return None
+
+    def validate_argument(arg_model, arg_value):
+        return arg_model.model_validate(
+            arg_value,
+            strict=strict,
+            context={**context, 'celery_app': app, 'celery_task_name': task_name},
+        )
+
     @functools.wraps(task_fun)
     def wrapper(*task_args, **task_kwargs):
         # Validate task parameters if type hinted as BaseModel
         bound_args = task_signature.bind(*task_args, **task_kwargs)
         for arg_name, arg_value in bound_args.arguments.items():
-            if type_hints and arg_name in type_hints:
-                arg_annotation = type_hints[arg_name]
-            else:
-                arg_annotation = task_signature.parameters[arg_name].annotation
-
-            optional_arg = get_optional_arg(arg_annotation)
-            if optional_arg is not None and arg_value is not None:
-                arg_annotation = optional_arg
-
-            if annotation_issubclass(arg_annotation, BaseModel):
-                bound_args.arguments[arg_name] = arg_annotation.model_validate(
-                    arg_value,
-                    strict=strict,
-                    context={**context, 'celery_app': app, 'celery_task_name': task_name},
-                )
+            arg_model = get_argument_model(arg_name, arg_value)
+            if arg_model is not None:
+                bound_args.arguments[arg_name] = validate_argument(arg_model, arg_value)
 
         # Call the task with (potentially) converted arguments
         returned_value = task_fun(*bound_args.args, **bound_args.kwargs)
@@ -243,6 +253,79 @@ def pydantic_wrapper(
 
         return returned_value
 
+    # Parameters that positional and keyword arguments bind to. Other arguments
+    # go to *args or **kwargs, which the wrapper doesn't validate one by one.
+    positional_names = [
+        name for name, param in task_signature.parameters.items()
+        if param.kind in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD)
+    ]
+    keyword_names = {
+        name for name, param in task_signature.parameters.items()
+        if param.kind in (param.POSITIONAL_OR_KEYWORD, param.KEYWORD_ONLY)
+    }
+
+    def dump_argument(arg_name, arg_value):
+        # Only dump a model if the wrapper gets an equal model back from the
+        # dump. Other models are left as they are, so the serializer handles
+        # them (usually with EncodeError) like it does for tasks without pydantic=True.
+        if (
+            arg_name is None
+            or not isinstance(arg_value, BaseModel)
+            # A model with kombu's __json__ hook already knows how to be sent.
+            or hasattr(type(arg_value), '__json__')
+        ):
+            return arg_value
+        arg_model = get_argument_model(arg_name, arg_value)
+        if arg_model is None:
+            return arg_value
+        try:
+            dumped = arg_value.model_dump(**dump_kwargs)
+            rebuilt = validate_argument(arg_model, dumped)
+            # Model equality includes the class, so a subclass passed for its base class is left too.
+            if rebuilt == arg_value:
+                return dumped
+        except Exception:
+            # The model's serializers and validators run here on the caller, and some
+            # may only work on a worker. If anything fails, the model is left as it is.
+            pass
+        return arg_value
+
+    def dump_arguments(args, kwargs, bound=False):
+        """Dump the models passed by a caller that the wrapper rebuilds as equal models.
+
+        Used by :meth:`celery.app.task.Task.apply_async`. ``args`` and ``kwargs``
+        are returned as they are when no model is dumped.
+        """
+        task_args = () if args is None else args
+        task_kwargs = {} if kwargs is None else kwargs
+        if not isinstance(task_args, (list, tuple)) or not isinstance(task_kwargs, Mapping):
+            # Left for send_task() to reject, as for other tasks.
+            return args, kwargs
+        if not any(isinstance(value, BaseModel) for value in (*task_args, *task_kwargs.values())):
+            return args, kwargs
+        try:
+            # A bound task gets the task itself as its first argument.
+            task_signature.bind(*([None] if bound else []), *task_args, **task_kwargs)
+        except TypeError:
+            # The wrapper can't bind these arguments either.
+            return args, kwargs
+
+        names = positional_names[1:] if bound else positional_names
+        dumped_args = [
+            dump_argument(names[index] if index < len(names) else None, value)
+            for index, value in enumerate(task_args)
+        ]
+        dumped_kwargs = {
+            key: dump_argument(key if key in keyword_names else None, value)
+            for key, value in task_kwargs.items()
+        }
+        if any(new is not old for new, old in zip(dumped_args, task_args)):
+            args = dumped_args if isinstance(task_args, list) else tuple(dumped_args)
+        if any(dumped_kwargs[key] is not value for key, value in task_kwargs.items()):
+            kwargs = dumped_kwargs
+        return args, kwargs
+
+    wrapper.dump_arguments = dump_arguments
     return wrapper
 
 
@@ -659,6 +742,10 @@ class Celery:
         if name not in self._tasks:
             if pydantic is True:
                 fun = pydantic_wrapper(self, fun, name, pydantic_strict, pydantic_context, pydantic_dump_kwargs)
+                # Used by apply_async() for models passed by the caller.
+                dump_pydantic_arguments = staticmethod(functools.partial(fun.dump_arguments, bound=bind))
+            else:
+                dump_pydantic_arguments = None
 
             run = fun if bind else staticmethod(fun)
             task = type(fun.__name__, (base,), dict({
@@ -666,6 +753,7 @@ class Celery:
                 'name': name,
                 'run': run,
                 '_decorated': True,
+                '_dump_pydantic_arguments': dump_pydantic_arguments,
                 '__doc__': fun.__doc__,
                 '__module__': fun.__module__,
                 '__annotations__': _get_annotations(fun),
@@ -1043,7 +1131,7 @@ class Celery:
                     if eta:
                         if isinstance(eta, str):
                             eta = isoparse(eta)
-                        countdown = (maybe_make_aware(eta) - self.now()).total_seconds()
+                        countdown = subtract_datetimes(eta, self.now()).total_seconds()
 
                     if countdown:
                         if countdown > 0:
@@ -1066,11 +1154,9 @@ class Celery:
 
         if expires is not None:
             if isinstance(expires, datetime):
-                expires_s = (maybe_make_aware(
-                    expires) - self.now()).total_seconds()
+                expires_s = subtract_datetimes(expires, self.now()).total_seconds()
             elif isinstance(expires, str):
-                expires_s = (maybe_make_aware(
-                    isoparse(expires)) - self.now()).total_seconds()
+                expires_s = subtract_datetimes(isoparse(expires), self.now()).total_seconds()
             else:
                 expires_s = expires
 

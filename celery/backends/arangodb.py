@@ -13,9 +13,8 @@ from .base import KeyValueStoreBackend
 
 try:
     from pyArango import connection as py_arango_connection
-    from pyArango.theExceptions import AQLQueryError
 except ImportError:
-    py_arango_connection = AQLQueryError = None
+    py_arango_connection = None
 
 __all__ = ('ArangoDbBackend',)
 
@@ -166,7 +165,7 @@ class ArangoDbBackend(KeyValueStoreBackend):
         if key is None:
             return
         self.db.AQLQuery(
-            "REMOVE {_key: @key} IN @@collection",
+            "REMOVE {_key: @key} IN @@collection OPTIONS { ignoreErrors: true }",
             bindVars={
                 "@collection": self.collection,
                 "key": key,

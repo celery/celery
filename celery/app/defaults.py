@@ -73,6 +73,8 @@ NAMESPACES = Namespace(
     beat=Namespace(
         __old__=OLD_NS_BEAT,
 
+        enable_remote_control=Option(False, type='bool'),
+        remote_control_max_tick_age=Option(None, type='float'),
         max_loop_interval=Option(0, type='float'),
         schedule=Option({}, type='dict'),
         scheduler=Option('celery.beat:PersistentScheduler'),
@@ -217,6 +219,8 @@ NAMESPACES = Namespace(
             timedelta(days=1),
             type='float', old={'celery_task_result_expires'},
         ),
+        chord_expires=Option(None, type='float'),
+        failure_expires=Option(None, type='float'),
         persistent=Option(None, type='bool'),
         extended=Option(False, type='bool'),
         serializer=Option('json'),
@@ -306,6 +310,7 @@ NAMESPACES = Namespace(
         queues=Option(type='dict'),
         queue_max_priority=Option(None, type='int'),
         reject_on_worker_lost=Option(type='bool'),
+        retry_on_worker_lost=Option(False, type='bool'),
         remote_tracebacks=Option(False, type='bool'),
         repr_maxlevels=Option(3, type='int'),
         routes=Option(type='any'),
@@ -332,7 +337,8 @@ NAMESPACES = Namespace(
         ),
         soft_shutdown_timeout=Option(0.0, type='float'),
         enable_soft_shutdown_on_idle=Option(False, type='bool'),
-        concurrency=Option(None, type='int'),
+        # 'any' preserves "auto"; validated in WorkController.setup_instance.
+        concurrency=Option(None, type='any'),
         consumer=Option('celery.worker.consumer:Consumer', type='string'),
         direct=Option(False, type='bool', old={'celery_worker_direct'}),
         disable_rate_limits=Option(

@@ -1,5 +1,6 @@
 import copy
 import datetime
+import doctest
 import platform
 import traceback
 from contextlib import contextmanager
@@ -7,11 +8,12 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
-from celery import states, uuid
+from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
-from celery.exceptions import ImproperlyConfigured, IncompleteStream, TimeoutError
-from celery.result import AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block, result_from_tuple
+from celery.exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
+from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
+                           denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -488,6 +490,42 @@ class test_AsyncResult:
         del result
 
 
+class test_collect:
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('serializer', ['json', 'pickle'])
+    def test_documented_example(self, serializer):
+        self.app.conf.result_serializer = serializer
+        children = []
+        for i in range(10):
+            leaf = self.app.AsyncResult(uuid())
+            self.app.backend.mark_as_done(leaf.id, i ** 2)
+            child = self.app.AsyncResult(uuid())
+            request = Context()
+            request.children.append(leaf)
+            self.app.backend.mark_as_done(
+                child.id, leaf, request=request,
+            )
+            children.append(child)
+        group = self.app.GroupResult(uuid(), children)
+        result = self.app.AsyncResult(uuid())
+        request = Context()
+        request.children.append(group)
+        self.app.backend.mark_as_done(
+            result.id, group, request=request,
+        )
+
+        example = doctest.DocTestFinder().find(AsyncResult.collect)[0]
+        example.examples = [
+            item for item in example.examples
+            if 'result.collect(' in item.source
+        ]
+        example.globs['result'] = result
+        failures, attempted = doctest.DocTestRunner().run(example)
+        assert attempted == 1
+        assert failures == 0
+
+
 class test_ResultSet:
 
     def test_resultset_repr(self):
@@ -846,6 +884,74 @@ class test_GroupResult:
         with pytest.raises(KeyError):
             ts.join_native(propagate=True)
 
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    @pytest.mark.parametrize('with_callback', [False, True])
+    def test_get_nested_propagate_false(self, method, depth, with_callback):
+        successful = make_mock_group(self.app, 2)
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            successful[1], self.app.AsyncResult(failed['id']),
+        ])
+        for _ in range(depth - 1):
+            nested = self.app.GroupResult(uuid(), [nested])
+        ts = self.app.GroupResult(uuid(), [successful[0], nested])
+        callback = Mock() if with_callback else None
+        assert ts.supports_native_join
+
+        values = getattr(ts, method)(propagate=False, callback=callback)
+
+        if with_callback:
+            assert values is None
+            assert callback.call_count == len(ts)
+            by_id = dict(args for args, _ in callback.call_args_list)
+            values = [by_id[result.id] for result in ts.results]
+        nested_values = values[1]
+        for _ in range(depth - 1):
+            assert len(nested_values) == 1
+            nested_values = nested_values[0]
+        error = nested_values[1]
+        assert isinstance(error, ValueError)
+        assert error.args == ('failed',)
+        expected = [1, error]
+        for _ in range(depth - 1):
+            expected = [expected]
+        assert values == [0, expected]
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('kwargs', [{}, {'propagate': True}])
+    def test_get_nested_propagate_raises(self, method, kwargs):
+        failed = mock_task('failed', states.FAILURE, ValueError('failed'))
+        save_result(self.app, failed)
+        nested = self.app.GroupResult(uuid(), [
+            self.app.AsyncResult(failed['id']),
+        ])
+        ts = self.app.GroupResult(uuid(), [nested])
+        assert ts.supports_native_join
+
+        with pytest.raises(ValueError, match='failed'):
+            getattr(ts, method)(**kwargs)
+
+    @pytest.mark.parametrize('method', ['get', 'join_native'])
+    @pytest.mark.parametrize('depth', [1, 2])
+    def test_get_nested_sync_subtasks(self, method, depth):
+        ts = self.app.GroupResult(uuid(), make_mock_group(self.app, 2))
+        expected = [0, 1]
+        for _ in range(depth):
+            ts = self.app.GroupResult(uuid(), [ts])
+            expected = [expected]
+        assert ts.supports_native_join
+
+        with patch('celery.result.task_join_will_block',
+                   _state.orig_task_join_will_block):
+            with denied_join_result():
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)()
+                with pytest.raises(RuntimeError, match='Never call result.get'):
+                    getattr(ts, method)(disable_sync_subtasks=True)
+                assert getattr(ts, method)(disable_sync_subtasks=False) == expected
+
     def test_failed_join_report(self):
         res = Mock()
         ts = self.app.GroupResult(uuid(), [res])
@@ -1024,6 +1130,54 @@ class test_EagerResult:
         res = self.raising.apply(args=[3, 3])
         assert not res.revoke()
 
+    def test_revoke_then_get_raises_TaskRevokedError(self):
+        res = EagerResult('x', 4, states.SUCCESS)
+        res.revoke()
+        assert res.state == states.REVOKED
+        assert res.traceback is None
+        with pytest.raises(TaskRevokedError):
+            res.get()
+        assert isinstance(res.get(propagate=False), TaskRevokedError)
+        assert isinstance(res.result, TaskRevokedError)
+
+    def test_revoke_failed_task_then_get_raises_TaskRevokedError(self):
+        res = self.raising.apply(args=[3, 3])
+        res.revoke()
+        assert res.traceback is None
+        with pytest.raises(TaskRevokedError):
+            res.get()
+
+    def test_revoke_replaces_original_exception(self):
+        res = self.raising.apply(args=[3, 3])
+        original = res.result
+        assert isinstance(original, KeyError)
+        with pytest.raises(KeyError):
+            res.get()
+
+        res.revoke()
+
+        # the task's own exception is intentionally discarded.
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert not isinstance(excinfo.value, KeyError)
+        assert excinfo.value is not original
+        assert res.result is excinfo.value
+        assert res.get(propagate=False) is excinfo.value
+
+    def test_revoke_replaces_original_return_value(self):
+        res = EagerResult('x', 4, states.SUCCESS)
+        assert res.get() == 4
+
+        res.revoke()
+
+        # the return value is intentionally discarded, and it isn't raised
+        # wrapped in a bare Exception anymore (Issue #10761).
+        with pytest.raises(TaskRevokedError) as excinfo:
+            res.get()
+        assert excinfo.value.args == ('revoked',)
+        assert res.result != 4
+        assert res.get(propagate=False) != 4
+
     @patch('celery.result.task_join_will_block')
     def test_get_sync_subtask_option(self, task_join_will_block):
         task_join_will_block.return_value = True
@@ -1039,6 +1193,52 @@ class test_EagerResult:
 
         res = EagerResult('x', 'x', states.SUCCESS, name='test_task_named_argument')
         assert res.name == 'test_task_named_argument'
+
+    @pytest.mark.parametrize('kwargs', [{}, {'name': 'test_task'}])
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_attributes(self, kwargs, method):
+        res = EagerResult(uuid(), {'value': [1, 2]}, states.SUCCESS,
+                          PYTRACEBACK, **kwargs)
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed is not res
+        assert type(reconstructed) is EagerResult
+        assert reconstructed.id == res.id
+        assert reconstructed.result == res.result
+        assert reconstructed.state == res.state
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.name == res.name
+        assert reconstructed.ready()
+        assert reconstructed.successful()
+        assert reconstructed.get() == res.get()
+        if method == 'copy':
+            assert reconstructed.result is res.result
+
+    @pytest.mark.parametrize('method', ['copy', 'pickle'])
+    def test_reconstruction_preserves_eager_task(self, method):
+        res = self.raising.apply(args=[3, 3])
+
+        if method == 'copy':
+            reconstructed = copy.copy(res)
+        else:
+            reconstructed = pickle.loads(pickle.dumps(res))
+
+        assert reconstructed.id == res.id
+        assert reconstructed.name == self.raising.name
+        assert reconstructed.state == res.state == states.FAILURE
+        assert reconstructed.traceback == res.traceback
+        assert reconstructed.ready()
+        assert reconstructed.failed()
+        assert isinstance(reconstructed.result, KeyError)
+        assert reconstructed.result.args == res.result.args == (3, 3)
+        with pytest.raises(KeyError) as exc_info:
+            reconstructed.get()
+        assert exc_info.value.args == (3, 3)
+        assert reconstructed.get(propagate=False) is reconstructed.result
 
 
 class test_tuples:

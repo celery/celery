@@ -2,12 +2,15 @@ import errno
 import logging
 import socket
 from collections import deque
+from time import monotonic
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
+from kombu import Queue
+from kombu.asynchronous import Hub
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -16,6 +19,7 @@ from celery.exceptions import WorkerShutdown, WorkerTerminate
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.utils.time import utcoffset
+from celery.worker import state as worker_state
 from celery.worker.consumer.agent import Agent
 from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
                                              Consumer)
@@ -277,6 +281,56 @@ class test_Consumer(ConsumerTestCase):
         assert c.initial_prefetch_count == c.max_prefetch_count
         assert c._maximum_prefetch_restored is True
 
+    @pytest.mark.parametrize(
+        'active_requests_count,expected_initial,expected_maximum',
+        [
+            # Idle worker at reconnect (the common case during a broker
+            # maintenance roll): nothing in flight, keep the full prefetch.
+            (0, 50, True),
+            # Busy worker: reduce by the in-flight count, restore gradually.
+            (3, 47, False),
+        ],
+        ids=['idle', 'busy'],
+    )
+    @patch('celery.worker.consumer.consumer.active_requests', new_callable=set)
+    def test_prefetch_reduction_uses_green_pool_capacity_not_running_greenlets(
+            self, active_requests_mock, active_requests_count, expected_initial,
+            expected_maximum):
+        """Reconnect-time prefetch reduction must size from pool capacity.
+
+        Regression test for the gevent pool reporting ``num_processes`` as
+        the number of greenlets running *right now* (0 when idle) instead of
+        the configured concurrency. With that, ``max_prefetch_count`` was 0
+        on an idle worker, the reduction dropped the channel to
+        ``prefetch_multiplier`` (1) and the restore step immediately treated
+        ``min(0, qos + 1)`` as "restored", so a worker that lost its broker
+        connection once stayed at prefetch=1 for the rest of its life.
+        Fixed on the pool side by #10361; this pins the consumer-side
+        outcome against a real green pool.
+        """
+        pytest.importorskip('gevent')
+        from celery.concurrency.gevent import TaskPool
+
+        self.app.conf.worker_enable_prefetch_count_reduction = True
+        active_requests_mock.update({Mock() for _ in range(active_requests_count)})
+
+        c = self.get_consumer()
+        c.qos = Mock()
+        c.qos_global = True
+        c.prefetch_multiplier = 1
+        c.pool = TaskPool(50)
+        # A *started* green pool tracks only the greenlets currently
+        # running; that number must not leak into the prefetch math.
+        c.pool._pool = [object()] * active_requests_count
+        c.initial_prefetch_count = 50
+        c._maximum_prefetch_restored = True
+
+        c.on_connection_error_after_connected(ConnectionError('simulated'))
+
+        assert c.max_prefetch_count == 50
+        assert c.initial_prefetch_count == expected_initial
+        assert c._maximum_prefetch_restored is expected_maximum
+
     def test_restore_prefetch_count_after_connection_restart_negative(self):
         self.app.conf.worker_enable_prefetch_count_reduction = False
 
@@ -338,7 +392,19 @@ class test_Consumer(ConsumerTestCase):
         c.on_send_event_buffered()
         c.hub = Mock(name='hub')
         c.on_send_event_buffered()
-        c.hub._ready.add.assert_called_with(c._flush_events)
+        c.hub.call_soon.assert_called_with(c._flush_events_promise)
+
+    def test_on_send_event_buffered_schedules_one_flush(self):
+        c = self.get_consumer()
+        c.event_dispatcher = Mock(name='evd')
+        c.hub = Hub()
+        try:
+            c.on_send_event_buffered()
+            c.on_send_event_buffered()
+            next(c.hub.loop)
+        finally:
+            c.hub.close()
+        c.event_dispatcher.flush.assert_called_once_with()
 
     def test_schedule_bucket_request(self):
         c = self.get_consumer()
@@ -909,6 +975,36 @@ class test_Consumer(ConsumerTestCase):
                 task_consumer = self.app.amqp.TaskConsumer(con)
                 assert {q.name for q in task_consumer.queues} == {default_queue}
 
+    @pytest.mark.parametrize('queue', ['foo', 'barfoo'])
+    def test_cancel_task_queue_stops_consuming_by_name_or_alias(self, queue):
+        self.app.conf.task_queues = (Queue('foo', alias='barfoo'),)
+        consumer = self.get_consumer()
+
+        with self.app.connection_for_read() as connection:
+            with self.app.amqp.TaskConsumer(connection) as task_consumer:
+                consumer.task_consumer = task_consumer
+                assert task_consumer.consuming_from('foo')
+
+                consumer.cancel_task_queue(queue)
+                assert not task_consumer.consuming_from('foo')
+                assert not task_consumer.queues
+                assert not self.app.amqp.queues.consume_from
+
+    @pytest.mark.parametrize('create_missing', [True, False])
+    def test_cancel_unknown_task_queue_does_not_create_queue(self, create_missing):
+        self.app.conf.task_queues = (Queue('foo'),)
+        self.app.conf.task_create_missing_queues = create_missing
+        consumer = self.get_consumer()
+
+        with self.app.connection_for_read() as connection:
+            with self.app.amqp.TaskConsumer(connection) as task_consumer:
+                consumer.task_consumer = task_consumer
+
+                consumer.cancel_task_queue('missing')
+                assert list(self.app.amqp.queues) == ['foo']
+                assert list(self.app.amqp.queues.consume_from) == ['foo']
+                assert task_consumer.consuming_from('foo')
+
     def test_readd_cancelled_queue_restores_consume_from(self):
         queues = self.app.amqp.queues
         default_queue = self.app.conf.task_default_queue
@@ -1265,7 +1361,7 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_2 = Mock()
 
         # Add mock operations to _pending_operations
-        c._pending_operations = [mock_operation_1, mock_operation_2]
+        c._pending_operations = deque([mock_operation_1, mock_operation_2])
 
         # Call perform_pending_operations
         c.perform_pending_operations()
@@ -1275,6 +1371,18 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_2.assert_called_once()
 
         # Ensure all pending operations are cleared
+        assert len(c._pending_operations) == 0
+
+    def test_perform_pending_operations_in_scheduling_order(self):
+        c = self.get_consumer(no_hub=True)
+        operations = []
+
+        c.call_soon(operations.append, 'first')
+        c.call_soon(operations.append, 'second')
+
+        c.perform_pending_operations()
+
+        assert operations == ['first', 'second']
         assert len(c._pending_operations) == 0
 
     def test_perform_pending_operations_with_exception(self):
@@ -1289,7 +1397,7 @@ class test_Consumer_PerformPendingOperations(ConsumerTestCase):
         mock_operation_success = Mock()
 
         # Add operations to _pending_operations
-        c._pending_operations = [mock_operation_fail, mock_operation_success]
+        c._pending_operations = deque([mock_operation_fail, mock_operation_success])
 
         # Patch logger to avoid logging during the test
         with patch('celery.worker.consumer.consumer.logger.exception') as mock_logger:
@@ -1356,7 +1464,7 @@ class test_Consumer_CallSoonAck(ConsumerTestCase):
     def test_call_soon_ack_does_not_append_to_pending_ops(self):
         """Ack/reject callbacks must not be deferred to _pending_operations."""
         c = self.get_consumer(no_hub=True)
-        c._pending_operations = []
+        c._pending_operations = deque()
         callback = Mock()
 
         c.call_soon_ack(callback)
@@ -1616,6 +1724,7 @@ class test_Mingle:
         c = Mock()
         c.app.connection_for_read = _amqp_connection()
         mingle = Mingle(c)
+        c.controller.state.revoked = LimitedSet()
         I = c.app.control.inspect.return_value = Mock()
         I.hello.return_value = {}
         mingle.start(c)
@@ -1647,16 +1756,45 @@ class test_Mingle:
             },
         }
 
-        our_revoked = c.controller.state.revoked = LimitedSet()
-
-        mingle.start(c)
-        I.hello.assert_called_with(c.hostname, our_revoked._data)
+        our_revoked = LimitedSet()
+        our_revoked.add('ours')
+        with patch.object(worker_state, 'revoked', our_revoked):
+            c.controller.state = worker_state
+            mingle.start(c)
+        I.hello.assert_called_with(c.hostname, ['ours'])
         c.app.clock.adjust.assert_has_calls([
             call(312), call(29),
         ], any_order=True)
         assert 'Aig-1' in our_revoked
         assert 'Aig-2' in our_revoked
         assert 'Big-1' in our_revoked
+
+    def test_start_stamps_received_revoked_items_locally(self):
+        # The stamps of a neighbour count from the boot of its host; taken
+        # as they are, the ones ahead of the local clock never expire and,
+        # once they fill the set, evict every id revoked here as the
+        # oldest one the moment it is added (#4300).
+        c = Mock()
+        c.app.connection_for_read = _amqp_connection()
+        mingle = Mingle(c)
+
+        Aig = LimitedSet()
+        Aig.add('Aig-1', now=monotonic() + 10 ** 6)
+        I = c.app.control.inspect.return_value = Mock()
+        I.hello.return_value = {
+            'A@example.com': {'clock': 312, 'revoked': Aig._data},
+        }
+
+        our_revoked = LimitedSet(maxlen=1, expires=3600)
+        with patch.object(worker_state, 'revoked', our_revoked):
+            c.controller.state = worker_state
+            mingle.start(c)
+        assert 'Aig-1' in our_revoked
+        assert our_revoked.as_dict()['Aig-1'] <= monotonic()
+
+        our_revoked.add('ours')
+        assert 'ours' in our_revoked
+        assert 'Aig-1' not in our_revoked
 
 
 def _amqp_connection():
