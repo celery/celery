@@ -128,8 +128,33 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         # Use a separate try/except so this always runs even if hub.reset()
         # raised above. Timers are re-registered by register_with_event_loop
         # when blueprint.start() is called after reconnect.
+        # Ensure pool time limits (soft/hard task timeouts) are preserved across
+        # reconnects so running tasks are not left without time limits (#10888).
         try:
+            from weakref import WeakValueDictionary
+            pool = getattr(obj, 'pool', None)
+            tref_dict = getattr(pool, '_tref_for_id', None)
+            pool_trefs = set(tref_dict.values()) if isinstance(tref_dict, (dict, WeakValueDictionary)) else set()
+            preserved_entries = []
+            queue = getattr(getattr(hub, 'timer', None), '_queue', None)
+            if isinstance(queue, list):
+                for item in queue:
+                    entry = getattr(item, 'entry', None)
+                    if entry is None and isinstance(item, (list, tuple)) and len(item) > 2:
+                        entry = item[2]
+                    if entry:
+                        fun = getattr(entry, 'fun', None)
+                        fun_name = getattr(fun, '__name__', '')
+                        fun_qual = getattr(fun, '__qualname__', '')
+                        if (entry in pool_trefs or
+                                '_on_soft_timeout' in fun_qual or '_on_hard_timeout' in fun_qual or
+                                '_on_soft_timeout' in fun_name or '_on_hard_timeout' in fun_name):
+                            preserved_entries.append(item)
             hub.timer.clear()
+            if preserved_entries:
+                import heapq
+                for item in preserved_entries:
+                    heapq.heappush(hub.timer._queue, item)
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error clearing hub timer after event loop: %r', exc)

@@ -585,6 +585,45 @@ class test_asynloop:
             asynloop(*x.args)
         x.hub.timer.clear.assert_called_once()
 
+    def test_hub_timer_preserves_pool_timelimits_on_connection_error(self):
+        # Regression test for #10888: broker reconnect must not drop
+        # running task soft/hard time limits armed on the shared timer.
+        from kombu.asynchronous.timer import Entry, scheduled
+        x = X(self.app)
+        x.hub.readers = {6: Mock()}
+
+        def dummy_soft():
+            pass
+        dummy_soft.__qualname__ = 'AsynPool._on_soft_timeout'
+
+        def dummy_consumer_periodic():
+            pass
+        dummy_consumer_periodic.__qualname__ = 'Consumer.maybe_restore_messages'
+
+        pool_entry = Entry(dummy_soft, (), {})
+        consumer_entry = Entry(dummy_consumer_periodic, (), {})
+
+        item_pool = scheduled(100.0, 0, pool_entry)
+        item_consumer = scheduled(50.0, 0, consumer_entry)
+
+        def actual_clear():
+            x.hub.timer._queue[:] = []
+        x.hub.timer.clear = Mock(side_effect=actual_clear)
+        x.hub.timer._queue = [item_pool, item_consumer]
+
+        x.hub.reset = Mock(name='hub.reset()')
+        x.close_then_error(x.hub.poller.poll)
+        x.hub.fire_timers.return_value = 33.37
+        x.hub.poller.poll.return_value = []
+
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+
+        x.hub.timer.clear.assert_called_once()
+        remaining_entries = [getattr(it, 'entry', it[2]) for it in x.hub.timer._queue]
+        assert pool_entry in remaining_entries
+        assert consumer_entry not in remaining_entries
+
     def test_hub_not_reset_on_graceful_shutdown(self):
         x = X(self.app)
         x.hub.reset = Mock(name='hub.reset()')
