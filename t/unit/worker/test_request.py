@@ -987,6 +987,31 @@ class test_Request(RequestCase):
             assert job._already_revoked
             assert job.acknowledged
 
+    def test_revoked_by_second_stamped_header(self):
+        """Test that revocation works when a later stamped header matches.
+
+        Regression test for issue where the loop broke unconditionally after
+        checking the first header in revoked_stamps, even if it didn't match.
+        """
+        revoked_stamps.clear()
+        job = self.xRequest()
+        # Task has two stamped headers
+        stamps = {'a': 'x', 'b': 'y'}
+        stamped_headers = ['a', 'b']
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = stamped_headers
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = stamped_headers
+        # Only revoke header 'b' with value 'y' (header 'a' value 'x' is not revoked)
+        revoked_stamps.update({'a': ['other'], 'b': ['y']})
+        # Should be revoked because 'b' matches, even though 'a' doesn't
+        with self.assert_signal_called(
+                task_revoked, sender=job.task, request=job._context,
+                terminated=False, expired=False, signum=None):
+            assert job.revoked()
+            assert job._already_revoked
+            assert job.acknowledged
+
     def test_execute_does_not_execute_revoked(self):
         job = self.xRequest()
         revoked.add(job.id)

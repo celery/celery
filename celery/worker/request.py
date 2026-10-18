@@ -501,7 +501,8 @@ class Request:
                             stamped_header == revoked_header,  # When the header is a single set value
                         ])
                         revoking_header = {stamp: stamped_header}
-                    break
+                    if revoked_by_header:
+                        break
 
         if any((expired, revoked_by_id, revoked_by_header)):
             log_msg = 'Discarding revoked task: %s[%s]'
