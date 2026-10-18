@@ -468,6 +468,44 @@ class test_xmap_xstarmap(CanvasCase):
             assert type.from_dict(dict(s)) == s
             assert repr(s)
 
+    def test_apply_async_uses_signature_options(self):
+        for attr in ('map', 'starmap'):
+            args = [(i, i) for i in range(10)]
+            s = getattr(self.add, attr)(args)
+            s.set(queue='q1', countdown=3)
+            s.link(self.add.s(1))
+            s.type = Mock()
+
+            s.apply_async()
+            s.type.apply_async.assert_called_with(
+                (), {'task': self.add.s(), 'it': args},
+                queue='q1', countdown=3, link=[self.add.s(1)],
+                route_name=self.add.name,
+            )
+
+    def test_apply_async_options_override_signature_options(self):
+        for attr in ('map', 'starmap'):
+            args = [(i, i) for i in range(10)]
+            s = getattr(self.add, attr)(args)
+            s.set(queue='q1', countdown=3)
+            s.type = Mock()
+
+            s.apply_async(queue='q2', priority=None)
+            s.type.apply_async.assert_called_with(
+                (), {'task': self.add.s(), 'it': args},
+                queue='q2', countdown=3,
+                route_name=self.add.name,
+            )
+
+    def test_apply_async_uses_frozen_task_id(self):
+        for attr in ('map', 'starmap'):
+            s = getattr(self.add, attr)([(1, 2)])
+            result = s.freeze()
+            s.type = Mock()
+
+            s.apply_async()
+            assert s.type.apply_async.call_args.kwargs['task_id'] == result.id
+
 
 class test_chunks(CanvasCase):
 

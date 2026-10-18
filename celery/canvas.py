@@ -1677,6 +1677,11 @@ class _basemap(Signature):
         # need to evaluate generators
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        # Extra options set to None are dismissed
+        opts = {k: v for k, v in opts.items() if v is not None}
+        # Options stored on the signature (``.set()``, ``.link()``,
+        # ``freeze()``) are merged with the ones given to this call.
+        _, _, opts = self._merge(args, kwargs, opts)
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
             (), {'task': task, 'it': list(it)},
