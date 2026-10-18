@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 from kombu.asynchronous import ERR, READ, WRITE, Hub
+from kombu.asynchronous.timer import Timer
 from kombu.exceptions import DecodeError
 
 from celery.bootsteps import CLOSE, RUN
@@ -66,6 +67,7 @@ class X:
         self.hub.readers = {}
         self.hub.timer = Mock(name='hub.timer')
         self.hub.timer._queue = [Mock()]
+        self.hub.timer.queue = []
         self.hub.fire_timers = Mock(name='hub.fire_timers')
         self.hub.fire_timers.return_value = 1.7
         self.hub.poller = Mock(name='hub.poller')
@@ -504,34 +506,79 @@ class test_asynloop:
             asynloop(*x.args)
         x.hub.reset.assert_called_once()
 
-    def test_hub_timer_cleared_on_connection_error(self):
-        # Stale timer entries (e.g. maybe_restore_messages) must be cleared
-        # when the event loop exits due to a connection error.  Without this,
-        # entries accumulated across reconnects can fire against the broken
-        # connection and crash the loop again before the new connection is
-        # fully established, causing a rapid restart loop.
-        x = X(self.app)
+    def _with_real_timer(self, x):
+        # Use a real timer, and register a periodic entry with the event loop
+        # the way the transport does (e.g. maybe_restore_messages).
+        x.hub.timer = Timer()
+        x.loop_entries = []
+
+        def register_with_event_loop(hub):
+            x.loop_entries.append(hub.call_repeatedly(10, Mock()))
+        x.obj.register_with_event_loop.side_effect = register_with_event_loop
+        return x
+
+    def _error_after_first_poll(self, x):
         x.hub.readers = {6: Mock()}
-        x.hub.timer._queue = [1]
         x.hub.reset = Mock(name='hub.reset()')
         x.close_then_error(x.hub.poller.poll)
         x.hub.fire_timers.return_value = 33.37
         x.hub.poller.poll.return_value = []
+        return x
+
+    def test_hub_timer_entries_cancelled_on_connection_error(self):
+        # Stale timer entries (e.g. maybe_restore_messages) must be cancelled
+        # when the event loop exits due to a connection error.  Without this,
+        # entries accumulated across reconnects can fire against the broken
+        # connection and crash the loop again before the new connection is
+        # fully established, causing a rapid restart loop.
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
         with pytest.raises(socket.error):
             asynloop(*x.args)
-        x.hub.timer.clear.assert_called_once()
+        assert x.loop_entries
+        assert all(entry.canceled for entry in x.loop_entries)
 
-    def test_hub_timer_not_cleared_on_graceful_shutdown(self):
-        # On graceful shutdown the timer queue must be left intact so that
+    def test_hub_timer_entries_cancelled_across_reconnects(self):
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
+        for _ in range(3):
+            x.blueprint.state = RUN
+            with pytest.raises(socket.error):
+                asynloop(*x.args)
+        assert len(x.loop_entries) == 3
+        assert all(entry.canceled for entry in x.loop_entries)
+
+    def test_hub_timer_keeps_other_entries_on_connection_error(self):
+        # The timer is shared with the rest of the worker: e.g. the
+        # soft/hard time limits of tasks that keep running across the
+        # reconnect are not registered again, so they must survive.
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
+        existing = x.hub.timer.call_after(60, Mock())
+        added_while_running = []
+
+        def fire_timers(propagate=()):
+            if not added_while_running:
+                added_while_running.append(
+                    x.hub.timer.call_after(60, Mock()))
+            return 33.37
+        x.hub.fire_timers.side_effect = fire_timers
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        assert added_while_running
+        for entry in (existing, *added_while_running):
+            assert not entry.canceled
+            assert entry in [s.entry for s in x.hub.timer.queue]
+
+    def test_hub_timer_entries_kept_on_graceful_shutdown(self):
+        # On graceful shutdown the timer entries must be left intact so that
         # periodic timers (e.g. heartbeat) keep firing while the pool drains.
-        x = X(self.app)
+        x = self._with_real_timer(X(self.app))
         x.hub.reset = Mock(name='hub.reset()')
         x.hub.on_tick.add(x.closer(mod=2))
         asynloop(*x.args)
-        x.hub.timer.clear.assert_not_called()
+        assert x.loop_entries
+        assert not any(entry.canceled for entry in x.loop_entries)
 
-    def test_hub_timer_not_cleared_on_worker_shutdown(self):
-        x = X(self.app)
+    def test_hub_timer_entries_kept_on_worker_shutdown(self):
+        x = self._with_real_timer(X(self.app))
         x.hub.reset = Mock(name='hub.reset()')
         state.should_stop = 303
         try:
@@ -539,10 +586,10 @@ class test_asynloop:
                 asynloop(*x.args)
         finally:
             state.should_stop = None
-        x.hub.timer.clear.assert_not_called()
+        assert not any(entry.canceled for entry in x.loop_entries)
 
-    def test_hub_timer_not_cleared_on_worker_terminate(self):
-        x = X(self.app)
+    def test_hub_timer_entries_kept_on_worker_terminate(self):
+        x = self._with_real_timer(X(self.app))
         x.hub.reset = Mock(name='hub.reset()')
         state.should_terminate = True
         try:
@@ -550,40 +597,29 @@ class test_asynloop:
                 asynloop(*x.args)
         finally:
             state.should_terminate = None
-        x.hub.timer.clear.assert_not_called()
+        assert not any(entry.canceled for entry in x.loop_entries)
 
-    def test_hub_timer_clear_error_still_reraises_original(self):
-        # If hub.timer.clear() itself raises, the original connection error
-        # must still be propagated, not the cleanup error.
-        x = X(self.app)
-        x.hub.readers = {6: Mock()}
-        x.hub.timer._queue = [1]
-        x.hub.reset = Mock(name='hub.reset()')
-        x.hub.timer.clear = Mock(
-            name='hub.timer.clear()', side_effect=RuntimeError('clear failed')
+    def test_hub_timer_cancel_error_still_reraises_original(self):
+        # If cancelling the timer entries raises, the original connection
+        # error must still be propagated, not the cleanup error.
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
+        x.hub.timer.cancel = Mock(
+            name='hub.timer.cancel()', side_effect=RuntimeError('cancel failed')
         )
-        x.close_then_error(x.hub.poller.poll)
-        x.hub.fire_timers.return_value = 33.37
-        x.hub.poller.poll.return_value = []
         with pytest.raises(socket.error):
             asynloop(*x.args)
-        x.hub.timer.clear.assert_called_once()
+        x.hub.timer.cancel.assert_called_once()
 
-    def test_hub_timer_cleared_even_when_reset_raises(self):
-        # hub.timer.clear() must still be called even if hub.reset() raises.
-        # The two cleanup calls are in separate try/except blocks so that a
-        # failure in hub.reset() does not prevent stale timer entries from
-        # being discarded, avoiding stale timers persisting after a reset error.
-        x = X(self.app)
-        x.hub.readers = {6: Mock()}
-        x.hub.timer._queue = [1]
-        x.hub.reset = Mock(name='hub.reset()', side_effect=RuntimeError('reset failed'))
-        x.close_then_error(x.hub.poller.poll)
-        x.hub.fire_timers.return_value = 33.37
-        x.hub.poller.poll.return_value = []
+    def test_hub_timer_entries_cancelled_even_when_reset_raises(self):
+        # The timer entries must still be cancelled even if hub.reset()
+        # raises.  The two cleanup steps are in separate try/except blocks so
+        # that a failure in hub.reset() does not prevent stale timer entries
+        # from being discarded.
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
+        x.hub.reset.side_effect = RuntimeError('reset failed')
         with pytest.raises(socket.error):
             asynloop(*x.args)
-        x.hub.timer.clear.assert_called_once()
+        assert all(entry.canceled for entry in x.loop_entries)
 
     def test_hub_not_reset_on_graceful_shutdown(self):
         x = X(self.app)

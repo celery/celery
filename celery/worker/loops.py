@@ -47,6 +47,10 @@ def _enable_amqheartbeats(timer, connection, rate=2.0):
     return heartbeat_error
 
 
+def _timer_entries(timer):
+    return {scheduled.entry for scheduled in timer.queue}
+
+
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0):
     """Non-blocking event loop."""
@@ -55,6 +59,12 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     errors = connection.connection_errors
 
     on_task_received = obj.create_task_handler()
+
+    # Remember which timer entries are registered below, so that only these
+    # are cancelled if the loop exits with an error.  The timer is shared
+    # with the rest of the worker (e.g. the time limits of tasks running
+    # in the pool), and entries owned by others must survive a reconnect.
+    timer_entries_before = _timer_entries(hub.timer)
 
     heartbeat_error = _enable_amqheartbeats(hub.timer, connection, rate=hbrate)
     dispatcher_heartbeat_error = [None]
@@ -65,6 +75,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     consumer.on_message = on_task_received
     obj.controller.register_with_event_loop(hub)
     obj.register_with_event_loop(hub)
+    registered_timer_entries = (
+        _timer_entries(hub.timer) - timer_entries_before)
     consumer.consume()
     obj.on_ready()
 
@@ -106,12 +118,10 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     except Exception:
         # Reset the hub on error (e.g. connection loss) to clean up
         # stale file descriptors and callbacks from the old connection.
-        # Also clear the timer queue so that stale periodic entries added by
-        # register_with_event_loop (e.g. maybe_restore_messages) do not fire
+        # Also cancel the timer entries registered above, so that stale
+        # periodic entries (e.g. maybe_restore_messages) do not fire
         # against the broken connection after reconnect and trigger another
         # crash before the new connection is fully established.
-        # All hub timers are re-registered during blueprint.start() once this
-        # exception propagates and the consumer reconnects.
         # We intentionally do NOT reset on normal exit (graceful shutdown)
         # so that timers (e.g. heartbeat) keep firing while the pool drains.
         # WorkerShutdown/WorkerTerminate extend SystemExit (not Exception)
@@ -121,18 +131,24 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
                 'Error cleaning up after event loop: %r', exc)
-        # Clear stale timer entries accumulated across reconnects (e.g.
-        # maybe_restore_messages registered via call_repeatedly). Without
-        # this, each reconnect appends a new entry; all of them fire during
-        # the reconnect window, raise again, and trigger another restart.
+        # Cancel the timer entries registered by this loop (heartbeats,
+        # pool maintenance, transport callbacks registered via
+        # call_repeatedly).  Without this, each reconnect appends a new
+        # entry; all of them fire during the reconnect window, raise again,
+        # and trigger another restart. They are registered again when the
+        # consumer reconnects and calls asynloop again.
+        # The timer must not be cleared: other entries on it, such as the
+        # soft/hard time limits of tasks that keep running across the
+        # reconnect, are not registered again.
         # Use a separate try/except so this always runs even if hub.reset()
-        # raised above. Timers are re-registered by register_with_event_loop
-        # when blueprint.start() is called after reconnect.
+        # raised above.
         try:
-            hub.timer.clear()
+            for entry in registered_timer_entries:
+                hub.timer.cancel(entry)
         except Exception as exc:  # pylint: disable=broad-except
             logger.exception(
-                'Error clearing hub timer after event loop: %r', exc)
+                'Error cancelling hub timer entries after event loop: %r',
+                exc)
         raise
 
 
