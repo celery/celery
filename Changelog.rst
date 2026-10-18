@@ -9,13 +9,102 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
-Unreleased
-==========
+.. _version-5.7.0rc1:
 
-- Non-eager ``chord.apply_async()`` no longer writes generated task IDs
-  back to the original list-backed header (e.g., ``c.tasks[0].id`` remains
-  ``None``). Re-dispatching the same chord generates fresh header task IDs
-  unless IDs were explicitly assigned or the chord was frozen (#10873).
+5.7.0rc1
+========
+
+:release-date: 2026-10-18
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0rc1 Release Candidate 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add ``result_failure_expires`` setting for Redis result backend chord keys (#10826)
+- Add ``task_retry_on_worker_lost`` setting to limit requeues after worker loss (#10843)
+- Accept Pydantic models when calling tasks with ``pydantic=True`` (#10844)
+
+Canvas
+~~~~~~
+
+- Keep eager group application from accessing the result backend (#10750)
+- Avoid geometric message growth in standalone chord bodies (#10824)
+- Fix empty group and empty chain handling in chains (#10834)
+- Build chains in a single pass instead of folding with ``|`` (#10840)
+- Fix duplicate nodes in a chain's ``as_tuple()`` after a group (#10829)
+- Fix errback arity classification with stored signature arguments (#10838)
+- Fix chain/group representations mangling task names and arguments (#10855)
+- Prevent nested groups from taking their parent group's ID (#10857)
+- Fire chain links only once, on the last task in eager chains (#10864)
+- Fix exponential message growth in chains of groups (#10873)
+
+Workers
+~~~~~~~
+
+- Fix prefork write generators raising ``StopIteration`` (PEP 479) (#10842)
+- Send the worker hostname as the ``worker_process_init`` signal sender (#10849)
+- Reset autoscale keepalive for immediate tasks (#10839)
+- Avoid calling ``setup_defaults`` twice when creating a worker (#10828)
+- Skip exited children in ``AsynPool._help_stuff_finish`` (#10861)
+- Pass preload options only to commands that accept them (#10837)
+- Fix worker expiration checks during DST fall back (#10868)
+- Add source replacement support to ``regen`` during cached iteration (#10823)
+
+Task Publishing and Execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Fix ``send_task`` ETA and expiration calculations across DST transitions (#10813)
+- Fix task execution after ETA conversion failure (#10876)
+- Copy only declared stamps into task execution options (#10853)
+
+Results
+~~~~~~~
+
+- Fix MongoDB result cleanup across DST transitions (#10852)
+- Add ``result_chord_expires`` for Redis chord keys (#10827)
+- Keep cache backend chords alive past ``result_expires`` (#10830)
+- Avoid calling ``get_state`` for plain chain failures (#10836)
+- Fix database backend cleanup timezone handling (#10866)
+
+Beat
+~~~~
+
+- Fix relative schedule rounding across DST transitions (#10818)
+
+Security
+~~~~~~~~
+
+- Redact Azure credentials in diagnostic output (#10822)
+
+Documentation
+~~~~~~~~~~~~~
+
+- Fix ``broker_use_ssl`` setting target being swallowed into the previous paragraph (#10847)
+- Fix unresolved mailing-list and IRC links in the contributing guide and introduction (#10848)
+- Fix stray RST markup in changelog entries (#10851)
+
+Dependencies
+~~~~~~~~~~~~
+
+- Update ``cryptography`` to 50.0.2 (#10815)
+- Update the minimum ``boto3`` requirement to 1.43.113 (#10820, #10869)
+- Update ``azure-storage-blob`` to 12.31.0 (#10825)
+- Update ``azure-identity`` to 1.26.0 (#10863)
+- Update ``tox`` to 4.64.9 (#10832)
+- Align the minimum ``pymemcache`` version with ``RetryingClient`` support and update it to 4.0.0 (#10831, #10859)
+- Update GitHub CodeQL Action to 4.38.3 (#10860)
+- Update Kombu to 5.7.0rc1 (#10882)
+
+Other
+~~~~~
+
+- Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
+- Fix invalid Bandit baseline JSON and validate it before commit (#10766)
+
 
 
 .. _version-5.7.0b1:
