@@ -2669,6 +2669,20 @@ class test_chord(CanvasCase):
         assert isinstance(res, GroupResult)
         assert res.id != res.parent.id
 
+    @pytest.mark.parametrize('body_priority', [0, 2])
+    @pytest.mark.parametrize('priority', [None, 0, 6])
+    def test_apply_async_preserves_body_priority(self, body_priority, priority):
+        body = self.add.s(3).set(priority=body_priority)
+        workflow = chord([self.add.s(1, 2)], body)
+
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord:
+            workflow.apply_async(priority=priority)
+
+        published_body = apply_chord.call_args.args[1]
+        expected = body_priority if priority is None else priority
+        assert published_body.options['priority'] == expected
+        assert body.options['priority'] == body_priority
+
     def test_group_or_task_apply_async_countdown_delays_header(self):
         """countdown on group|task must delay the header, not only the body.
 

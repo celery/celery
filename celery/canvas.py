@@ -2454,6 +2454,7 @@ class _chord(Signature):
                     router=None, result_cls=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        options = {k: v for k, v in options.items() if v is not None}
         args = (tuple(args) + tuple(self.args)
                 if args and not self.immutable else self.args)
         body = kwargs.pop('body', None) or self.kwargs['body']
