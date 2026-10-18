@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery import chord, group
+from celery import Task, chord, group
 from celery.app import builtins
 from celery.contrib.testing.mocks import ContextMock
 from celery.utils.functional import pass1
@@ -57,6 +57,63 @@ class test_map(BuiltinsCase):
         )
         assert res, [4, 16 == 64]
 
+    def test_run__fires_task_lifecycle_hooks(self):
+        # Every mapped item must go through the task trace, so that
+        # before_start/on_success/on_failure/after_return fire just like
+        # they do for single tasks (see issue #7585).
+        calls = []
+
+        class HookedTask(Task):
+            def before_start(self, task_id, args, kwargs):
+                calls.append(('before_start', args))
+
+            def on_success(self, retval, task_id, args, kwargs):
+                calls.append(('on_success', retval))
+
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                calls.append(('on_failure', repr(exc)))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def hooked(x):
+            return x * 2
+
+        res = self.app.tasks['celery.map'](hooked, [1, 2])
+        assert res == [2, 4]
+        assert calls == [
+            ('before_start', (1,)),
+            ('on_success', 2),
+            ('after_return', 'SUCCESS'),
+            ('before_start', (2,)),
+            ('on_success', 4),
+            ('after_return', 'SUCCESS'),
+        ]
+
+    def test_run__item_failure_calls_on_failure(self):
+        calls = []
+
+        class HookedTask(Task):
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                calls.append(('on_failure', repr(exc)))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def fails(x):
+            raise ValueError('nope')
+
+        with pytest.raises(ValueError):
+            self.app.tasks['celery.map'](fails, [1])
+        assert calls == [
+            ('on_failure', "ValueError('nope')"),
+            ('after_return', 'FAILURE'),
+        ]
+
 
 class test_starmap(BuiltinsCase):
 
@@ -70,6 +127,32 @@ class test_starmap(BuiltinsCase):
             smap_mul, [(2, 2), (4, 4), (8, 8)],
         )
         assert res, [4, 16 == 64]
+
+    def test_run__fires_task_lifecycle_hooks(self):
+        calls = []
+
+        class HookedTask(Task):
+            def before_start(self, task_id, args, kwargs):
+                calls.append(('before_start', args))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def hooked(x, y):
+            return x * y
+
+        res = self.app.tasks['celery.starmap'](
+            hooked, [(2, 2), (4, 4)],
+        )
+        assert res == [4, 16]
+        assert calls == [
+            ('before_start', (2, 2)),
+            ('after_return', 'SUCCESS'),
+            ('before_start', (4, 4)),
+            ('after_return', 'SUCCESS'),
+        ]
 
 
 class test_chunks(BuiltinsCase):

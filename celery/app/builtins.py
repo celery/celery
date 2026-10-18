@@ -113,7 +113,14 @@ def add_map_task(app):
     @app.task(name='celery.map', shared=False, lazy=False)
     def xmap(task, it):
         task = signature(task, app=app).type
-        return [task(item) for item in it]
+        # Execute every item through the task trace so that task
+        # lifecycle hooks (before_start/on_success/on_failure/
+        # after_return) and signals fire, just like for single tasks.
+        # The result is already computed, so joining it cannot block.
+        return [
+            task.apply((item,)).get(disable_sync_subtasks=False)
+            for item in it
+        ]
     return xmap
 
 
@@ -124,7 +131,11 @@ def add_starmap_task(app):
     @app.task(name='celery.starmap', shared=False, lazy=False)
     def xstarmap(task, it):
         task = signature(task, app=app).type
-        return [task(*item) for item in it]
+        # See xmap above: run through the trace, never block on get().
+        return [
+            task.apply(item).get(disable_sync_subtasks=False)
+            for item in it
+        ]
     return xstarmap
 
 
