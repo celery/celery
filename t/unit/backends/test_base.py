@@ -130,6 +130,44 @@ class test_Backend_interface:
         assert meta['kwargs'] == kwargs
         assert meta['queue'] == 'celery'
 
+    def test_get_result_meta_ignores_undeclared_stamps(self):
+        self.app.conf.result_extended = True
+        backend = BaseBackend(self.app)
+        request = Context(
+            stamped_headers=['team', 'trace_id'],
+            stamps={
+                'team': 'payments',
+                'trace_id': ['trace-1', 'trace-2'],
+                'extra': 'unexpected',
+            },
+        )
+
+        meta = backend._get_result_meta(
+            result=42, state=states.SUCCESS, traceback=None, request=request,
+        )
+
+        assert meta['stamped_headers'] == ['team', 'trace_id']
+        assert meta['team'] == 'payments'
+        assert meta['trace_id'] == ['trace-1', 'trace-2']
+        assert 'extra' not in meta
+
+    @pytest.mark.parametrize('stamped_headers', [[], None])
+    def test_get_result_meta_without_declared_stamps(self, stamped_headers):
+        self.app.conf.result_extended = True
+        backend = BaseBackend(self.app)
+        request = Context(
+            stamped_headers=stamped_headers,
+            stamps={'extra': 'unexpected', 'status': 'BOGUS', 'result': 'wrong'},
+        )
+
+        meta = backend._get_result_meta(
+            result=42, state=states.SUCCESS, traceback=None, request=request,
+        )
+
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+        assert 'extra' not in meta
+
     def test_get_result_meta_stamps_attribute_error(self):
         class Request:
             pass
@@ -1499,6 +1537,21 @@ class test_KeyValueStoreBackend:
         stored_meta = self.b.decode(self.b.get(self.b.get_key_for_task(tid)))
         assert stored_meta['group_id'] == request.group
 
+    def test_store_result_ignores_undeclared_stamps(self):
+        self.app.conf.result_extended = True
+        tid = uuid()
+        request = Context(
+            stamped_headers=['team'],
+            stamps={'team': 'payments', 'status': 'BOGUS'},
+        )
+
+        self.b.store_result(tid, 42, states.SUCCESS, request=request)
+        result = self.app.AsyncResult(tid, backend=self.b)
+
+        assert result.get(timeout=0) == 42
+        assert result.state == states.SUCCESS
+        assert self.b.get_task_meta(tid)['team'] == 'payments'
+
     def test_store_result_race_second_write_should_ignore_if_previous_success(self):
         tid = uuid()
         state = 'SUCCESS'
@@ -1757,6 +1810,7 @@ class test_KeyValueStoreBackend:
             deps = GR.restore.return_value = Mock(name='DEPS')
             deps.__len__ = Mock()
             deps.__len__.return_value = 10
+            deps.results = []
             b.incr = Mock()
             b.incr.return_value = 10
             b.expire = Mock()

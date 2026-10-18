@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
@@ -865,6 +865,50 @@ class test_DatabaseBackend:
         s.close()
 
         tb.cleanup()
+
+    def test_cleanup_respects_timezone_for_expiration(self):
+        """Regression test for timezone bug where cleanup uses app.now() while date_done is UTC."""
+        original_timezone = self.app.conf.timezone
+        original_expires = self.app.conf.result_expires
+
+        try:
+            self.app.conf.timezone = 'Asia/Tokyo'
+            self.app.conf.result_expires = 86400
+
+            tb = DatabaseBackend(self.uri, app=self.app)
+
+            unexpired_task_id = uuid()
+            expired_task_id = uuid()
+            tb.mark_as_done(unexpired_task_id, 42)
+            tb.mark_as_done(expired_task_id, 100)
+
+            session = tb.ResultSession()
+            now = datetime.now(timezone.utc)
+
+            session.query(Task).filter(
+                Task.task_id == unexpired_task_id
+            ).first().date_done = now - timedelta(hours=20)
+
+            session.query(Task).filter(
+                Task.task_id == expired_task_id
+            ).first().date_done = now - timedelta(hours=30)
+
+            session.commit()
+            session.close()
+
+            tb.cleanup()
+
+            session = tb.ResultSession()
+            assert session.query(Task).filter(
+                Task.task_id == unexpired_task_id
+            ).first() is not None
+            assert session.query(Task).filter(
+                Task.task_id == expired_task_id
+            ).first() is None
+            session.close()
+        finally:
+            self.app.conf.timezone = original_timezone
+            self.app.conf.result_expires = original_expires
 
     def test_Task__repr__(self):
         assert 'foo' in repr(Task('foo'))
