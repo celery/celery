@@ -29,6 +29,8 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: check-toml
+      - id: check-json
+        files: ^bandit\.json$
       - id: check-yaml
         exclude: helm-chart/templates/
       - id: mixed-line-ending
@@ -43,4 +45,3 @@ repos:
     hooks:
       - id: mypy
         pass_filenames: false
-
