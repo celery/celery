@@ -487,6 +487,42 @@ class test_LimitedSet:
         assert len(s._data) == 1
         assert len(s._heap) == 1
 
+    def test_readded_item_expires_from_new_timestamp(self):
+        # #10757: re-adding an item must reset its expiry; the stale heap
+        # entry from the first add must not expire it early.  Eight live
+        # items keep the single stale entry under the heap-refresh
+        # threshold (max_heap_percent_overload).
+        s = LimitedSet(maxlen=0, expires=60)
+        s.add('a', now=105.0)
+        for i in range(7):
+            s.add('k%s' % i, now=110.0 + i)
+        s.add('a', now=150.0)
+        s.purge(now=170.0)
+        assert 'a' in s
+
+    def test_readded_item_is_not_evicted_as_oldest(self):
+        # #10757: under maxlen pressure a re-added item must not be
+        # evicted through its stale heap entry; the true oldest live
+        # item goes instead.
+        s = LimitedSet(maxlen=9)
+        s.add('x', now=0.0)
+        for i in range(8):
+            s.add('k%s' % i, now=float(i + 1))
+        s.add('x', now=9.0)
+        s.add('z', now=10.0)
+        assert 'x' in s
+        assert 'z' in s
+        assert 'k0' not in s
+
+    def test_pop_returns_true_oldest_after_readd(self):
+        # #10757: pop() must skip stale heap entries of re-added items.
+        s = LimitedSet(maxlen=0, expires=0)
+        s.add('p', now=0.0)
+        for i in range(8):
+            s.add('k%s' % i, now=float(i + 1))
+        s.add('p', now=9.0)
+        assert s.pop() == 'k0'
+
     def test_add_removes_duplicate_from_big_heap(self):
         s = LimitedSet(maxlen=1000)
         [s.add(i) for i in range(2000)]

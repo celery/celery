@@ -630,6 +630,12 @@ class LimitedSet:
         # time based expiring:
         if self.expires:
             while len(self._data) > self.minlen >= 0:
+                # Drop stale heap heads left behind by re-added items:
+                # only the entry stored in _data is authoritative.
+                while self._heap and self._data.get(self._heap[0][2]) is not self._heap[0]:
+                    heappop(self._heap)
+                if not self._heap:
+                    break
                 inserted_time = self._heap[0][0]
                 if inserted_time + self.expires > now:
                     break  # oldest item hasn't expired yet
@@ -638,13 +644,14 @@ class LimitedSet:
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, _, item = heappop(self._heap)
-            try:
-                self._data.pop(item)
-            except KeyError:
-                pass
-            else:
-                return item
+            entry = heappop(self._heap)
+            _, _, item = entry
+            # A re-added item left its old heap entry behind; skip it
+            # instead of removing the item's current entry.
+            if self._data.get(item) is not entry:
+                continue
+            del self._data[item]
+            return item
         return default
 
     def as_dict(self):
