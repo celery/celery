@@ -5,7 +5,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 from kombu.exceptions import EncodeError
 
-from celery import group, signals, states, uuid
+from celery import chord, group, signals, states, uuid
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
@@ -347,6 +347,25 @@ class test_trace(TraceCase):
         sig.apply_async.assert_called_with(
             (4,), parent_id='id-1', root_id='root', chain=[sig2], priority=42
         )
+
+    @pytest.mark.parametrize('body_priority', [0, 2])
+    @pytest.mark.parametrize('inherit, parent_priority', [(False, 6), (True, 0), (True, 6)])
+    def test_chain_chord_body_priority(self, body_priority, inherit, parent_priority):
+        self.app.conf.task_inherit_parent_priority = inherit
+        body = self.add.s(3).set(priority=body_priority)
+        request = {
+            'chain': [chord([self.add.s(1), self.add.s(2)], body)],
+            'delivery_info': {'priority': parent_priority},
+        }
+
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord:
+            retval, info, _ = self.trace(self.add, (2, 2), {}, request=request)
+
+        assert retval == 4
+        assert info is None
+        published_body = apply_chord.call_args.args[1]
+        expected = parent_priority if inherit else body_priority
+        assert published_body.options['priority'] == expected
 
     @patch('celery.canvas.maybe_signature')
     def test_callbacks__EncodeError(self, maybe_signature):

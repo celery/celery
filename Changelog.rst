@@ -12,6 +12,10 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- Preserve the chord body's configured priority when ``apply_async()``
+  receives ``priority=None``, including when the chord follows another
+  task in a chain (#7517).
+
 - Non-eager ``chord.apply_async()`` no longer writes generated task IDs
   back to the original list-backed header (e.g., ``c.tasks[0].id`` remains
   ``None``). Re-dispatching the same chord generates fresh header task IDs
