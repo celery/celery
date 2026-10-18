@@ -988,15 +988,16 @@ class test_tasks(TasksCase):
             add.delay(1, kw=2)
             add.delay(1, 2, foobar=3)
 
+    @pytest.mark.parametrize('key', ['strict_typing', 'CELERY_STRICT_TYPING'])
     @pytest.mark.parametrize('configured,task_typing,expected', [
         (False, None, False),
         (True, None, True),
         (False, True, True),
         (True, False, False),
     ])
-    def test_typing__from_config(self, configured, task_typing, expected):
+    def test_typing__from_config(self, key, configured, task_typing, expected):
         with self.Celery(set_as_current=False) as app:
-            app.config_from_object({'strict_typing': configured})
+            app.config_from_object({key: configured})
 
             @app.task(typing=task_typing, shared=False)
             def add(x, y):

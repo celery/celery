@@ -399,6 +399,10 @@ class Celery:
                 configuration (default: :const:`True`). Pass :const:`False`
                 explicitly to disable argument checking. Reading
                 ``app.strict_typing`` now loads pending configuration.
+                A subclass defining ``strict_typing`` as a class attribute
+                now shadows this property and takes precedence over both
+                configuration and an explicit constructor argument. Remove
+                the class attribute to use either of those values.
         set_as_current (bool):  Make this the global current app.
         include (List[str]): List of modules every worker should import.
 

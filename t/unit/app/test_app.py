@@ -582,11 +582,14 @@ class test_App:
             assert app.configured
 
     @pytest.mark.parametrize('strict_typing', [True, False])
-    @pytest.mark.parametrize('namespace', [None, 'CELERY'])
+    @pytest.mark.parametrize('key,namespace', [
+        ('strict_typing', None),
+        ('CELERY_STRICT_TYPING', None),
+        ('CELERY_STRICT_TYPING', 'CELERY'),
+    ])
     def test_strict_typing_constructor_overrides_configuration(
-        self, strict_typing, namespace,
+        self, strict_typing, key, namespace,
     ):
-        key = 'CELERY_STRICT_TYPING' if namespace else 'strict_typing'
         with self.Celery(
             strict_typing=strict_typing, namespace=namespace,
         ) as app:
@@ -602,6 +605,35 @@ class test_App:
                 {'CELERY_STRICT_TYPING': False}, namespace='CELERY',
             )
             assert app.strict_typing is False
+
+    @pytest.mark.parametrize('strict_typing', [True, False])
+    def test_strict_typing_from_legacy_configuration(self, strict_typing):
+        with self.Celery() as app:
+            app.config_from_object({
+                'CELERY_STRICT_TYPING': strict_typing,
+                'CELERY_ALWAYS_EAGER': False,
+            })
+            assert not app.configured
+            assert app.strict_typing is strict_typing
+            assert app.conf.strict_typing is strict_typing
+            assert app.conf.task_always_eager is False
+
+    @pytest.mark.parametrize('default', [True, False])
+    def test_strict_typing_subclass_attribute_overrides_configuration(self, default):
+        class CustomCelery(Celery):
+            strict_typing = default
+
+        with CustomCelery(
+            set_as_current=False, strict_typing=not default,
+            config_source={'strict_typing': not default},
+        ) as app:
+            @app.task(shared=False)
+            def add(x, y):
+                return x + y
+
+            assert app.strict_typing is default
+            assert app.conf.strict_typing is (not default)
+            assert add.typing is default
 
     @pytest.mark.parametrize('configured', [True, False])
     def test_strict_typing_attribute_assignment(self, configured):
@@ -621,9 +653,12 @@ class test_App:
             assert app.conf.task_always_eager is False
 
     @pytest.mark.parametrize('configured', [True, False])
-    @pytest.mark.parametrize('namespace', [None, 'CELERY'])
-    def test_strict_typing_survives_pickle(self, configured, namespace):
-        key = 'CELERY_STRICT_TYPING' if namespace else 'strict_typing'
+    @pytest.mark.parametrize('key,namespace', [
+        ('strict_typing', None),
+        ('CELERY_STRICT_TYPING', None),
+        ('CELERY_STRICT_TYPING', 'CELERY'),
+    ])
+    def test_strict_typing_survives_pickle(self, configured, key, namespace):
         with self.Celery(strict_typing=False, namespace=namespace) as app:
             app.config_from_object({key: True})
             if configured:
