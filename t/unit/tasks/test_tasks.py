@@ -1676,6 +1676,30 @@ class test_apply_task(TasksCase):
         with pytest.raises(KeyError):
             self.raising.apply()
 
+    def test_apply_propagate_still_runs_failure_handlers(self):
+        # Even when the exception is propagated to the caller,
+        # on_failure and after_return must fire (see issue #5666).
+        calls = []
+
+        class HookedTask(Task):
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                calls.append(('on_failure', repr(exc)))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def hooked_raising():
+            raise KeyError('foo')
+
+        with pytest.raises(KeyError):
+            hooked_raising.apply(throw=True)
+        assert calls == [
+            ('on_failure', "KeyError('foo')"),
+            ('after_return', 'FAILURE'),
+        ]
+
     def test_apply_request_context_is_ok(self):
         self.app.conf.task_eager_propagates = True
         self.task_check_request_context.apply()
