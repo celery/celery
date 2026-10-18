@@ -400,7 +400,6 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                  connection_pool=None, **kwargs):
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
-        self._chord_expires = _get('result_chord_expires')
         failure_expires = _get('result_failure_expires')
         self.failure_expires = (
             self.expires if failure_expires is None
@@ -753,12 +752,6 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             )
             raise chord_error
         return retval
-
-    @property
-    def chord_expires(self):
-        if self._chord_expires is None:
-            return self.expires
-        return self.prepare_expires(self._chord_expires, type=int)
 
     def _set_chord_key(self, key, value):
         if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:

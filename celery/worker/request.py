@@ -414,7 +414,7 @@ class Request:
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
         if self.expires:
-            now = datetime.now(self.expires.tzinfo)
+            now = datetime.now(timezone.utc if self.expires.tzinfo else None)
             if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
@@ -702,8 +702,6 @@ class Request:
         elif isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
-        # (acks_late) acknowledge after result stored.
-        requeue = False
         is_worker_lost = isinstance(exc, WorkerLostError)
         if is_worker_lost and self._success_was_stored():
             # The pool child stored SUCCESS and was lost afterwards, e.g. in
@@ -716,11 +714,25 @@ class Request:
                 self.acknowledge()
             return
 
+        max_retries_exceeded = False
+        if is_worker_lost and self.task.retry_on_worker_lost:
+            max_retries = self.task.max_retries
+            max_retries_exceeded = (
+                max_retries is not None and self._context.retries >= max_retries
+            )
+            # If sending the retry fails, fall through so the message is
+            # still rejected/requeued as it would be without this setting.
+            if not max_retries_exceeded and self._retry_worker_lost(exc, exc_info):
+                return
+
+        # (acks_late) acknowledge after result stored.
+        requeue = False
         if self.task.acks_late:
             is_timeout = isinstance(exc, TimeLimitExceeded)
             ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
-                (self.task.reject_on_worker_lost and is_worker_lost)
+                (self.task.reject_on_worker_lost and is_worker_lost
+                 and not max_retries_exceeded)
                 or (is_timeout and not ack_flag)
             )
             if reject:
@@ -771,6 +783,39 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _retry_worker_lost(self, exc, exc_info):
+        """Retry the task after its worker was lost, return False if not retried."""
+        task = self.task
+        request = self._context
+        countdown = task.default_retry_delay
+        try:
+            task.signature_from_request(
+                request, countdown=countdown, retries=request.retries + 1,
+            ).apply_async()
+        except Exception as send_exc:
+            error('Failed to retry task %s[%s] after worker was lost: %r',
+                  self.task_name, self.id, send_exc, exc_info=True)
+            return False
+
+        task.backend.mark_as_retry(
+            self.id, exc, exc_info.traceback, request=request,
+        )
+        if task.acks_late:
+            self.acknowledge()
+        self.send_event('task-retried',
+                        exception=safe_repr(exc),
+                        traceback=safe_str(exc_info.traceback))
+
+        reason = Retry(exc=exc, when=countdown)
+        task.request_stack.push(request)
+        try:
+            task.on_retry(exc, self.id, self.args, self.kwargs, exc_info)
+            send_retry(task, request=request, reason=reason, einfo=exc_info)
+        finally:
+            task.request_stack.pop()
+        info('Task %s[%s] retry: %s', self.task_name, self.id, reason)
+        return True
 
     def _success_was_stored(self):
         try:

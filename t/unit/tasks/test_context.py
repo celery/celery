@@ -85,6 +85,59 @@ class test_Context:
         ctx = Context(request)
         assert ctx.headers == {'custom-header': 'custom-value'}
 
+    def test_as_execution_options_ignores_undeclared_stamps(self):
+        ctx = Context(
+            stamped_headers=['team'],
+            stamps={'team': 'payments', 'extra': 'unexpected'},
+        )
+
+        options = ctx.as_execution_options()
+
+        assert options['stamped_headers'] == ['team']
+        assert options['team'] == 'payments'
+        assert 'extra' not in options
+
+    def test_as_execution_options_undeclared_stamp_cannot_override_retries(self):
+        ctx = Context(
+            retries=2,
+            stamped_headers=['team'],
+            stamps={'team': 'payments', 'retries': 99},
+        )
+
+        options = ctx.as_execution_options()
+
+        assert options['retries'] == 2
+
+    def test_as_execution_options_empty_stamped_headers_ignores_stamps(self):
+        ctx = Context(stamped_headers=[], stamps={'extra': 'unexpected'})
+
+        options = ctx.as_execution_options()
+
+        assert options['stamped_headers'] == []
+        assert 'extra' not in options
+
+    def test_as_execution_options_stamps_in_task_message(self, app):
+        ctx = Context(
+            id='task-id',
+            retries=2,
+            stamped_headers=['team', 'trace_id'],
+            stamps={
+                'team': 'payments',
+                'trace_id': ['trace-1', 'trace-2'],
+                'retries': 99,
+                'extra': 'unexpected',
+            },
+        )
+
+        message = app.amqp.as_task_v2(name='test.task', **ctx.as_execution_options())
+
+        assert message.headers['stamped_headers'] == ['team', 'trace_id']
+        assert message.headers['stamps'] == {
+            'team': 'payments',
+            'trace_id': ['trace-1', 'trace-2'],
+        }
+        assert message.headers['retries'] == 2
+
     # ------------------------------------------------------------------
     # Context.update() – timelimit detection with non-Mapping iterables
     # ------------------------------------------------------------------

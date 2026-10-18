@@ -186,7 +186,12 @@ def default(task, app, consumer,
             except (OverflowError, ValueError) as exc:
                 error("Couldn't convert ETA %r to timestamp: %r. Task: %r",
                       req.eta, exc, req.info(safe=True), exc_info=True)
+                req.task.backend.mark_as_failure(
+                    req.id, exc, request=req._context,
+                    store_result=req.store_errors,
+                )
                 req.reject(requeue=False)
+                return
         if rate_limits_enabled:
             bucket = get_bucket(task.name)
 
