@@ -16,6 +16,15 @@ Unreleased
   back to the original list-backed header (e.g., ``c.tasks[0].id`` remains
   ``None``). Re-dispatching the same chord generates fresh header task IDs
   unless IDs were explicitly assigned or the chord was frozen (#10873).
+- When a task fails with an exception group (PEP 654) that cannot be
+  pickled, the stored exception now keeps the group with only its
+  unpickleable members replaced, falling back to the first pickleable
+  member when the group itself cannot be preserved, instead of reducing
+  the whole group to an ``UnpickleableExceptionWrapper`` (#8852). This
+  applies everywhere ``get_pickleable_exception()`` is used, including
+  the result backend, ``celery/app/trace.py`` and ``Retry``, so a task
+  that raised a group may now report a different exception type than
+  before when its result is inspected (e.g. via ``result.result``).
 
 
 .. _version-5.7.0b1:
