@@ -31,7 +31,7 @@ from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordErro
                                NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
 from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
-from celery.utils.functional import LRUCache, arity_greater
+from celery.utils.functional import LRUCache, arity_greater, maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls, ensure_serializable, get_pickleable_exception,
                                         get_pickled_exception, raise_with_context)
@@ -471,7 +471,7 @@ class Backend:
         # what really went wrong, but at least we call them!
         fake_request = _create_fake_task_request(
             task_id=callback.options.get("task_id"),
-            errbacks=callback.options.get("link_error", []),
+            errbacks=maybe_list(callback.options.get("link_error")) or [],
             **callback
         )
         try:
@@ -515,7 +515,7 @@ class Backend:
                         # Create fake request for error callbacks
                         fake_request = _create_fake_task_request(
                             task_id=result.id,
-                            errbacks=group_callback.options.get("link_error", []),
+                            errbacks=maybe_list(group_callback.options.get("link_error")) or [],
                             task_name=getattr(result, 'task', 'unknown')
                         )
 

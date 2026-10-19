@@ -990,6 +990,22 @@ class test_BaseBackend_dict:
         stored = {call_[0][0]: type(call_[0][1]) for call_ in store_result.call_args_list}
         assert stored == {'body-id': KeyError, 'after-id': KeyError}
 
+    @pytest.mark.parametrize('as_list', [False, True], ids=['single_signature', 'list'])
+    def test_chord_error_from_stack_accepts_a_single_errback(self, as_list):
+        # link_error may hold one signature instead of a list of them.
+        errback = signature('errback')
+        link_error = [errback] if as_list else errback
+        callback = signature('body', options={'task_id': 'body-id', 'link_error': link_error})
+
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, '_call_task_errbacks') as call_errbacks:
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        assert call_errbacks.call_args[0][0].errbacks == [errback]
+
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
@@ -1441,6 +1457,21 @@ class test_BaseBackend_dict:
         assert fake_request.id == "task-id-1"
         assert fake_request.errbacks == errbacks
         assert fake_request.task == "test.task"
+
+    @pytest.mark.parametrize('as_list', [False, True], ids=['single_signature', 'list'])
+    def test_handle_group_chord_error_accepts_a_single_errback(self, as_list):
+        # link_error may hold one signature instead of a list of them.
+        errback = signature('errback')
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(
+            errbacks=[errback] if as_list else errback,
+            task_ids=["task-id-1", "task-id-2"],
+        )
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert backend._call_task_errbacks.call_count == 2
+        for call_ in backend._call_task_errbacks.call_args_list:
+            assert call_[0][0].errbacks == [errback]
 
     def test_handle_group_chord_error_cleanup_exception_handling(self):
         """Test _handle_group_chord_error handles cleanup exceptions gracefully."""
