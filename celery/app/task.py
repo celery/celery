@@ -328,6 +328,10 @@ class Task:
     #: When enabled messages for this task will be acknowledged on failure.
     #: Falls back to :attr:`acks_on_failure_or_timeout` if :const:`None`.
     #:
+    #: This can also be a method taking the exception and returning
+    #: whether to acknowledge, to decide per failure.  It is called in
+    #: the worker main process, not in the pool process running the task.
+    #:
     #: Configuring this setting only applies to tasks that are
     #: acknowledged **after** they have been executed and only if
     #: :setting:`task_acks_late` is enabled.
