@@ -446,6 +446,35 @@ class test_Scheduler:
         expected_time = now_ts + 0.5 - 0.010
         assert scheduler._heap[0].time == expected_time
 
+    def test_tick_daily_relative_spring_forward(self, monkeypatch):
+        self.app.conf.timezone = 'America/New_York'
+        tz = ZoneInfo('America/New_York')
+        now = datetime(2026, 3, 8, tzinfo=tz)
+        monkeypatch.setattr(self.app, 'now', lambda: now)
+        scheduler = mScheduler(app=self.app, lazy=True)
+        entry = scheduler.add(
+            name='daily', task='t.fake.task',
+            schedule=timedelta(days=1), relative=True,
+            last_run_at=datetime(2026, 3, 7, tzinfo=tz),
+        )
+
+        assert scheduler.tick() == 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        # The next midnight is 23 elapsed hours away, including heap drift.
+        next_delay = scheduler._heap[0].time - now.timestamp()
+        assert next_delay == pytest.approx(82800, abs=0.02, rel=0)
+
+        now = datetime(2026, 3, 8, 23, 59, 59, tzinfo=tz)
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        now = datetime(2026, 3, 9, tzinfo=tz)
+        assert scheduler.tick() == 0
+        assert scheduler.schedule[entry.name].total_run_count == 2
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 2
+
     def test_ticks_schedule_change(self):
         # initialise schedule and check heap is not initialized
         scheduler = mScheduler(app=self.app)

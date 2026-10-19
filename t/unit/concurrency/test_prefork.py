@@ -162,6 +162,7 @@ class test_process_initializer:
             _signals.reset.assert_any_call(*WORKER_SIGRESET)
             assert app.loader.init_worker.call_count
             on_worker_process_init.assert_called()
+            assert on_worker_process_init.call_args.kwargs['sender'] == 'awesome.worker.com'
             assert _tls.current_app is app
             set_mp_process_title.assert_called_with(
                 'celeryd', hostname='awesome.worker.com',
@@ -230,14 +231,42 @@ class test_process_initializer:
             process_initializer(app, 'awesome.worker.com')
         _set_pdeathsig.assert_called_once_with('SIGKILL')
 
+    @patch('celery.platforms.set_pdeathsig')
+    @patch('celery.concurrency.prefork.get_start_method', return_value='fork')
+    def test_worker_process_init_sender_is_hostname(self, _get_start_method, _set_pdeathsig,
+                                                    set_mp_process_title, restore_logging):
+        from celery import signals
+        from celery.concurrency.prefork import process_initializer
+        on_db_worker = Mock()
+        signals.worker_process_init.connect(on_db_worker, sender='db@example.com')
+        try:
+            with self.Celery(loader=self.Loader) as app:
+                app.conf = AttributeDict(DEFAULTS)
+                process_initializer(app, 'web@example.com')
+                on_db_worker.assert_not_called()
+                process_initializer(app, 'db@example.com')
+                on_db_worker.assert_called_once()
+                assert mp._process_hostname == 'db@example.com'
+        finally:
+            signals.worker_process_init.disconnect(on_db_worker, sender='db@example.com')
+
 
 class test_process_destructor:
 
+    @patch('celery.concurrency.prefork._process_hostname', None)
     @patch('celery.concurrency.prefork.signals')
     def test_process_destructor(self, signals):
         mp.process_destructor(13, -3)
         signals.worker_process_shutdown.send.assert_called_with(
             sender=None, pid=13, exitcode=-3,
+        )
+
+    @patch('celery.concurrency.prefork._process_hostname', 'db@example.com')
+    @patch('celery.concurrency.prefork.signals')
+    def test_process_destructor_sender_is_hostname(self, signals):
+        mp.process_destructor(13, 0)
+        signals.worker_process_shutdown.send.assert_called_with(
+            sender='db@example.com', pid=13, exitcode=0,
         )
 
 
@@ -1323,6 +1352,42 @@ class test_AsynPool:
         proc = Mock(name='proc')
         handler = make_result_handler(3, proc)
         assert handler._finish_partial_read(3, proc) is False
+
+    @t.skip.if_win32
+    def test_help_stuff_finish_skips_exited_processes(self):
+        # A child killed between reading the 4-byte length and the body of
+        # its None sentinel leaves only the pickle body in its inqueue.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        exited = proc(15, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([exited, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (exited, alive):
+                p.inq.close()
+
+    @t.skip.if_win32
+    def test_help_stuff_finish_survives_truncated_message_from_live_process(self):
+        # A child can still look alive when its exitcode is checked and then
+        # die mid-way through reading its sentinel, leaving only the body.
+        def proc(exitcode, data):
+            inq = asynpool._SimpleQueue(wnonblock=True)
+            os.write(inq._writer.fileno(), data)
+            return Bunch(exitcode=exitcode, inq=inq)
+
+        dying = proc(None, pickle.dumps(None))
+        alive = proc(None, pack('>I', len(pickle.dumps(None))) + pickle.dumps(None))
+        try:
+            asynpool.AsynPool._help_stuff_finish([dying, alive])
+            assert not select.select([alive.inq._reader], [], [], 0)[0]
+        finally:
+            for p in (dying, alive):
+                p.inq.close()
 
 
 class test_TaskPool:
