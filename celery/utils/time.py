@@ -8,9 +8,8 @@ import random
 import sys
 import time as _time
 from calendar import monthrange
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, tzinfo
 from datetime import timezone as datetime_timezone
-from datetime import tzinfo
 from types import ModuleType
 from typing import Any, Callable
 

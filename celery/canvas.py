@@ -29,9 +29,8 @@ from celery.result import EagerResult, GroupResult, allow_join_result
 from celery.states import IGNORED, REJECTED
 from celery.utils import abstract
 from celery.utils.collections import ChainMap
-from celery.utils.functional import _regen
+from celery.utils.functional import _regen, is_list, maybe_list, regen, seq_concat_item, seq_concat_seq
 from celery.utils.functional import chunks as _chunks
-from celery.utils.functional import is_list, maybe_list, regen, seq_concat_item, seq_concat_seq
 from celery.utils.objects import getitem_property
 from celery.utils.text import remove_repeating_from_task, truncate
 
