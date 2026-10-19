@@ -1184,6 +1184,23 @@ class test_PersistentScheduler:
         s._create_schedule()
         s._store.__setitem__.assert_called_with("entries", {})
 
+    def test_create_schedule_invalid_stored_crontab(self):
+        """
+        Test that entries stored by an older version, containing a crontab
+        that is now rejected (e.g. the 30th of February), are recreated
+        """
+        stored = crontab(day_of_month=28, month_of_year=2)
+        stored._orig_day_of_month = '30'
+        pickled_entries = pickle.dumps({'invalid': stored})
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+
+        # self._store['entries'] will throw a ValueError when unpickled
+        s._store.__getitem__.side_effect = lambda key: pickle.loads(pickled_entries)
+
+        s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,
                                              schedule_filename='schedule')

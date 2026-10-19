@@ -631,8 +631,10 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError):
-                # new schedule db
+            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError,
+                    ValueError):
+                # new schedule db, or the stored entries can't be loaded
+                # anymore (e.g. a crontab that is now invalid).
                 try:
                     self._store['entries'] = {}
                 except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
