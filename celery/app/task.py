@@ -1,4 +1,5 @@
 """Task implementation: request context and the task base class."""
+import inspect
 import sys
 import types
 
@@ -862,6 +863,45 @@ class Task:
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
+
+        # Explicit args/kwargs can change how a task's parameters are passed
+        # on retry. Keep inherited values that do not conflict with the new
+        # calling convention (see #6494).
+        if ((args is not None and kwargs is None and request.kwargs) or
+                (kwargs is not None and args is None and request.args)):
+            try:
+                parameters = inspect.signature(self.run).parameters.values()
+            except (TypeError, ValueError):
+                pass  # Let normal task argument validation handle this case.
+            else:
+                positional = [
+                    p for p in parameters
+                    if p.kind in (inspect.Parameter.POSITIONAL_ONLY,
+                                  inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                ]
+                if args is not None:
+                    kwargs = dict(request.kwargs)
+                    for p in positional[:len(args)]:
+                        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                            kwargs.pop(p.name, None)
+                else:
+                    # An explicit keyword may replace an inherited positional
+                    # argument. Move that argument and any following positional
+                    # parameters to kwargs, preserving their original values.
+                    for index, p in enumerate(positional[:len(request.args)]):
+                        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and p.name in kwargs:
+                            tail = positional[index:len(request.args)]
+                            # With *args or positional-only parameters in the
+                            # tail, the original call cannot be safely rebuilt.
+                            if (len(request.args) > len(positional) or
+                                    any(q.kind == inspect.Parameter.POSITIONAL_ONLY for q in tail)):
+                                break
+                            inherited = dict(zip((q.name for q in tail),
+                                                 request.args[index:]))
+                            inherited.update(kwargs)
+                            kwargs = inherited
+                            args = request.args[:index]
+                            break
 
         is_eager = request.is_eager
         S = self.signature_from_request(

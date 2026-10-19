@@ -418,6 +418,57 @@ class test_task_retries(TasksCase):
         self.retry_task_noargs.apply(propagate=True).get()
         assert self.retry_task_noargs.iterations == 4
 
+    def test_retry_with_args_after_initial_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, label=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1, bar + 1), countdown=0)
+            return foo, bar, label
+
+        result = task.apply(kwargs={'foo': 1, 'bar': 2, 'label': 'kept'},
+                            propagate=True)
+        assert result.get() == (2, 3, 'kept')
+
+    def test_retry_with_kwargs_after_initial_args(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_with_kwargs_overriding_last_positional(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'bar': bar + 1}, countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (1, 3)
+
+    def test_retry_preserves_non_conflicting_request_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_keeps_explicit_args_and_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), kwargs={'bar': 3}, countdown=0)
+            return foo, bar
+
+        result = task.apply(kwargs={'foo': 1, 'bar': 2}, propagate=True)
+        assert result.get() == (2, 3)
+
     def test_signature_from_request__passes_headers(self):
         self.retry_task.push_request()
         self.retry_task.request.headers = {'custom': 10.1}
