@@ -469,6 +469,135 @@ class test_task_retries(TasksCase):
         result = task.apply(kwargs={'foo': 1, 'bar': 2}, propagate=True)
         assert result.get() == (2, 3)
 
+    def test_retry_with_kwargs_overriding_varargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return foo, rest
+
+        result = task.apply(args=(1, 2, 3), propagate=True)
+        assert result.get() == (2, (2, 3))
+
+    def test_retry_with_kwargs_overriding_multiple_varargs_parameters(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1, 'bar': bar + 1},
+                                  countdown=0)
+            return foo, bar, rest
+
+        result = task.apply(args=(1, 2, 4, 5), propagate=True)
+        assert result.get() == (2, 3, (4, 5))
+
+    def test_retry_does_not_mutate_explicit_kwargs_with_varargs(self):
+        retry_kwargs = {'foo': 2}
+
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs=retry_kwargs, countdown=0)
+            return foo, rest
+
+        result = task.apply(args=(1, 2, 3), propagate=True)
+        assert result.get() == (2, (2, 3))
+        assert retry_kwargs == {'foo': 2}
+
+    @pytest.mark.parametrize('retry_kwargs, expected', (
+        ({'foo': 10}, (10, 2, (3, 4))),
+        ({'bar': 20}, (1, 20, (3, 4))),
+    ))
+    def test_retry_with_kwargs_overriding_one_parameter_before_varargs(
+            self, retry_kwargs, expected):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs=retry_kwargs, countdown=0)
+            return foo, bar, rest
+
+        original_kwargs = retry_kwargs.copy()
+        result = task.apply(args=(1, 2, 3, 4), propagate=True)
+        assert result.get() == expected
+        assert retry_kwargs == original_kwargs
+
+    def test_retry_keeps_positional_only_name_in_extra_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, /, bar, **extra):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': 10, 'bar': 20}, countdown=0)
+            return foo, bar, extra
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (1, 20, {'foo': 10})
+
+    def test_retry_with_unbindable_request_args(self):
+        task = self.retry_task_mockapply
+        task.push_request(args=(1, 2, 3, 4), kwargs={},
+                          called_directly=False, is_eager=True)
+        try:
+            with pytest.raises(Retry) as exc_info:
+                task.retry(kwargs={'unknown': 5}, countdown=0)
+            assert exc_info.value.sig.args == (1, 2, 3, 4)
+            assert exc_info.value.sig.kwargs == {'unknown': 5}
+        finally:
+            task.pop_request()
+
+    def test_retry_with_kwargs_after_positional_only_arg(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, prefix, /, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return prefix, foo, bar
+
+        result = task.apply(args=(10, 1, 2), propagate=True)
+        assert result.get() == (10, 2, 2)
+
+    def test_retry_with_args_preserves_positional_only_arg(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, /, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_with_keyword_only_argument(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *, label=None):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'label': 'new'}, countdown=0)
+            return foo, label
+
+        result = task.apply(args=(1,), kwargs={'label': 'old'},
+                            propagate=True)
+        assert result.get() == (1, 'new')
+
+    def test_retry_preserves_arguments_when_not_overridden(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (1, 2)
+
+    @pytest.mark.parametrize('error_type', (TypeError, ValueError))
+    def test_retry_with_uninspectable_signature(self, error_type):
+        task = self.retry_task_mockapply
+        task.push_request(args=(1, 2), kwargs={},
+                          called_directly=False, is_eager=True)
+        try:
+            with patch('celery.app.task.inspect.signature',
+                       side_effect=error_type):
+                with pytest.raises(Retry) as exc_info:
+                    task.retry(kwargs={'arg1': 3}, countdown=0)
+            assert exc_info.value.sig.args == (1, 2)
+            assert exc_info.value.sig.kwargs == {'arg1': 3}
+        finally:
+            task.pop_request()
+
     def test_signature_from_request__passes_headers(self):
         self.retry_task.push_request()
         self.retry_task.request.headers = {'custom': 10.1}
