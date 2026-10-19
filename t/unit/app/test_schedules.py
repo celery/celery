@@ -847,13 +847,17 @@ class test_crontab_remaining_estimate:
         assert next == datetime(2010, 5, 29, 0, 5)
 
     def test_invalid_specification(self):
+        with pytest.raises(ValueError):
+            self.crontab(day_of_month=31, month_of_year=4)
+
+    def test_rollover_gives_up_on_invalid_date(self):
         # *** WARNING ***
         # This test triggers an infinite loop in case of a regression
+        c = self.crontab(day_of_month=30, month_of_year=4)
+        # bypass the validation done by the constructor
+        c.day_of_month = {31}
         with pytest.raises(RuntimeError):
-            self.next_occurrence(
-                self.crontab(day_of_month=31, month_of_year=4),
-                datetime(2010, 1, 28, 14, 30, 15),
-            )
+            self.next_occurrence(c, datetime(2010, 1, 28, 14, 30, 15))
 
     def test_leapyear(self):
         next = self.next_occurrence(
@@ -1097,6 +1101,28 @@ class test_crontab_is_due:
     def test_crontab_spec_invalid_moy(self, month_of_year):
         with pytest.raises(ValueError):
             self.crontab(month_of_year=month_of_year)
+
+    @pytest.mark.parametrize('day_of_month,month_of_year', [
+        (30, 2),
+        ('30,31', 'feb'),
+        (31, 4),
+        (31, '4,6,9,11'),
+        ([], '*'),
+        ('*', []),
+    ])
+    def test_crontab_spec_date_never_occurs(self, day_of_month, month_of_year):
+        with pytest.raises(ValueError, match='never occurs'):
+            self.crontab(day_of_month=day_of_month,
+                         month_of_year=month_of_year)
+
+    @pytest.mark.parametrize('day_of_month,month_of_year', [
+        (29, 2),
+        ('30,31', '2,3'),
+        (31, '4-5'),
+        (31, '*'),
+    ])
+    def test_crontab_spec_date_occurs(self, day_of_month, month_of_year):
+        self.crontab(day_of_month=day_of_month, month_of_year=month_of_year)
 
     def seconds_almost_equal(self, a, b, precision):
         for index, skew in enumerate((+1, -1, 0)):

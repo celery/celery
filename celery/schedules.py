@@ -34,6 +34,17 @@ Argument cronspec needs to be of any of the following types: \
 int, str, or an iterable type. {type!r} was given.\
 """
 
+CRON_INVALID_DATE = """\
+Invalid crontab: day_of_month {day_of_month!r} never occurs in \
+month_of_year {month_of_year!r}.\
+"""
+
+# Number of days in each month, using the longest February (leap years).
+CRON_DAYS_IN_MONTH = {
+    1: 31, 2: 29, 3: 31, 4: 30, 5: 31, 6: 30,
+    7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31,
+}
+
 CRON_REPR = """\
 <crontab: {0._orig_minute} {0._orig_hour} {0._orig_day_of_month} {0._orig_month_of_year} \
 {0._orig_day_of_week} (m/h/dM/MY/d)>\
@@ -416,6 +427,9 @@ class crontab(BaseSchedule):
     execution events.  Or, ``day_of_week`` is 1 and ``day_of_month``
     is '1-7,15-21' means every first and third Monday of every month
     present in ``month_of_year``.
+
+    :exc:`ValueError` is raised if none of the days in ``day_of_month``
+    occur in any month in ``month_of_year`` (e.g., the 30th of February).
     """
 
     def __init__(self, minute: Cronspec = '*', hour: Cronspec = '*', day_of_week: Cronspec = '*',
@@ -431,6 +445,13 @@ class crontab(BaseSchedule):
         self.day_of_week = self._expand_cronspec(day_of_week, 7)
         self.day_of_month = self._expand_cronspec(day_of_month, 31, 1)
         self.month_of_year = self._expand_cronspec(month_of_year, 12, 1)
+        if not any(day <= CRON_DAYS_IN_MONTH[month]
+                   for month in self.month_of_year
+                   for day in self.day_of_month):
+            raise ValueError(CRON_INVALID_DATE.format(
+                day_of_month=self._orig_day_of_month,
+                month_of_year=self._orig_month_of_year,
+            ))
         super().__init__(**kwargs)
 
     @classmethod

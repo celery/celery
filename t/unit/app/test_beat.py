@@ -177,6 +177,15 @@ class mocked_schedule(schedule):
         return self._is_due, self._next_run_at
 
 
+class raising_schedule(mocked_schedule):
+
+    def __init__(self):
+        super().__init__(False, 1)
+
+    def is_due(self, last_run_at):
+        raise RuntimeError('cannot calculate next run')
+
+
 always_due = mocked_schedule(True, 1)
 always_pending = mocked_schedule(False, 1)
 always_pending_left_10_milliseconds = mocked_schedule(False, 0.01)
@@ -405,6 +414,35 @@ class test_Scheduler:
                       schedule=always_due)
         assert scheduler.tick() == 0
         error.assert_called()
+
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_in_populate_heap(self, error):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='broken', task='c.broken',
+                      schedule=raising_schedule())
+        scheduler.add(name='healthy', task='c.healthy', schedule=always_due)
+        assert scheduler.tick() == 0
+        assert [s['name'] for s in scheduler.sent] == ['c.healthy']
+        error.assert_called()
+        assert 'broken' in error.call_args[0]
+        broken_event = next(
+            e for e in scheduler._heap if e[2].name == 'broken')
+        assert broken_event[0] == pytest.approx(scheduler._when(
+            broken_event[2], scheduler.max_interval), abs=1)
+
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_when_due(self, error):
+        scheduler = mScheduler(app=self.app)
+        broken = scheduler.add(name='broken', task='c.broken',
+                               schedule=raising_schedule())
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(broken, 0) - 1, 5, broken)]
+        assert scheduler.tick() == scheduler.adjust(scheduler.max_interval)
+        assert not scheduler.sent
+        error.assert_called()
+        assert scheduler._heap[0][0] == pytest.approx(
+            scheduler._when(broken, scheduler.max_interval), abs=1)
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)

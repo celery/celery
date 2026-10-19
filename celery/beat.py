@@ -303,6 +303,14 @@ class Scheduler:
     def is_due(self, entry):
         return entry.is_due()
 
+    def _is_due_failed(self, entry):
+        # One entry whose next run can't be calculated must not stop beat
+        # (and every other entry with it), so log it and try again later.
+        error('beat: Cannot calculate the next run of %r, '
+              'trying again in %s.', entry.name,
+              humanize_seconds(self.max_interval), exc_info=True)
+        return False, self.max_interval
+
     def _when(self, entry, next_time_to_run, mktime=timegm):
         """Return a utc timestamp, make sure heapq in correct order."""
         adjust = self.adjust
@@ -318,7 +326,10 @@ class Scheduler:
         priority = 5
         self._heap = []
         for entry in self.schedule.values():
-            is_due, next_call_delay = entry.is_due()
+            try:
+                is_due, next_call_delay = entry.is_due()
+            except Exception:  # pylint: disable=broad-except
+                is_due, next_call_delay = self._is_due_failed(entry)
             self._heap.append(event_t(
                 self._when(
                     entry,
@@ -357,7 +368,10 @@ class Scheduler:
         if event[0] > now:
             return min(event[0] - now, max_interval)
 
-        is_due, next_time_to_run = self.is_due(entry)
+        try:
+            is_due, next_time_to_run = self.is_due(entry)
+        except Exception:  # pylint: disable=broad-except
+            is_due, next_time_to_run = self._is_due_failed(entry)
         if is_due:
             verify = heappop(H)
             if verify is event:

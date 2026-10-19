@@ -356,6 +356,13 @@ Some examples:
 
 See :class:`celery.schedules.crontab` for more documentation.
 
+.. versionchanged:: 5.7
+
+    A crontab whose ``day_of_month`` never occurs in its ``month_of_year``
+    (e.g., ``crontab(0, 0, day_of_month='30', month_of_year='2')``) now raises
+    :exc:`ValueError` when created. Previously it was accepted, and made
+    :program:`celery beat` exit when it tried to calculate the next run.
+
 .. _beat-solar:
 
 Solar schedules
