@@ -675,6 +675,20 @@ The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
 database file.
 
+.. versionchanged:: 5.7
+
+    If an entry's ``is_due()`` raises an exception, :program:`celery beat`
+    now logs the error with its traceback and tries that entry again after
+    ``max_interval``, while the other entries keep running. Previously the
+    exception made :program:`celery beat` exit. This also applies to
+    custom schedulers and schedule classes, e.g. one whose ``is_due()``
+    reads from a database that is temporarily unavailable.
+
+    If the schedule database contains entries that can no longer be loaded
+    (e.g. a crontab for the 30th of February, which is now rejected), a
+    warning is logged and the stored entries are recreated from
+    :setting:`beat_schedule`. The last run times of all entries are lost.
+
 There's also the :pypi:`django-celery-beat` extension that stores the schedule
 in the Django database, and presents a convenient admin interface to manage
 periodic tasks at runtime.

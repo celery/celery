@@ -1198,8 +1198,24 @@ class test_PersistentScheduler:
         # self._store['entries'] will throw a ValueError when unpickled
         s._store.__getitem__.side_effect = lambda key: pickle.loads(pickled_entries)
 
-        s._create_schedule()
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
         s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_called_once()
+        assert isinstance(warning.call_args[0][1], ValueError)
+
+    def test_create_schedule_missing_entries_not_logged(self):
+        """
+        Test that creating the entries of a new schedule db doesn't log a warning
+        """
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+        s._store.__getitem__.side_effect = KeyError('entries')
+
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_not_called()
 
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,

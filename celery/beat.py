@@ -632,9 +632,12 @@ class PersistentScheduler(Scheduler):
             try:
                 self._store['entries']
             except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError,
-                    ValueError):
+                    ValueError) as exc:
                 # new schedule db, or the stored entries can't be loaded
                 # anymore (e.g. a crontab that is now invalid).
+                if isinstance(exc, ValueError):
+                    warning('DB Reset: Cannot load the stored entries, '
+                            'recreating them from beat_schedule: %r', exc)
                 try:
                     self._store['entries'] = {}
                 except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
