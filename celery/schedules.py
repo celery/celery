@@ -824,6 +824,10 @@ class solar(BaseSchedule):
         'dusk_astronomical': True,
     }
 
+    #: How many days ahead to search for an event that doesn't happen
+    #: every day (see :meth:`_next_event`).
+    max_search_days = 366
+
     def __init__(self, event: str, lat: int | float, lon: int | float, **
                  kwargs: Any) -> None:
         try:
@@ -863,6 +867,31 @@ class solar(BaseSchedule):
             self.event, self.lat, self.lon,
         )
 
+    def _next_event(self, start: Any) -> Any:
+        """Return the first occurrence of the event after ``start``.
+
+        At high latitudes some events don't happen every day, e.g.
+        astronomical dawn in summer or sunrise during the polar night,
+        and :mod:`ephem` raises :exc:`~ephem.CircumpolarError` for them.
+        In that case the search continues from the next anti-transit
+        (one day later), for at most :attr:`max_search_days` days.
+
+        Returns:
+            ephem.Date: the time of the event, or, if it doesn't happen
+                within :attr:`max_search_days` days, the time at which
+                the search stopped, so the schedule is checked again then.
+        """
+        sun = self.ephem.Sun()
+        kwargs = {'use_center': True} if self.use_center else {}
+        for _ in range(self.max_search_days):
+            try:
+                return getattr(self.cal, self.method)(
+                    sun, start=start, **kwargs
+                )
+            except self.ephem.CircumpolarError:
+                start = self.cal.next_antitransit(sun, start=start)
+        return start
+
     def remaining_estimate(self, last_run_at: datetime) -> timedelta:
         """Return estimate of next time to run.
 
@@ -875,24 +904,7 @@ class solar(BaseSchedule):
         last_run_at = self.maybe_make_aware(last_run_at)
         last_run_at_utc = localize(last_run_at, timezone.utc)
         self.cal.date = last_run_at_utc
-        try:
-            if self.use_center:
-                next_utc = getattr(self.cal, self.method)(
-                    self.ephem.Sun(),
-                    start=last_run_at_utc, use_center=self.use_center
-                )
-            else:
-                next_utc = getattr(self.cal, self.method)(
-                    self.ephem.Sun(), start=last_run_at_utc
-                )
-
-        except self.ephem.CircumpolarError:  # pragma: no cover
-            # Sun won't rise/set today.  Check again tomorrow
-            # (specifically, after the next anti-transit).
-            next_utc = (
-                self.cal.next_antitransit(self.ephem.Sun()) +
-                timedelta(minutes=1)
-            )
+        next_utc = self._next_event(self.ephem.Date(last_run_at_utc))
         next = self.maybe_make_aware(next_utc.datetime())
         now = self.maybe_make_aware(self.now())
         delta = next - now

@@ -100,6 +100,50 @@ class test_solar:
                     f"{s.method} was called with 'use_center' which is not a "
                     "valid keyword for the function.")
 
+    @pytest.mark.parametrize('event,lat,lon,last_run_at,expected', [
+        # Astronomical twilight lasts all night in London around the
+        # summer solstice, so there is no astronomical dawn.
+        ('dawn_astronomical', 51.5074, -0.1278,
+         datetime(2026, 6, 15, tzinfo=timezone.utc),
+         datetime(2026, 7, 22, 0, 30, tzinfo=timezone.utc)),
+        # Same for nautical dawn in Stockholm.
+        ('dawn_nautical', 59.3293, 18.0686,
+         datetime(2026, 6, 15, tzinfo=timezone.utc),
+         datetime(2026, 7, 29, 23, 14, tzinfo=timezone.utc)),
+        # Polar night in Tromsø: the sun doesn't rise until mid-January.
+        ('sunrise', 69.6492, 18.9553,
+         datetime(2026, 12, 15, tzinfo=timezone.utc),
+         datetime(2027, 1, 15, 10, 34, tzinfo=timezone.utc)),
+    ])
+    def test_remaining_estimate_skips_days_without_event(
+            self, event, lat, lon, last_run_at, expected):
+        s = solar(event, lat, lon, app=self.app, nowfun=lambda: last_run_at)
+        next_run = last_run_at + s.remaining_estimate(last_run_at)
+        assert expected <= next_run < expected + timedelta(minutes=1)
+
+    def test_is_due_not_due_on_days_without_event(self):
+        # Before the fix, the entry was due every night in the summer.
+        s = solar('dawn_astronomical', 51.5074, -0.1278, app=self.app,
+                  nowfun=lambda: datetime(2026, 6, 16, 3,
+                                          tzinfo=timezone.utc))
+        state = s.is_due(datetime(2026, 6, 15, 2, tzinfo=timezone.utc))
+        assert not state.is_due
+        assert state.next > timedelta(days=30).total_seconds()
+
+    def test_remaining_estimate_event_never_happens(self):
+        last_run_at = datetime(2026, 6, 15, tzinfo=timezone.utc)
+        s = solar('dawn_astronomical', 51.5074, -0.1278, app=self.app,
+                  nowfun=lambda: last_run_at)
+        s.max_search_days = 3
+        s.cal = Mock(name='cal')
+        s.cal.next_rising.side_effect = s.ephem.CircumpolarError()
+        s.cal.next_antitransit.side_effect = (
+            lambda body, start: s.ephem.Date(start + 1)
+        )
+        rem = s.remaining_estimate(last_run_at)
+        assert s.cal.next_rising.call_count == 3
+        assert rem == timedelta(days=3)
+
 
 class test_solar_without_ephem:
 

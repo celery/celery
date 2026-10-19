@@ -460,11 +460,19 @@ Possible event types are:
 All solar events are calculated using UTC, and are therefore
 unaffected by your timezone setting.
 
-In polar regions, the sun may not rise or set every day. The scheduler
+In polar regions, the sun may not rise or set every day, and at high
+latitudes some twilight events don't happen for weeks around the summer
+solstice (e.g., astronomical dawn in London or Berlin). The scheduler
 is able to handle these cases (i.e., a ``sunrise`` event won't run on a day
-when the sun doesn't rise). The one exception is ``solar_noon``, which is
+when the sun doesn't rise, and will next run on the first day it does).
+The one exception is ``solar_noon``, which is
 formally defined as the moment the sun transits the celestial meridian,
 and will occur every day even if the sun is below the horizon.
+
+.. versionchanged:: 5.7
+
+    Previously, a solar event that didn't happen on a given day raised
+    :exc:`TypeError` and made :program:`celery beat` exit.
 
 Twilight is defined as the period between dawn and sunrise; and between
 sunset and dusk. You can schedule an event according to "twilight"
