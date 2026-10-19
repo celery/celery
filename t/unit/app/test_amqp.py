@@ -798,6 +798,7 @@ class test_AMQP(test_AMQP_Base):
     @pytest.mark.parametrize('signal', [
         signals.before_task_publish,
         signals.after_task_publish,
+        signals.task_sent,
     ], ids=lambda signal: signal.name)
     def test_send_publish_works_after_receivers_disconnect_and_connect(self, signal):
         call_count = 0
