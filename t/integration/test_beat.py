@@ -284,6 +284,57 @@ class test_beat_tick_heap_top_changed:
         assert scheduler.schedule['first'].total_run_count == 0
 
 
+class test_beat_failing_entry:
+    @flaky
+    @pytest.mark.usefixtures('celery_session_worker')
+    def test_dispatches_other_entries_when_is_due_raises(self, app):
+        healthy_task_id = uuid4().hex
+        last_run = datetime(2022, 12, 5, 10, 20)
+        scheduler = beat.Scheduler(app=app, lazy=True)
+        failing = scheduler.add(
+            name='failing',
+            task=add.name,
+            args=(1, 2),
+            schedule=timedelta(seconds=1),
+            last_run_at=last_run,
+        )
+        healthy = scheduler.add(
+            name='healthy',
+            task=add.name,
+            args=(3, 4),
+            schedule=timedelta(seconds=1),
+            last_run_at=last_run,
+            options={'task_id': healthy_task_id},
+        )
+
+        def failing_is_due(_last_run_at):
+            # e.g. a schedule whose next run can't be calculated
+            raise TypeError('cannot calculate the next run')
+
+        failing.schedule.is_due = failing_is_due
+
+        # populate_heap() doesn't raise, and moves failing max_interval ahead
+        scheduler.populate_heap()
+        heap = {event[2].name: event[0] for event in scheduler._heap}
+        now = scheduler._when(failing, 0)
+        assert heap['failing'] > now + scheduler.max_interval - 1
+        assert heap['healthy'] <= now
+
+        # so populate_heap() doesn't run again and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [
+            beat.event_t(now - 2, 5, failing),
+            beat.event_t(now - 1, 5, healthy),
+        ]
+        # tick() doesn't raise either: failing is moved back, and healthy is
+        # now the top, so tick() asks to be called again right away
+        assert scheduler.tick() == 0
+        # tick() returns 0 only when it dispatches a due task
+        assert scheduler.tick() == 0
+        assert app.AsyncResult(healthy_task_id).get(timeout=30) == 7
+        assert scheduler.schedule['failing'].total_run_count == 0
+
+
 class test_beat_remote_control:
     """A running beat must answer while it ticks, and stop when it wedges.
 
