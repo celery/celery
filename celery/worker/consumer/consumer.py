@@ -159,6 +159,10 @@ class Consumer:
     #: as sending heartbeats.
     timer = None
 
+    #: Entries on the event loop timer before the consumer last started
+    #: connecting to the broker.
+    timer_entries_before_start = None
+
     restart_count = -1  # first start is the same as a restart
 
     #: This flag will be turned off after the first failed
@@ -387,6 +391,12 @@ class Consumer:
                 recoverable_errors = (self.connection_errors + self.channel_errors)
             else:
                 recoverable_errors = self.connection_errors
+            if self.hub is not None:
+                # Entries added to the timer from here on, by connecting
+                # and starting the event loop, belong to this connection
+                # (see :func:`celery.worker.loops.asynloop`).
+                self.timer_entries_before_start = loops._timer_entries(
+                    self.hub.timer)
             try:
                 blueprint.start(self)
             except recoverable_errors as exc:

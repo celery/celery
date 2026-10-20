@@ -77,6 +77,8 @@ class ConsumerTestCase:
             **kwargs
         )
         consumer.blueprint = Mock(name='blueprint')
+        if consumer.hub is not None:
+            consumer.hub.timer.queue = []
         consumer.pool.num_processes = 2
         consumer._restart_state = Mock(name='_restart_state')
         consumer.connection = _amqp_connection()
@@ -483,6 +485,35 @@ class test_Consumer(ConsumerTestCase):
         with patch('celery.worker.consumer.consumer.sleep') as sleep:
             c.start()
             sleep.assert_called_with(1)
+
+    def test_records_timer_entries_before_start(self):
+        # asynloop cancels the timer entries added after this point when the
+        # connection is lost, e.g. the periodic entries the transport
+        # registers when connecting (#10888).
+        c = self.get_consumer()
+        worker_entry = Mock(name='worker_entry')
+        c.hub.timer.queue = [Mock(entry=worker_entry)]
+
+        def bp_start(*args, **kwargs):
+            assert c.timer_entries_before_start == {worker_entry}
+            c.hub.timer.queue.append(Mock(entry=Mock(name='transport')))
+            c.blueprint.state = CLOSE
+
+        c.blueprint.start.side_effect = bp_start
+        with patch('celery.worker.consumer.consumer.sleep'):
+            c.start()
+        c.blueprint.start.assert_called_once_with(c)
+
+    def test_no_timer_entries_recorded_without_hub(self):
+        c = self.get_consumer(no_hub=True)
+
+        def bp_start(*args, **kwargs):
+            c.blueprint.state = CLOSE
+
+        c.blueprint.start.side_effect = bp_start
+        with patch('celery.worker.consumer.consumer.sleep'):
+            c.start()
+        assert c.timer_entries_before_start is None
 
     def test_do_not_restart_when_closed(self):
         c = self.get_consumer()
