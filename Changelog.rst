@@ -106,7 +106,6 @@ Other
 - Fix invalid Bandit baseline JSON and validate it before commit (#10766)
 
 
-
 .. _version-5.7.0b1:
 
 5.7.0b1

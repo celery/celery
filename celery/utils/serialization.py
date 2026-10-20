@@ -1,4 +1,5 @@
 """Utilities for safely pickling exceptions."""
+import builtins
 import datetime
 import numbers
 import sys
@@ -158,6 +159,41 @@ class UnpickleableExceptionWrapper(Exception):
         return res
 
 
+def _exception_group_types():
+    """Collect the base classes that mark an exception as a group.
+
+    Only the builtin :exc:`BaseExceptionGroup` (PEP 654, Python 3.11+)
+    and the ``exceptiongroup`` backport's ``BaseExceptionGroup`` (when
+    the backport is importable) are exact: other exceptions that merely
+    carry an ``exceptions`` attribute are not exception groups.
+    """
+    types = []
+    builtin_group = getattr(builtins, 'BaseExceptionGroup', None)
+    if builtin_group is not None:
+        types.append(builtin_group)
+    try:
+        from exceptiongroup import BaseExceptionGroup as BackportBaseExceptionGroup
+    except ImportError:
+        pass
+    else:
+        if BackportBaseExceptionGroup not in types:
+            types.append(BackportBaseExceptionGroup)
+    return tuple(types)
+
+
+#: Base classes identifying an exception group (PEP 654).
+_EXCEPTION_GROUP_TYPES = _exception_group_types()
+
+
+def _is_exception_group(exc):
+    """Return True for exception groups (PEP 654).
+
+    This covers both the builtin :exc:`BaseExceptionGroup`/
+    :exc:`ExceptionGroup` and the ``exceptiongroup`` backport.
+    """
+    return isinstance(exc, _EXCEPTION_GROUP_TYPES)
+
+
 def get_pickleable_exception(exc):
     """Make sure exception is pickleable."""
     try:
@@ -166,6 +202,27 @@ def get_pickleable_exception(exc):
         pass
     else:
         return exc
+    if _is_exception_group(exc):
+        # The group itself cannot be pickled (e.g. one of its members
+        # cannot), so replace only the members that cannot be pickled
+        # and keep the group itself whenever the result pickles.
+        try:
+            derived = exc.derive([
+                get_pickleable_exception(subexc) for subexc in exc.exceptions
+            ])
+            pickle.loads(pickle.dumps(derived))
+        except Exception:  # pylint: disable=broad-except
+            pass
+        else:
+            return derived
+        # The derived group still cannot be pickled (e.g. a group
+        # subclass with unpicklable state), so fall back to the first
+        # pickleable exception the group contains instead of losing
+        # every member to an UnpickleableExceptionWrapper.
+        for subexc in exc.exceptions:
+            pickleable = get_pickleable_exception(subexc)
+            if not isinstance(pickleable, UnpickleableExceptionWrapper):
+                return pickleable
     nearest = find_pickleable_exception(exc)
     if nearest:
         return nearest
