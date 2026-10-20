@@ -1048,6 +1048,28 @@ class test_Request(RequestCase):
         finally:
             revoked_stamps.clear()
 
+    def test_revoked_by_header_handles_missing_stamp_value(self):
+        """Test that revocation handles missing stamped header values gracefully.
+
+        Regression test for case where a header is listed in stamped_headers
+        and flagged in revoked_stamps, but has no corresponding value in stamps.
+        This should not raise KeyError and should not revoke the task.
+        """
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            # 'b' is in stamped_headers but not in stamps
+            job._message.headers['stamps'] = {'a': 'x'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+            job._request_dict['stamps'] = {'a': 'x'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+            revoked_stamps.update({'a': ['other'], 'b': ['y']})
+            # Should not raise KeyError
+            assert not job.revoked()
+            assert not job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
     def test_execute_does_not_execute_revoked(self):
         job = self.xRequest()
         revoked.add(job.id)

@@ -487,7 +487,9 @@ class Request:
             for stamp in self.stamped_headers:
                 if stamp in revoked_stamps:
                     revoked_header = revoked_stamps[stamp]
-                    stamped_header = self._message.headers['stamps'][stamp]
+                    stamped_header = self.stamps.get(stamp)
+                    if stamped_header is None:
+                        continue
 
                     if isinstance(stamped_header, (list, tuple)):
                         for stamped_value in stamped_header:
