@@ -127,6 +127,21 @@ class test_DatabaseBackend:
         self.uri = 'sqlite:///' + DB_PATH
         self.app.conf.result_serializer = 'pickle'
 
+    def test_retry_settings_default_to_pre_5_7_behavior(self):
+        backend = DatabaseBackend(self.uri, app=self.app)
+
+        assert backend.always_retry is True
+        assert backend.max_retries == 3
+
+    def test_retry_settings_respect_explicit_configuration(self):
+        self.app.conf.result_backend_always_retry = False
+        self.app.conf.result_backend_max_retries = 0
+
+        backend = DatabaseBackend(self.uri, app=self.app)
+
+        assert backend.always_retry is False
+        assert backend.max_retries == 0
+
     def test_store_result_retries_on_database_error(self):
         """Test that _store_result retries when database errors occur."""
         from celery.backends.database import DatabaseError
