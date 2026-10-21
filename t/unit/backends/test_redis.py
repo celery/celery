@@ -24,20 +24,10 @@ from celery import signature, states, uuid
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured, WorkerLostError
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from t.unit import conftest
-
-
-def raise_on_second_call(mock, exc, *retval):
-    def on_first_call(*args, **kwargs):
-        mock.side_effect = exc
-        return mock.return_value
-
-    mock.side_effect = on_first_call
-    if retval:
-        mock.return_value, = retval
 
 
 class ConnectionError(Exception):
@@ -170,6 +160,38 @@ class Redis(conftest.MockCallbacks):
 
     def zcount(self, key, min_, max_):
         return len(self.zrangebyscore(key, min_, max_))
+
+    def sadd(self, key, value):
+        members = self.keyspace.setdefault(key, set())
+        if value in members:
+            return 0
+        members.add(value)
+        return 1
+
+    def register_script(self, script):
+        # Only the chord part script of the backend is used; emulate it
+        # with the fake commands above.
+        def chord_part_return(keys, args, client=None):
+            jkey, tkey, skey, dkey, gkey = keys
+            tid, value, ordered, score, expires, group_expires = args
+            member = f'{tid}:{score}'
+            if member not in self.keyspace.get(dkey, set()):
+                if ordered:
+                    self.zadd(jkey, {value: score})
+                else:
+                    self.rpush(jkey, value)
+                self.sadd(dkey, member)
+            if ordered:
+                readycount = self.zcount(jkey, '-inf', '+inf')
+            else:
+                readycount = self.llen(jkey)
+            if expires:
+                for key in (jkey, tkey, skey, dkey):
+                    self.expire(key, expires)
+                if group_expires:
+                    self.expire(gkey, group_expires)
+            return [readycount, self.get(tkey), self.get(skey)]
+        return chord_part_return
 
 
 class Sentinel(conftest.MockCallbacks):
@@ -2181,9 +2203,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         skey = self.b.get_key_for_group('group_id', '.s')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey)])
+        dkey = self.b.get_key_for_group('group_id', '.d')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey), call(dkey)])
         self.b.client.expire.assert_has_calls([
-            call(jkey, 86400), call(tkey, 86400), call(skey, 86400),
+            call(jkey, 86400), call(tkey, 86400), call(skey, 86400), call(dkey, 86400),
         ])
 
     @pytest.mark.parametrize('result_expires,group_expires', [
@@ -2202,8 +2225,9 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         skey = self.b.get_key_for_group('group_id', '.s')
+        dkey = self.b.get_key_for_group('group_id', '.d')
         gkey = self.b.get_key_for_group('group_id')
-        expected = [call(jkey, 600), call(tkey, 600), call(skey, 600)]
+        expected = [call(jkey, 600), call(tkey, 600), call(skey, 600), call(dkey, 600)]
         if group_expires:
             expected.append(call(gkey, group_expires))
         assert self.b.client.expire.call_args_list == expected
@@ -2331,10 +2355,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         self.b.expires = old_expires
 
     def test_on_chord_part_return__success(self):
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
     def test_on_chord_part_return__success__unordered(self):
@@ -2342,10 +2366,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             result_chord_ordered=False,
         )
 
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
     def test_on_chord_part_return__success__ordered(self):
@@ -2353,10 +2377,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             result_chord_ordered=True,
         )
 
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
     def test_on_chord_part_return__callback_raises(self):
@@ -2397,9 +2421,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     def test_on_chord_part_return__ChordError(self):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -2413,9 +2435,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -2429,9 +2449,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -2441,9 +2459,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     def test_on_chord_part_return__other_error(self):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -2457,9 +2473,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -2473,14 +2487,115 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
                 callback.id, exc=ANY,
             )
+
+    @pytest.mark.parametrize('ordered', (True, False))
+    @pytest.mark.parametrize(['dup_state', 'dup_result'], [
+        # The header task was executed again and returned another value
+        (states.SUCCESS, 99),
+        # An "already done" idempotency guard returned early
+        (states.SUCCESS, None),
+        # The worker was lost after the part was recorded (#10724)
+        (states.FAILURE, WorkerLostError()),
+    ])
+    def test_on_chord_part_return__duplicate_part(
+        self, ordered, dup_state, dup_result,
+    ):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            jkey = self.b.get_key_for_group(tasks[0].request.group, '.j')
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[0].request, dup_state, dup_result)
+            assert len(self.b.client.keyspace[jkey]) == 1
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with([10, 20, 30])
+            # A duplicate arriving after the chord completed is ignored
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 99)
+            callback.delay.assert_called_once_with([10, 20, 30])
+
+    @pytest.mark.parametrize('join_error', (False, True))
+    def test_on_chord_part_return__duplicate_after_chord_failed(self, join_error):
+        if join_error:
+            # Reading the results fails with an error other than ChordError
+            self.b._unpack_chord_result = Mock(side_effect=RuntimeError())
+        with self.chord_context(2) as (tasks, _, callback):
+            jkey = self.b.get_key_for_group(tasks[0].request.group, '.j')
+            with patch.object(self.b, 'chord_error_from_stack') as chord_error:
+                self.b.on_chord_part_return(tasks[0].request, states.FAILURE, KeyError('x'))
+                self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+                assert chord_error.call_count == 1
+                # The results are kept, so the user can look at them
+                assert len(self.b.client.keyspace[jkey]) == 2
+                # A copy of a header part arrives after the chord failed
+                self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+                assert chord_error.call_count == 1
+                callback.delay.assert_not_called()
+
+    def test_on_chord_part_return__last_part_runs_again(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            # The last part is saved, but its worker is lost before the body
+            # is sent, so the redelivered part must still send it.
+            request = tasks[1].request
+            keys = [self.b.get_key_for_group(request.group, suffix)
+                    for suffix in ('.j', '.t', '.s', '.d', '')]
+            encoded = self.b.encode([1, request.id, states.SUCCESS,
+                                     self.b.encode_result(20, states.SUCCESS)])
+            self.b._chord_part_return_script(
+                keys=keys, args=[request.id, encoded, 1, request.group_index, 0, 0])
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    @pytest.mark.parametrize('ordered', (True, False))
+    def test_on_chord_part_return__same_task_id_at_two_indexes(self, ordered):
+        # A header that reuses one frozen signature has its task id twice
+        # (with different results; equal ones merge in the ordered zset)
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(2) as (tasks, _, callback):
+            tasks[1].request.id = tasks[0].request.id
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    @pytest.mark.parametrize(['ordered', 'expected'], [
+        (True, [10, 20, 30]),
+        (False, [20, 10, 30]),
+    ])
+    def test_on_chord_part_return__part_recorded_by_older_worker(
+        self, ordered, expected,
+    ):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            # Workers running an older version record their part without
+            # marking the task id as done, which must not stall the chord.
+            request = tasks[1].request
+            jkey = self.b.get_key_for_group(request.group, '.j')
+            encoded = self.b.encode([1, request.id, states.SUCCESS, 20])
+            if ordered:
+                self.b.client.zadd(jkey, {encoded: request.group_index})
+            else:
+                self.b.client.rpush(jkey, encoded)
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with(expected)
 
 
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
