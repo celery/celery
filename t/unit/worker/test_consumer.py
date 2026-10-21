@@ -535,7 +535,7 @@ class test_Consumer(ConsumerTestCase):
 
         def bp_start(*args, **kwargs):
             transport_entries.append(c.hub.timer.call_repeatedly(10, Mock()))
-            raise socket.error('connection lost')
+            raise OSError('connection lost')
 
         c.blueprint.start.side_effect = bp_start
         c.start()
@@ -556,7 +556,7 @@ class test_Consumer(ConsumerTestCase):
             c.timer_entries_registered = {loop_entry}
             loop_entries.append(loop_entry)
             time_limits.append(c.hub.timer.call_after(60, Mock()))
-            raise socket.error('connection lost')
+            raise OSError('connection lost')
 
         c.blueprint.start.side_effect = bp_start
         c.start()
