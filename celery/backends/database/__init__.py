@@ -19,6 +19,7 @@ from .session import SessionManager
 try:
     from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
     from sqlalchemy.orm import defer
+    from sqlalchemy.orm.attributes import flag_modified
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
@@ -168,8 +169,17 @@ class DatabaseBackend(BaseBackend):
                 task.task_id = task_id
                 session.add(task)
                 session.flush()
+            elif task.status == states.SUCCESS:
+                # Like BaseKeyValueStoreBackend, ignore any write after a
+                # SUCCESS is saved, so a repeated run of the task doesn't
+                # replace its result.
+                return
 
             self._update_result(task, result, state, traceback=traceback, request=request)
+            # Write the state even if it looks unchanged. Another run may have
+            # saved a SUCCESS after we read the row, and that SUCCESS must not
+            # stay next to the result written here.
+            flag_modified(task, 'status')
             session.commit()
 
     def _update_result(self, task, result, state, traceback=None,
