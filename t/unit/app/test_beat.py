@@ -177,6 +177,15 @@ class mocked_schedule(schedule):
         return self._is_due, self._next_run_at
 
 
+class raising_schedule(mocked_schedule):
+
+    def __init__(self):
+        super().__init__(False, 1)
+
+    def is_due(self, last_run_at):
+        raise RuntimeError('cannot calculate next run')
+
+
 always_due = mocked_schedule(True, 1)
 always_pending = mocked_schedule(False, 1)
 always_pending_left_10_milliseconds = mocked_schedule(False, 0.01)
@@ -405,6 +414,35 @@ class test_Scheduler:
                       schedule=always_due)
         assert scheduler.tick() == 0
         error.assert_called()
+
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_in_populate_heap(self, error):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='broken', task='c.broken',
+                      schedule=raising_schedule())
+        scheduler.add(name='healthy', task='c.healthy', schedule=always_due)
+        assert scheduler.tick() == 0
+        assert [s['name'] for s in scheduler.sent] == ['c.healthy']
+        error.assert_called()
+        assert 'broken' in error.call_args[0]
+        broken_event = next(
+            e for e in scheduler._heap if e[2].name == 'broken')
+        assert broken_event[0] == pytest.approx(scheduler._when(
+            broken_event[2], scheduler.max_interval), abs=1)
+
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_when_due(self, error):
+        scheduler = mScheduler(app=self.app)
+        broken = scheduler.add(name='broken', task='c.broken',
+                               schedule=raising_schedule())
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(broken, 0) - 1, 5, broken)]
+        assert scheduler.tick() == scheduler.adjust(scheduler.max_interval)
+        assert not scheduler.sent
+        error.assert_called()
+        assert scheduler._heap[0][0] == pytest.approx(
+            scheduler._when(broken, scheduler.max_interval), abs=1)
 
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -1145,6 +1183,39 @@ class test_PersistentScheduler:
 
         s._create_schedule()
         s._store.__setitem__.assert_called_with("entries", {})
+
+    def test_create_schedule_invalid_stored_crontab(self):
+        """
+        Test that entries stored by an older version, containing a crontab
+        that is now rejected (e.g. the 30th of February), are recreated
+        """
+        stored = crontab(day_of_month=28, month_of_year=2)
+        stored._orig_day_of_month = '30'
+        pickled_entries = pickle.dumps({'invalid': stored})
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+
+        # self._store['entries'] will throw a ValueError when unpickled
+        s._store.__getitem__.side_effect = lambda key: pickle.loads(pickled_entries)
+
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_called_once()
+        assert isinstance(warning.call_args[0][1], ValueError)
+
+    def test_create_schedule_missing_entries_not_logged(self):
+        """
+        Test that creating the entries of a new schedule db doesn't log a warning
+        """
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+        s._store.__getitem__.side_effect = KeyError('entries')
+
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_not_called()
 
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,
