@@ -229,9 +229,14 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
         # Tasks may override their backend.
         backend = request.task.backend if request else state.app.backend
         try:
-            if backend.get_state(task_id) in states.READY_STATES:
+            task_state = backend.get_state(task_id)
+            if task_state in states.READY_STATES:
                 # The task already has a result (or the chord error handler
                 # failed it on its behalf); a revoke must not overwrite it.
+                continue
+            if task_state == states.STARTED:
+                # Another worker started the task, so leave its state to that
+                # worker.
                 continue
             backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:

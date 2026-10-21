@@ -1113,7 +1113,7 @@ class test_ControlPanel:
             self.app.backend.mark_as_revoked.assert_called_once_with(
                 'task-2', reason='revoked', store_result=True)
 
-    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES))
+    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES - {states.STARTED}))
     def test_revoke_marks_unfinished_task(self, unready_state):
         with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
             self.app.backend.get_state.return_value = unready_state
@@ -1123,6 +1123,20 @@ class test_ControlPanel:
 
             self.app.backend.mark_as_revoked.assert_called_once_with(
                 'task-1', reason='revoked', store_result=True)
+
+    @pytest.mark.parametrize('terminate', [False, True])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, terminate):
+        # Another worker runs the task: it keeps running without terminate,
+        # and with terminate, that worker stores REVOKED when it stops it.
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.return_value = states.STARTED
+            state = self.create_state()
+
+            with patch('celery.worker.control._find_requests_by_id', return_value=[]):
+                control._revoke(state, ['task-1'], terminate=terminate)
+
+            assert 'task-1' in worker_state.revoked
+            self.app.backend.mark_as_revoked.assert_not_called()
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_state_lookup_failure_defensive(self):
