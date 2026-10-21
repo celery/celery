@@ -822,11 +822,7 @@ class Backend:
                         self._sleep(sleep_amount)
                     else:
                         if fallback_exc:
-                            exc_kwargs = {}
-                            for key in ("task_id", "state"):
-                                if key in kwargs:
-                                    exc_kwargs[key] = kwargs[key]
-                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                            raise_with_context(fallback_exc(fallback_msg))
                         raise
                 else:
                     raise
