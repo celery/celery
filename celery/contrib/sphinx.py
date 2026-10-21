@@ -63,7 +63,7 @@ class TaskDocumenter(FunctionDocumenter):
 
     @classmethod
     def can_document_member(cls, member, membername, isattr, parent):
-        return isinstance(member, BaseTask) and getattr(member, '__wrapped__')
+        return isinstance(member, BaseTask) and member.__wrapped__
 
     def format_args(self):
         wrapped = getattr(self.object, '__wrapped__', None)
@@ -83,7 +83,7 @@ class TaskDocumenter(FunctionDocumenter):
         # decorator are instances living in the celery.local, we have to check
         # the wrapped function instead.
         wrapped = getattr(self.object, '__wrapped__', None)
-        if wrapped and getattr(wrapped, '__module__') == self.modname:
+        if wrapped and wrapped.__module__ == self.modname:
             return True
         return super().check_module()
 
@@ -102,7 +102,7 @@ def autodoc_skip_member_handler(app, what, name, obj, skip, options):
     # trips up the logic in sphinx.ext.autodoc that is supposed to
     # suppress repetition of class documentation in an instance of the
     # class. This overrides that behavior.
-    if isinstance(obj, BaseTask) and getattr(obj, '__wrapped__'):
+    if isinstance(obj, BaseTask) and obj.__wrapped__:
         if skip:
             return False
     return None
