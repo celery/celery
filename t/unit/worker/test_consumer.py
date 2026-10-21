@@ -11,6 +11,7 @@ from amqp import ChannelError
 from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
 from kombu.asynchronous import Hub
+from kombu.asynchronous.timer import Timer
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -514,6 +515,65 @@ class test_Consumer(ConsumerTestCase):
         with patch('celery.worker.consumer.consumer.sleep'):
             c.start()
         assert c.timer_entries_before_start is None
+
+    def _restart_once_with_real_timer(self, c):
+        c.app.conf['broker_connection_retry'] = True
+        c.app.conf['broker_connection_retry_on_startup'] = True
+        c.hub.timer = Timer()
+        # stops test from running indefinitely in the while loop
+        c.blueprint.restart.side_effect = self._closer(c)
+
+    def test_cancels_timer_entries_when_connection_fails_before_loop(self):
+        # The connection can fail after the transport registered its timer
+        # entries but before asynloop records them, e.g. in a later
+        # bootstep.  These entries must still be cancelled: otherwise they
+        # are part of the next attempt's snapshot and are never cancelled.
+        c = self.get_consumer()
+        self._restart_once_with_real_timer(c)
+        worker_entry = c.hub.timer.call_repeatedly(5, Mock())
+        transport_entries = []
+
+        def bp_start(*args, **kwargs):
+            transport_entries.append(c.hub.timer.call_repeatedly(10, Mock()))
+            raise socket.error('connection lost')
+
+        c.blueprint.start.side_effect = bp_start
+        c.start()
+        c.blueprint.restart.assert_called_once_with(c)
+        assert transport_entries[0].canceled
+        assert not worker_entry.canceled
+
+    def test_cancels_only_loop_entries_once_the_loop_started(self):
+        # Once asynloop has recorded the entries it registered for the
+        # connection, entries added while it ran (e.g. the time limits of
+        # tasks that keep running across the reconnect) must survive.
+        c = self.get_consumer()
+        self._restart_once_with_real_timer(c)
+        loop_entries, time_limits = [], []
+
+        def bp_start(*args, **kwargs):
+            loop_entry = c.hub.timer.call_repeatedly(10, Mock())
+            c.timer_entries_registered = {loop_entry}
+            loop_entries.append(loop_entry)
+            time_limits.append(c.hub.timer.call_after(60, Mock()))
+            raise socket.error('connection lost')
+
+        c.blueprint.start.side_effect = bp_start
+        c.start()
+        assert loop_entries[0].canceled
+        assert not time_limits[0].canceled
+
+    def test_timer_entries_registered_reset_before_each_attempt(self):
+        c = self.get_consumer()
+        c.timer_entries_registered = {Mock(name='previous_connection')}
+
+        def bp_start(*args, **kwargs):
+            assert c.timer_entries_registered is None
+            c.blueprint.state = CLOSE
+
+        c.blueprint.start.side_effect = bp_start
+        with patch('celery.worker.consumer.consumer.sleep'):
+            c.start()
 
     def test_do_not_restart_when_closed(self):
         c = self.get_consumer()

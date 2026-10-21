@@ -628,6 +628,36 @@ class test_asynloop:
             asynloop(*x.args)
         x.hub.timer.cancel.assert_called_once()
 
+    def test_hub_timer_cancel_error_does_not_skip_other_entries(self):
+        # A failure to cancel one entry must not leave the connection's
+        # other entries live.
+        x = self._error_after_first_poll(self._with_real_timer(X(self.app)))
+
+        def register_with_event_loop(hub):
+            x.loop_entries.append(hub.timer.call_repeatedly(10, Mock()))
+            x.loop_entries.append(hub.timer.call_repeatedly(20, Mock()))
+        x.obj.register_with_event_loop.side_effect = register_with_event_loop
+        cancel, attempted = x.hub.timer.cancel, []
+
+        def cancel_failing_once(entry):
+            attempted.append(entry)
+            if len(attempted) == 1:
+                raise RuntimeError('cancel failed')
+            return cancel(entry)
+        x.hub.timer.cancel = cancel_failing_once
+        with pytest.raises(socket.error):
+            asynloop(*x.args)
+        assert sorted(attempted, key=id) == sorted(x.loop_entries, key=id)
+        assert sum(entry.canceled for entry in x.loop_entries) == 1
+
+    def test_registered_timer_entries_recorded_on_consumer(self):
+        # The consumer cancels these if the connection fails before the
+        # loop is running (see Consumer._cancel_connection_timer_entries).
+        x = self._with_real_timer(X(self.app))
+        x.hub.on_tick.add(x.closer(mod=2))
+        asynloop(*x.args)
+        assert x.obj.timer_entries_registered == set(x.loop_entries)
+
     def test_hub_timer_entries_cancelled_even_when_reset_raises(self):
         # The timer entries must still be cancelled even if hub.reset()
         # raises.  The two cleanup steps are in separate try/except blocks so

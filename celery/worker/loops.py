@@ -51,6 +51,17 @@ def _timer_entries(timer):
     return {scheduled.entry for scheduled in timer.queue}
 
 
+def _cancel_timer_entries(timer, entries):
+    # Cancel each entry on its own, so one that fails to cancel does not
+    # leave the remaining entries of the connection live.
+    for entry in entries:
+        try:
+            timer.cancel(entry)
+        except Exception as exc:  # pylint: disable=broad-except
+            logger.exception(
+                'Error cancelling hub timer entry %r: %r', entry, exc)
+
+
 def asynloop(obj, connection, consumer, blueprint, hub, qos,
              heartbeat, clock, hbrate=2.0):
     """Non-blocking event loop."""
@@ -78,6 +89,9 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
     obj.register_with_event_loop(hub)
     registered_timer_entries = (
         _timer_entries(hub.timer) - timer_entries_before)
+    # The consumer cancels these if the connection fails before the loop
+    # below is running (see :meth:`Consumer.start`).
+    obj.timer_entries_registered = registered_timer_entries
     consumer.consume()
     obj.on_ready()
 
@@ -139,15 +153,8 @@ def asynloop(obj, connection, consumer, blueprint, hub, qos,
         # with the rest of the worker, and other entries on it, such as the
         # soft/hard time limits of tasks that keep running across the
         # reconnect, are not registered again (#10888).
-        # Use a separate try/except so this always runs even if hub.reset()
-        # raised above.
-        try:
-            for entry in registered_timer_entries:
-                hub.timer.cancel(entry)
-        except Exception as exc:  # pylint: disable=broad-except
-            logger.exception(
-                'Error cancelling hub timer entries after event loop: %r',
-                exc)
+        # This runs even if hub.reset() raised above.
+        _cancel_timer_entries(hub.timer, registered_timer_entries)
         raise
 
 
