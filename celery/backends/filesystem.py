@@ -96,7 +96,12 @@ class FilesystemBackend(KeyValueStoreBackend):
             yield self.get(key)
 
     def delete(self, key):
-        self.unlink(self._filename(key))
+        try:
+            self.unlink(self._filename(key))
+        except FileNotFoundError:
+            # KeyValueStoreBackend.delete is expected to be idempotent
+            # (e.g. AsyncResult.forget() on an expired or never-stored key).
+            pass
 
     def cleanup(self):
         """Delete expired meta-data."""

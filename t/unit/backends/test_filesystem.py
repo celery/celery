@@ -156,6 +156,17 @@ class test_FilesystemBackend:
         tb.forget(tid)
         assert len(os.listdir(self.directory)) == 0
 
+    def test_forget_missing_task_is_idempotent(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        # forget() must tolerate results that were never stored or have
+        # already been removed (e.g. by cleanup), like other
+        # KeyValueStoreBackend implementations do.
+        tb.forget(uuid())
+
+    def test_delete_missing_key_is_idempotent(self):
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        tb.delete(tb.get_key_for_task(uuid()))
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_pickleable(self):
         tb = FilesystemBackend(app=self.app, url=self.url, serializer='pickle')
