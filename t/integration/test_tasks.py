@@ -313,6 +313,21 @@ class test_tasks:
         assert result.failed() is False
         assert result.successful() is False
 
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, manager):
+        if TEST_BACKEND.startswith('rpc'):
+            raise pytest.skip('Requires a backend that stores task states.')
+        backend = manager.app.backend
+        started, not_started = str(uuid4()), str(uuid4())
+        # Play another worker that has started a task. The session worker
+        # gets the revoke but doesn't run the task, so without terminate it
+        # must leave the state to the other worker.
+        backend.store_result(started, {'hostname': 'other@host'}, celery.states.STARTED)
+
+        # The worker replies once it has handled the revoke
+        assert manager.app.control.revoke([started, not_started], reply=True, timeout=10)
+        assert backend.get_state(started) == celery.states.STARTED
+        assert backend.get_state(not_started) == celery.states.REVOKED
+
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
         target_monitoring_id = uuid4().hex
