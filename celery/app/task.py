@@ -708,8 +708,6 @@ class Task:
             args, kwargs = self._dump_pydantic_arguments(args, kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
