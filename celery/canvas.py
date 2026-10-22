@@ -2820,3 +2820,18 @@ def maybe_signature(d, app=None, clone=False):
 
 
 maybe_subtask = maybe_signature  # XXX compat
+
+
+def _represent_signature(dumper, sig):
+    # Write a signature to YAML as the same plain dict that JSON uses.
+    return dumper.represent_dict(sig.__json__())
+
+
+try:
+    import yaml
+except ImportError:  # pragma: no cover
+    pass  # PyYAML is optional; without it there is no YAML serializer.
+else:
+    # yaml.safe_dump only knows plain dicts, and Signature subclasses dict.
+    # A multi representer also covers chain, group, chord and other subclasses.
+    yaml.SafeDumper.add_multi_representer(Signature, _represent_signature)
