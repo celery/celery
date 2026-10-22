@@ -732,6 +732,13 @@ worker.
     what you're doing. See :setting:`task_retry_on_worker_lost` for a way
     to limit how many times a task is sent again.
 
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps killing its
+    worker can disappear this way without any log message.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
 .. setting:: task_retry_on_worker_lost
 
 ``task_retry_on_worker_lost``

@@ -238,6 +238,33 @@ we can no longer increase the prefetch count and fetch another task from the que
 In order to properly schedule ETA/Countdown tasks we automatically detect if quorum queues are used
 and in case they are, Celery automatically enables :ref:`Native Delayed Delivery <native-delayed-delivery>`.
 
+.. _quorum-queues-delivery-limit:
+
+Delivery Limit
+--------------
+
+Starting with RabbitMQ 4.0, quorum queues have a default delivery limit of 20.
+When a message is redelivered more times than that, RabbitMQ drops it, or
+dead-letters it if the queue has a dead letter exchange configured.
+
+This matters when :setting:`task_acks_late` and :setting:`task_reject_on_worker_lost`
+are enabled. If a task keeps killing its worker process (for example it is
+OOM-killed every time), the message is requeued on each crash. After the limit
+is reached the task is silently dropped. Its state stays ``PENDING`` and the
+worker logs nothing about it.
+
+To keep control over this:
+
+- Change the limit with the ``x-delivery-limit`` queue argument or a
+  ``delivery-limit`` policy.
+- Configure a dead letter exchange so dropped tasks are kept instead of lost.
+- Use :setting:`task_retry_on_worker_lost` to cap how many times Celery runs
+  the task again after a worker loss.
+
+See RabbitMQ's `poison message handling`_ docs for details.
+
+.. _`poison message handling`: https://www.rabbitmq.com/docs/quorum-queues#poison-message-handling
+
 .. _native-delayed-delivery:
 
 Native Delayed Delivery
