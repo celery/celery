@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 from dateutil import tz as dateutil_tz
+from freezegun import freeze_time
 
 from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
@@ -63,6 +64,38 @@ class test_solar:
         self.s.cal = Mock(name='cal')
         self.s.cal.next_rising().datetime.return_value = datetime.now(timezone.utc)
         self.s.remaining_estimate(datetime.now(timezone.utc))
+
+    @pytest.mark.parametrize('tz', [
+        pytest.param(ZoneInfo('America/New_York'), id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz('America/New_York'), id='dateutil'),
+        pytest.param(timezone.utc, id='utc-control'),
+    ])
+    def test_remaining_estimate_spring_forward(self, tz):
+        self.app.timezone = tz
+        now = datetime.fromisoformat('2026-03-08T01:30:00-05:00')
+        last_run_at = datetime.fromisoformat('2026-03-07T03:00:00-05:00')
+        s = solar('sunrise', 0, -15, app=self.app)
+
+        # Sunrise here is around 03:07-04:00 in New York
+        with freeze_time(now):
+            remaining = s.remaining_estimate(last_run_at)
+        assert timedelta(minutes=37) <= remaining < timedelta(minutes=38)
+
+    @pytest.mark.parametrize('tz', [
+        pytest.param(ZoneInfo('America/New_York'), id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz('America/New_York'), id='dateutil'),
+        pytest.param(timezone.utc, id='utc-control'),
+    ])
+    def test_remaining_estimate_fall_back(self, tz):
+        self.app.timezone = tz
+        now = datetime.fromisoformat('2026-11-01T01:45:00-04:00')
+        last_run_at = datetime.fromisoformat('2026-10-31T03:00:00-04:00')
+        s = solar('sunrise', 0, -15, app=self.app)
+
+        # Sunrise here is in the second 01:40, at -05:00 (06:40 UTC).
+        with freeze_time(now):
+            remaining = s.remaining_estimate(last_run_at)
+        assert timedelta(minutes=55) <= remaining < timedelta(minutes=56)
 
     def test_coordinates(self):
         with pytest.raises(ValueError):

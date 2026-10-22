@@ -15,7 +15,7 @@ import pytest
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
-from celery.schedules import crontab, schedule
+from celery.schedules import crontab, schedule, solar
 from celery.utils.objects import Bunch
 
 if sys.version_info >= (3, 9):
@@ -483,6 +483,50 @@ class test_Scheduler:
         # ensure those 0.2 seconds on now_ts don't get dropped
         expected_time = now_ts + 0.5 - 0.010
         assert scheduler._heap[0].time == expected_time
+
+    @pytest.mark.parametrize('now,last_run_at,after_sunrise', [
+        pytest.param(
+            datetime.fromisoformat('2026-03-08T01:30:00-05:00'),
+            datetime.fromisoformat('2026-03-07T03:00:00-05:00'),
+            datetime.fromisoformat('2026-03-08T03:08:00-04:00'),
+            id='spring-forward',
+        ),
+        pytest.param(
+            datetime.fromisoformat('2026-11-01T01:45:00-04:00'),
+            datetime.fromisoformat('2026-10-31T03:00:00-04:00'),
+            datetime.fromisoformat('2026-11-01T01:41:00-05:00'),
+            id='fall-back',
+        ),
+    ])
+    def test_tick_solar_across_dst(self, now, last_run_at, after_sunrise):
+        pytest.importorskip('ephem')
+        tz = self.app.timezone = ZoneInfo('America/New_York')
+        now_utc = now.astimezone(timezone.utc)
+        s = solar('sunrise', 0, -15, app=self.app, nowfun=lambda: now_utc.astimezone(tz))
+        scheduler = mScheduler(app=self.app, lazy=True)
+        entry = scheduler.add(
+            name='sunrise', task='t.fake.task', schedule=s,
+            last_run_at=last_run_at,
+        )
+
+        delays = []
+        for _ in range(5):
+            delays.append(scheduler.tick())
+            now_utc += timedelta(seconds=1)
+
+        assert scheduler.sent == []
+        assert all(delay > 0 for delay in delays)
+
+        now_utc = after_sunrise.astimezone(timezone.utc)
+        scheduler.tick()
+        assert [sent['name'] for sent in scheduler.sent] == ['t.fake.task']
+        reserved = scheduler.schedule[entry.name]
+        assert reserved.total_run_count == 1
+        assert reserved.last_run_at.astimezone(timezone.utc) == now_utc
+
+        now_utc += timedelta(seconds=1)
+        assert scheduler.tick() > 0
+        assert len(scheduler.sent) == 1
 
     def test_tick_daily_relative_spring_forward(self, monkeypatch):
         self.app.conf.timezone = 'America/New_York'
