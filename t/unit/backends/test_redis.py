@@ -2598,6 +2598,69 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             callback.delay.assert_called_once_with(expected)
 
 
+class test_RedisBackend_chord_part_script(basetest_RedisBackend):
+    # The other chord tests run a Python copy of the chord part script.
+    # These run the Lua script itself, with fakeredis.
+
+    @pytest.fixture(autouse=True)
+    def fake_redis(self):
+        self.FakeRedis = pytest.importorskip('fakeredis').FakeRedis
+        pytest.importorskip('lupa')
+        self.b.client = self.FakeRedis()
+        with patch('celery.result.GroupResult.restore', return_value=None):
+            yield
+
+    @pytest.mark.parametrize(['ordered', 'indexed', 'expected'], [
+        (True, True, [10, 20, 30]),
+        (False, True, [10, 20, 30]),
+        # Without an index, the parts have the same score and sort by task id
+        (True, False, [30, 20, 10]),
+        (False, False, [10, 20, 30]),
+    ])
+    def test_on_chord_part_return__duplicate_part(self, ordered, indexed, expected):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            for i, task in enumerate(tasks):
+                # Task ids that sort in the reverse order of the header
+                task.request.id = f'task-{2 - i}'
+                if not indexed:
+                    task.request.group_index = None
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 99)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with(expected)
+            # A copy of the last part, after the chord completed
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once()
+
+    def test_on_chord_part_return__same_task_id_at_two_indexes(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            tasks[1].request.id = tasks[0].request.id
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    def test_on_chord_part_return__expires(self):
+        self.app.conf.result_chord_expires = 600
+        self.b = self.Backend(app=self.app)
+        self.b.client = client = self.FakeRedis()
+
+        with self.chord_context(2) as (tasks, request, _):
+            gkey = self.b.get_key_for_group(request.group)
+            client.set(gkey, 'a saved GroupResult')
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            for suffix in ('.j', '.s', '.d'):
+                key = self.b.get_key_for_group(request.group, suffix)
+                assert client.ttl(key) == 600
+            # The group key is kept for at least result_expires (one day)
+            assert client.ttl(gkey) == 86400
+
+
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
     @pytest.fixture(scope="function", autouse=True)
     def complex_header_result(self):
