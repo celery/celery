@@ -484,8 +484,9 @@ existing keyword arguments, but with new arguments taking precedence:
 
 .. code-block:: pycon
 
+    # merges the keyword arguments: add(2, y=4)
     >>> s3 = add.s(2, y=2)
-    >>> res = s3.delay(y=4)   # y is now 4: add(2, 4)
+    >>> res = s3.delay(y=4)
     >>> res.get()
     6
 
