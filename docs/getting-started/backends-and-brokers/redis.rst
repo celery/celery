@@ -103,7 +103,8 @@ For a complete list of options supported by the Redis result backend, see
 
 Chords save the results of their header tasks with a Lua script. If you
 limit the commands the Redis user can run, also allow ``EVALSHA``,
-``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``.
+``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. A Redis-compatible service or
+proxy has to support ``EVALSHA`` and ``SCRIPT LOAD`` too.
 
 If you are using Sentinel, you should specify the master_name using the :setting:`result_backend_transport_options` setting:
 
