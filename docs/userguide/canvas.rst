@@ -1065,6 +1065,10 @@ Example decorated task:
     def another_task(project):
         do_something()
 
+A chord whose header tasks take longer than :setting:`result_expires` can
+lose its bookkeeping, and its body then never runs. Set
+:setting:`result_chord_expires` for chords that run that long.
+
 By default the synchronization step is implemented by having a recurring task
 poll the completion of the group every second, calling the signature when
 ready.

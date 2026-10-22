@@ -141,9 +141,31 @@ def xsum(nums):
 
 
 @shared_task(bind=True)
+def sum_and_record(self, values, redis_key):
+    """Sum the preceding group's results and record this execution."""
+    result = sum(values)
+    with get_redis_connection() as connection:
+        connection.rpush(redis_key, self.request.id)
+    return result
+
+
+@shared_task(bind=True)
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))
+
+
+@shared_task(bind=True)
+def record_replaced_task_nesting(self, replacements, nesting=None):
+    """Record the nesting level across successive task replacements."""
+    if nesting is None:
+        nesting = []
+    nesting.append(self.request.replaced_task_nesting)
+    if replacements:
+        replacement = record_replaced_task_nesting.s(replacements - 1, nesting)
+        # Keep the caller's result queue when using the RPC backend.
+        return self.replace(replacement.set(reply_to=self.request.reply_to))
+    return nesting
 
 
 @shared_task(bind=True)
@@ -504,6 +526,16 @@ def errback_old_style(request_id):
 def errback_new_style(request, exc, tb):
     redis_count(request.id)
     return request.id
+
+
+@shared_task
+def errback_old_style_with_args(request_id, label):
+    redis_echo(label, redis_key=request_id)
+
+
+@shared_task
+def errback_new_style_with_args(request, exc, tb, label):
+    redis_echo(label, redis_key=request.id)
 
 
 @shared_task
