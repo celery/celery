@@ -169,6 +169,12 @@ def record_replaced_task_nesting(self, replacements, nesting=None):
 
 
 @shared_task(bind=True)
+def add_replaced_with_chain(self, x, y):
+    """Add two numbers (via a chain of the add and identity tasks)."""
+    raise self.replace(chain(add.s(x, y), identity.s()))
+
+
+@shared_task(bind=True)
 def replace_with_chain(self, *args, link_msg=None):
     c = chain(identity.s(*args), identity.s())
     link_sig = redis_echo.s()
