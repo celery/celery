@@ -929,6 +929,57 @@ def mongo_backend_factory(app):
     yield create_mongo_backend
 
 
+def _document_matches(doc, filter):
+    """Match a stored document against the subset of Mongo query syntax used.
+
+    Enough of it to run the upserts the backend issues: equality, and ``$ne``
+    (MongoDB also matches ``$ne`` when the field is missing).
+    """
+    for key, condition in filter.items():
+        if isinstance(condition, dict) and '$ne' in condition:
+            if doc.get(key) == condition['$ne']:
+                return False
+        elif doc.get(key) != condition:
+            return False
+    return True
+
+
+@pytest.fixture(scope="function")
+def fake_mongo_collection():
+    """Return an in-memory stand-in for a pymongo Collection.
+
+    The values go through BSON on the way in and out, so what a write puts in
+    is what a read gets back, which is what makes a store-then-retrieve
+    assertion meaningful here.
+    """
+    bson = pytest.importorskip("bson")
+
+    class FakeMongoCollection:
+
+        def __init__(self):
+            self.docs = {}
+
+        def replace_one(self, filter, replacement, upsert=False):
+            matched = [key for key, doc in self.docs.items()
+                       if _document_matches(bson.decode(doc), filter)]
+            if matched:
+                for key in matched:
+                    self.docs[key] = bson.encode(replacement)
+                return
+            # MongoDB keeps ``_id`` unique, so an upsert that matched nothing
+            # inserts only when the ``_id`` the filter names is still free.
+            if upsert and filter['_id'] not in self.docs:
+                self.docs[filter['_id']] = bson.encode(replacement)
+
+        def find_one(self, filter, *args, **kwargs):
+            for doc in self.docs.values():
+                if _document_matches(bson.decode(doc), filter):
+                    return bson.decode(doc)
+            return None
+
+    yield FakeMongoCollection()
+
+
 @pytest.mark.parametrize("serializer,encoded_into", [
     ('bson', int),
     ('json', str),
@@ -1009,21 +1060,9 @@ SUCCESS_RESULT_TEST_DATA = [
 class test_MongoBackend_store_get_result:
 
     @pytest.fixture(scope="function", autouse=True)
-    def fake_mongo_collection_patch(self, monkeypatch):
+    def fake_mongo_collection_patch(self, monkeypatch, fake_mongo_collection):
         """A fake collection with serialization experience close to MongoDB."""
-        bson = pytest.importorskip("bson")
-
-        class FakeMongoCollection:
-            def __init__(self):
-                self.data = {}
-
-            def replace_one(self, task_id, meta, upsert=True):
-                self.data[task_id['_id']] = bson.encode(meta)
-
-            def find_one(self, task_id):
-                return bson.decode(self.data[task_id['_id']])
-
-        monkeypatch.setattr(MongoBackend, "collection", FakeMongoCollection())
+        monkeypatch.setattr(MongoBackend, "collection", fake_mongo_collection)
 
     @pytest.mark.parametrize("serializer,result_type,result", [
         (s, type(i['result']), i['result']) for i in SUCCESS_RESULT_TEST_DATA
@@ -1060,3 +1099,33 @@ class test_MongoBackend_store_get_result:
         recovered = backend.get_result(TASK_ID)
         assert isinstance(recovered, type(exception))
         assert recovered.args == exception.args
+
+    @pytest.mark.parametrize('state, result', [
+        (states.STARTED, {'pid': 1}),
+        (states.FAILURE, KeyError('foo')),
+        (states.SUCCESS, 43),
+    ])
+    def test_store_result_after_success_is_ignored(self, mongo_backend_factory,
+                                                   state, result):
+        # e.g. the task runs again after its worker was lost before the ack.
+        # A later SUCCESS still wins, as it does in the database backend.
+        backend = mongo_backend_factory(serializer='json')
+        backend.mark_as_done(TASK_ID, 42)
+        backend.store_result(TASK_ID, result, state)
+        meta = backend.get_task_meta(TASK_ID, cache=False)
+        assert meta['status'] == states.SUCCESS
+        expected = 43 if state == states.SUCCESS else 42
+        assert meta['result'] == expected
+
+    def test_store_result_before_success_is_saved(self, mongo_backend_factory):
+        backend = mongo_backend_factory(serializer='json')
+        backend.mark_as_started(TASK_ID)
+        backend.mark_as_retry(TASK_ID, KeyError('foo'))
+        backend.mark_as_failure(TASK_ID, KeyError('foo'))
+        assert backend.get_task_meta(TASK_ID, cache=False)['status'] == \
+            states.FAILURE
+
+        backend.mark_as_done(TASK_ID, 42)
+        meta = backend.get_task_meta(TASK_ID, cache=False)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42

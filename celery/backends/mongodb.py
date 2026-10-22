@@ -192,8 +192,18 @@ class MongoBackend(BaseBackend):
         # Add the _id for mongodb
         meta['_id'] = task_id
 
+        # Keep the first SUCCESS, like BaseKeyValueStoreBackend: a repeated
+        # run of the task, e.g. one redelivered after the worker that ran it
+        # was lost before it could ack, must not replace a stored success
+        # with its own result.  Left to the server so the check is atomic
+        # rather than a read followed by a write, which a concurrent run can
+        # slip between.
+        query = {'_id': task_id}
+        if state != states.SUCCESS:
+            query['status'] = {'$ne': states.SUCCESS}
+
         try:
-            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
+            self.collection.replace_one(query, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc) from exc
 
