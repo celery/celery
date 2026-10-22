@@ -234,9 +234,9 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
                 # The task already has a result (or the chord error handler
                 # failed it on its behalf); a revoke must not overwrite it.
                 continue
-            if task_state == states.STARTED:
-                # Another worker started the task, so leave its state to that
-                # worker.
+            if task_state not in (states.PENDING, states.RECEIVED, states.RETRY, states.REJECTED):
+                # Another worker started the task (STARTED, or a custom state
+                # it set), so leave its state to that worker.
                 continue
             backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:

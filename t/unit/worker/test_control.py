@@ -702,6 +702,7 @@ class test_ControlPanel:
         request = Mock()
         request.id = tid = uuid()
         task_backend = Mock()
+        task_backend.get_state.return_value = states.PENDING
         request.task.backend = task_backend
         state = self.create_state()
         state.consumer = Mock()
@@ -1087,6 +1088,7 @@ class test_ControlPanel:
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):
+        self.app.backend.get_state.return_value = states.PENDING
         state = self.create_state()
         task_ids = ['task-1', 'task-2']
 
@@ -1125,11 +1127,12 @@ class test_ControlPanel:
                 'task-1', reason='revoked', store_result=True)
 
     @pytest.mark.parametrize('terminate', [False, True])
-    def test_revoke_keeps_state_of_task_started_elsewhere(self, terminate):
+    @pytest.mark.parametrize('task_state', [states.STARTED, 'PROGRESS'])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, task_state, terminate):
         # Another worker runs the task: it keeps running without terminate,
         # and with terminate, that worker stores REVOKED when it stops it.
         with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
-            self.app.backend.get_state.return_value = states.STARTED
+            self.app.backend.get_state.return_value = task_state
             state = self.create_state()
 
             with patch('celery.worker.control._find_requests_by_id', return_value=[]):
@@ -1158,6 +1161,7 @@ class test_ControlPanel:
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_terminate_backend_update(self):
+        self.app.backend.get_state.return_value = states.PENDING
         state = self.create_state()
 
         with patch('celery.worker.control._find_requests_by_id', return_value=[]):
