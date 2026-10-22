@@ -148,6 +148,7 @@ class test_saferepr:
             len('[1, 2, 3]') - 1,
             '[1, 2, 3..., ...',
         ),
+        (12345, len('12345'), '12345...'),
     ])
     def test_non_flat_values_use_streaming_path(
         self, value, maxlen, expected, monkeypatch,

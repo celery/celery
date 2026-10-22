@@ -121,6 +121,10 @@ def _fast_saferepr(o, maxlen):
         res = _fast_scalar(o)
         if res is None:
             return None
+        if t is not str and maxlen is not None and len(res) >= maxlen:
+            # The streaming path truncates a bare non-str scalar whose
+            # repr is exactly maxlen long, so leave that case to it.
+            return None
     return res if maxlen is None or len(res) <= maxlen else None
 
 
