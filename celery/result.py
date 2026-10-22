@@ -606,7 +606,17 @@ class ResultSet(ResultBase):
         if result not in self.results:
             self.results.append(result)
             if self._on_full:
-                self._on_full.add(result)
+                if self._on_full.p.ready:
+                    # The barrier has fired, so it won't wait for new
+                    # results. Wait for this one with a new barrier, which
+                    # finalize() fulfills at once if the result is ready.
+                    self.on_ready = promise(args=(proxy(self),))
+                    self._on_full = barrier()
+                    self._on_full.then(promise(self._on_ready, weak=True))
+                    self._on_full.add(result)
+                    self._on_full.finalize()
+                else:
+                    self._on_full.add(result)
 
     def _on_ready(self):
         if self.backend.is_async:
