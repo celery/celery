@@ -139,10 +139,14 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
-    def _query_task(self, session, task_id):
+    def _query_task(self, session, task_id, for_update=False):
         """Query task by id, falling back to deferring missing columns from database."""
+        query = session.query(self.task_cls)
+        if for_update:
+            # Lock the row, and read it again even if the session has it.
+            query = query.with_for_update().populate_existing()
         try:
-            tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
+            tasks = list(query.filter(self.task_cls.task_id == task_id))
             return tasks and tasks[0]
         except DatabaseError as exc:
             exc_str = str(exc).lower()
@@ -152,7 +156,7 @@ class DatabaseBackend(BaseBackend):
             if 'stamps' in exc_str and hasattr(self.task_cls, 'stamps'):
                 defers.append(defer(self.task_cls.stamps))
             if defers:
-                tasks = list(session.query(self.task_cls).options(*defers).filter(
+                tasks = list(query.options(*defers).filter(
                     self.task_cls.task_id == task_id
                 ))
                 return tasks and tasks[0]
@@ -164,6 +168,12 @@ class DatabaseBackend(BaseBackend):
         session = self.ResultSession()
         with session_cleanup(session):
             task = self._query_task(session, task_id)
+            if task:
+                # Lock the row and read it again, so a run that stores SUCCESS
+                # at the same time can't be written over. Only an existing row
+                # is locked: on MySQL, locking a missing row takes a gap lock,
+                # which deadlocks concurrent inserts.
+                task = self._query_task(session, task_id, for_update=True)
             if not task:
                 task = self.task_cls(task_id)
                 task.task_id = task_id
@@ -176,9 +186,9 @@ class DatabaseBackend(BaseBackend):
                 return
 
             self._update_result(task, result, state, traceback=traceback, request=request)
-            # Write the state even if it looks unchanged. Another run may have
-            # saved a SUCCESS after we read the row, and that SUCCESS must not
-            # stay next to the result written here.
+            # Write the state even if it looks unchanged. Without row locks, as
+            # on SQLite, another run may have saved a SUCCESS after we read the
+            # row, and that SUCCESS must not stay next to the result written here.
             flag_modified(task, 'status')
             session.commit()
 

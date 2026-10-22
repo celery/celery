@@ -820,21 +820,36 @@ class test_DatabaseBackend:
         assert meta['status'] == states.SUCCESS
         assert meta['result'] == 42
 
-    def test_store_result_racing_a_success_writes_its_state(self):
+    def start_while_other_run_succeeds(self, tb, tid, on_locked_read):
+        # A second run starts just as the first one saves its SUCCESS
+        query_task = tb._query_task
+
+        def query_task_then_other_run_succeeds(session, task_id, for_update=False):
+            task = query_task(session, task_id, for_update=for_update)
+            if for_update == on_locked_read:
+                tb._query_task = query_task
+                tb.mark_as_done(task_id, 42)
+            return task
+
+        tb._query_task = query_task_then_other_run_succeeds
+        tb.mark_as_started(tid, pid=2)
+
+    def test_store_result_racing_a_success_keeps_it(self):
         tb = DatabaseBackend(self.uri, app=self.app)
         tid = uuid()
         tb.mark_as_started(tid, pid=1)
-        query_task = tb._query_task
+        # The SUCCESS is saved before the second run locks the row
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=False)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert (meta['status'], meta['result']) == (states.SUCCESS, 42)
 
-        def query_task_then_other_run_succeeds(session, task_id):
-            task = query_task(session, task_id)
-            tb._query_task = query_task
-            tb.mark_as_done(task_id, 42)
-            return task
-
-        # A second run starts just as the first one saves its SUCCESS
-        tb._query_task = query_task_then_other_run_succeeds
-        tb.mark_as_started(tid, pid=2)
+    def test_store_result_racing_a_success_without_row_locks(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid, pid=1)
+        # SQLite has no row locks, so the SUCCESS can be saved even after the
+        # second run read the row. The row then has that run's state.
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=True)
         meta = tb.get_task_meta(tid, cache=False)
         assert (meta['status'], meta['result']) == (states.STARTED, {'pid': 2})
         tb.mark_as_done(tid, 43)
