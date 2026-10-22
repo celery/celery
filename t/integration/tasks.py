@@ -156,6 +156,17 @@ def add_replaced(self, x, y):
 
 
 @shared_task(bind=True)
+def record_replaced_task_nesting(self, replacements, nesting=None):
+    """Record the nesting level across successive task replacements."""
+    if nesting is None:
+        nesting = []
+    nesting.append(self.request.replaced_task_nesting)
+    if replacements:
+        return self.replace(record_replaced_task_nesting.s(replacements - 1, nesting))
+    return nesting
+
+
+@shared_task(bind=True)
 def replace_with_chain(self, *args, link_msg=None):
     c = chain(identity.s(*args), identity.s())
     link_sig = redis_echo.s()
