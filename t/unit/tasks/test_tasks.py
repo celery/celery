@@ -1284,6 +1284,19 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_chain_links_callback_once(self):
+        c = chain([self.mytask.si(), self.mytask.si()], app=self.app)
+        callback = self.mytask.si()
+        self.mytask.request.id = 'id'
+        self.mytask.request.callbacks = [callback]
+        with patch.object(self.app, 'send_task') as send_task:
+            with pytest.raises(Ignore):
+                self.mytask.replace(c)
+        # The first task is sent with the rest of the chain, and the
+        # callback must be linked to the last task only once.
+        (last_task,) = send_task.call_args.kwargs['chain']
+        assert last_task.options['link'] == [callback]
+
     def test_replace_chain_ending_in_group(self):
         c = chain(
             [
@@ -1960,6 +1973,14 @@ class test_apply_async(TasksCase):
                 *expected_args,
                 **expected_kwargs
             )
+
+    def test_task_with_zero_priority(self):
+        self.mytask.priority = 0
+
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async()
+
+        assert send_task.call_args.kwargs['priority'] == 0
 
     def test_apply_async_does_not_mutate_cached_execution_options(self):
         """apply_async() must not mutate cached execution options."""
