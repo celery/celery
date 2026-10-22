@@ -17,6 +17,7 @@ from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
 from celery.events.state import HEARTBEAT_DRIFT_MAX
 from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.platforms import EX_OK
 from celery.utils.collections import LimitedSet
 from celery.utils.quorum_queues import detect_quorum_queues
 from celery.utils.time import utcoffset
@@ -27,6 +28,7 @@ from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COL
 from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
+from celery.worker.consumer.idle import IdleShutdown
 from celery.worker.consumer.mingle import Mingle
 from celery.worker.consumer.tasks import Tasks
 from celery.worker.state import active_requests, successful_requests
@@ -1562,6 +1564,78 @@ class test_Consumer_CallSoonAck(ConsumerTestCase):
         c.call_soon_ack(Mock())
 
         assert len(c._pending_operations) == 0
+
+
+class test_IdleShutdown:
+
+    def teardown_method(self):
+        worker_state.should_stop = None
+        worker_state.reset_state()
+
+    def test_disabled_by_default(self):
+        c = Mock(app=self.app)
+        assert not IdleShutdown(c).enabled
+
+    def test_max_idle_option_overrides_setting(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c, max_idle=5)
+        assert step.enabled
+        assert step.max_idle == 5
+
+    def test_shuts_down_after_max_idle(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c)
+        assert step.enabled
+        with patch('celery.worker.consumer.idle.monotonic', return_value=100.0):
+            step.start(c)
+        c.timer.call_repeatedly.assert_called_once_with(1.0, step.check)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=109.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=110.0):
+            step.check()
+        assert worker_state.should_stop == EX_OK
+        c.timer.call_repeatedly.return_value.cancel.assert_called_once_with()
+
+    def test_busy_worker_is_not_idle(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=100.0):
+            step.start(c)
+        request = Mock(id='task-1')
+        worker_state.task_reserved(request)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=200.0):
+            step.check()
+        assert worker_state.should_stop is None
+        worker_state.task_ready(request)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=209.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=210.0):
+            step.check()
+        assert worker_state.should_stop == EX_OK
+
+    def test_short_task_between_checks_is_not_idle(self):
+        self.app.conf.worker_max_idle = 10
+        c = Mock(app=self.app)
+        step = IdleShutdown(c)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=100.0):
+            step.start(c)
+        request = Mock(id='task-2')
+        worker_state.task_accepted(request)
+        worker_state.task_ready(request)
+        with patch('celery.worker.consumer.idle.monotonic', return_value=112.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=121.0):
+            step.check()
+        assert worker_state.should_stop is None
+        with patch('celery.worker.consumer.idle.monotonic', return_value=122.0):
+            step.check()
+        assert worker_state.should_stop == EX_OK
 
 
 class test_Heart:
