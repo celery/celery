@@ -1968,6 +1968,14 @@ class test_App:
         finally:
             _appbase.register_after_fork = prev
 
+    @patch('celery.app.base.register_after_fork')
+    def test_ensure_after_fork__registers_once(self, register_after_fork):
+        self.app._after_fork_registered = False
+        self.app._ensure_after_fork()
+        self.app._ensure_after_fork()
+        register_after_fork.assert_called_once_with(
+            self.app, _appbase._after_fork_cleanup_app)
+
     def test_canvas(self):
         assert self.app._canvas.Signature
 
