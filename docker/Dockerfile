@@ -26,7 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     libev-dev \
     libffi-dev \
-    libmemcached-dev \
     libssl-dev \
     pkg-config \
     zlib1g-dev \

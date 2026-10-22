@@ -303,6 +303,14 @@ class Scheduler:
     def is_due(self, entry):
         return entry.is_due()
 
+    def _is_due_failed(self, entry):
+        # One entry whose next run can't be calculated must not stop beat
+        # (and every other entry with it), so log it and try again later.
+        error('beat: Cannot calculate the next run of %r, '
+              'trying again in %s.', entry.name,
+              humanize_seconds(self.max_interval), exc_info=True)
+        return False, self.max_interval
+
     def _when(self, entry, next_time_to_run, mktime=timegm):
         """Return a utc timestamp, make sure heapq in correct order."""
         adjust = self.adjust
@@ -318,7 +326,10 @@ class Scheduler:
         priority = 5
         self._heap = []
         for entry in self.schedule.values():
-            is_due, next_call_delay = entry.is_due()
+            try:
+                is_due, next_call_delay = entry.is_due()
+            except Exception:  # pylint: disable=broad-except
+                is_due, next_call_delay = self._is_due_failed(entry)
             self._heap.append(event_t(
                 self._when(
                     entry,
@@ -357,7 +368,10 @@ class Scheduler:
         if event[0] > now:
             return min(event[0] - now, max_interval)
 
-        is_due, next_time_to_run = self.is_due(entry)
+        try:
+            is_due, next_time_to_run = self.is_due(entry)
+        except Exception:  # pylint: disable=broad-except
+            is_due, next_time_to_run = self._is_due_failed(entry)
         if is_due:
             verify = heappop(H)
             if verify is event:
@@ -462,7 +476,28 @@ class Scheduler:
         pass
 
     def close(self):
-        self.sync()
+        """Sync and release publishing resources; subclasses close storage.
+
+        The base publishing properties are recreated lazily on next access.
+        Resuming a subclass may require reopening storage or reacquiring locks.
+        """
+        sync_failed = True
+        try:
+            self.sync()
+            sync_failed = False
+        finally:
+            # Inspect the cache so closing an unused scheduler cannot open
+            # a broker connection. Releasing it also closes its channels.
+            self.__dict__.pop('producer', None)
+            connection = self.__dict__.pop('connection', None)
+            if connection is not None:
+                try:
+                    ignore_errors(connection, connection.release)
+                except Exception:
+                    if not sync_failed:
+                        raise
+                    error('beat: Connection cleanup failed after sync error',
+                          exc_info=True)
 
     def add(self, **kwargs):
         entry = self.Entry(app=self.app, **kwargs)
@@ -596,8 +631,13 @@ class PersistentScheduler(Scheduler):
         for _ in (1, 2):
             try:
                 self._store['entries']
-            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError):
-                # new schedule db
+            except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError,
+                    ValueError) as exc:
+                # new schedule db, or the stored entries can't be loaded
+                # anymore (e.g. a crontab that is now invalid).
+                if isinstance(exc, ValueError):
+                    warning('DB Reset: Cannot load the stored entries, '
+                            'recreating them from beat_schedule: %r', exc)
                 try:
                     self._store['entries'] = {}
                 except (KeyError, UnicodeDecodeError, TypeError, UnpicklingError) + dbm.error as exc:
@@ -627,8 +667,19 @@ class PersistentScheduler(Scheduler):
             self._store.sync()
 
     def close(self):
-        self.sync()
-        self._store.close()
+        close_failed = True
+        try:
+            super().close()
+            close_failed = False
+        finally:
+            if self._store is not None:
+                try:
+                    self._store.close()
+                except Exception:
+                    if not close_failed:
+                        raise
+                    error('beat: Store cleanup failed after scheduler error',
+                          exc_info=True)
 
     @property
     def info(self):
