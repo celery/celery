@@ -484,8 +484,10 @@ existing keyword arguments, but with new arguments taking precedence:
 
 .. code-block:: pycon
 
-    >>> s3 = add.s(2, 2, debug=True)
-    >>> s3.delay(debug=False)   # debug is now False.
+    >>> s3 = add.s(2, y=2)
+    >>> res = s3.delay(y=4)   # y is now 4: add(2, 4)
+    >>> res.get()
+    6
 
 As stated, signatures support the calling API: meaning that
 
