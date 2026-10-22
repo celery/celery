@@ -1431,8 +1431,9 @@ class test_result_set:
         assert_ping(manager)
 
         rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
-        while not rs.ready():
-            sleep(0.1)
+        # Collecting the results fires the set's barrier, so add() then
+        # appends to a set whose results are all ready.
+        assert rs.get(timeout=TIMEOUT) == [2, 4]
         rs.add(add.delay(3, 3))
         assert rs.get(timeout=TIMEOUT) == [2, 4, 6]
 
