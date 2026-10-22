@@ -162,7 +162,9 @@ def record_replaced_task_nesting(self, replacements, nesting=None):
         nesting = []
     nesting.append(self.request.replaced_task_nesting)
     if replacements:
-        return self.replace(record_replaced_task_nesting.s(replacements - 1, nesting))
+        replacement = record_replaced_task_nesting.s(replacements - 1, nesting)
+        # Keep the caller's result queue when using the RPC backend.
+        return self.replace(replacement.set(reply_to=self.request.reply_to))
     return nesting
 
 
