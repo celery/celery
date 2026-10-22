@@ -34,6 +34,14 @@ class SmokeWorkerContainer(CeleryWorkerContainer):
     def worker_queue(cls) -> str:
         return "smoke_tests_queue"
 
+    @classmethod
+    def buildargs(cls) -> dict:
+        args = super().buildargs()
+        # The smoke-dev tox env sets this so the worker image also installs
+        # requirements/dev.txt (py-amqp, Kombu and Billiard from Git).
+        args["CELERY_DEV_REQUIREMENTS"] = os.environ.get("CELERY_DEV_REQUIREMENTS", "")
+        return args
+
 
 # Build the image from the current source code
 celery_dev_worker_image = build(

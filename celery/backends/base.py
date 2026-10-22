@@ -88,6 +88,11 @@ The {0} result backend cannot store compressed payloads, so the
 result_compression setting is ignored and results are stored uncompressed.
 """
 
+W_FAILURE_EXPIRES_UNSUPPORTED = """\
+The {0} result backend does not support result_failure_expires, so failed
+results expire like any other result.
+"""
+
 
 def compress_payload(payload, compression):
     """Compress an encoded result payload.
@@ -201,6 +206,10 @@ class Backend:
     #: :setting:`result_compression` setting is ignored for them.
     supports_result_compression = False
 
+    #: If true the backend applies :setting:`result_failure_expires` to the
+    #: results of failed tasks.
+    supports_failure_expires = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -228,6 +237,13 @@ class Backend:
         self.accept = conf.result_accept_content if accept is None else accept
         self.accept = conf.accept_content if self.accept is None else self.accept
         self.accept = prepare_accept_content(self.accept)
+
+        if (conf.get('result_failure_expires') is not None
+                and not self.supports_failure_expires):
+            warnings.warn(
+                W_FAILURE_EXPIRES_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
 
         self.always_retry = conf.get('result_backend_always_retry', False)
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
@@ -275,56 +291,83 @@ class Backend:
             # It might also have chained tasks which need to be propagated to,
             # this is most likely to be exclusive with being a direct part of a
             # chord but we'll handle both cases separately.
-            #
-            # The `chain_data` try block here is a bit tortured since we might
-            # have non-iterable objects here in tests and it's easier this way.
-            try:
-                chain_data = iter(request.chain)
-            except (AttributeError, TypeError):
-                chain_data = tuple()
-            chain_elems = deque(chain_data)
-            while chain_elems:
-                chain_elem = chain_elems.popleft()
-                # Reconstruct a `Context` object for the chained task which has
-                # enough information to for backends to work with
-                chain_elem_ctx = Context(chain_elem)
-                chain_elem_ctx.update(chain_elem_ctx.options)
-                chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
-                chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
-                # If the state should be propagated, we'll do so for all
-                # elements of the chain. This is only truly important so
-                # that the last chain element which controls completion of
-                # the chain itself is marked as completed to avoid stalls.
-                #
-                # Some chained elements may be complex signatures and have no
-                # task ID of their own, so we skip them hoping that not
-                # descending through them is OK. If the last chain element is
-                # complex, we assume it must have been uplifted to a chord by
-                # the canvas code and therefore the condition below will ensure
-                # that we mark something as being complete as avoid stalling.
-                if (
-                    store_result and state in states.PROPAGATE_STATES and
-                    chain_elem_ctx.id is not None
-                ):
-                    self.store_result(
-                        chain_elem_ctx.id, exc, state,
-                        traceback=traceback, request=chain_elem_ctx,
-                    )
-                # If the chain element is a member of a chord, we also need
-                # to call `on_chord_part_return()` as well to avoid stalls.
-                if 'chord' in chain_elem_ctx.options:
-                    self.on_chord_part_return(chain_elem_ctx, state, exc)
-                # A chord step completes only when its body does, so the
-                # result that later steps and any enclosing chord wait on is
-                # the chord body, not the chord's own id. Descend into it so
-                # the failure reaches that result (see issue #9674).
-                if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
-                    chord_body = (chain_elem_ctx.kwargs or {}).get('body')
-                    if chord_body is not None:
-                        chain_elems.append(chord_body)
+            self._fail_chain(getattr(request, 'chain', None), exc, traceback,
+                             store_result=store_result, state=state)
             # And finally we'll fire any errbacks
             if call_errbacks and request.errbacks:
                 self._call_task_errbacks(request, exc, traceback)
+
+    def _fail_chain(self, chain, exc, traceback=None,
+                    store_result=True, state=states.FAILURE):
+        """Propagate a failure to the tasks chained after a failed one."""
+        # a request's chain may be None or a non-iterable placeholder
+        try:
+            chain_data = iter(chain)
+        except TypeError:
+            chain_data = tuple()
+        chain_elems = deque(chain_data)
+        while chain_elems:
+            chain_elem = chain_elems.popleft()
+            # Reconstruct a `Context` object for the chained task which has
+            # enough information for backends to work with
+            chain_elem_ctx = Context(chain_elem)
+            chain_elem_ctx.update(chain_elem_ctx.options)
+            chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
+            chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            # Only check state for chord members to avoid requiring a result backend
+            # for ordinary chains. The already_failed check is only used when
+            # calling on_chord_part_return() for chord members below.
+            already_failed = (
+                'chord' in chain_elem_ctx.options and
+                chain_elem_ctx.id is not None and
+                self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
+            )
+            # If the state should be propagated, we'll do so for all
+            # elements of the chain. This is only truly important so
+            # that the last chain element which controls completion of
+            # the chain itself is marked as completed to avoid stalls.
+            #
+            # Some chained elements may be complex signatures and have no
+            # task ID of their own, so we skip them hoping that not
+            # descending through them is OK. If the last chain element is
+            # complex, we assume it must have been uplifted to a chord by
+            # the canvas code and therefore the condition below will ensure
+            # that we mark something as being complete as avoid stalling.
+            if (
+                store_result and state in states.PROPAGATE_STATES and
+                chain_elem_ctx.id is not None
+            ):
+                self.store_result(
+                    chain_elem_ctx.id, exc, state,
+                    traceback=traceback, request=chain_elem_ctx,
+                )
+            # If the chain element is a member of a chord, we also need
+            # to call `on_chord_part_return()` as well to avoid stalls.
+            # An element that already failed has returned its part.
+            if 'chord' in chain_elem_ctx.options and not already_failed:
+                self.on_chord_part_return(chain_elem_ctx, state, exc)
+            # A chord step completes only when its body does, so the
+            # result that later steps and any enclosing chord wait on is
+            # the chord body, not the chord's own id. Descend into it so
+            # the failure reaches that result (see issue #9674).
+            if getattr(chain_elem_ctx, 'subtask_type', None) == 'chord':
+                chord_body = (chain_elem_ctx.kwargs or {}).get('body')
+                if chord_body is not None:
+                    chain_elems.append(chord_body)
+
+    def _errback_arity_greater(self, errback, n):
+        header = errback.type.__header__
+        if not errback.immutable and (errback.args or errback.kwargs):
+            try:
+                # Only count remaining arguments; task_id precedes stored args
+                # at invocation, although partial binds them from the left.
+                return arity_greater(
+                    partial(header, *errback.args, **errback.kwargs), n,
+                )
+            except (TypeError, ValueError):
+                # Keep invalid calls isolated by the original classification.
+                return arity_greater(header, n)
+        return arity_greater(header, n)
 
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
@@ -345,7 +388,9 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        self._errback_arity_greater(errback, 1)
                 ):
                     try:
                         errback(request, exc, traceback)
@@ -399,6 +444,8 @@ class Backend:
 
     def chord_error_from_stack(self, callback, exc=None):
         app = self.app
+        if exc is None:
+            exc = sys.exc_info()[1]
 
         try:
             backend = app._tasks[callback.task].backend
@@ -407,7 +454,9 @@ class Backend:
 
         # Handle group callbacks specially to prevent hanging body tasks
         if isinstance(callback, group):
-            return self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            exception_info = self._handle_group_chord_error(group_callback=callback, backend=backend, exc=exc)
+            backend._fail_chain(callback.options.get("chain"), exc)
+            return exception_info
 
         # Generate an ID if missing so the error can be stored.
         callback_id = callback.id
@@ -428,9 +477,12 @@ class Backend:
         try:
             self._call_task_errbacks(fake_request, exc, None)
         except Exception as eb_exc:  # pylint: disable=broad-except
-            return backend.fail_from_current_stack(callback_id, exc=eb_exc)
+            exc = eb_exc
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
         else:
-            return backend.fail_from_current_stack(callback_id, exc=exc)
+            exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
+        backend._fail_chain(callback.options.get("chain"), exc)
+        return exception_info
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
         """Handle chord errors when the callback is a group.
@@ -454,8 +506,8 @@ class Backend:
             frozen_group = group_callback.freeze()
 
             if isinstance(frozen_group, GroupResult):
-                # revoke all tasks in the group to prevent execution
-                frozen_group.revoke()
+                # Store the failures before broadcasting the revoke, so the
+                # revoke handler finds them and keeps them (see _revoke()).
 
                 # Handle each task in the group individually
                 for result in frozen_group.results:
@@ -488,6 +540,7 @@ class Backend:
                 frozen_group_id = getattr(frozen_group, 'id', None)
                 if frozen_group_id:
                     backend.mark_as_failure(frozen_group_id, original_exc)
+                frozen_group.revoke()
 
             return None
 
@@ -676,7 +729,7 @@ class Backend:
         return self.persistent if persistent is None else persistent
 
     def encode_result(self, result, state):
-        if state in self.EXCEPTION_STATES and isinstance(result, Exception):
+        if state in self.EXCEPTION_STATES and isinstance(result, BaseException):
             return self.prepare_exception(result)
         return self.prepare_value(result)
 
@@ -720,7 +773,10 @@ class Backend:
                 }
                 if getattr(request, 'stamps', None):
                     request_meta['stamped_headers'] = request.stamped_headers
-                    request_meta.update(request.stamps)
+                    request_meta.update({
+                        k: v for k, v in request.stamps.items()
+                        if k in (request.stamped_headers or ())
+                    })
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
@@ -956,11 +1012,32 @@ class Backend:
             queue = self.app.amqp.router.route(kwargs, body.name)['queue'].name
 
         priority = body.options.get('priority', getattr(body_type, 'priority', 0))
+
+        stamps = body.options.get('stamped_headers', ())
+        routing_options = {}
+        for option in ('exchange', 'exchange_type', 'routing_key', 'headers'):
+            if option in stamps:
+                continue
+            value = body.options.get(option)
+            if value is not None:
+                routing_options[option] = value
+
+        if 'exchange_type' not in routing_options:
+            try:
+                queue_obj = self.app.amqp.queues[queue] if isinstance(queue, str) else queue
+                routing_options['exchange_type'] = queue_obj.exchange.type
+            except (AttributeError, KeyError):
+                pass
+        if 'exchange_type' in routing_options:
+            # unlock_chord needs this for retries.
+            kwargs['_chord_unlock_exchange_type'] = routing_options['exchange_type']
+
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
             countdown=countdown,
             queue=queue,
             priority=priority,
+            **routing_options,
         )
 
     def ensure_chords_allowed(self):
@@ -1081,10 +1158,26 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         super().__init__(*args, **kwargs)
+        self._chord_expires = self.app.conf.get('result_chord_expires')
         self._add_global_keyprefix()
         self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    @property
+    def chord_expires(self):
+        if self._chord_expires is None:
+            return self.expires
+        return self.prepare_expires(self._chord_expires, type=int)
+
+    @property
+    def _chord_result_expires(self):
+        # Header results and a saved GroupResult are also read by users, so
+        # never keep them for less than result_expires (0 means no expiry).
+        expires = self.chord_expires
+        if not expires or not self.expires:
+            return 0
+        return max(expires, self.expires)
 
     def _add_global_keyprefix(self):
         """
@@ -1307,6 +1400,8 @@ class BaseKeyValueStoreBackend(Backend):
         self.ensure_chords_allowed()
         header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
+        self.expire(self.get_key_for_group(header_result.id),
+                    self._chord_result_expires)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
@@ -1375,8 +1470,16 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                # The chord is done: give the header results back their
+                # normal lifetime.
+                for dep in deps.results:
+                    self.expire(self.get_key_for_task(dep.id), self.expires)
         else:
-            self.expire(key, self.expires)
+            self.expire(key, self.chord_expires)
+            # The last part joins every header result, so keep this one too.
+            self.expire(self.get_key_for_group(gid), self._chord_result_expires)
+            self.expire(self.get_key_for_task(request.id),
+                        self._chord_result_expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

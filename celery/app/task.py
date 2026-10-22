@@ -191,7 +191,8 @@ class Context:
             if self.stamps is not None and self.stamped_headers is not None:
                 execution_options['stamped_headers'] = self.stamped_headers
                 for k, v in self.stamps.items():
-                    execution_options[k] = v
+                    if k in self.stamped_headers:
+                        execution_options[k] = v
         return execution_options
 
     @property
@@ -358,6 +359,17 @@ class Task:
     #: what you're doing.
     reject_on_worker_lost = None
 
+    #: When enabled, a task whose worker process exits abruptly is sent
+    #: again the same way :meth:`retry` would, so :attr:`max_retries` and
+    #: :attr:`default_retry_delay` apply.  Once the retries run out the
+    #: task fails instead of being re-queued.
+    #:
+    #: Takes precedence over :attr:`reject_on_worker_lost`, which is still
+    #: used if sending the retry fails.
+    #: The default is taken from the :setting:`task_retry_on_worker_lost`
+    #: setting.
+    retry_on_worker_lost = None
+
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
@@ -391,6 +403,10 @@ class Task:
 
     _exec_options = None
 
+    #: Set for tasks created with ``pydantic=True``: dumps the models passed
+    #: by the caller that the task gets back as equal models.
+    _dump_pydantic_arguments = None
+
     __bound__ = False
 
     from_config = (
@@ -405,6 +421,7 @@ class Task:
         ('acks_on_failure', 'task_acks_on_failure'),
         ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
+        ('retry_on_worker_lost', 'task_retry_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
@@ -684,11 +701,13 @@ class Task:
             shadow = shadow or self.shadow_name(args, kwargs, options)
 
         preopts = self._get_exec_options()
-        options = dict(preopts, **options) if options else preopts
+        options = dict(preopts, **options)
+
+        # Pickle can send models as they are, so only dump them for other serializers.
+        if self._dump_pydantic_arguments is not None and options.get('serializer') != 'pickle':
+            args, kwargs = self._dump_pydantic_arguments(args, kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
@@ -1065,6 +1084,9 @@ class Task:
         if isinstance(sig, group):
             # Groups get uplifted to a chord so that we can link onto the body
             sig |= self.app.tasks['celery.accumulate'].s(index=0)
+        if isinstance(sig, _chain) and isinstance(sig.tasks[-1], group):
+            sig.tasks = list(sig.tasks)
+            sig.tasks[-1] |= self.app.tasks['celery.accumulate'].s(index=0)
         for callback in maybe_list(self.request.callbacks) or []:
             sig.link(callback)
         for errback in maybe_list(self.request.errbacks) or []:

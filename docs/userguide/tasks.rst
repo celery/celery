@@ -808,7 +808,7 @@ You can also set `autoretry_for`, `max_retries`, `retry_backoff`, `retry_backoff
 .. attribute:: Task.dont_autoretry_for
 
     A list/tuple of exception classes.  These exceptions won't be autoretried.
-	This allows to exclude some exceptions that match `autoretry_for
+	This allows excluding some exceptions that match `autoretry_for
 	<Task.autoretry_for>`:attr: but for which you don't want a retry.
 
 .. _task-pydantic:
@@ -823,8 +823,52 @@ results based on typehints by passing ``pydantic=True``.
 
 .. NOTE::
 
-   Argument validation only covers arguments/return values on the task side. You still have
-   serialize arguments yourself when invoking a task with ``delay()`` or ``apply_async()``.
+   Argument validation only covers arguments/return values on the task side. You still have to
+   serialize arguments yourself in the cases listed below.
+
+.. versionchanged:: 5.7
+
+   Models can be passed directly to ``delay()`` and ``apply_async()``.
+
+A model passed when calling a task is sent dumped with ``pydantic_dump_kwargs``
+only if the task gets an equal model back: before sending, the caller validates
+the dump the way the worker will, running the model's validators with the task's
+context, and compares the result with ``==``. Otherwise, or if dumping or
+validating raises an error on the caller, the model is left as it is, so the
+serializer raises ``EncodeError`` as it did before. Models are sent as they are
+for tasks using the ``pickle`` serializer and for models that define kombu's
+``__json__()`` hook.
+
+In these cases you still have to pass a dict, as passing a model raises ``EncodeError``:
+
+* models inside lists or dicts
+* models in ``link`` and ``link_error`` signatures
+* models for a later task of a chain, the body of a chord, or ``map()``,
+  ``starmap()`` and ``chunks()``
+* tasks called by name with ``send_task()``
+* models the task wouldn't get back as an equal model, for example:
+
+  * a model with a ``SecretStr`` field, which is dumped as ``'**********'``
+  * a model whose private attributes differ from those a new model gets, as
+    private attributes aren't sent
+  * a model with a computed field and ``extra='forbid'``
+  * a subclass passed for a parameter annotated with its base class
+  * a model for a parameter that isn't annotated with a model
+  * with ``pydantic_strict=True``, a model with fields like ``datetime`` or
+    ``UUID`` that ``mode='json'`` turns into strings
+
+An equal model can still differ in a few ways:
+
+* The task's model counts every dumped field as set. If the task uses
+  ``model_fields_set`` or ``model_dump(exclude_unset=True)``, add
+  ``exclude_unset=True`` to ``pydantic_dump_kwargs``.
+* Aware datetimes arrive with a fixed UTC offset instead of their time zone,
+  such as a ``ZoneInfo``.
+* The check uses the model's own ``__eq__``. If a model defines one, anything
+  it ignores can still change, such as a ``SecretStr`` field.
+* With the default ``mode='json'``, the dump is what the worker gets. With
+  ``mode='python'``, the serializer can still change it, for example tuples
+  arrive as lists, which ``pydantic_strict=True`` rejects on the worker.
 
 For example:
 
@@ -846,11 +890,14 @@ For example:
         # The returned model will be converted to a dict automatically
         return ReturnModel(value=f"example: {arg.value}")
 
-The task can then be called using a dict matching the model, and you'll receive
+The task can then be called using a model or a dict matching the model, and you'll receive
 the returned model "dumped" (serialized using ``BaseModel.model_dump()``):
 
 .. code-block:: python
 
+   >>> result = x.delay(ArgModel(value=1))
+   >>> result.get(timeout=1)
+   {'value': 'example: 1'}
    >>> result = x.delay({'value': 1})
    >>> result.get(timeout=1)
    {'value': 'example: 1'}
@@ -920,8 +967,12 @@ There are a few more options influencing Pydantic behavior:
 
 .. attribute:: Task.pydantic_dump_kwargs
 
-   When serializing a result, pass these additional arguments to ``dump_kwargs()``.
-   By default, only ``mode='json'`` is passed.
+   When serializing a result or a model passed as an argument, pass these additional
+   arguments to ``model_dump()``. By default, only ``mode='json'`` is passed. If your
+   models use field aliases, add ``by_alias=True`` so models passed as arguments can be sent.
+   With ``pydantic_strict=True``, fields that ``mode='json'`` turns into strings, such as
+   ``datetime`` or ``UUID``, don't validate, so call those tasks with ``model.model_dump()``
+   instead of the model.
 
 
 .. _task-options:
@@ -1033,6 +1084,12 @@ General
     rate limit. To enforce a global rate limit (e.g., for an API with a
     maximum number of  requests per second), you must restrict to a given
     queue.
+
+    If a task is called with ``countdown`` or ``eta``, the ETA takes
+    precedence: the task will not start before its ETA, and the rate
+    limit is enforced afterwards, once the ETA has passed. In other
+    words, the task starts at the later of the two: its ETA, or the
+    next slot allowed by the rate limit.
 
 .. warning::
 
@@ -2013,16 +2070,17 @@ Make your design asynchronous instead, for example by using *callbacks*.
 
 .. code-block:: python
 
+    @app.task
     def update_page_info(url):
         # fetch_page -> parse_page -> store_page
         chain = fetch_page.s(url) | parse_page.s() | store_page_info.s(url)
         chain()
 
-    @app.task()
+    @app.task
     def fetch_page(url):
         return myhttplib.get(url)
 
-    @app.task()
+    @app.task
     def parse_page(page):
         return myparser.parse_document(page)
 

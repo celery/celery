@@ -8,7 +8,7 @@ from signal import SIGKILL
 from time import sleep
 
 import celery.utils
-from celery import Task, shared_task, signature
+from celery import Task, current_app, shared_task, signature
 from celery.canvas import Signature
 from t.integration.tasks import *  # noqa
 from t.integration.tasks import replaced_with_me
@@ -17,6 +17,11 @@ from t.integration.tasks import replaced_with_me
 @shared_task
 def noop(*args, **kwargs) -> None:
     return celery.utils.noop(*args, **kwargs)
+
+
+@current_app.task(lazy=True)
+def add_with_explicit_lazy_option(x, y):
+    return x + y
 
 
 @shared_task
@@ -58,6 +63,12 @@ def replace_with_task(self: Task, replace_with: Signature = None):
 @shared_task
 def self_termination_sigkill():
     """Forceful termination."""
+    os.kill(os.getpid(), SIGKILL)
+
+
+@shared_task(default_retry_delay=0, max_retries=2)
+def self_termination_sigkill_with_retries():
+    """Forceful termination, with a limited number of retries."""
     os.kill(os.getpid(), SIGKILL)
 
 

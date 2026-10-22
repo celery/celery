@@ -203,6 +203,21 @@ class test_unlock_chord_task(ChordCase):
             # did retry
             retry.assert_called_with(countdown=10, max_retries=30)
 
+    def test_when_not_ready_preserves_exchange_type(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        with self._chord_context(
+            NeverReady, interval=10,
+            max_retries=30, _chord_unlock_exchange_type='headers',
+        ) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(
+                countdown=10,
+                max_retries=30,
+                exchange_type='headers',
+            )
+
     def test_when_not_ready_with_configured_chord_retry_interval(self):
         class NeverReady(TSR):
             is_ready = False
@@ -323,6 +338,40 @@ class test_chord(ChordCase):
             chord.run.assert_called()
         finally:
             chord.run = prev
+
+    def test_nested_chord_with_single_task_inner_chord(self):
+        """Regression test for #3885.
+
+        A nested chord containing an inner chord with a single task used to
+        raise KeyError: 0 when submitted with apply_async().
+        """
+        from celery import chord
+
+        workflow = chord(
+            [
+                chord(
+                    [
+                        self.add.s(1, 2),
+                        self.add.s(3, 4),
+                    ],
+                    body=self.add.s(4),
+                    app=self.app,
+                ),
+                chord(
+                    [
+                        self.add.s(5, 6),
+                    ],
+                    body=self.add.s(4),
+                    app=self.app,
+                ),
+            ],
+            body=self.add.s(4),
+            app=self.app,
+        )
+
+        result = workflow.apply_async()
+
+        assert result.id
 
     def test_init(self):
         from celery import chord

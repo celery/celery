@@ -8,6 +8,7 @@ from pytest_docker_tools.wrappers.container import wait_for_callable
 import celery
 from celery import Celery
 from celery.canvas import chain, group
+from celery.exceptions import TimeLimitExceeded
 from t.integration.tasks import add, identity
 from t.smoke.conftest import SuiteOperations, WorkerKill, WorkerRestart
 from t.smoke.tasks import long_running_task
@@ -28,6 +29,36 @@ def assert_container_exited(worker: CeleryTestWorker, attempts: int = RESULT_TIM
 
     worker.container.reload()
     assert worker.container.status == "exited"
+
+
+class test_pool_start_method_spawn:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_pool_start_method = "spawn"
+        return app
+
+    def test_tasks_run_in_spawned_children(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
+        celery_setup.worker.assert_log_exists("SpawnPoolWorker-")
+
+    def test_child_is_replaced_after_hard_time_limit(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        sig = long_running_task.si(30, verbose=True).set(queue=queue, time_limit=3)
+        with pytest.raises(TimeLimitExceeded):
+            sig.delay().get(RESULT_TIMEOUT)
+        sig = long_running_task.si(1, verbose=True).set(queue=queue)
+        assert sig.delay().get(RESULT_TIMEOUT) is True
+
+    def test_spawn_worker_executes_task_with_explicit_lazy_option(self, celery_setup: CeleryTestSetup):
+        result = celery_setup.app.send_task(
+            "t.smoke.tasks.add_with_explicit_lazy_option",
+            args=(2, 3),
+            queue=celery_setup.worker.worker_queue,
+        )
+        assert result.get(timeout=RESULT_TIMEOUT) == 5
 
 
 @pytest.mark.parametrize("method", list(WorkerRestart.Method))
@@ -556,20 +587,45 @@ class test_worker_queue_alias_reconnect:
 
         return AliasQueueWorkerContainer
 
-    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_by_real_name_and_reconnect(
+    def test_cancel_consumer_by_alias_stops_consuming(self, celery_setup: CeleryTestSetup):
+        worker = celery_setup.worker
+        assert identity.si("consumed").apply_async(queue="real_name").get(timeout=RESULT_TIMEOUT) == "consumed"
+
+        replies = celery_setup.app.control.cancel_consumer(
+            "alias",
+            destination=[worker.hostname()],
+            reply=True,
+            timeout=RESULT_TIMEOUT,
+        )
+        assert replies == [{worker.hostname(): {"ok": "no longer consuming from alias"}}]
+
+        inspect = celery_setup.app.control.inspect(destination=[worker.hostname()], timeout=2)
+        wait_for_callable(
+            message="Waiting for the worker to cancel the queue consumer",
+            func=lambda: {
+                queue["name"] for queue in (inspect.active_queues() or {}).get(worker.hostname(), [])
+            } == {"celery"},
+            timeout=RESULT_TIMEOUT,
+        )
+        with pytest.raises(celery.exceptions.TimeoutError):
+            identity.si("ignored").apply_async(queue="real_name").get(timeout=10)
+
+    @pytest.mark.parametrize("cancel_queue", ["real_name", "alias"])
+    def test_queue_selected_by_alias_is_not_reconsumed_after_cancel_and_reconnect(
         self,
         celery_setup: CeleryTestSetup,
+        cancel_queue: str,
     ):
         worker = celery_setup.worker
         assert identity.si("consumed").apply_async(queue="real_name").get(timeout=RESULT_TIMEOUT) == "consumed"
 
         replies = celery_setup.app.control.cancel_consumer(
-            "real_name",
+            cancel_queue,
             destination=[worker.hostname()],
             reply=True,
             timeout=RESULT_TIMEOUT,
         )
-        assert replies == [{worker.hostname(): {"ok": "no longer consuming from real_name"}}]
+        assert replies == [{worker.hostname(): {"ok": f"no longer consuming from {cancel_queue}"}}]
 
         # Sever all broker connections so the worker reconnects and rebuilds
         # its consumers from _consume_from

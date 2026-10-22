@@ -20,7 +20,7 @@ RUN apt-get update \
 COPY /requirements /requirements
 
 # All imports needed for autodoc.
-RUN pip install -r /requirements/docs.txt -r /requirements/default.txt
+RUN pip install -r /requirements/docs.txt -r /requirements/extras/sphinxautobuild.txt -r /requirements/default.txt
 
 COPY . /celery
 

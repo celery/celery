@@ -13,6 +13,17 @@ except ImportError:
     Cluster = PasswordAuthenticator = None
 
 try:
+    from couchbase.exceptions import DocumentNotFoundException
+except ImportError:  # pragma: no cover
+    class DocumentNotFoundException(Exception):
+        """Stand-in so ``except`` clauses stay valid without the SDK."""
+
+try:
+    from couchbase.options import GetMultiOptions
+except ImportError:  # pragma: no cover
+    GetMultiOptions = None
+
+try:
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     FMT_AUTO = None
@@ -98,7 +109,12 @@ class CouchbaseBackend(KeyValueStoreBackend):
         return self._get_connection()
 
     def get(self, key):
-        return self.connection.get(key).content
+        try:
+            return self.connection.get(key).content
+        except DocumentNotFoundException:
+            # A missing document means no (or expired) result, not an error:
+            # the KV backend contract is to return None for absent keys.
+            return None
 
     def set(self, key, value):
         # Since 4.0.0 value is JSONType in couchbase lib, so parameter format isn't needed
@@ -108,7 +124,28 @@ class CouchbaseBackend(KeyValueStoreBackend):
             self.connection.upsert(key, value, ttl=self.expires)
 
     def mget(self, keys):
-        return self.connection.get_multi(keys)
+        # ``get_multi`` returns a MultiGetResult, which is neither a mapping
+        # (no ``.items()``) nor iterable, so the KV contract's
+        # ``_mget_to_results`` cannot consume it. By default it also raises
+        # on the first failed key. Ask the SDK to keep per-key results, then
+        # build the plain dict: a missing document means no result (None),
+        # any other per-key failure is a real error and is re-raised.
+        if GetMultiOptions is None:  # pragma: no cover - SDK without the option
+            return self.connection.get_multi(keys)
+        result = self.connection.get_multi(
+            keys, GetMultiOptions(return_exceptions=True))
+        values = {key: None for key in keys}
+        for key, res in result.results.items():
+            values[key] = res.content
+        for exc in result.exceptions.values():
+            if not isinstance(exc, DocumentNotFoundException):
+                raise exc
+        return values
 
     def delete(self, key):
-        self.connection.remove(key)
+        try:
+            self.connection.remove(key)
+        except DocumentNotFoundException:
+            # Deleting an absent (already expired or forgotten) key is a
+            # no-op, matching the other KV backends.
+            pass
