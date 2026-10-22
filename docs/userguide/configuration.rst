@@ -729,7 +729,43 @@ worker.
 .. warning::
 
     Enabling this can cause message loops; make sure you know
-    what you're doing.
+    what you're doing. See :setting:`task_retry_on_worker_lost` for a way
+    to limit how many times a task is sent again.
+
+.. setting:: task_retry_on_worker_lost
+
+``task_retry_on_worker_lost``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+When the worker process executing a task exits abruptly (e.g. it's killed
+by the OOM killer), send the task again the same way
+:meth:`Task.retry() <celery.app.task.Task.retry>` would, instead of
+re-queuing the original message. This means
+:attr:`~celery.app.task.Task.max_retries` and
+:attr:`~celery.app.task.Task.default_retry_delay` apply, and once the
+retries run out the task is marked as failed.
+
+This takes precedence over :setting:`task_reject_on_worker_lost`. If
+sending the retry fails, the task falls back to the normal
+:setting:`task_reject_on_worker_lost` behaviour.
+
+A few things to keep in mind:
+
+- The task is sent again after
+  :attr:`~celery.app.task.Task.default_retry_delay` (180 seconds by
+  default), not right away.
+- These retries count towards the same
+  :attr:`~celery.app.task.Task.max_retries` as calls to
+  :meth:`Task.retry() <celery.app.task.Task.retry>` made by the task itself.
+- It also applies when :setting:`task_acks_late` is disabled.
+- It only covers a pool child process dying while the main worker process
+  keeps running. If the whole worker is killed (for example the container
+  is OOM-killed), nothing is left to retry the task, so this setting has
+  no effect.
 
 .. setting:: task_default_rate_limit
 
@@ -1040,6 +1076,56 @@ on backend specifications).
 
     When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
+
+See :setting:`result_chord_expires` for chords whose header tasks run longer
+than this.
+
+.. setting:: result_chord_expires
+
+``result_chord_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) a chord's
+bookkeeping is kept after the chord starts or after one of its header tasks
+finishes. With the cache backend, each header task's result is also kept that
+long after the task finishes, and never for less than :setting:`result_expires`.
+When the chord finishes, the header results get :setting:`result_expires` back.
+If it runs out before the chord's last header task finishes, the chord's body
+never runs, so set it longer than the chord's total run time.
+A value of 0 means the chord's bookkeeping never expires while the chord is
+open, and the saved header of a chord with nested groups never expires.
+The bookkeeping of a chord that never completes, for example after a lost
+header task, is then never removed.
+
+.. note::
+
+    For the moment this only works with the cache and Redis backends.
+
+    Memcached reads an expiry over 30 days as an absolute time, so keep this
+    setting at 30 days or less with the cache backend.
+
+.. setting:: result_failure_expires
+
+``result_failure_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
+the results of failed tasks will be deleted. Use it to keep failures longer,
+or shorter, than other results. A value of 0 means failed results never expire.
+
+Only results in the ``FAILURE`` state use this setting.
+
+.. note::
+
+    For the moment this only works with the Redis backend.
 
 .. setting:: result_cache_max
 
@@ -3255,6 +3341,7 @@ too many heartbeats. The rate at which this is checked is calculated
 by dividing the :setting:`broker_heartbeat` value with this value,
 so if the heartbeat is 10.0 and the rate is the default 3.0, the check
 will be performed about every 3.33 seconds (three checks per negotiated heartbeat interval).
+
 .. setting:: broker_use_ssl
 
 ``broker_use_ssl``
@@ -3673,6 +3760,7 @@ memory, potentially causing out-of-memory issues.
     implied by :setting:`worker_prefetch_multiplier` would exceed this cap, the
     worker will stop consuming new messages until previously received tasks have
     been acknowledged.
+
 .. setting:: worker_disable_prefetch
 
 ``worker_disable_prefetch``

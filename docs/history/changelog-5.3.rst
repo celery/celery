@@ -136,7 +136,7 @@ The code changes are mostly fix for regressions. More details can be found below
 - Remove tox version limit (#8464)
 - Fixed AttributeError: 'str' object has no attribute (#8463)
 - Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
-- Document need for CELERY_ prefix on CLI env vars (#8469)
+- Document need for ``CELERY_`` prefix on CLI env vars (#8469)
 - Use string value for CELERY_SKIP_CHECKS envvar (#8462)
 - Revert "store children with database backend" (#8475)
 - Revert "Fix eager tasks does not populate name field" (#8476)

@@ -993,7 +993,7 @@ class AsynPool(_pool.Pool):
                         errors += 1
                         if errors > 100:
                             on_not_recovering(proc, fd, job, exc)
-                            raise StopIteration()
+                            return
                         yield
                     else:
                         errors = 0
@@ -1009,7 +1009,7 @@ class AsynPool(_pool.Pool):
                         errors += 1
                         if errors > 100:
                             on_not_recovering(proc, fd, job, exc)
-                            raise StopIteration()
+                            return
                         yield
                     else:
                         errors = 0
@@ -1043,7 +1043,7 @@ class AsynPool(_pool.Pool):
                 except KeyError:
                     # process died, we can safely discard the ack at this
                     # point.
-                    raise StopIteration()
+                    return
                 send = proc.send_syn_offset
 
                 Hw = Bw = 0
@@ -1468,6 +1468,8 @@ class AsynPool(_pool.Pool):
         fileno_to_proc = {}
         inqR = set()
         for w in pool:
+            if w.exitcode is not None:
+                continue  # nothing will ever read this inqueue again
             try:
                 fd = w.inq._reader.fileno()
                 inqR.add(fd)
@@ -1481,7 +1483,11 @@ class AsynPool(_pool.Pool):
             if not readable:
                 break
             for fd in readable:
-                fileno_to_proc[fd].inq._reader.recv()
+                try:
+                    fileno_to_proc[fd].inq._reader.recv()
+                except (EOFError, OSError):
+                    # the child died mid-message; nothing will read this pipe again
+                    inqR.discard(fd)
             sleep(0)
 
     @property

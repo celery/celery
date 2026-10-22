@@ -2,6 +2,7 @@
 import logging
 import pickle
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 from kombu.utils.encoding import ensure_bytes
 
@@ -334,7 +335,7 @@ class DatabaseBackend(BaseBackend):
     def _cleanup(self):
         session = self.ResultSession()
         expires = self.expires
-        now = self.app.now()
+        now = datetime.now(timezone.utc)
         with session_cleanup(session):
             session.query(self.task_cls).filter(
                 self.task_cls.date_done < (now - expires)).delete()

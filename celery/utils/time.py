@@ -34,7 +34,8 @@ __all__ = (
     'LocalTimezone', 'timezone', 'maybe_timedelta',
     'delta_resolution', 'remaining', 'rate', 'weekday',
     'humanize_seconds', 'maybe_iso8601', 'is_naive',
-    'add_seconds_to_datetime', 'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
+    'add_seconds_to_datetime', 'subtract_datetimes',
+    'make_aware', 'localize', 'to_utc', 'maybe_make_aware',
     'ffwd', 'utcoffset', 'adjust_timestamp',
     'get_exponential_backoff_interval',
 )
@@ -216,12 +217,32 @@ def delta_resolution(dt: datetime, delta: timedelta) -> datetime:
     return dt
 
 
+def _relative_end_dates(dt: datetime, delta: timedelta) -> list[datetime]:
+    """Return UTC occurrences of a rounded local deadline."""
+    rounded = delta_resolution(dt, delta).replace(microsecond=0)
+    dates = []
+    for fold in (0, 1):
+        candidate = rounded.replace(fold=fold)
+        if _is_imaginary(candidate, candidate.tzinfo):
+            resolved = dateutil_tz.resolve_imaginary(candidate)
+            # Some timezone implementations misidentify rollback times as
+            # gaps. A genuine gap must resolve forwards, never backwards.
+            if resolved > candidate:
+                candidate = resolved
+        dates.append(candidate.astimezone(timezone.utc))
+    return dates
+
+
 def remaining(
         start: datetime, ends_in: timedelta | ffwd, now: datetime | None = None,
         relative: bool = False) -> timedelta:
     """Calculate the real remaining time for a start date and a timedelta.
 
     For example, "how many seconds left for 30 seconds after start?"
+
+    For relative schedules, the deadline is the last rounded local boundary at
+    or before ``start + ends_in`` in real time, never at or before ``start``;
+    day intervals use calendar days.
 
     Arguments:
         start (~datetime.datetime): Starting date.
@@ -236,12 +257,40 @@ def remaining(
         ~datetime.timedelta: Remaining time.
     """
     now = now or datetime.now(datetime_timezone.utc)
-    if isinstance(ends_in, timedelta):
+    if isinstance(ends_in, timedelta) and not (
+            relative and ends_in >= timedelta(days=1)):
         end_date = add_seconds_to_datetime(start, ends_in.total_seconds())
     else:
+        # Day-resolution relative schedules advance by local calendar days.
+        # An elapsed-time addition can land on the wrong date across DST.
         end_date = start + ends_in
     if relative:
-        end_date = delta_resolution(end_date, ends_in).replace(microsecond=0)
+        candidates = _relative_end_dates(end_date, ends_in)
+        start_utc = start.astimezone(timezone.utc)
+        if ends_in >= timedelta(days=1):
+            # Use the first midnight after start, including a repeated
+            # midnight whose first occurrence has already passed.
+            future = [dt for dt in candidates if dt > start_utc]
+            end_date = min(future, default=end_date.astimezone(timezone.utc))
+        else:
+            end_utc = start_utc + ends_in
+            # Rounding may enter an ambiguous period even when the
+            # unrounded time is outside it. Choose by the UTC occurrence.
+            before_end = [dt for dt in candidates if dt <= end_utc]
+            rounded = max(before_end) if before_end else min(candidates)
+            if ends_in >= timedelta(minutes=1) and rounded <= start_utc:
+                # A partial-hour rollback can put the rounded boundary
+                # before start. Consider both the next clock boundary and
+                # the calendar boundary, including both occurrences.
+                unit = (timedelta(hours=1) if ends_in >= timedelta(hours=1)
+                        else timedelta(minutes=1))
+                candidates += _relative_end_dates(end_date + unit, ends_in)
+                candidates += _relative_end_dates(start + ends_in, ends_in)
+                future = [dt for dt in candidates if dt > start_utc]
+                before_end = [dt for dt in future if dt <= end_utc]
+                rounded = (max(before_end) if before_end
+                           else min(future, default=end_utc))
+            end_date = rounded
 
     # Using UTC to calculate real time difference.
     # Python by default uses wall time in arithmetic between datetimes with
@@ -343,6 +392,13 @@ def add_seconds_to_datetime(dt: datetime, seconds: float) -> datetime:
     if is_naive(dt):
         return dt + delta
     return (dt.astimezone(datetime_timezone.utc) + delta).astimezone(dt.tzinfo)
+
+
+def subtract_datetimes(end: datetime, start: datetime) -> timedelta:
+    """Return the elapsed time between two datetimes, treating naive datetimes as UTC."""
+    end_utc = maybe_make_aware(end).astimezone(datetime_timezone.utc)
+    start_utc = maybe_make_aware(start).astimezone(datetime_timezone.utc)
+    return end_utc - start_utc
 
 
 def _can_detect_ambiguous(tz: tzinfo) -> bool:

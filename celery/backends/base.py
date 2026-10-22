@@ -88,6 +88,11 @@ The {0} result backend cannot store compressed payloads, so the
 result_compression setting is ignored and results are stored uncompressed.
 """
 
+W_FAILURE_EXPIRES_UNSUPPORTED = """\
+The {0} result backend does not support result_failure_expires, so failed
+results expire like any other result.
+"""
+
 
 def compress_payload(payload, compression):
     """Compress an encoded result payload.
@@ -201,6 +206,10 @@ class Backend:
     #: :setting:`result_compression` setting is ignored for them.
     supports_result_compression = False
 
+    #: If true the backend applies :setting:`result_failure_expires` to the
+    #: results of failed tasks.
+    supports_failure_expires = False
+
     retry_policy = {
         'max_retries': 20,
         'interval_start': 0,
@@ -228,6 +237,13 @@ class Backend:
         self.accept = conf.result_accept_content if accept is None else accept
         self.accept = conf.accept_content if self.accept is None else self.accept
         self.accept = prepare_accept_content(self.accept)
+
+        if (conf.get('result_failure_expires') is not None
+                and not self.supports_failure_expires):
+            warnings.warn(
+                W_FAILURE_EXPIRES_UNSUPPORTED.format(type(self).__name__),
+                UserWarning,
+            )
 
         self.always_retry = conf.get('result_backend_always_retry', False)
         self.max_sleep_between_retries_ms = conf.get('result_backend_max_sleep_between_retries_ms', 10000)
@@ -298,7 +314,11 @@ class Backend:
             chain_elem_ctx.update(chain_elem_ctx.options)
             chain_elem_ctx.id = chain_elem_ctx.options.get('task_id')
             chain_elem_ctx.group = chain_elem_ctx.options.get('group_id')
+            # Only check state for chord members to avoid requiring a result backend
+            # for ordinary chains. The already_failed check is only used when
+            # calling on_chord_part_return() for chord members below.
             already_failed = (
+                'chord' in chain_elem_ctx.options and
                 chain_elem_ctx.id is not None and
                 self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
             )
@@ -335,6 +355,20 @@ class Backend:
                 if chord_body is not None:
                     chain_elems.append(chord_body)
 
+    def _errback_arity_greater(self, errback, n):
+        header = errback.type.__header__
+        if not errback.immutable and (errback.args or errback.kwargs):
+            try:
+                # Only count remaining arguments; task_id precedes stored args
+                # at invocation, although partial binds them from the left.
+                return arity_greater(
+                    partial(header, *errback.args, **errback.kwargs), n,
+                )
+            except (TypeError, ValueError):
+                # Keep invalid calls isolated by the original classification.
+                return arity_greater(header, n)
+        return arity_greater(header, n)
+
     def _call_task_errbacks(self, request, exc, traceback):
         old_signature = []
         for errback in request.errbacks:
@@ -354,7 +388,9 @@ class Backend:
                         # workaround to support tasks with bind=True executed as
                         # link errors. Otherwise, retries can't be used
                         not isinstance(errback.type.__header__, partial) and
-                        arity_greater(errback.type.__header__, 1)
+                        # Classify the arguments still supplied by the failure,
+                        # not arguments already stored on a mutable signature.
+                        self._errback_arity_greater(errback, 1)
                 ):
                     try:
                         errback(request, exc, traceback)
@@ -737,7 +773,10 @@ class Backend:
                 }
                 if getattr(request, 'stamps', None):
                     request_meta['stamped_headers'] = request.stamped_headers
-                    request_meta.update(request.stamps)
+                    request_meta.update({
+                        k: v for k, v in request.stamps.items()
+                        if k in (request.stamped_headers or ())
+                    })
 
                 if encode:
                     # args and kwargs need to be encoded properly before saving
@@ -1119,10 +1158,26 @@ class BaseKeyValueStoreBackend(Backend):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
             self.key_t = self.key_t.__func__  # remove binding
         super().__init__(*args, **kwargs)
+        self._chord_expires = self.app.conf.get('result_chord_expires')
         self._add_global_keyprefix()
         self._encode_prefixes()
         if self.implements_incr:
             self.apply_chord = self._apply_chord_incr
+
+    @property
+    def chord_expires(self):
+        if self._chord_expires is None:
+            return self.expires
+        return self.prepare_expires(self._chord_expires, type=int)
+
+    @property
+    def _chord_result_expires(self):
+        # Header results and a saved GroupResult are also read by users, so
+        # never keep them for less than result_expires (0 means no expiry).
+        expires = self.chord_expires
+        if not expires or not self.expires:
+            return 0
+        return max(expires, self.expires)
 
     def _add_global_keyprefix(self):
         """
@@ -1345,6 +1400,8 @@ class BaseKeyValueStoreBackend(Backend):
         self.ensure_chords_allowed()
         header_result = self.app.GroupResult(*header_result_args)
         header_result.save(backend=self)
+        self.expire(self.get_key_for_group(header_result.id),
+                    self._chord_result_expires)
 
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
@@ -1413,8 +1470,16 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                # The chord is done: give the header results back their
+                # normal lifetime.
+                for dep in deps.results:
+                    self.expire(self.get_key_for_task(dep.id), self.expires)
         else:
-            self.expire(key, self.expires)
+            self.expire(key, self.chord_expires)
+            # The last part joins every header result, so keep this one too.
+            self.expire(self.get_key_for_group(gid), self._chord_result_expires)
+            self.expire(self.get_key_for_task(request.id),
+                        self._chord_result_expires)
 
 
 class KeyValueStoreBackend(BaseKeyValueStoreBackend, SyncBackendMixin):

@@ -1,8 +1,10 @@
 import threading
+from types import SimpleNamespace
 
 import pytest
 
 from celery import states, uuid
+from celery.result import AsyncResult, GroupResult
 from t.integration.conftest import get_active_redis_channels
 from t.integration.tasks import identity
 
@@ -34,6 +36,24 @@ def test_decode_responses_disables_compression(app):
         assert app.conf.result_compression == 'gzip'
     finally:
         backend.forget(task_id)
+
+
+@pytest.mark.celery(result_expires=60, result_failure_expires=600)
+def test_failure_expires(app):
+    if not app.conf.result_backend.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    backend = app.backend
+    success_id, failure_id = uuid(), uuid()
+    try:
+        backend.store_result(success_id, 42, states.SUCCESS)
+        backend.store_result(failure_id, KeyError('x'), states.FAILURE)
+
+        assert 0 < backend.client.ttl(backend.get_key_for_task(success_id)) <= 60
+        assert 60 < backend.client.ttl(backend.get_key_for_task(failure_id)) <= 600
+    finally:
+        backend.forget(success_id)
+        backend.forget(failure_id)
 
 
 @pytest.mark.celery(
@@ -205,3 +225,27 @@ def test_pubsub_reentrant_cancel_from_finalizer(app):
         channel for channel in get_active_redis_channels()
         if channel.startswith(b'celery-task-meta-')]
     assert meta_channels == []
+
+
+@pytest.mark.celery(result_expires=60, result_chord_expires=600)
+def test_chord_expires(app):
+    if not app.conf.result_backend.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    backend = app.backend
+    group_id = uuid()
+    header = GroupResult(group_id, [GroupResult(uuid(), [AsyncResult(uuid())])])
+    request = SimpleNamespace(id=uuid(), group=group_id, group_index=0, chord=None)
+    keys = [backend.get_key_for_group(group_id, suffix)
+            for suffix in ('', '.j', '.s')]
+    try:
+        backend.apply_chord((group_id, header.results), None)
+        backend.set_chord_size(group_id, 2)
+        assert 60 < backend.client.ttl(keys[2]) <= 600
+        backend.on_chord_part_return(request, states.SUCCESS, 1)
+
+        for key in keys:
+            assert 60 < backend.client.ttl(key) <= 600
+        assert GroupResult.restore(group_id, backend=backend) == header
+    finally:
+        backend.client.delete(*keys)
