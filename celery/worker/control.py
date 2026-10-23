@@ -374,8 +374,14 @@ def disable_events(state):
     dispatcher = state.consumer.event_dispatcher
     if dispatcher is None:
         return nok('event dispatcher unavailable')
-    if 'task' in dispatcher.groups:
-        dispatcher.groups.discard('task')
+    groups = dispatcher.groups
+    # An empty set of groups means events of every group are sent
+    # (this is the case for workers started with -E), so there's no 'task'
+    # to discard: keep only the 'worker' events instead.
+    if not groups or 'task' in groups:
+        groups.discard('task')
+        if not groups:
+            groups.add('worker')
         logger.info('Events of group {task} disabled by remote.')
         return ok('task events disabled')
     return ok('task events already disabled')
