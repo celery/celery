@@ -662,6 +662,13 @@ has been executed, not *right before* (the default behavior).
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
 .. setting:: task_acks_on_failure_or_timeout
 
 ``task_acks_on_failure_or_timeout``
@@ -735,8 +742,8 @@ worker.
 .. note::
 
     On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
-    it) after 20 redeliveries by default. A task that keeps killing its
-    worker can disappear this way without any log message.
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
     See :ref:`quorum-queues-delivery-limit` for details.
 
 .. setting:: task_retry_on_worker_lost
