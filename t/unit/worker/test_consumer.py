@@ -695,12 +695,13 @@ class test_Consumer(ConsumerTestCase):
 
         warning = next(record for record in caplog.records
                        if record.levelno == logging.WARNING
-                       and record.getMessage() == CONNECTION_RETRY)
+                       and record.getMessage().startswith(CONNECTION_RETRY))
 
         assert warning.exc_info is None
+        assert warning.getMessage() == f'{CONNECTION_RETRY} ({exc!r})'
         debug_record = next(record for record in caplog.records
                             if record.levelno == logging.DEBUG
-                            and record.getMessage() == 'Connection error:')
+                            and record.getMessage() == f'Connection error: {exc!r}')
         assert debug_record.exc_info[1] is exc
 
     def test_bounds_already_open_sockets_before_collect(self):
