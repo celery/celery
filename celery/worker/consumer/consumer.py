@@ -464,7 +464,10 @@ class Consumer:
               'Trying to reconnect...')
 
     def on_connection_error_after_connected(self, exc):
-        warn(CONNECTION_RETRY, exc_info=True)
+        warn(CONNECTION_RETRY)
+        # Keep the traceback available for debugging without attaching it to
+        # the warning, where application log handlers would capture it too.
+        debug('Connection error:', exc_info=exc)
         # Bound the sockets that are already open before cleanup reads from
         # them; collect()'s socket_timeout only applies to new sockets.
         bound_open_broker_sockets(self.connection, COLLECT_SOCKET_TIMEOUT)
