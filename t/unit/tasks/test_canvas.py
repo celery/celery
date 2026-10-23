@@ -3048,6 +3048,16 @@ class test_chord(CanvasCase):
         assert x.body.options[key] == [own_callback]
 
     @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_none_keeps_body_callbacks(self, eager):
+        body = self.mul.s(4)
+        body.link(self.div.s(2))
+        body.link_error(self.add.s(1))
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=body)
+        body = self._body_to_run(x, eager, link=None, link_error=None)
+        assert body.options['link'] == [self.div.s(2)]
+        assert body.options['link_error'] == [self.add.s(1)]
+
+    @pytest.mark.parametrize('eager', [False, True])
     def test_link_option_replaces_link_set_on_chord(self, eager):
         # As for any signature, the link given to apply_async() wins
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
