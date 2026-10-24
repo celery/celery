@@ -9,6 +9,19 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- The Redis result backend now counts each chord header task only once,
+  even when the task runs again, as it can after a lost worker with
+  ``acks_late``. Header results are now saved with a Lua script. If your
+  Redis user has an ACL that lists the commands it can run, add
+  ``EVALSHA``, ``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. Without them,
+  header tasks fail when they store their results, and neither the chord
+  body nor its error callbacks run. A Redis-compatible service or proxy has
+  to support ``EVALSHA`` and ``SCRIPT LOAD`` too (#10919).
+
+
 .. _version-5.7.0rc1:
 
 5.7.0rc1
