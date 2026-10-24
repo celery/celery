@@ -186,6 +186,15 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
+        collection = self.collection
+
+        # If the stored status is already a success, ignore any following
+        # update to the state, as BaseKeyValueStoreBackend does: a repeated
+        # run of the task must not overwrite the first successful result.
+        existing = collection.find_one({'_id': task_id})
+        if existing and existing.get('status') == states.SUCCESS:
+            return result
+
         meta = self._get_result_meta(result=self.encode(result), state=state,
                                      traceback=traceback, request=request,
                                      format_date=False)
@@ -193,7 +202,7 @@ class MongoBackend(BaseBackend):
         meta['_id'] = task_id
 
         try:
-            self.collection.replace_one({'_id': task_id}, meta, upsert=True)
+            collection.replace_one({'_id': task_id}, meta, upsert=True)
         except InvalidDocument as exc:
             raise EncodeError(exc) from exc
 

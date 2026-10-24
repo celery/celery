@@ -399,6 +399,23 @@ class test_MongoBackend:
                 sentinel.task_id, sentinel.result, sentinel.status)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_after_success_is_ignored(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        mock_collection.find_one.return_value = {'status': states.SUCCESS}
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, states.STARTED)
+
+        assert sentinel.result == ret_val
+        mock_collection.replace_one.assert_not_called()
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_store_result_with_request(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -1021,7 +1038,8 @@ class test_MongoBackend_store_get_result:
                 self.data[task_id['_id']] = bson.encode(meta)
 
             def find_one(self, task_id):
-                return bson.decode(self.data[task_id['_id']])
+                doc = self.data.get(task_id['_id'])
+                return bson.decode(doc) if doc is not None else None
 
         monkeypatch.setattr(MongoBackend, "collection", FakeMongoCollection())
 
