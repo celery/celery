@@ -1,4 +1,5 @@
 """Task implementation: request context and the task base class."""
+import inspect
 import sys
 import types
 
@@ -860,6 +861,43 @@ class Task:
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
+
+        # Explicit args/kwargs can change how a task's parameters are passed
+        # on retry. Keep inherited values that do not conflict with the new
+        # calling convention (see #6494).
+        if ((args is not None and kwargs is None and request.kwargs) or
+                (kwargs is not None and args is None and request.args)):
+            try:
+                signature = inspect.signature(self.run)
+            except (TypeError, ValueError):
+                pass  # Let normal task argument validation handle this case.
+            else:
+                if args is not None:
+                    positional = [
+                        p for p in signature.parameters.values()
+                        if p.kind in (inspect.Parameter.POSITIONAL_ONLY,
+                                      inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                    ]
+                    kwargs = dict(request.kwargs)
+                    for p in positional[:len(args)]:
+                        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                            kwargs.pop(p.name, None)
+                else:
+                    # An explicit keyword may replace an inherited positional
+                    # argument. Bind inherited values to names so *args and
+                    # positional-only parameters keep their original positions.
+                    try:
+                        bound = signature.bind_partial(*request.args)
+                    except TypeError:
+                        pass  # Let normal task argument validation handle this case.
+                    else:
+                        kwargs = dict(kwargs)
+                        for name in list(kwargs):
+                            if (name in bound.arguments and
+                                    signature.parameters[name].kind ==
+                                    inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                                bound.arguments[name] = kwargs.pop(name)
+                        args, kwargs = bound.args, {**bound.kwargs, **kwargs}
 
         is_eager = request.is_eager
         S = self.signature_from_request(
