@@ -583,7 +583,13 @@ class LimitedSet:
         if not other:
             return
         if isinstance(other, LimitedSet):
-            self._data.update(other._data)
+            # Give the entries sequence numbers of this set, in the other
+            # set's order: its own numbers can be the same as ours, and two
+            # entries with the same insertion time and sequence number make
+            # the heap compare the items themselves.
+            entries = sorted(other._data.values(), key=lambda e: e[:2])
+            for inserted, _, item in entries:
+                self._data[item] = (inserted, next(self._seq), item)
             self._refresh_heap()
             self.purge()
         elif isinstance(other, dict):
