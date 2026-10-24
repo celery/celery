@@ -22,11 +22,14 @@ if pymongo:
     except ImportError:
         from pymongo.binary import Binary
     from pymongo import uri_parser
-    from pymongo.errors import InvalidDocument
+    from pymongo.errors import DuplicateKeyError, InvalidDocument
 else:                                       # pragma: no cover
     Binary = None
 
     class InvalidDocument(Exception):
+        pass
+
+    class DuplicateKeyError(Exception):
         pass
 
 __all__ = ('MongoBackend',)
@@ -186,25 +189,30 @@ class MongoBackend(BaseBackend):
     def _store_result(self, task_id, result, state,
                       traceback=None, request=None, **kwargs):
         """Store return value and state of an executed task."""
-        collection = self.collection
-
-        # If the stored status is already a success, ignore any following
-        # update to the state, as BaseKeyValueStoreBackend does: a repeated
-        # run of the task must not overwrite the first successful result.
-        existing = collection.find_one({'_id': task_id})
-        if existing and existing.get('status') == states.SUCCESS:
-            return result
-
         meta = self._get_result_meta(result=self.encode(result), state=state,
                                      traceback=traceback, request=request,
                                      format_date=False)
         # Add the _id for mongodb
         meta['_id'] = task_id
 
-        try:
-            collection.replace_one({'_id': task_id}, meta, upsert=True)
-        except InvalidDocument as exc:
-            raise EncodeError(exc) from exc
+        # Keep the first SUCCESS, as BaseKeyValueStoreBackend does: a
+        # repeated run of the task must not overwrite it. Putting the
+        # status check in the filter makes the check and the write a
+        # single step, so a concurrent run cannot slip a write in
+        # between them. When the stored document is already a SUCCESS
+        # the filter does not match and the upsert raises
+        # DuplicateKeyError, which is ignored here. The same error
+        # comes up when another run inserts the document at that
+        # moment, so one retry is allowed for that case.
+        query = {'_id': task_id, 'status': {'$ne': states.SUCCESS}}
+        for _ in range(2):
+            try:
+                self.collection.replace_one(query, meta, upsert=True)
+                break
+            except DuplicateKeyError:
+                pass
+            except InvalidDocument as exc:
+                raise EncodeError(exc) from exc
 
         return result
 

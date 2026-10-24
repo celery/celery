@@ -23,7 +23,7 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery import states, uuid
-from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
+from celery.backends.mongodb import Binary, DuplicateKeyError, InvalidDocument, MongoBackend
 from celery.contrib.abortable import ABORTED
 from celery.exceptions import ImproperlyConfigured
 from t.unit import conftest
@@ -404,7 +404,9 @@ class test_MongoBackend:
 
         mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
         mock_collection = Mock()
-        mock_collection.find_one.return_value = {'status': states.SUCCESS}
+        # A stored SUCCESS does not match the filter, so the upsert
+        # raises DuplicateKeyError on both attempts and is ignored.
+        mock_collection.replace_one.side_effect = DuplicateKeyError('dup')
 
         mock_get_database.return_value = mock_database
         mock_database.__getitem__.return_value = mock_collection
@@ -413,7 +415,32 @@ class test_MongoBackend:
             sentinel.task_id, sentinel.result, states.STARTED)
 
         assert sentinel.result == ret_val
-        mock_collection.replace_one.assert_not_called()
+        expected_filter = {
+            '_id': sentinel.task_id,
+            'status': {'$ne': states.SUCCESS},
+        }
+        assert mock_collection.replace_one.call_count == 2
+        for call in mock_collection.replace_one.call_args_list:
+            assert call.args[0] == expected_filter
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_retries_duplicate_key(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        # Another run inserted the document first; the retry stores.
+        mock_collection.replace_one.side_effect = [
+            DuplicateKeyError('dup'), None]
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, states.STARTED)
+
+        assert sentinel.result == ret_val
+        assert mock_collection.replace_one.call_count == 2
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_store_result_with_request(self, mock_get_database):
@@ -1034,8 +1061,16 @@ class test_MongoBackend_store_get_result:
             def __init__(self):
                 self.data = {}
 
-            def replace_one(self, task_id, meta, upsert=True):
-                self.data[task_id['_id']] = bson.encode(meta)
+            def replace_one(self, filter, meta, upsert=True):
+                existing = self.data.get(filter['_id'])
+                if existing is not None:
+                    status_ne = filter.get('status', {}).get('$ne')
+                    if status_ne is not None and \
+                            bson.decode(existing).get('status') == status_ne:
+                        # The filter does not match, so an upsert tries
+                        # to insert a document with the same _id.
+                        raise DuplicateKeyError('dup')
+                self.data[filter['_id']] = bson.encode(meta)
 
             def find_one(self, task_id):
                 doc = self.data.get(task_id['_id'])
@@ -1054,6 +1089,13 @@ class test_MongoBackend_store_get_result:
         recovered = backend.get_result(TASK_ID)
         assert isinstance(recovered, result_type)
         assert recovered == result
+
+    def test_store_result_keeps_first_success(self, mongo_backend_factory):
+        backend = mongo_backend_factory(serializer='pickle')
+        backend.store_result(TASK_ID, 'first', 'SUCCESS')
+        backend.store_result(TASK_ID, 'second', 'STARTED')
+        assert backend.get_status(TASK_ID) == 'SUCCESS'
+        assert backend.get_result(TASK_ID) == 'first'
 
     @pytest.mark.parametrize("serializer",
                              ["bson", "pickle", "yaml", "json", "msgpack"])
