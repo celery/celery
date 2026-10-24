@@ -156,6 +156,25 @@ def add_replaced(self, x, y):
 
 
 @shared_task(bind=True)
+def record_replaced_task_nesting(self, replacements, nesting=None):
+    """Record the nesting level across successive task replacements."""
+    if nesting is None:
+        nesting = []
+    nesting.append(self.request.replaced_task_nesting)
+    if replacements:
+        replacement = record_replaced_task_nesting.s(replacements - 1, nesting)
+        # Keep the caller's result queue when using the RPC backend.
+        return self.replace(replacement.set(reply_to=self.request.reply_to))
+    return nesting
+
+
+@shared_task(bind=True)
+def add_replaced_with_chain(self, x, y):
+    """Add two numbers (via a chain of the add and identity tasks)."""
+    raise self.replace(chain(add.s(x, y), identity.s()))
+
+
+@shared_task(bind=True)
 def replace_with_chain(self, *args, link_msg=None):
     c = chain(identity.s(*args), identity.s())
     link_sig = redis_echo.s()

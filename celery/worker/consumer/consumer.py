@@ -159,6 +159,14 @@ class Consumer:
     #: as sending heartbeats.
     timer = None
 
+    #: Entries on the event loop timer before the consumer last started
+    #: connecting to the broker.
+    timer_entries_before_start = None
+
+    #: Entries the event loop registered on its timer for the current
+    #: connection, or :const:`None` if it has not registered them yet.
+    timer_entries_registered = None
+
     restart_count = -1  # first start is the same as a restart
 
     #: This flag will be turned off after the first failed
@@ -387,6 +395,13 @@ class Consumer:
                 recoverable_errors = (self.connection_errors + self.channel_errors)
             else:
                 recoverable_errors = self.connection_errors
+            if self.hub is not None:
+                # Entries added to the timer from here on, by connecting
+                # and starting the event loop, belong to this connection
+                # (see :func:`celery.worker.loops.asynloop`).
+                self.timer_entries_before_start = loops._timer_entries(
+                    self.hub.timer)
+                self.timer_entries_registered = None
             try:
                 blueprint.start(self)
             except recoverable_errors as exc:
@@ -413,7 +428,30 @@ class Consumer:
                     else:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
+                    self._cancel_connection_timer_entries()
                     blueprint.restart(self)
+
+    def _cancel_connection_timer_entries(self):
+        """Cancel the timer entries registered for the failed connection.
+
+        :func:`~celery.worker.loops.asynloop` records the entries it
+        registered for the connection.  If the connection failed before
+        that, e.g. in a bootstep that runs after the transport connected,
+        every entry added since the consumer started connecting belongs to
+        it: the event loop was not running, so nothing else added entries
+        in the meantime.  Without this, those entries would be part of the
+        next attempt's snapshot and never be cancelled.
+
+        Cancelling an entry twice is harmless, so this also runs after
+        :func:`~celery.worker.loops.asynloop` cancelled its own entries.
+        """
+        if self.hub is None or self.timer_entries_before_start is None:
+            return
+        entries = self.timer_entries_registered
+        if entries is None:
+            entries = (loops._timer_entries(self.hub.timer) -
+                       self.timer_entries_before_start)
+        loops._cancel_timer_entries(self.hub.timer, entries)
 
     def _get_connection_retry_type(self, is_connection_loss_on_startup):
         return ('broker_connection_retry_on_startup'
@@ -555,10 +593,11 @@ class Consumer:
         # entries (through self.timer.cancel(), not entry.cancel()
         # directly, since e.g. the Eventlet timer relies on that to catch
         # GreenletExit) so the callback can't fire after we've torn down
-        # this connection (the synloop error path doesn't clear the timer
-        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
-        # our copies since the broker may redeliver these tasks to another
-        # worker on reconnect.
+        # this connection (neither event loop cancels them: synloop's error
+        # path cancels nothing, and asynloop's only cancels the entries it
+        # registered for the connection, which doesn't include these), then
+        # drop our copies since the broker may redeliver these tasks to
+        # another worker on reconnect.
         for r in tuple(scheduled_requests):
             entry = r._eta_timer_entry
             if entry is not None and self.timer is not None:

@@ -18,8 +18,8 @@ from celery.worker import state as worker_state
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
                     add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
-                    print_unicode, reject_then_succeed, reject_without_requeue, retry, retry_once,
-                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
+                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
                     return_request_time_limits, second_order_replace1, sleeping,
                     soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
@@ -312,6 +312,22 @@ class test_tasks:
         assert result.ready() is True
         assert result.failed() is False
         assert result.successful() is False
+
+    @pytest.mark.parametrize('task_state', [celery.states.STARTED, 'PROGRESS'])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, manager, task_state):
+        if TEST_BACKEND.startswith('rpc'):
+            raise pytest.skip('Requires a backend that stores task states.')
+        backend = manager.app.backend
+        started, not_started = str(uuid4()), str(uuid4())
+        # Play another worker that has started a task. The session worker
+        # gets the revoke but doesn't run the task, so without terminate it
+        # must leave the state to the other worker.
+        backend.store_result(started, {'hostname': 'other@host'}, task_state)
+
+        # The worker replies once it has handled the revoke
+        assert manager.app.control.revoke([started, not_started], reply=True, timeout=10)
+        assert backend.get_state(started) == task_state
+        assert backend.get_state(not_started) == celery.states.REVOKED
 
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
@@ -803,6 +819,11 @@ class test_task_redis_result_backend:
 
 
 class test_task_replacement:
+    @pytest.mark.parametrize('replacements', (0, 1, 3))
+    def test_replaced_task_nesting_increments(self, manager, replacements):
+        result = record_replaced_task_nesting.delay(replacements)
+        assert result.get(timeout=TIMEOUT) == list(range(replacements + 1))
+
     def test_replaced_task_nesting_level_0(self, manager):
         @task_received.connect
         def task_received_handler(request, **kwargs):

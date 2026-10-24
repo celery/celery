@@ -398,6 +398,30 @@ class test_DatabaseBackend:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
 
+    def test_retry_settings_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    def test_retry_settings_set_to_none_use_the_defaults(self):
+        self.app.conf.result_backend_always_retry = None
+        self.app.conf.result_backend_max_retries = None
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    @pytest.mark.parametrize('config', [
+        {'result_backend_always_retry': False, 'result_backend_max_retries': 0},
+        # The old setting names
+        {'CELERY_RESULT_BACKEND_ALWAYS_RETRY': False, 'CELERY_RESULT_BACKEND_MAX_RETRIES': 0},
+    ])
+    def test_retry_settings_from_config_object(self, config):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object(config)
+            tb = DatabaseBackend(self.uri, app=app)
+            assert tb.always_retry is False
+            assert tb.max_retries == 0
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
