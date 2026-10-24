@@ -284,6 +284,10 @@ class CassandraBackend(BaseBackend):
         """Store return value and state of an executed task."""
         self._get_connection(write=True)
 
+        # Create the table before reading, and keep the first SUCCESS result.
+        if self._get_task_meta_for(task_id)['status'] == states.SUCCESS:
+            return
+
         self._session.execute(self._write_stmt, (
             task_id,
             state,

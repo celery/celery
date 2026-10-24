@@ -28,11 +28,14 @@ class FakeCassandraTable:
 
     def __init__(self):
         self.rows = {}
+        self.created = False
 
     def __call__(self, statement, parameters=None):
         if parameters is None:
             # DDL, CREATE TABLE for instance, carries no parameters
+            self.created = True
             return Mock(name='ddl-result')
+        assert self.created, 'the result table does not exist yet'
         if len(parameters) > 1:
             task_id, status, result, date_done, traceback, children = \
                 parameters
@@ -169,7 +172,71 @@ class test_CassandraBackend:
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
+        session.execute.return_value.one.return_value = None
         x._store_result('task_id', 'result', states.SUCCESS)
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state, result', [
+        (states.STARTED, None),
+        (states.FAILURE, ValueError('second run failed')),
+        (states.SUCCESS, 'second result'),
+    ])
+    def test_store_result_after_success_is_ignored(
+            self, module, monkeypatch, state, result):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        first.store_result('task_id', 'first result', states.SUCCESS)
+        original_meta = first._get_task_meta_for('task_id')
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', result, state, traceback='later traceback')
+
+        assert second._get_task_meta_for('task_id') == original_meta
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state', [
+        states.PENDING, states.STARTED, states.RETRY, states.FAILURE,
+    ])
+    def test_store_result_before_success_can_be_updated(
+            self, module, monkeypatch, state):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        x = mod.CassandraBackend(app=self.app)
+        x._session = Mock(execute=FakeCassandraTable())
+        result = ValueError('first run failed') if state in states.EXCEPTION_STATES else None
+        x.store_result('task_id', result, state)
+        x.store_result('task_id', 'successful result', states.SUCCESS)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 'successful result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('read_session', [False, True])
+    def test_store_result_creates_table_before_read(
+            self, module, monkeypatch, read_session):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        table = FakeCassandraTable()
+        session = mod.cassandra.cluster.Cluster.return_value.connect.return_value
+        session.execute = table
+        x = mod.CassandraBackend(app=self.app)
+        if read_session:
+            x._get_connection()
+        assert not table.created
+
+        x.store_result('task_id', 'first result', states.SUCCESS)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 'first result'
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
     def test_store_result_compressed(self, module, monkeypatch):
@@ -183,6 +250,7 @@ class test_CassandraBackend:
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
+        session.execute.return_value.one.return_value = None
         x._store_result('task_id', 'result', states.SUCCESS)
 
         params = session.execute.call_args[0][1]
@@ -461,6 +529,7 @@ class test_CassandraBackend:
                     other_thread_started.wait(5)
                     other_thread.append(t)
                 executed.append(statement.query.split()[0])
+                return Mock(one=Mock(return_value=None))
 
         class DummyCluster:
             def __init__(self, *args, **kwargs):
@@ -477,7 +546,7 @@ class test_CassandraBackend:
         x._get_connection(write=True)
         other_thread[0].join(5)
         assert not other_thread[0].is_alive()
-        assert executed == ['CREATE', 'INSERT']
+        assert executed == ['CREATE', 'SELECT', 'INSERT']
 
     def test_table_is_created_for_a_write_through_a_read_session(self, monkeypatch):
         # A read opens the session without creating the table, so the first
@@ -507,11 +576,11 @@ class test_CassandraBackend:
         assert executed == ['SELECT']
 
         x._store_result('task_id', 'result', states.SUCCESS)
-        assert executed == ['SELECT', 'CREATE', 'INSERT']
+        assert executed == ['SELECT', 'CREATE', 'SELECT', 'INSERT']
 
         # ...and only the first write pays for it.
         x._store_result('task_id', 'result', states.SUCCESS)
-        assert executed == ['SELECT', 'CREATE', 'INSERT', 'INSERT']
+        assert executed == ['SELECT', 'CREATE', 'SELECT', 'INSERT', 'SELECT', 'INSERT']
 
     def test_auth_provider(self, monkeypatch):
         # Ensure valid auth_provider works properly, and invalid one raises
