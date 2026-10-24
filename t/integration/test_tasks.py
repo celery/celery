@@ -19,7 +19,8 @@ from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connect
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
                     add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
                     print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
-                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
+                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable,
+                    retry_with_args_after_kwargs, retry_with_kwargs_after_args, return_properties,
                     return_request_time_limits, second_order_replace1, sleeping,
                     soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
@@ -490,6 +491,21 @@ class test_tasks:
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
+
+    def test_retry_switches_from_kwargs_to_args(self, manager):
+        result = retry_with_args_after_kwargs.apply_async(
+            kwargs={'foo': 1, 'bar': 2, 'label': 'kept'},
+        )
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 3, 'label': 'kept',
+            'retries': 1, 'is_eager': False,
+        }
+
+    def test_retry_switches_from_args_to_kwargs(self, manager):
+        result = retry_with_kwargs_after_args.apply_async(args=(1, 2))
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 2, 'retries': 1, 'is_eager': False,
+        }
 
     def test_retry_with_unpickleable_exception(self, manager):
         """Test a task that retries with an unpickleable exception.
