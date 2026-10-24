@@ -10,6 +10,8 @@ import os
 import sys
 import threading
 import weakref
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from celery.local import Proxy
 from celery.utils.threads import LocalStack
@@ -37,7 +39,17 @@ _apps = weakref.WeakSet()
 #: Shared tasks, and built-in tasks are created by adding callbacks here.
 _on_app_finalizers = set()
 
+#: Process-wide default, set by the worker pool (e.g. prefork children).
 _task_join_will_block = False
+
+#: Scoped override set by :func:`~celery.result.allow_join_result` and
+#: :func:`~celery.result.denied_join_result`.  A context variable keeps it
+#: local to the current thread/asyncio task, so concurrent guards
+#: (e.g. eager ``apply_async`` from several threads) can't leak into
+#: each other or into the process-wide default.
+_task_join_will_block_override: ContextVar[bool | None] = ContextVar(
+    'celery_task_join_will_block_override', default=None,
+)
 
 
 def connect_on_app_finalize(callback):
@@ -58,7 +70,19 @@ def _set_task_join_will_block(blocks):
 
 
 def task_join_will_block():
+    override = _task_join_will_block_override.get()
+    if override is not None:
+        return override
     return _task_join_will_block
+
+
+@contextmanager
+def _override_task_join_will_block(blocks):
+    token = _task_join_will_block_override.set(blocks)
+    try:
+        yield
+    finally:
+        _task_join_will_block_override.reset(token)
 
 
 class _TLS(threading.local):
