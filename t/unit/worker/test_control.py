@@ -220,6 +220,78 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_disable_events_all_groups(self):
+        # worker started with -E: an empty set of groups means that
+        # events of every group are sent.
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = set()
+        reply = panel.handle('disable_events')
+        assert reply == {'ok': 'task events disabled'}
+        assert evd.groups == {'worker'}
+        assert 'already disabled' in panel.handle('disable_events')['ok']
+        assert evd.groups == {'worker'}
+
+    def test_disable_events_all_groups_stops_task_events(self):
+        consumer = Consumer(self.app)
+        connection = Mock()
+        connection.transport.driver_type = 'amqp'
+        # same dispatcher a worker started with -E has: groups=None
+        evd = consumer.event_dispatcher = self.app.events.Dispatcher(
+            connection, enabled=True, groups=None, buffer_group=None,
+        )
+        evd._publish = Mock(name='_publish')
+        panel = self.create_panel(consumer=consumer)
+        assert not evd.groups
+
+        evd.send('task-received', uuid='id1')
+        assert evd._publish.call_count == 1
+
+        panel.handle('disable_events')
+        evd.send('task-received', uuid='id2')
+        assert evd._publish.call_count == 1
+        evd.send('worker-heartbeat', freq=2)
+        assert evd._publish.call_count == 2
+
+        panel.handle('enable_events')
+        evd.send('task-received', uuid='id3')
+        assert evd._publish.call_count == 3
+
+    def test_disable_events_enable_events_round_trip(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = set()
+        assert 'disabled' in panel.handle('disable_events')['ok']
+        assert 'task' not in evd.groups
+        assert panel.handle('enable_events') == {'ok': 'task events enabled'}
+        assert evd.groups == {'worker', 'task'}
+        assert panel.handle('disable_events') == {'ok': 'task events disabled'}
+        assert evd.groups == {'worker'}
+
+    def test_disable_events_only_task_group_keeps_worker_group(self):
+        # discarding the last group must not leave an empty set,
+        # as that would mean "send every group".
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = {'task'}
+        assert panel.handle('disable_events') == {'ok': 'task events disabled'}
+        assert evd.groups == {'worker'}
+
+    def test_disable_events_keeps_other_groups(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = {'worker', 'task', 'custom'}
+        panel.handle('disable_events')
+        assert evd.groups == {'worker', 'custom'}
+
     def test_enable_events_no_dispatcher(self):
         consumer = Consumer(self.app)
         consumer.event_dispatcher = None
