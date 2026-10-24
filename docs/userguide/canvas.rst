@@ -1040,10 +1040,13 @@ Enabling this flag will cause the chord header to invoke the errback for the bod
 .. versionchanged:: 5.7
 
     You can also pass ``link`` and ``link_error`` to ``chord.apply_async()``.
-    They are added to the body, after its own callbacks. The
+    ``link`` is linked to the body the same way ``chord.link()`` links it.
+    ``link_error`` is added to the body's options. When the body is a group,
+    a group task that fails calls this errback instead of its own errbacks,
+    and a failed header task calls it once for each task in the group. The
     :setting:`task_allow_error_cb_on_chord_header` setting doesn't apply to
-    them, so an errback passed this way isn't added to the header tasks.
-    Previously, passing them raised :exc:`TypeError`.
+    ``link_error``, so an errback passed this way isn't added to the header
+    tasks. Previously, passing them raised :exc:`TypeError`.
 
 .. _chord-important-notes:
 

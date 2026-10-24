@@ -3113,12 +3113,26 @@ class test_chord(CanvasCase):
         assert not any(task.immutable for task in callback.tasks)
 
     @pytest.mark.parametrize('eager', [False, True])
-    def test_link_option_on_chord_body_goes_to_its_body(self, eager):
-        inner = chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s())
-        x = chord([self.add.s(2, 2)], body=inner)
-        body = self._body_to_run(x, eager, link=self.div.s(2))
-        assert body.body.options['link'] == [self.div.s(2)]
-        assert not x.body.body.options.get('link')
+    @pytest.mark.parametrize('make_inner_body', [
+        lambda self: self.xsum.s(),
+        lambda self: group(self.xsum.s(), self.xsum.s(), app=self.app),
+    ], ids=['task', 'group'])
+    def test_link_option_on_chord_body_goes_to_its_body(self, make_inner_body, eager):
+        # As with chord.link(), the callback goes to the body of the chord
+        def make_chord():
+            inner = chord([self.xsum.s(), self.xsum.s()], body=make_inner_body(self))
+            return chord([self.add.s(2, 2)], body=inner)
+
+        def links(inner_body):
+            tasks = inner_body.tasks if isinstance(inner_body, group) else [inner_body]
+            return [task.options.get('link') for task in tasks]
+
+        expected = make_chord()
+        expected.link(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link=self.div.si(2))
+        assert links(body.body) == links(expected.body.body)
+        assert not any(links(x.body.body))
 
     @pytest.mark.parametrize('eager', [False, True])
     def test_link_option_is_not_kept_for_next_call(self, eager):

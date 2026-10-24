@@ -2829,18 +2829,16 @@ subtask = signature  # XXX compat
 
 
 def _clone_with_members(sig):
-    """Clone ``sig`` and the groups and chords in it.
+    """Clone ``sig`` and the signatures in it that ``link()`` changes.
 
-    ``clone()`` keeps the tasks of a group and the header of a chord, so
-    linking a callback to the clone would change the original as well.
+    ``clone()`` keeps the tasks of a group, so linking a callback to the
+    clone would change the original group as well. ``link()`` goes on to
+    the tasks of a group and to the body of a chord.
     """
     sig = maybe_signature(sig, clone=True)
     if isinstance(sig, group):
         sig.tasks = [_clone_with_members(task) for task in sig.tasks]
     elif isinstance(sig, _chord):
-        header = sig.tasks
-        sig.tasks = (_clone_with_members(header) if isinstance(header, group)
-                     else [_clone_with_members(task) for task in header])
         sig.body = _clone_with_members(sig.body)
     return sig
 
