@@ -552,7 +552,44 @@ class test_BaseBackend_dict:
         b = BaseBackend(self.app)
         b._save_group = Mock()
         b.save_group('foofoo', 'xxx')
-        b._save_group.assert_called_with(group_id='foofoo', result='xxx')
+        b._save_group.assert_called_with('foofoo', 'xxx')
+
+    def test_backend_hooks_get_positional_arguments(self):
+        # Backends outside Celery (e.g. django-celery-results) give these
+        # hooks other parameter names, so the values must go by position.
+        stored, groups = {}, {}
+
+        class RenamedBackend(BaseBackend):
+            def _store_result(self, tid, value, status, tb=None, request=None, using=None):
+                stored[tid] = {'status': status, 'result': value, 'traceback': tb, 'using': using}
+
+            def _get_task_meta_for(self, tid):
+                return stored.get(tid, {'status': states.PENDING, 'result': None})
+
+            def _forget(self, tid):
+                stored.pop(tid)
+
+            def _save_group(self, gid, group_result):
+                groups[gid] = group_result
+
+            def _restore_group(self, gid):
+                return {'result': groups[gid]} if gid in groups else None
+
+            def _delete_group(self, gid):
+                groups.pop(gid)
+
+        b = RenamedBackend(self.app)
+        b.store_result('t1', 42, states.SUCCESS, traceback='tb', using='replica')
+        assert stored['t1']['status'] == states.SUCCESS
+        assert stored['t1']['traceback'] == 'tb'
+        assert stored['t1']['using'] == 'replica'
+        assert b.get_task_meta('t1', cache=False)['result'] == 42
+        b.forget('t1')
+        assert 't1' not in stored
+        b.save_group('g1', 'xxx')
+        assert b.restore_group('g1', cache=False) == 'xxx'
+        b.delete_group('g1')
+        assert 'g1' not in groups
 
     def test_add_to_chord_interface(self):
         b = BaseBackend(self.app)
@@ -2234,8 +2271,9 @@ class test_backend_retries:
             try:
                 b.get_task_meta(sentinel.task_id)
                 assert False
-            except BackendGetMetaError:
+            except BackendGetMetaError as exc:
                 assert b._sleep.call_count == 0
+                assert exc.task_id is sentinel.task_id
         finally:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
@@ -2395,7 +2433,9 @@ class test_backend_retries:
             try:
                 b.store_result(sentinel.task_id, 42, states.SUCCESS)
                 assert False
-            except BackendStoreError:
+            except BackendStoreError as exc:
+                assert exc.task_id is sentinel.task_id
+                assert exc.state == states.SUCCESS
                 assert b._sleep.call_count == 0
         finally:
             self.app.conf.result_backend_always_retry = prev
