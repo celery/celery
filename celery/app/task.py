@@ -708,8 +708,6 @@ class Task:
             args, kwargs = self._dump_pydantic_arguments(args, kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
@@ -1093,12 +1091,13 @@ class Task:
             sig.link(callback)
         for errback in maybe_list(self.request.errbacks) or []:
             sig.link_error(errback)
-        # If the replacement signature is a chain, we need to push callbacks
+        # If the replacement signature is a chain, we need to move callbacks
         # down to the final task so they run at the right time even if we
-        # proceed to link further tasks from the original request below
+        # proceed to link further tasks from the original request below.
+        # Leaving them on the chain as well would link them twice.
         if isinstance(sig, _chain) and "link" in sig.options:
             final_task_links = sig.tasks[-1].options.setdefault("link", [])
-            final_task_links.extend(maybe_list(sig.options["link"]))
+            final_task_links.extend(maybe_list(sig.options.pop("link")))
         # We need to freeze the replacement signature with the current task's
         # ID to ensure that we don't disassociate it from the existing task IDs
         # which would break previously constructed results objects.

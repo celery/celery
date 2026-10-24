@@ -8,6 +8,7 @@ from unittest.mock import Mock
 
 import pytest
 from dateutil import tz as dateutil_tz
+from freezegun import freeze_time
 
 from celery.exceptions import ImproperlyConfigured
 from celery.schedules import ParseException, crontab, crontab_parser, schedule, solar
@@ -64,6 +65,38 @@ class test_solar:
         self.s.cal.next_rising().datetime.return_value = datetime.now(timezone.utc)
         self.s.remaining_estimate(datetime.now(timezone.utc))
 
+    @pytest.mark.parametrize('tz', [
+        pytest.param(ZoneInfo('America/New_York'), id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz('America/New_York'), id='dateutil'),
+        pytest.param(timezone.utc, id='utc-control'),
+    ])
+    def test_remaining_estimate_spring_forward(self, tz):
+        self.app.timezone = tz
+        now = datetime.fromisoformat('2026-03-08T01:30:00-05:00')
+        last_run_at = datetime.fromisoformat('2026-03-07T03:00:00-05:00')
+        s = solar('sunrise', 0, -15, app=self.app)
+
+        # Sunrise here is around 03:07-04:00 in New York
+        with freeze_time(now):
+            remaining = s.remaining_estimate(last_run_at)
+        assert timedelta(minutes=37) <= remaining < timedelta(minutes=38)
+
+    @pytest.mark.parametrize('tz', [
+        pytest.param(ZoneInfo('America/New_York'), id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz('America/New_York'), id='dateutil'),
+        pytest.param(timezone.utc, id='utc-control'),
+    ])
+    def test_remaining_estimate_fall_back(self, tz):
+        self.app.timezone = tz
+        now = datetime.fromisoformat('2026-11-01T01:45:00-04:00')
+        last_run_at = datetime.fromisoformat('2026-10-31T03:00:00-04:00')
+        s = solar('sunrise', 0, -15, app=self.app)
+
+        # Sunrise here is in the second 01:40, at -05:00 (06:40 UTC).
+        with freeze_time(now):
+            remaining = s.remaining_estimate(last_run_at)
+        assert timedelta(minutes=55) <= remaining < timedelta(minutes=56)
+
     def test_coordinates(self):
         with pytest.raises(ValueError):
             solar('sunrise', -120, 60, app=self.app)
@@ -99,6 +132,50 @@ class test_solar:
                 pytest.fail(
                     f"{s.method} was called with 'use_center' which is not a "
                     "valid keyword for the function.")
+
+    @pytest.mark.parametrize('event,lat,lon,last_run_at,expected', [
+        # Astronomical twilight lasts all night in London around the
+        # summer solstice, so there is no astronomical dawn.
+        ('dawn_astronomical', 51.5074, -0.1278,
+         datetime(2026, 6, 15, tzinfo=timezone.utc),
+         datetime(2026, 7, 22, 0, 30, tzinfo=timezone.utc)),
+        # Same for nautical dawn in Stockholm.
+        ('dawn_nautical', 59.3293, 18.0686,
+         datetime(2026, 6, 15, tzinfo=timezone.utc),
+         datetime(2026, 7, 29, 23, 14, tzinfo=timezone.utc)),
+        # Polar night in Tromsø: the sun doesn't rise until mid-January.
+        ('sunrise', 69.6492, 18.9553,
+         datetime(2026, 12, 15, tzinfo=timezone.utc),
+         datetime(2027, 1, 15, 10, 34, tzinfo=timezone.utc)),
+    ])
+    def test_remaining_estimate_skips_days_without_event(
+            self, event, lat, lon, last_run_at, expected):
+        s = solar(event, lat, lon, app=self.app, nowfun=lambda: last_run_at)
+        next_run = last_run_at + s.remaining_estimate(last_run_at)
+        assert expected <= next_run < expected + timedelta(minutes=1)
+
+    def test_is_due_not_due_on_days_without_event(self):
+        # Before the fix, the entry was due every night in the summer.
+        s = solar('dawn_astronomical', 51.5074, -0.1278, app=self.app,
+                  nowfun=lambda: datetime(2026, 6, 16, 3,
+                                          tzinfo=timezone.utc))
+        state = s.is_due(datetime(2026, 6, 15, 2, tzinfo=timezone.utc))
+        assert not state.is_due
+        assert state.next > timedelta(days=30).total_seconds()
+
+    def test_remaining_estimate_event_never_happens(self):
+        last_run_at = datetime(2026, 6, 15, tzinfo=timezone.utc)
+        s = solar('dawn_astronomical', 51.5074, -0.1278, app=self.app,
+                  nowfun=lambda: last_run_at)
+        s.max_search_days = 3
+        s.cal = Mock(name='cal')
+        s.cal.next_rising.side_effect = s.ephem.CircumpolarError()
+        s.cal.next_antitransit.side_effect = (
+            lambda body, start: s.ephem.Date(start + 1)
+        )
+        rem = s.remaining_estimate(last_run_at)
+        assert s.cal.next_rising.call_count == 3
+        assert rem == timedelta(days=3)
 
 
 class test_solar_without_ephem:
@@ -847,13 +924,17 @@ class test_crontab_remaining_estimate:
         assert next == datetime(2010, 5, 29, 0, 5)
 
     def test_invalid_specification(self):
+        with pytest.raises(ValueError):
+            self.crontab(day_of_month=31, month_of_year=4)
+
+    def test_rollover_gives_up_on_invalid_date(self):
         # *** WARNING ***
         # This test triggers an infinite loop in case of a regression
+        c = self.crontab(day_of_month=30, month_of_year=4)
+        # bypass the validation done by the constructor
+        c.day_of_month = {31}
         with pytest.raises(RuntimeError):
-            self.next_occurrence(
-                self.crontab(day_of_month=31, month_of_year=4),
-                datetime(2010, 1, 28, 14, 30, 15),
-            )
+            self.next_occurrence(c, datetime(2010, 1, 28, 14, 30, 15))
 
     def test_leapyear(self):
         next = self.next_occurrence(
@@ -1097,6 +1178,28 @@ class test_crontab_is_due:
     def test_crontab_spec_invalid_moy(self, month_of_year):
         with pytest.raises(ValueError):
             self.crontab(month_of_year=month_of_year)
+
+    @pytest.mark.parametrize('day_of_month,month_of_year', [
+        (30, 2),
+        ('30,31', 'feb'),
+        (31, 4),
+        (31, '4,6,9,11'),
+        ([], '*'),
+        ('*', []),
+    ])
+    def test_crontab_spec_date_never_occurs(self, day_of_month, month_of_year):
+        with pytest.raises(ValueError, match='never occurs'):
+            self.crontab(day_of_month=day_of_month,
+                         month_of_year=month_of_year)
+
+    @pytest.mark.parametrize('day_of_month,month_of_year', [
+        (29, 2),
+        ('30,31', '2,3'),
+        (31, '4-5'),
+        (31, '*'),
+    ])
+    def test_crontab_spec_date_occurs(self, day_of_month, month_of_year):
+        self.crontab(day_of_month=day_of_month, month_of_year=month_of_year)
 
     def seconds_almost_equal(self, a, b, precision):
         for index, skew in enumerate((+1, -1, 0)):
