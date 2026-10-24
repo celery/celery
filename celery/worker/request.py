@@ -703,6 +703,23 @@ class Request:
             return self.on_retry(exc_info)
 
         is_worker_lost = isinstance(exc, WorkerLostError)
+        if is_worker_lost and self._success_was_stored():
+            # The pool child stored SUCCESS and was lost afterwards, e.g. in
+            # on_success, a task_postrun receiver or process_cleanup.
+            # Recording a failure here would fire the errbacks and count a
+            # chord header twice, and requeueing would run the task again.
+            warn('Task %s[%s] succeeded before the worker was lost: %r',
+                 self.name, self.id, exc)
+            if self.task.acks_late:
+                self.acknowledge()
+            # Emit the success event so Flower/events.State do not stay STARTED.
+            try:
+                result = self.task.backend.get_result(self.id)
+            except Exception:  # pylint: disable=broad-except
+                result = None
+            self.send_event('task-succeeded', result=result, runtime=None)
+            return
+
         max_retries_exceeded = False
         if is_worker_lost and self.task.retry_on_worker_lost:
             max_retries = self.task.max_retries
@@ -805,6 +822,23 @@ class Request:
             task.request_stack.pop()
         info('Task %s[%s] retry: %s', self.task_name, self.id, reason)
         return True
+
+    def _success_was_stored(self):
+        task = self.task
+        # ignore_result never writes SUCCESS, and rpc:// results live on the
+        # caller's queue: a lookup here would always see PENDING and would
+        # declare a durable per-worker reply queue as a side effect.
+        if task.ignore_result:
+            return False
+        backend = task.backend
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
+        try:
+            return backend.get_state(self.id) == states.SUCCESS
+        except Exception:  # pylint: disable=broad-except
+            # No backend, or it can't be reached: keep the failure handling.
+            return False
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):
