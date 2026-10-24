@@ -1,7 +1,7 @@
 import pytest
 
-from celery.utils.text import (abbr, abbrtask, ensure_newlines, indent, pretty, remove_repeating_from_task,
-                               simple_format, truncate)
+from celery.utils.text import (abbr, abbrtask, ensure_newlines, ensure_sep, indent, pretty,
+                               remove_repeating_from_task, simple_format, truncate)
 
 RANDTEXT = """\
 The quick brown
@@ -48,6 +48,14 @@ class test_Info:
     def test_ensure_newlines(self):
         assert len(ensure_newlines('foo\nbar\nbaz\n').splitlines()) == 3
         assert len(ensure_newlines('foo\nbar').splitlines()) == 2
+
+    @pytest.mark.parametrize(('sep', 'text', 'n', 'expected'), [
+        ('\n', 'foo\nbar\nbaz', 2, 'foo\nbar\nbaz\n'),
+        ('--', 'a--b--c', 2, 'a--b--c--'),
+        ('\n', 'foo\nbar\nbaz\n', 2, 'foo\nbar\nbaz\n'),
+    ])
+    def test_ensure_sep_ends_with_separator(self, sep, text, n, expected):
+        assert ensure_sep(sep, text, n) == expected
 
 
 @pytest.mark.parametrize('s,maxsize,expected', [
