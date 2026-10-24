@@ -121,6 +121,7 @@ Other
 .. _version-5.7.0b1:
 
 5.7.0b1
+=======
 
 :release-date: 2026-10-06
 :release-by: Asif Saif Uddin

@@ -82,7 +82,11 @@ class test_trace(TraceCase):
             return x + y
 
         on_task_success = Mock()
+        on_task_failure = Mock()
+        on_task_internal_error = Mock()
         signals.task_success.connect(on_task_success)
+        signals.task_failure.connect(on_task_failure)
+        signals.task_internal_error.connect(on_task_internal_error)
         try:
             with patch('celery.app.trace.TraceInfo.handle_failure') as handle_failure, \
                     patch('celery.app.trace.logger') as mock_logger:
@@ -91,6 +95,8 @@ class test_trace(TraceCase):
                 )
         finally:
             signals.task_success.receivers[:] = []
+            signals.task_failure.receivers[:] = []
+            signals.task_internal_error.receivers[:] = []
 
         assert info is None
         assert retval == 4
@@ -100,6 +106,8 @@ class test_trace(TraceCase):
         assert add_with_failing_success.backend.get_state('id-1') == states.SUCCESS
         handle_failure.assert_not_called()
         on_task_success.assert_called()
+        on_task_failure.assert_not_called()
+        on_task_internal_error.assert_not_called()
         add_with_failing_success.after_return.assert_called_with(
             states.SUCCESS, 4, 'id-1', (2, 2), {}, None,
         )
