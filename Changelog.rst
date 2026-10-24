@@ -9,6 +9,16 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
+  worker is now logged at ``ERROR`` level instead of being recorded as a task
+  failure. The task's errbacks no longer run for a task that succeeded, and a
+  failed task is no longer recorded a second time. Broken hooks therefore no
+  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
+  execution still propagates the exception (#10724).
+
 .. _version-5.7.0rc1:
 
 5.7.0rc1
@@ -104,6 +114,7 @@ Other
 
 - Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
 - Fix invalid Bandit baseline JSON and validate it before commit (#10766)
+
 
 
 
