@@ -1037,10 +1037,13 @@ This behavior can be manipulated to allow error handling of the chord header
 using the :setting:`task_allow_error_cb_on_chord_header` flag.
 Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
 
-You can also pass ``link`` and ``link_error`` to ``chord.apply_async()``.
-They are added to the body, after its own callbacks. The
-:setting:`task_allow_error_cb_on_chord_header` setting doesn't apply to
-them, so an errback passed this way isn't added to the header tasks.
+.. versionchanged:: 5.7
+
+    You can also pass ``link`` and ``link_error`` to ``chord.apply_async()``.
+    They are added to the body, after its own callbacks. The
+    :setting:`task_allow_error_cb_on_chord_header` setting doesn't apply to
+    them, so an errback passed this way isn't added to the header tasks.
+    Previously, passing them raised :exc:`TypeError`.
 
 .. _chord-important-notes:
 
