@@ -712,6 +712,12 @@ class Request:
                  self.name, self.id, exc)
             if self.task.acks_late:
                 self.acknowledge()
+            # Emit the success event so Flower/events.State do not stay STARTED.
+            try:
+                result = self.task.backend.get_result(self.id)
+            except Exception:  # pylint: disable=broad-except
+                result = None
+            self.send_event('task-succeeded', result=result, runtime=None)
             return
 
         max_retries_exceeded = False
@@ -818,8 +824,18 @@ class Request:
         return True
 
     def _success_was_stored(self):
+        task = self.task
+        # ignore_result never writes SUCCESS, and rpc:// results live on the
+        # caller's queue: a lookup here would always see PENDING and would
+        # declare a durable per-worker reply queue as a side effect.
+        if task.ignore_result:
+            return False
+        backend = task.backend
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
         try:
-            return self.task.backend.get_state(self.id) == states.SUCCESS
+            return backend.get_state(self.id) == states.SUCCESS
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False
