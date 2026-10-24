@@ -3854,6 +3854,47 @@ class test_chord:
             result.get(timeout=TIMEOUT)
         await_redis_echo('failed', redis_key=redis_key)
 
+    def test_link_option_runs_after_the_body(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        body = tsum.s()
+        body.link(redis_echo.si('own', redis_key=redis_key))
+        result = chord([add.si(1, 1), add.si(2, 2)], body).apply_async(
+            link=redis_echo.s(redis_key=redis_key))
+
+        assert result.get(timeout=TIMEOUT) == 6
+        # The body keeps its own callback, and each callback runs once
+        await_redis_echo({'own', '6'}, redis_key=redis_key)
+
+    def test_link_option_on_chain_ending_in_chord(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        # The worker applies the chord after the first task succeeds
+        workflow = chain(add.si(1, 1), chord([add.s(10), add.s(20)], tsum.s()))
+        result = workflow.apply_async(link=redis_echo.s(redis_key=redis_key))
+
+        assert result.get(timeout=TIMEOUT) == 34
+        await_redis_echo({'34'}, redis_key=redis_key)
+
+    def test_link_error_option_runs_on_body_failure(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        body = fail.s()
+        body.link_error(errback_old_style.s())
+        result = chord([identity.si(42)], body).apply_async(
+            link_error=errback_new_style.s())
+
+        with pytest.raises(ExpectedException):
+            result.get(timeout=TIMEOUT)
+        # Both errbacks of the body ran: its own and the chord's
+        await_redis_count(2, redis_key=result.id)
+        get_redis_connection().delete(result.id)
+
 
 class test_signature_serialization:
     """
