@@ -698,6 +698,24 @@ Default: :const:`None` (falls back to :setting:`task_acks_on_failure_or_timeout`
 When enabled messages for tasks that fail will be acknowledged.
 When disabled failed task messages will be rejected without requeue.
 
+The :attr:`Task.acks_on_failure <celery.app.task.Task.acks_on_failure>`
+attribute can also be a method that takes the exception and returns
+whether to acknowledge, for example to keep messages whose retries
+were exhausted on a transient error for a dead letter queue:
+
+.. code-block:: python
+
+    class DLQTask(Task):
+        acks_late = True
+        autoretry_for = (ConnectionError,)
+
+        def acks_on_failure(self, exc):
+            return not isinstance(exc, self.autoretry_for)
+
+The method is called in the worker main process, not in the pool process
+that ran the task, so changing task attributes from :meth:`Task.on_failure`
+has no effect on acknowledgement.
+
 Configuring this setting only applies to tasks that are
 acknowledged **after** they have been executed and only if
 :setting:`task_acks_late` is enabled.

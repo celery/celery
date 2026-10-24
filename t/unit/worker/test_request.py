@@ -1302,6 +1302,105 @@ class test_Request(RequestCase):
         job._on_reject.assert_called_with(req_logger, job.connection_errors,
                                           False)
 
+    def test_on_failure_acks_on_failure_callable_rejects(self):
+        """A callable acks_on_failure returning False rejects without requeue."""
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = Mock(return_value=False)
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        (exc,), _ = self.mytask.acks_on_failure.call_args
+        assert isinstance(exc, KeyError)
+        job._on_reject.assert_called_with(req_logger, job.connection_errors,
+                                          False)
+
+    def test_on_failure_acks_on_failure_callable_acks(self):
+        """A callable acks_on_failure returning True acknowledges."""
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = Mock(return_value=True)
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_not_called()
+
+    def test_on_failure_acks_on_failure_callable_raises_acks(self):
+        """A callable acks_on_failure that raises falls back to acknowledging."""
+        job = self.xRequest()
+        job.time_start = 1
+        job._on_reject = Mock()
+        self.mytask.acks_late = True
+        self.mytask.acks_on_failure = Mock(side_effect=RuntimeError('boom'))
+        try:
+            raise KeyError('foo')
+        except KeyError:
+            exc_info = ExceptionInfo()
+            with patch('celery.worker.request.error') as error:
+                job.on_failure(exc_info)
+        assert job.acknowledged is True
+        job._on_reject.assert_not_called()
+        error.assert_called()
+
+    def test_on_failure_acks_on_failure_method_per_exception(self):
+        """acks_on_failure defined as a task method decides per exception."""
+
+        class DLQTask(self.app.Task):
+            acks_late = True
+            autoretry_for = (ConnectionError,)
+
+            def acks_on_failure(self, exc):
+                return not isinstance(exc, self.autoretry_for)
+
+        @self.app.task(base=DLQTask, shared=False)
+        def dlqtask():
+            pass
+
+        for exc, acked in ((KeyError('foo'), True),
+                           (ConnectionError('down'), False)):
+            job = self.xRequest(name=dlqtask.name)
+            job.time_start = 1
+            job._on_reject = Mock()
+            try:
+                raise exc
+            except type(exc):
+                exc_info = ExceptionInfo()
+                job.on_failure(exc_info)
+            if acked:
+                job._on_reject.assert_not_called()
+            else:
+                job._on_reject.assert_called_with(
+                    req_logger, job.connection_errors, False)
+
+    def test_on_failure_timelimit_ignores_callable_acks_on_failure(self):
+        """TimeLimitExceeded uses acks_on_timeout without calling acks_on_failure."""
+        try:
+            raise TimeLimitExceeded()
+        except TimeLimitExceeded:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.acks_on_failure = Mock(return_value=True)
+        req.task.acks_on_timeout = False
+        req.delivery_info['redelivered'] = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.acks_on_failure.assert_not_called()
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+
     def test_on_failure_timelimit_uses_acks_on_timeout_not_failure(self):
         """TimeLimitExceeded in on_failure should use acks_on_timeout, not acks_on_failure."""
         try:
