@@ -155,7 +155,7 @@ when absolutely necessary.
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Django users now uses the exact same template as above,
+Django users can now use the exact same template as above,
 but make sure that the module that defines your Celery app instance
 also sets a default value for :envvar:`DJANGO_SETTINGS_MODULE`
 as shown in the example Django project in :ref:`django-first-steps`.
