@@ -48,6 +48,11 @@ to match all tasks in the ``feed.tasks`` name-space:
 
     app.conf.task_routes = {'feed.tasks.*': {'queue': 'feeds'}}
 
+Glob patterns also support ``?`` for a single character and character classes
+such as ``[abc]``, ``[0-9]``, and ``[!abc]``. For example,
+``'feed.tasks.import[12]'`` matches ``feed.tasks.import1`` and
+``feed.tasks.import2`` without requiring an asterisk in the pattern.
+
 If the order of matching patterns is important you should
 specify the router in *items* format instead:
 
