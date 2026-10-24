@@ -822,11 +822,7 @@ class Backend:
                         self._sleep(sleep_amount)
                     else:
                         if fallback_exc:
-                            exc_kwargs = {}
-                            for key in ("task_id", "state"):
-                                if key in kwargs:
-                                    exc_kwargs[key] = kwargs[key]
-                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                            raise_with_context(fallback_exc(fallback_msg))
                         raise
                 else:
                     raise
@@ -840,14 +836,13 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        kwargs.update({'task_id': task_id, 'state': state})
-
+        # Pass the values by position, as 5.6 did: backends outside Celery,
+        # such as django-celery-results, name these parameters differently.
         self._ensure_retryable(
             self._store_result,
-            fallback_exc=BackendStoreError,
+            task_id, result, state, traceback,
+            fallback_exc=partial(BackendStoreError, task_id=task_id, state=state),
             fallback_msg="failed to store result on the backend",
-            result=result,
-            traceback=traceback,
             request=request,
             **kwargs
         )
@@ -855,7 +850,7 @@ class Backend:
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._ensure_retryable(self._forget, task_id=task_id)
+        self._ensure_retryable(self._forget, task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -919,9 +914,9 @@ class Backend:
 
         meta = self._ensure_retryable(
             self._get_task_meta_for,
-            fallback_exc=BackendGetMetaError,
+            task_id,
+            fallback_exc=partial(BackendGetMetaError, task_id=task_id),
             fallback_msg="failed to get meta",
-            task_id=task_id
         )
 
         if cache and meta.get('status') == states.SUCCESS:
@@ -955,7 +950,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -968,15 +963,11 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._ensure_retryable(
-            self._save_group,
-            group_id=group_id,
-            result=result
-        )
+        return self._ensure_retryable(self._save_group, group_id, result)
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._ensure_retryable(self._delete_group, group_id=group_id)
+        return self._ensure_retryable(self._delete_group, group_id)
 
     def cleanup(self):
         """Backend cleanup."""

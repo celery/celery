@@ -18,14 +18,14 @@ from t.canvas_helpers import ids_in_as_tuple
 
 from . import tasks
 from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
-from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
-                    add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
-                    ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
-                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, return_request_eta, second_order_replace1, tsum, write_to_file_and_return_int,
-                    xsum)
+from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced,
+                    add_replaced_with_chain, add_to_all, add_to_all_to_chord, build_chain_inside_task, collect_ids,
+                    delayed_sum, delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail,
+                    fail_replaced, identity, ids, mul, print_unicode, raise_error, redis_count, redis_echo,
+                    redis_echo_group_id, replace_with_chain, replace_with_chain_which_contains_a_group,
+                    replace_with_chain_which_raises, replace_with_empty_chain, replace_with_stamped_task, retry_once,
+                    return_exception, return_priority, return_request_eta, second_order_replace1, tsum,
+                    write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
@@ -922,6 +922,25 @@ class test_chain:
             with pytest.raises(ExpectedException):
                 res_obj.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_task_with_callback_replaced_with_chain(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        orig_sig = add_replaced_with_chain.si(42, 1337)
+        orig_sig.link(callback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Task executes as expected"):
+            res_obj = orig_sig.delay()
+            assert res_obj.get(timeout=TIMEOUT) == 42 + 1337
+        with subtests.test(msg="Callback is called once after the chain finishes"):
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
@@ -1914,6 +1933,26 @@ class test_group:
             with pytest.raises(ExpectedException):
                 res_obj.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_child_with_callback_replaced_with_chain(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_sig = add_replaced_with_chain.si(42, 1337)
+        child_sig.link(callback)
+        group_sig = group(child_sig, identity.si(31337))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Group executes as expected"):
+            res_obj = group_sig()
+            assert res_obj.get(timeout=TIMEOUT) == [42 + 1337, 31337]
+        with subtests.test(msg="Callback is called once after the chain finishes"):
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
