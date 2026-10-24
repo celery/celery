@@ -1464,6 +1464,19 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_chain_links_callback_once(self):
+        c = chain([self.mytask.si(), self.mytask.si()], app=self.app)
+        callback = self.mytask.si()
+        self.mytask.request.id = 'id'
+        self.mytask.request.callbacks = [callback]
+        with patch.object(self.app, 'send_task') as send_task:
+            with pytest.raises(Ignore):
+                self.mytask.replace(c)
+        # The first task is sent with the rest of the chain, and the
+        # callback must be linked to the last task only once.
+        (last_task,) = send_task.call_args.kwargs['chain']
+        assert last_task.options['link'] == [callback]
+
     def test_replace_chain_ending_in_group(self):
         c = chain(
             [
