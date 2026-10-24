@@ -3072,6 +3072,62 @@ class test_chord(CanvasCase):
         body = self._body_to_run(x, eager)
         assert body.options['link'] == [self.div.s(2)]
 
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_on_group_body_is_like_chord_link(self, eager):
+        # chord.link() links a group body once, on its first task
+        def make_chord():
+            return chord([self.add.s(2, 2)],
+                         body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+
+        expected = make_chord()
+        expected.link(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link=self.div.si(2))
+        assert [task.options.get('link') for task in body.tasks] == [
+            task.options.get('link') for task in expected.body.tasks]
+        assert not body.options.get('link')
+        assert not any(task.options.get('link') for task in x.body.tasks)
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('make_body', [
+        lambda self: group(self.xsum.s(), self.xsum.s(), app=self.app),
+        lambda self: chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()),
+    ], ids=['group', 'chord'])
+    def test_link_error_option_stays_on_group_or_chord_body(self, make_body, eager):
+        # The chord's error handling reads it there when the header fails
+        x = chord([self.add.s(2, 2)], body=make_body(self))
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert body.options['link_error'] == [self.div.si(2)]
+        assert not x.body.options.get('link_error')
+
+    def test_link_option_on_empty_group_body(self):
+        x = chord([self.add.s(2, 2)], body=group([], app=self.app))
+        body = self._body_to_run(x, False, link=self.div.si(2))
+        assert body.options['link'] == [self.div.si(2)]
+
+    def test_link_option_does_not_change_callback_group(self):
+        callback = group(self.div.s(2), self.mul.s(4), app=self.app)
+        x = chord([self.add.s(2, 2)],
+                  body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+        self._body_to_run(x, False, link=callback)
+        assert not any(task.immutable for task in callback.tasks)
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_on_chord_body_goes_to_its_body(self, eager):
+        inner = chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s())
+        x = chord([self.add.s(2, 2)], body=inner)
+        body = self._body_to_run(x, eager, link=self.div.s(2))
+        assert body.body.options['link'] == [self.div.s(2)]
+        assert not x.body.body.options.get('link')
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_is_not_kept_for_next_call(self, eager):
+        x = chord([self.add.s(2, 2)],
+                  body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+        self._body_to_run(x, eager, link=self.div.si(2))
+        body = self._body_to_run(x, eager, link=self.mul.si(4))
+        assert body.tasks[0].options['link'] == [self.mul.si(4)]
+
     def test_chain_link_to_chord_step_keeps_body_callbacks(self):
         own_callback = self.div.s(2)
         chain_callback = self.add.s(1)

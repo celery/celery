@@ -2484,7 +2484,7 @@ class _chord(Signature):
             tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
             # apply() does not use the options of the chord, unlike run()
-            self._add_body_callbacks(body, dict(self.options, **callbacks))
+            body = self._add_body_callbacks(body, dict(self.options, **callbacks))
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
@@ -2560,15 +2560,30 @@ class _chord(Signature):
     def _add_body_callbacks(body, options):
         """Move ``link`` and ``link_error`` from ``options`` to the body.
 
-        They are appended to the ``link`` / ``link_error`` options of the
-        body, after the callbacks it already has, and must not reach the
-        header: a group refuses them. Unlike :meth:`link_error` with
-        ``task_allow_error_cb_on_chord_header`` enabled, ``link_error`` is
-        not added to the header tasks.
+        ``link`` is linked to the body as :meth:`link` does. ``link_error``
+        is appended to the ``link_error`` option of the body itself: the
+        chord's error handling reads it there when the header fails, while
+        :meth:`link_error` links the tasks of a group or chord body instead.
+        Unlike :meth:`link_error` with ``task_allow_error_cb_on_chord_header``
+        enabled, it is not added to the header tasks. Neither may reach the
+        header: a group refuses them.
+
+        Returns the body to use: a copy when there are callbacks to link.
         """
-        for key in ('link', 'link_error'):
-            for callback in maybe_list(options.pop(key, None)) or []:
-                body.append_to_list_option(key, callback)
+        callbacks = maybe_list(options.pop('link', None)) or []
+        if callbacks:
+            # Linking changes the signatures in a group or chord, which
+            # clone() shares with the caller's.
+            body = _clone_with_members(body)
+        for callback in callbacks:
+            callback = _clone_with_members(maybe_signature(callback, app=body._app))
+            if isinstance(body, group) and not body.tasks:
+                body.append_to_list_option('link', callback)
+            else:
+                body.link(callback)
+        for errback in maybe_list(options.pop('link_error', None)) or []:
+            body.append_to_list_option('link_error', errback)
+        return body
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
@@ -2607,7 +2622,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
-            self._add_body_callbacks(body, options)
+            body = self._add_body_callbacks(body, options)
             body.options.update(self._body_options(options))
 
         # Freezing a nested chain first would embed its whole remaining tail
@@ -2811,6 +2826,23 @@ def signature(varies, *args, **kwargs):
 
 
 subtask = signature  # XXX compat
+
+
+def _clone_with_members(sig):
+    """Clone ``sig`` and the groups and chords in it.
+
+    ``clone()`` keeps the tasks of a group and the header of a chord, so
+    linking a callback to the clone would change the original as well.
+    """
+    sig = maybe_signature(sig, clone=True)
+    if isinstance(sig, group):
+        sig.tasks = [_clone_with_members(task) for task in sig.tasks]
+    elif isinstance(sig, _chord):
+        header = sig.tasks
+        sig.tasks = (_clone_with_members(header) if isinstance(header, group)
+                     else [_clone_with_members(task) for task in header])
+        sig.body = _clone_with_members(sig.body)
+    return sig
 
 
 def maybe_signature(d, app=None, clone=False):

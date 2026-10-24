@@ -3895,6 +3895,43 @@ class test_chord:
         await_redis_count(2, redis_key=result.id)
         get_redis_connection().delete(result.id)
 
+    def test_link_option_on_group_body_runs_once(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        first = tsum.s()
+        first.link(redis_echo.si('own', redis_key=redis_key))
+        body = group(first, tsum.s())
+        result = chord([add.si(1, 1), add.si(2, 2)], body).apply_async(
+            link=redis_echo.si('chord', redis_key=redis_key))
+
+        assert result.get(timeout=TIMEOUT) == [6, 6]
+        # As with chord.link(), the callback runs once, and the tasks of the
+        # body keep their own callbacks
+        await_redis_echo({'own', 'chord'}, redis_key=redis_key)
+
+    @pytest.mark.parametrize('body_type', ['group', 'chord'])
+    def test_link_error_option_runs_on_header_failure(self, body_type, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        if body_type == 'group':
+            body = group(tsum.s(), tsum.s())
+        else:
+            body = chord([tsum.s(), tsum.s()], tsum.s())
+        result = chord([add.si(1, 1), fail.si()], body).apply_async(
+            link_error=redis_echo.si('failed', redis_key=redis_key))
+
+        with pytest.raises((ExpectedException, ChordError)):
+            result.get(timeout=TIMEOUT)
+        # The chord's error handling calls the errback once for each task of
+        # a group body
+        await_redis_list_message_length(
+            2 if body_type == 'group' else 1, redis_key=redis_key)
+        get_redis_connection().delete(redis_key)
+
 
 class test_signature_serialization:
     """
