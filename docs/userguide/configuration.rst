@@ -916,7 +916,7 @@ Default: :const:`False`
     setting to :const:`True` by default to preserve backward compatibility
     with the automatic retry behavior that was previously provided by an
     internal ``@retry`` decorator. Other backends continue to default to
-    :const:`False`.
+    :const:`False`. Setting it to :const:`None` also gives :const:`True`.
 
 If enabled, the backend will try to retry on the event of recoverable
 exceptions instead of propagating the exception.
@@ -956,6 +956,7 @@ Default: Inf
     setting to ``3`` by default to preserve backward compatibility with the
     behavior previously provided by an internal ``@retry`` decorator.
     Other backends continue to default to :const:`Inf` (unlimited retries).
+    Setting it to :const:`None` also gives ``3``.
 
 This is the maximum number of retries in case of recoverable exceptions.
 
