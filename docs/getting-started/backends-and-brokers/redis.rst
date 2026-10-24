@@ -101,10 +101,13 @@ you should configure these settings::
 For a complete list of options supported by the Redis result backend, see
 :ref:`conf-redis-result-backend`.
 
-Chords save the results of their header tasks with a Lua script. If you
-limit the commands the Redis user can run, also allow ``EVALSHA``,
-``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. A Redis-compatible service or
-proxy has to support ``EVALSHA`` and ``SCRIPT LOAD`` too.
+.. versionchanged:: 5.7
+
+    A chord now counts each header task only once, even when the task runs
+    again. It saves header results with a Lua script. If you limit the
+    commands the Redis user can run, also allow ``EVALSHA``,
+    ``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. A Redis-compatible service
+    or proxy has to support ``EVALSHA`` and ``SCRIPT LOAD`` too.
 
 If you are using Sentinel, you should specify the master_name using the :setting:`result_backend_transport_options` setting:
 
