@@ -24,6 +24,7 @@ from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
+from celery.utils.saferepr import saferepr
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
@@ -717,7 +718,11 @@ class Request:
                 result = self.task.backend.get_result(self.id)
             except Exception:  # pylint: disable=broad-except
                 result = None
-            self.send_event('task-succeeded', result=result, runtime=None)
+            self.send_event(
+                'task-succeeded',
+                result=saferepr(result, self.task.resultrepr_maxsize),
+                runtime=None,
+            )
             return
 
         max_retries_exceeded = False
@@ -824,13 +829,14 @@ class Request:
         return True
 
     def _success_was_stored(self):
-        task = self.task
         # ignore_result never writes SUCCESS, and rpc:// results live on the
         # caller's queue: a lookup here would always see PENDING and would
         # declare a durable per-worker reply queue as a side effect.
-        if task.ignore_result:
+        # Use the request's ignore_result so apply_async(ignore_result=...)
+        # is honored, not only the task-level default.
+        if self.ignore_result:
             return False
-        backend = task.backend
+        backend = self.task.backend
         as_uri = getattr(backend, 'as_uri', None)
         if callable(as_uri) and as_uri() == 'rpc://':
             return False

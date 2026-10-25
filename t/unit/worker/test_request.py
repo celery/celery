@@ -1146,10 +1146,13 @@ class test_Request(RequestCase):
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
         req.on_reject.assert_not_called()
         req.task.backend.mark_as_failure.assert_not_called()
-        assert any(
-            c.args and c.args[0] == 'task-succeeded'
-            for c in req.eventer.send.call_args_list
-        )
+        succeeded = [
+            c for c in req.eventer.send.call_args_list
+            if c.args and c.args[0] == 'task-succeeded'
+        ]
+        assert succeeded
+        # Payload is saferepr'd like a normal success event, not the raw result.
+        assert succeeded[0].kwargs['result'] == '42'
 
     def test_on_failure_WorkerLostError_after_success_skips_retry_on_worker_lost(self):
         try:
@@ -1197,7 +1200,10 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo(internal=True)
 
         req = self.get_request(self.add.s(2, 2))
-        req.task.ignore_result = True
+        # Request-level ignore_result (e.g. apply_async(ignore_result=True)),
+        # not only the task default.
+        req._ignore_result = True
+        req.task.ignore_result = False
         req.task.backend = Mock()
 
         req.on_failure(einfo)
