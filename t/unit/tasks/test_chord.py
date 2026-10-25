@@ -5,7 +5,7 @@ import pytest
 
 from celery import canvas, group, result, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, Retry
+from celery.exceptions import ChordError, Reject, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 
@@ -130,6 +130,22 @@ class test_unlock_chord_task(ChordCase):
             fail.assert_called()
             assert fail.call_args[0][0] == cb.id
             assert isinstance(fail.call_args[1]['exc'], ChordError)
+
+    def test_retry_refused_fails_chord(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        def setup(callback):
+            self.app.tasks['celery.chord_unlock'].retry.side_effect = Reject(
+                OSError('refused'), requeue=False)
+
+        with pytest.raises(Reject):
+            with self._chord_context(NeverReady, setup):
+                pass
+        fail = self.app.backend.fail_from_current_stack
+        fail.assert_called()
+        assert fail.call_args[0][0] == 'callback_id'
+        assert isinstance(fail.call_args[1]['exc'], ChordError)
 
     def test_unlock_ready_failed(self):
 
