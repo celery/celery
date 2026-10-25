@@ -379,11 +379,14 @@ def disable_events(state):
     dispatcher = state.consumer.event_dispatcher
     if dispatcher is None:
         return nok('event dispatcher unavailable')
+    if dispatcher.groups and 'task' not in dispatcher.groups:
+        return ok('task events already disabled')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
-        logger.info('Events of group {task} disabled by remote.')
-        return ok('task events disabled')
-    return ok('task events already disabled')
+    if not dispatcher.groups:
+        dispatcher.groups.add('worker')
+    logger.info('Events of group {task} disabled by remote.')
+    return ok('task events disabled')
 
 
 @control_command()

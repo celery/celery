@@ -220,6 +220,18 @@ class test_ControlPanel:
         assert 'task' not in evd.groups
         assert 'already disabled' in panel.handle('disable_events')['ok']
 
+    def test_disable_events_when_groups_empty(self):
+        consumer = Consumer(self.app)
+        panel = self.create_panel(consumer=consumer)
+        evd = consumer.event_dispatcher
+        evd.enabled = True
+        evd.groups = set()
+        res = panel.handle('disable_events')
+        assert 'task events disabled' in res['ok']
+        assert 'task' not in evd.groups
+        assert 'worker' in evd.groups
+        assert 'already disabled' in panel.handle('disable_events')['ok']
+
     def test_enable_events_no_dispatcher(self):
         consumer = Consumer(self.app)
         consumer.event_dispatcher = None
