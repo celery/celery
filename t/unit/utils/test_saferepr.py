@@ -149,8 +149,9 @@ class test_saferepr:
         assert result.endswith(')'), repr(result)
 
     def test_truncated_last_element_keeps_closing_bracket_dict(self):
+        # The inner list's ']' must appear before the outer dict's '}' (#10760).
         result = saferepr({'a': ['v' * 100]}, 30)
-        assert result.endswith('}'), repr(result)
+        assert result.endswith(']}'), repr(result)
 
     def test_maxlevels(self):
         saferepr(D_ALL, maxlevels=1)
