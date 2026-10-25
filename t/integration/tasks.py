@@ -169,6 +169,12 @@ def record_replaced_task_nesting(self, replacements, nesting=None):
 
 
 @shared_task(bind=True)
+def add_replaced_with_chain(self, x, y):
+    """Add two numbers (via a chain of the add and identity tasks)."""
+    raise self.replace(chain(add.s(x, y), identity.s()))
+
+
+@shared_task(bind=True)
 def replace_with_chain(self, *args, link_msg=None):
     c = chain(identity.s(*args), identity.s())
     link_sig = redis_echo.s()
@@ -281,6 +287,26 @@ def retry(self, return_value=None):
 def retry_unpickleable(self, foo, bar, *, retry_kwargs):
     """Task that fails with an unpickleable exception and is retried."""
     raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
+
+
+@shared_task(bind=True, max_retries=1)
+def retry_with_args_after_kwargs(self, foo, bar, label=None):
+    if not self.request.retries:
+        raise self.retry(args=(foo + 1, bar + 1), countdown=0)
+    return {
+        'foo': foo, 'bar': bar, 'label': label,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
+
+
+@shared_task(bind=True, max_retries=1)
+def retry_with_kwargs_after_args(self, foo, bar):
+    if not self.request.retries:
+        raise self.retry(kwargs={'foo': foo + 1}, countdown=0)
+    return {
+        'foo': foo, 'bar': bar,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
 
 
 @shared_task(bind=True, expires=120.0, max_retries=1)
