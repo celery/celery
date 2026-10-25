@@ -97,8 +97,8 @@ FINDINGS = Findings(
         # The child died as the task started: the message is never sent, the error callback fires, and
         # nothing runs the task again (task_reject_on_worker_lost is off by default).
         'died at task_prerun': ('FAILURE', 0, ('failed: WorkerLostError',)),
-        # FINDING: the message was sent and the link announced it; the task is recorded FAILURE and the
-        # error callback announces a failure too.
+        # FINDING (#10949): the message was sent and the link announced it; the task is recorded FAILURE and
+        # the error callback announces a failure too.
         'died at mark_as_done': ('FAILURE', 1, ('failed: WorkerLostError', SENT)),
         # FINDING (#10725): the message was sent; the refused link records FAILURE, and the message is
         # acknowledged, so the link is never published again.
@@ -113,8 +113,8 @@ CHORD_FINDINGS = Findings(
     {
         # The first header's child died as it started: its message is never sent, and the chord fails.
         'died at task_prerun': ('FAILURE', 1, ('failed: ChordError',)),
-        # FINDING: both messages were sent; the first header is recorded FAILURE, so the chord fails and its
-        # body never runs.
+        # FINDING (#10949): both messages were sent; the first header is recorded FAILURE, so the chord fails
+        # and its body never runs.
         'died at mark_as_done': ('FAILURE', 2, ('failed: ChordError',)),
         # FINDING (reported in a comment on #10725): both messages were sent; the last header's publish of the
         # body is refused, the chord is recorded FAILURE, and nothing publishes the body again.
@@ -153,8 +153,9 @@ CONTRACT = worker_contract(
     gap=(
         'once the link is published, a failure still runs the failure path: a child lost after the link, before '
         'the store, records FAILURE for a task whose effect and link happened, and fires the error callback '
-        'beside the link (not reported separately); and a link the broker refuses records FAILURE and '
-        'acknowledges the message, so the link is never sent (https://github.com/celery/celery/issues/10725). '
+        'beside the link (https://github.com/celery/celery/issues/10949); and a link the broker refuses records '
+        'FAILURE and acknowledges the message, so the link is never sent '
+        '(https://github.com/celery/celery/issues/10725). '
         'FINDINGS pins each history'
     ),
 )
@@ -167,7 +168,8 @@ CONTRACT = CONTRACT.model_copy(
             CHORD.name: (
                 'a chord whose body the broker refuses, or whose header task is lost after its effect and before '
                 'its store, fails for good with ChordError though every message was sent; the body never runs '
-                '(https://github.com/celery/celery/issues/10725#issuecomment-6318108091). '
+                '(https://github.com/celery/celery/issues/10725#issuecomment-6318108091, '
+                'https://github.com/celery/celery/issues/10949). '
                 'CHORD_FINDINGS pins each history'
             ),
         },
