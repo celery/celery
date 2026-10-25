@@ -1,4 +1,4 @@
-"""The Celery application the due-work contract runs: a task that sends a message, its link, its error callback."""
+"""The Celery application the obligation contract runs: a task that sends a message, its link, its error callback."""
 
 import os
 
@@ -32,3 +32,9 @@ def announce(result):
 def report_failure(request, exc, traceback):
     """The error callback: tell the customer it failed."""
     RECORDS.rpush('announced', f'failed: {type(exc).__name__}')
+
+
+@app.task
+def announce_all(results):
+    """A chord's body: tell the customer every message in the header was sent."""
+    RECORDS.rpush('announced', f'sent {len(results)} messages')
