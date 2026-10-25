@@ -81,6 +81,43 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+# Records the result of a chord header task, unless a result for the same
+# task was already recorded: a header task can run more than once (e.g.
+# redelivered after a lost worker when using acks_late), and must only count
+# once, even if the runs returned different results. Returns the number of
+# results recorded so far, and the chord's total diff and size.
+CHORD_PART_RETURN_LUA = """
+local jkey, tkey, skey, dkey, gkey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5]
+local tid, value, ordered, score = ARGV[1], ARGV[2], ARGV[3], ARGV[4]
+local expires, group_expires = tonumber(ARGV[5]), tonumber(ARGV[6])
+-- Key the check on the task id and header index, so it doesn't merge two
+-- header entries that share the task id of a reused frozen signature.
+local member = tid .. ':' .. score
+if redis.call('SISMEMBER', dkey, member) == 0 then
+    if ordered == '1' then
+        redis.call('ZADD', jkey, score, value)
+    else
+        redis.call('RPUSH', jkey, value)
+    end
+    redis.call('SADD', dkey, member)
+end
+local readycount
+if ordered == '1' then
+    readycount = redis.call('ZCOUNT', jkey, '-inf', '+inf')
+else
+    readycount = redis.call('LLEN', jkey)
+end
+if expires > 0 then
+    for _, key in ipairs({jkey, tkey, skey, dkey}) do
+        redis.call('EXPIRE', key, expires)
+    end
+    if group_expires > 0 then
+        redis.call('EXPIRE', gkey, group_expires)
+    end
+end
+return {readycount, redis.call('GET', tkey), redis.call('GET', skey)}
+"""
+
 logger = get_logger(__name__)
 
 _NO_SOCKET = object()
@@ -784,6 +821,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _transport_options(self):
         return self.app.conf.get('result_backend_transport_options', {})
 
+    @cached_property
+    def _chord_part_return_script(self):
+        return self.client.register_script(CHORD_PART_RETURN_LUA)
+
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
@@ -797,27 +838,15 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
         skey = self.get_key_for_group(gid, '.s')
+        dkey = self.get_key_for_group(gid, '.d')
         result = self.encode_result(result, state)
         encoded = self.encode([1, tid, state, result])
-        with client.pipeline() as pipe:
-            pipeline = (
-                pipe.zadd(jkey, {encoded: group_index}).zcount(jkey, "-inf", "+inf")
-                if self._chord_zset
-                else pipe.rpush(jkey, encoded).llen(jkey)
-            ).get(tkey).get(skey)
-            expires = self.chord_expires
-            if expires:
-                pipeline = pipeline \
-                    .expire(jkey, expires) \
-                    .expire(tkey, expires) \
-                    .expire(skey, expires)
-                if self.expires:
-                    # The group key can also hold a GroupResult the user
-                    # saved, so never shorten it below result_expires.
-                    pipeline = pipeline.expire(
-                        self.get_key_for_group(gid), max(expires, self.expires))
-
-            _, readycount, totaldiff, chord_size_bytes = pipeline.execute()[:4]
+        readycount, totaldiff, chord_size_bytes = self._chord_part_return_script(
+            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid)],
+            args=[tid, encoded, 1 if self._chord_zset else 0, group_index,
+                  self.chord_expires or 0, self._chord_result_expires],
+            client=client,
+        )
 
         totaldiff = int(totaldiff or 0)
 
@@ -874,16 +903,26 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                                 .delete(jkey) \
                                 .delete(tkey) \
                                 .delete(skey) \
+                                .delete(dkey) \
                                 .execute()
             except ChordError as exc:
                 logger.exception('Chord %r raised: %r', request.group, exc)
-                return self.chord_error_from_stack(callback, exc)
+                try:
+                    return self.chord_error_from_stack(callback, exc)
+                finally:
+                    # Drop the chord size, so a copy of a header task that
+                    # arrives later doesn't fail the chord again. The saved
+                    # results stay, as before.
+                    client.delete(skey)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', request.group, exc)
-                return self.chord_error_from_stack(
-                    callback,
-                    ChordError(f'Join error: {exc!r}'),
-                )
+                try:
+                    return self.chord_error_from_stack(
+                        callback,
+                        ChordError(f'Join error: {exc!r}'),
+                    )
+                finally:
+                    client.delete(skey)
 
     def _create_client(self, **params):
         return self._get_client()(
