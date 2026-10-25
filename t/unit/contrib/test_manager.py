@@ -45,3 +45,19 @@ class test_Manager:
         assert stderr.getvalue() == (
             "Still waiting for thing.  Trying again now: ValueError('not ready')\n"
         )
+
+    def test_ensure_not_for_a_while_emits_warning(self):
+        stderr = StringIO()
+        manager = Manager(self.app, stderr=stderr)
+        callback = Mock(side_effect=ValueError('not ready'))
+
+        result = manager.ensure_not_for_a_while(
+            callback, ValueError, emit_warning=True, max_retries=1,
+            interval_start=0, interval_step=0,
+        )
+
+        assert result is None
+        assert callback.call_count == 2
+        assert stderr.getvalue() == (
+            "Still waiting for thing.  Trying again now: ValueError('not ready')\n"
+        )
