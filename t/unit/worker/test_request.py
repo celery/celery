@@ -8,6 +8,7 @@ from unittest.mock import ANY, Mock, patch
 
 import pytest
 from billiard.einfo import ExceptionInfo
+from freezegun import freeze_time
 from kombu.utils.encoding import from_utf8, safe_repr, safe_str
 from kombu.utils.uuid import uuid
 
@@ -18,6 +19,7 @@ from celery.backends.base import BaseDictBackend
 from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
+from celery.utils.time import maybe_make_aware
 from celery.worker import request as module
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
@@ -267,6 +269,49 @@ class test_Request(RequestCase):
         req = self.get_request(self.add.s(2, 2))
         assert not req.maybe_expire()
 
+    def test_maybe_expire_with_naive_expires(self):
+        job = self.xRequest()
+        job.expires = datetime(2026, 11, 1, 6, 30)
+
+        with freeze_time('2026-11-01 06:31:00'):
+            assert job.maybe_expire()
+            assert job.id in revoked
+
+    @pytest.mark.parametrize('now,expires,should_expire', [
+        pytest.param(
+            datetime(2026, 11, 1, 5, 45, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            False,
+            id='valid-until-second-occurrence',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 15, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 5, 45, tzinfo=timezone.utc),
+            True,
+            id='expired-in-first-occurrence',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            False,
+            id='exact-expiration',
+        ),
+        pytest.param(
+            datetime(2026, 11, 1, 6, 30, microsecond=1, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc),
+            True,
+            id='just-after-expiration',
+        ),
+    ])
+    def test_maybe_expire_across_dst(self, now, expires, should_expire):
+        self.app.conf.timezone = 'America/New_York'
+        expires = maybe_make_aware(expires.replace(tzinfo=None), 'America/New_York')
+        job = self.xRequest(expires=expires)
+
+        with freeze_time(now):
+            assert bool(job.maybe_expire()) is should_expire
+            assert (job.id in revoked) is should_expire
+
     def test_on_retry_acks_if_late(self):
         self.add.acks_late = True
         req = self.get_request(self.add.s(2, 2))
@@ -429,6 +474,107 @@ class test_Request(RequestCase):
 
         req.on_reject.assert_called_with(
             req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def _worker_lost_request(self, retries=0):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2).set(retries=retries))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        return req, einfo
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost(self):
+        req, einfo = self._worker_lost_request(retries=1)
+
+        retry_handler = Mock()
+        task_retry.connect(retry_handler)
+        try:
+            with patch('celery.canvas.Signature.apply_async') as apply_async, \
+                    patch.object(req.task, 'on_retry') as on_retry:
+                req.on_failure(einfo)
+        finally:
+            task_retry.disconnect(retry_handler)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_called_once()
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_called_once()
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert any(
+            c.args and c.args[0] == 'task-retried'
+            for c in req.eventer.send.call_args_list
+        )
+        on_retry.assert_called_once()
+        assert isinstance(on_retry.call_args.args[0], WorkerLostError)
+        assert on_retry.call_args.args[1] == req.id
+        retry_handler.assert_called_once()
+        assert isinstance(retry_handler.call_args.kwargs['reason'], Retry)
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_options(self):
+        req, einfo = self._worker_lost_request(retries=1)
+        req.task.default_retry_delay = 30
+
+        with patch.object(req.task, 'signature_from_request') as sfr:
+            req.on_failure(einfo)
+
+        _, kwargs = sfr.call_args
+        assert kwargs['retries'] == 2
+        assert kwargs['countdown'] == 30
+        sfr.return_value.apply_async.assert_called_once_with()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_exhausted(self):
+        req, einfo = self._worker_lost_request(retries=3)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        # No retries left: the task fails instead of being re-queued.
+        apply_async.assert_not_called()
+        req.on_reject.assert_not_called()
+        req.on_ack.assert_called_once()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_send_fails(self):
+        req, einfo = self._worker_lost_request()
+
+        with patch('celery.canvas.Signature.apply_async',
+                   side_effect=ConnectionError('broker down')):
+            req.on_failure(einfo)
+
+        # Falls back to reject_on_worker_lost, so the task isn't lost.
+        req.on_reject.assert_called_with(
+            req_logger, req.connection_errors, True)
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_send_fails_no_reject(self):
+        req, einfo = self._worker_lost_request()
+        req.task.reject_on_worker_lost = False
+
+        with patch('celery.canvas.Signature.apply_async',
+                   side_effect=ConnectionError('broker down')):
+            req.on_failure(einfo)
+
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_no_acks_late(self):
+        req, einfo = self._worker_lost_request()
+        req.task.acks_late = False
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_not_called()
         req.task.backend.mark_as_failure.assert_not_called()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
@@ -961,6 +1107,123 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
+    def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 42
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        succeeded = [
+            c for c in req.eventer.send.call_args_list
+            if c.args and c.args[0] == 'task-succeeded'
+        ]
+        assert succeeded
+        # Payload is saferepr'd like a normal success event, not the raw result.
+        assert succeeded[0].kwargs['result'] == '42'
+
+    def test_on_failure_WorkerLostError_after_success_skips_retry_on_worker_lost(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 7
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        req.on_ack.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_for_rpc_backend(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.as_uri.return_value = 'rpc://'
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_when_ignore_result(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        # Request-level ignore_result (e.g. apply_async(ignore_result=True)),
+        # not only the task default.
+        req._ignore_result = True
+        req.task.ignore_result = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_backend_unavailable(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.get_state.side_effect = ConnectionError()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once()
 
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:

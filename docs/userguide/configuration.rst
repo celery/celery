@@ -662,6 +662,13 @@ has been executed, not *right before* (the default behavior).
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
 .. setting:: task_acks_on_failure_or_timeout
 
 ``task_acks_on_failure_or_timeout``
@@ -729,7 +736,50 @@ worker.
 .. warning::
 
     Enabling this can cause message loops; make sure you know
-    what you're doing.
+    what you're doing. See :setting:`task_retry_on_worker_lost` for a way
+    to limit how many times a task is sent again.
+
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
+.. setting:: task_retry_on_worker_lost
+
+``task_retry_on_worker_lost``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Disabled.
+
+When the worker process executing a task exits abruptly (e.g. it's killed
+by the OOM killer), send the task again the same way
+:meth:`Task.retry() <celery.app.task.Task.retry>` would, instead of
+re-queuing the original message. This means
+:attr:`~celery.app.task.Task.max_retries` and
+:attr:`~celery.app.task.Task.default_retry_delay` apply, and once the
+retries run out the task is marked as failed.
+
+This takes precedence over :setting:`task_reject_on_worker_lost`. If
+sending the retry fails, the task falls back to the normal
+:setting:`task_reject_on_worker_lost` behaviour.
+
+A few things to keep in mind:
+
+- The task is sent again after
+  :attr:`~celery.app.task.Task.default_retry_delay` (180 seconds by
+  default), not right away.
+- These retries count towards the same
+  :attr:`~celery.app.task.Task.max_retries` as calls to
+  :meth:`Task.retry() <celery.app.task.Task.retry>` made by the task itself.
+- It also applies when :setting:`task_acks_late` is disabled.
+- It only covers a pool child process dying while the main worker process
+  keeps running. If the whole worker is killed (for example the container
+  is OOM-killed), nothing is left to retry the task, so this setting has
+  no effect.
 
 .. setting:: task_default_rate_limit
 
@@ -866,7 +916,7 @@ Default: :const:`False`
     setting to :const:`True` by default to preserve backward compatibility
     with the automatic retry behavior that was previously provided by an
     internal ``@retry`` decorator. Other backends continue to default to
-    :const:`False`.
+    :const:`False`. Setting it to :const:`None` also gives :const:`True`.
 
 If enabled, the backend will try to retry on the event of recoverable
 exceptions instead of propagating the exception.
@@ -906,6 +956,7 @@ Default: Inf
     setting to ``3`` by default to preserve backward compatibility with the
     behavior previously provided by an internal ``@retry`` decorator.
     Other backends continue to default to :const:`Inf` (unlimited retries).
+    Setting it to :const:`None` also gives ``3``.
 
 This is the maximum number of retries in case of recoverable exceptions.
 
@@ -1040,6 +1091,56 @@ on backend specifications).
 
     When using the database or filesystem backend, ``celery beat`` must be
     running for the results to be expired.
+
+See :setting:`result_chord_expires` for chords whose header tasks run longer
+than this.
+
+.. setting:: result_chord_expires
+
+``result_chord_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) a chord's
+bookkeeping is kept after the chord starts or after one of its header tasks
+finishes. With the cache backend, each header task's result is also kept that
+long after the task finishes, and never for less than :setting:`result_expires`.
+When the chord finishes, the header results get :setting:`result_expires` back.
+If it runs out before the chord's last header task finishes, the chord's body
+never runs, so set it longer than the chord's total run time.
+A value of 0 means the chord's bookkeeping never expires while the chord is
+open, and the saved header of a chord with nested groups never expires.
+The bookkeeping of a chord that never completes, for example after a lost
+header task, is then never removed.
+
+.. note::
+
+    For the moment this only works with the cache and Redis backends.
+
+    Memcached reads an expiry over 30 days as an absolute time, so keep this
+    setting at 30 days or less with the cache backend.
+
+.. setting:: result_failure_expires
+
+``result_failure_expires``
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: Same as :setting:`result_expires`.
+
+Time (in seconds, or a :class:`~datetime.timedelta` object) for when after
+the results of failed tasks will be deleted. Use it to keep failures longer,
+or shorter, than other results. A value of 0 means failed results never expire.
+
+Only results in the ``FAILURE`` state use this setting.
+
+.. note::
+
+    For the moment this only works with the Redis backend.
 
 .. setting:: result_cache_max
 

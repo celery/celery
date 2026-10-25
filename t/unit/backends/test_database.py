@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from unittest.mock import Mock, patch
 
@@ -398,6 +398,30 @@ class test_DatabaseBackend:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
 
+    def test_retry_settings_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    def test_retry_settings_set_to_none_use_the_defaults(self):
+        self.app.conf.result_backend_always_retry = None
+        self.app.conf.result_backend_max_retries = None
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    @pytest.mark.parametrize('config', [
+        {'result_backend_always_retry': False, 'result_backend_max_retries': 0},
+        # The old setting names
+        {'CELERY_RESULT_BACKEND_ALWAYS_RETRY': False, 'CELERY_RESULT_BACKEND_MAX_RETRIES': 0},
+    ])
+    def test_retry_settings_from_config_object(self, config):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object(config)
+            tb = DatabaseBackend(self.uri, app=app)
+            assert tb.always_retry is False
+            assert tb.max_retries == 0
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
@@ -793,6 +817,68 @@ class test_DatabaseBackend:
             assert isinstance(tb.get_result(tid3), KeyError)
             assert tb.get_traceback(tid3) == trace
 
+    @pytest.mark.parametrize('state, result', [
+        (states.STARTED, {'pid': 1}),
+        (states.FAILURE, KeyError('foo')),
+        (states.SUCCESS, 43),
+    ])
+    def test_store_result_after_success_is_ignored(self, state, result):
+        # e.g. the task runs again after its worker was lost before the ack
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_done(tid, 42)
+        tb.store_result(tid, result, state)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+
+    def test_store_result_before_success_is_saved(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid)
+        tb.mark_as_retry(tid, KeyError('foo'))
+        tb.mark_as_failure(tid, KeyError('foo'))
+        assert tb.get_task_meta(tid, cache=False)['status'] == states.FAILURE
+        tb.mark_as_done(tid, 42)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+
+    def start_while_other_run_succeeds(self, tb, tid, on_locked_read):
+        # A second run starts just as the first one saves its SUCCESS
+        query_task = tb._query_task
+
+        def query_task_then_other_run_succeeds(session, task_id, for_update=False):
+            task = query_task(session, task_id, for_update=for_update)
+            if for_update == on_locked_read:
+                tb._query_task = query_task
+                tb.mark_as_done(task_id, 42)
+            return task
+
+        tb._query_task = query_task_then_other_run_succeeds
+        tb.mark_as_started(tid, pid=2)
+
+    def test_store_result_racing_a_success_keeps_it(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid, pid=1)
+        # The SUCCESS is saved before the second run locks the row
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=False)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert (meta['status'], meta['result']) == (states.SUCCESS, 42)
+
+    def test_store_result_racing_a_success_without_row_locks(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid, pid=1)
+        # SQLite has no row locks, so the SUCCESS can be saved even after the
+        # second run read the row. The row then has that run's state.
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=True)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert (meta['status'], meta['result']) == (states.STARTED, {'pid': 2})
+        tb.mark_as_done(tid, 43)
+        assert tb.get_task_meta(tid, cache=False)['result'] == 43
+
     def test_forget(self):
         tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
         tid = uuid()
@@ -866,6 +952,50 @@ class test_DatabaseBackend:
 
         tb.cleanup()
 
+    def test_cleanup_respects_timezone_for_expiration(self):
+        """Regression test for timezone bug where cleanup uses app.now() while date_done is UTC."""
+        original_timezone = self.app.conf.timezone
+        original_expires = self.app.conf.result_expires
+
+        try:
+            self.app.conf.timezone = 'Asia/Tokyo'
+            self.app.conf.result_expires = 86400
+
+            tb = DatabaseBackend(self.uri, app=self.app)
+
+            unexpired_task_id = uuid()
+            expired_task_id = uuid()
+            tb.mark_as_done(unexpired_task_id, 42)
+            tb.mark_as_done(expired_task_id, 100)
+
+            session = tb.ResultSession()
+            now = datetime.now(timezone.utc)
+
+            session.query(Task).filter(
+                Task.task_id == unexpired_task_id
+            ).first().date_done = now - timedelta(hours=20)
+
+            session.query(Task).filter(
+                Task.task_id == expired_task_id
+            ).first().date_done = now - timedelta(hours=30)
+
+            session.commit()
+            session.close()
+
+            tb.cleanup()
+
+            session = tb.ResultSession()
+            assert session.query(Task).filter(
+                Task.task_id == unexpired_task_id
+            ).first() is not None
+            assert session.query(Task).filter(
+                Task.task_id == expired_task_id
+            ).first() is None
+            session.close()
+        finally:
+            self.app.conf.timezone = original_timezone
+            self.app.conf.result_expires = original_expires
+
     def test_Task__repr__(self):
         assert 'foo' in repr(Task('foo'))
 
@@ -937,6 +1067,19 @@ class test_DatabaseBackend_result_extended():
         assert meta['name'] == 'mytask'
         assert meta['retries'] == 2
         assert meta['worker'] == "celery@worker_1"
+
+    def test_store_result_after_success_keeps_extended_fields(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(1, 2), kwargs={'foo': 'bar'}, task='mytask',
+                          retries=0, hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid, cache=False)
+        # The task runs again on another worker
+        request.update(hostname='celery@worker_2', retries=1)
+        tb.store_result(tid, {'pid': 2}, states.STARTED, request=request)
+        assert tb.get_task_meta(tid, cache=False) == meta
 
     @pytest.mark.parametrize(
         'result_serializer',

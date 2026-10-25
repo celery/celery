@@ -1,4 +1,5 @@
 """Task implementation: request context and the task base class."""
+import inspect
 import sys
 import types
 
@@ -191,7 +192,8 @@ class Context:
             if self.stamps is not None and self.stamped_headers is not None:
                 execution_options['stamped_headers'] = self.stamped_headers
                 for k, v in self.stamps.items():
-                    execution_options[k] = v
+                    if k in self.stamped_headers:
+                        execution_options[k] = v
         return execution_options
 
     @property
@@ -358,6 +360,17 @@ class Task:
     #: what you're doing.
     reject_on_worker_lost = None
 
+    #: When enabled, a task whose worker process exits abruptly is sent
+    #: again the same way :meth:`retry` would, so :attr:`max_retries` and
+    #: :attr:`default_retry_delay` apply.  Once the retries run out the
+    #: task fails instead of being re-queued.
+    #:
+    #: Takes precedence over :attr:`reject_on_worker_lost`, which is still
+    #: used if sending the retry fails.
+    #: The default is taken from the :setting:`task_retry_on_worker_lost`
+    #: setting.
+    retry_on_worker_lost = None
+
     #: Tuple of expected exceptions.
     #:
     #: These are errors that are expected in normal operation
@@ -391,6 +404,10 @@ class Task:
 
     _exec_options = None
 
+    #: Set for tasks created with ``pydantic=True``: dumps the models passed
+    #: by the caller that the task gets back as equal models.
+    _dump_pydantic_arguments = None
+
     __bound__ = False
 
     from_config = (
@@ -405,6 +422,7 @@ class Task:
         ('acks_on_failure', 'task_acks_on_failure'),
         ('acks_on_timeout', 'task_acks_on_timeout'),
         ('reject_on_worker_lost', 'task_reject_on_worker_lost'),
+        ('retry_on_worker_lost', 'task_retry_on_worker_lost'),
         ('ignore_result', 'task_ignore_result'),
         ('store_eager_result', 'task_store_eager_result'),
         ('store_errors_even_if_ignored', 'task_store_errors_even_if_ignored'),
@@ -686,9 +704,11 @@ class Task:
         preopts = self._get_exec_options()
         options = dict(preopts, **options)
 
+        # Pickle can send models as they are, so only dump them for other serializers.
+        if self._dump_pydantic_arguments is not None and options.get('serializer') != 'pickle':
+            args, kwargs = self._dump_pydantic_arguments(args, kwargs)
+
         options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
@@ -841,6 +861,43 @@ class Task:
 
         if not eta and countdown is None:
             countdown = self.default_retry_delay
+
+        # Explicit args/kwargs can change how a task's parameters are passed
+        # on retry. Keep inherited values that do not conflict with the new
+        # calling convention (see #6494).
+        if ((args is not None and kwargs is None and request.kwargs) or
+                (kwargs is not None and args is None and request.args)):
+            try:
+                signature = inspect.signature(self.run)
+            except (TypeError, ValueError):
+                pass  # Let normal task argument validation handle this case.
+            else:
+                if args is not None:
+                    positional = [
+                        p for p in signature.parameters.values()
+                        if p.kind in (inspect.Parameter.POSITIONAL_ONLY,
+                                      inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                    ]
+                    kwargs = dict(request.kwargs)
+                    for p in positional[:len(args)]:
+                        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                            kwargs.pop(p.name, None)
+                else:
+                    # An explicit keyword may replace an inherited positional
+                    # argument. Bind inherited values to names so *args and
+                    # positional-only parameters keep their original positions.
+                    try:
+                        bound = signature.bind_partial(*request.args)
+                    except TypeError:
+                        pass  # Let normal task argument validation handle this case.
+                    else:
+                        kwargs = dict(kwargs)
+                        for name in list(kwargs):
+                            if (name in bound.arguments and
+                                    signature.parameters[name].kind ==
+                                    inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                                bound.arguments[name] = kwargs.pop(name)
+                        args, kwargs = bound.args, {**bound.kwargs, **kwargs}
 
         is_eager = request.is_eager
         S = self.signature_from_request(
@@ -1072,12 +1129,13 @@ class Task:
             sig.link(callback)
         for errback in maybe_list(self.request.errbacks) or []:
             sig.link_error(errback)
-        # If the replacement signature is a chain, we need to push callbacks
+        # If the replacement signature is a chain, we need to move callbacks
         # down to the final task so they run at the right time even if we
-        # proceed to link further tasks from the original request below
+        # proceed to link further tasks from the original request below.
+        # Leaving them on the chain as well would link them twice.
         if isinstance(sig, _chain) and "link" in sig.options:
             final_task_links = sig.tasks[-1].options.setdefault("link", [])
-            final_task_links.extend(maybe_list(sig.options["link"]))
+            final_task_links.extend(maybe_list(sig.options.pop("link")))
         # We need to freeze the replacement signature with the current task's
         # ID to ensure that we don't disassociate it from the existing task IDs
         # which would break previously constructed results objects.

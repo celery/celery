@@ -14,17 +14,18 @@ from celery.canvas import StampingVisitor, _chain
 from celery.exceptions import ChordError, ImproperlyConfigured, TimeoutError
 from celery.result import AsyncResult, GroupResult, ResultSet
 from celery.signals import before_task_publish, task_received
+from t.canvas_helpers import ids_in_as_tuple
 
 from . import tasks
 from .conftest import TEST_BACKEND, check_for_logs, flaky, get_active_redis_channels, get_redis_connection
-from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced, add_to_all,
-                    add_to_all_to_chord, build_chain_inside_task, collect_ids, delayed_sum,
-                    delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail, fail_replaced, identity,
-                    ids, mul, print_unicode, raise_error, redis_count, redis_echo, redis_echo_group_id,
-                    replace_with_chain, replace_with_chain_which_contains_a_group, replace_with_chain_which_raises,
-                    replace_with_empty_chain, replace_with_stamped_task, retry_once, return_exception,
-                    return_priority, return_request_eta, second_order_replace1, tsum, write_to_file_and_return_int,
-                    xsum)
+from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, add_replaced,
+                    add_replaced_with_chain, add_to_all, add_to_all_to_chord, build_chain_inside_task, collect_ids,
+                    delayed_sum, delayed_sum_with_soft_guard, errback_new_style, errback_old_style, fail,
+                    fail_replaced, identity, ids, mul, print_unicode, raise_error, redis_count, redis_echo,
+                    redis_echo_group_id, replace_with_chain, replace_with_chain_which_contains_a_group,
+                    replace_with_chain_which_raises, replace_with_empty_chain, replace_with_stamped_task, retry_once,
+                    return_exception, return_priority, return_request_eta, second_order_replace1, tsum,
+                    write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
@@ -117,6 +118,22 @@ def compare_group_ids_in_redis(redis_key='redis-group-ids'):
 
 
 class test_link_error:
+    @pytest.mark.parametrize('make_errback', [
+        lambda: tasks.errback_old_style_with_args.s('stored'),
+        lambda: tasks.errback_old_style_with_args.s(label='stored'),
+        lambda: tasks.errback_new_style_with_args.s('stored'),
+    ], ids=['old-style-args', 'old-style-kwargs', 'new-style-args'])
+    def test_mutable_errback_with_stored_arguments(self, make_errback, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        fail_sig = fail.s()
+        fail_sig_id = fail_sig.freeze().id
+        get_redis_connection().delete(fail_sig_id)
+        fail_sig.link_error(make_errback())
+        with pytest.raises(ExpectedException):
+            fail_sig.delay().get(timeout=TIMEOUT)
+        await_redis_echo({'stored'}, redis_key=fail_sig_id)
+
     @flaky
     def test_link_error_eager(self):
         exception = ExpectedException("Task expected to fail", "test")
@@ -540,6 +557,34 @@ class test_chain:
         assert res.get(timeout=TIMEOUT) == 29520
 
     @flaky
+    def test_chain_with_a_nested_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # The group at the head of the inner chain turns the outer chain
+        # into a chord, and the steps after it have to end up in the chord
+        # body rather than being dropped on the way.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        res = chain(inner, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
+
+    @flaky
+    def test_chain_with_a_deserialised_chain_led_by_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        # signature() of a serialised chain returns a _chain, so a canvas
+        # rebuilt from the wire reaches the same path as the test above.
+        inner = _chain(group(add.si(1, 1), add.si(2, 2)), tsum.s(), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        res = chain(restored, add.s(100))()
+        assert res.get(timeout=TIMEOUT) == 116
+
+    @flaky
     def test_chain_of_a_chord_and_a_group_with_two_tasks(self, manager):
         try:
             manager.app.backend.ensure_chords_allowed()
@@ -877,6 +922,25 @@ class test_chain:
             with pytest.raises(ExpectedException):
                 res_obj.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after chain finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_task_with_callback_replaced_with_chain(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        orig_sig = add_replaced_with_chain.si(42, 1337)
+        orig_sig.link(callback)
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Task executes as expected"):
+            res_obj = orig_sig.delay()
+            assert res_obj.get(timeout=TIMEOUT) == 42 + 1337
+        with subtests.test(msg="Callback is called once after the chain finishes"):
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
@@ -1276,6 +1340,63 @@ class test_chain:
         c = _chain(_chain(group(), add.s(10)), add.s(20), app=manager.app)
         assert c.apply_async((5,)).get(timeout=TIMEOUT) == 35
 
+    @flaky
+    @pytest.mark.parametrize('with_task_id', [False, True])
+    def test_chain_of_two_groups_as_tuple_holds_each_task_once(self, manager, with_task_id):
+        """Regression test for https://github.com/celery/celery/issues/9608.
+
+        The task after a group becomes the body of a chord, and the rest of
+        the chain must be linked to the chord's result only. as_tuple() must
+        list every node once, with or without a task_id.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        options = {'task_id': str(uuid.uuid4())} if with_task_id else {}
+        c = chain(
+            add.si(1, 0),
+            group(add.s(1), add.s(2)),
+            group(tsum.s(), tsum.s()),
+            tsum.s(),
+            add.s(1),
+            **options,
+        )
+        res = c.apply_async()
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        # The first task, two tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 9, ids
+        assert res.get(timeout=TIMEOUT) == 11
+
+    @flaky
+    def test_chord_with_chain_body_with_task_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/8890.
+
+        A chain with a task_id and a group inside used to make the chord
+        raise RuntimeError('Recursive result parents') when it was frozen
+        before it was sent.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        body = chain(
+            add.si(1, 0),
+            group(add.si(1, 1), add.si(1, 2)),
+            add.si(2, 2) | add.si(3, 3),
+            task_id=str(uuid.uuid4()),
+        )
+        c = chord([add.si(1, 1), add.si(1, 2)], body)
+        c.freeze()
+        res = c.apply_async()
+        ids = ids_in_as_tuple(res.as_tuple())
+
+        assert len(ids) == len(set(ids)), ids
+        assert res.get(timeout=TIMEOUT) == 6
+
 
 class test_result_set:
 
@@ -1568,6 +1689,25 @@ class test_group:
         assert res.children[0].get(timeout=TIMEOUT) == expected_result[0]
         assert res.get(timeout=TIMEOUT) == expected_result
 
+    def test_group_ending_a_chain_in_a_group_gets_its_own_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/10856.
+
+        The inner group must not take the outer group's id as its own.
+        """
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        res = group(
+            identity.si(1),
+            chain(identity.si(2), group(identity.si(3), identity.si(4))),
+        ).apply_async()
+        assert res.get(timeout=TIMEOUT) == [1, [3, 4]]
+        ids = ids_in_as_tuple(res.as_tuple())
+        # Two GroupResults and four tasks.
+        assert len(ids) == len(set(ids)) == 6, ids
+
     def test_callback_called_by_group(self, manager, subtests):
         if not manager.app.conf.result_backend.startswith("redis"):
             raise pytest.skip("Requires redis result backend.")
@@ -1793,6 +1933,26 @@ class test_group:
             with pytest.raises(ExpectedException):
                 res_obj.get(timeout=TIMEOUT)
         with subtests.test(msg="Errback is called after group finishes"):
+            await_redis_count(1, redis_key=redis_key)
+        redis_connection.delete(redis_key)
+
+    def test_group_child_with_callback_replaced_with_chain(self, manager, subtests):
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        redis_key = str(uuid.uuid4())
+        callback = redis_count.si(redis_key=redis_key)
+
+        child_sig = add_replaced_with_chain.si(42, 1337)
+        child_sig.link(callback)
+        group_sig = group(child_sig, identity.si(31337))
+
+        redis_connection.delete(redis_key)
+        with subtests.test(msg="Group executes as expected"):
+            res_obj = group_sig()
+            assert res_obj.get(timeout=TIMEOUT) == [42 + 1337, 31337]
+        with subtests.test(msg="Callback is called once after the chain finishes"):
             await_redis_count(1, redis_key=redis_key)
         redis_connection.delete(redis_key)
 
@@ -2497,6 +2657,22 @@ class test_chord:
         )
         res = sig.delay()
         assert res.get(timeout=TIMEOUT) == [[42, 42]]
+
+    def test_group_body_does_not_take_the_header_id(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/10856."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        res = chord(
+            group(identity.si(1), identity.si(2)),
+            group(identity.si(3), identity.si(4)),
+        ).apply_async()
+        assert res.get(timeout=TIMEOUT) == [3, 4]
+        ids = ids_in_as_tuple(res.as_tuple())
+        # The header and body GroupResults and four tasks.
+        assert len(ids) == len(set(ids)) == 6, ids
 
     @pytest.mark.xfail(TEST_BACKEND.startswith('redis://'), reason="Issue #6437")
     def test_error_propagates_from_chord(self, manager):
