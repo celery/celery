@@ -148,6 +148,9 @@ jobs:
     if: needs.Unit.result == 'success'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write # the report's one PR comment; a fork PR's token stays read-only
     services:
       redis:
         image: redis
@@ -164,4 +167,14 @@ jobs:
       - name: Install tox
         run: python -m pip install --upgrade pip 'tox' tox-gh-actions
       - name: Run tox for "3.13-due_work"
-        run: tox --verbose --verbose -e 3.13-due_work
+        id: tests
+        run: tox --verbose --verbose -e 3.13-due_work -- --due-work-profile-report=obligation-profiles.json
+      - name: Report what the contract proved
+        if: ${{ !cancelled() }}
+        uses: gigaverse-app/pytest-obligation/report@v1
+        with:
+          application-paths: t/due_work
+          report-path: obligation-profiles.json
+          expected-reports: '1'
+          test-outcome: ${{ steps.tests.outcome }}
+          sticky-key: celery-worker-contract
