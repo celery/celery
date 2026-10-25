@@ -12,6 +12,12 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
+  worker is now logged at ``ERROR`` level instead of being recorded as a task
+  failure. The task's errbacks no longer run for a task that succeeded, and a
+  failed task is no longer recorded a second time. Broken hooks therefore no
+  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
+  execution still propagates the exception (#10724).
 - The Redis result backend now counts each chord header task only once,
   even when the task runs again, as it can after a lost worker with
   ``acks_late``. Header results are now saved with a Lua script. If your
@@ -20,7 +26,6 @@ Unreleased
   header tasks fail when they store their results, and neither the chord
   body nor its error callbacks run. A Redis-compatible service or proxy has
   to support ``EVALSHA`` and ``SCRIPT LOAD`` too (#10919).
-
 
 .. _version-5.7.0rc1:
 
@@ -117,8 +122,6 @@ Other
 
 - Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
 - Fix invalid Bandit baseline JSON and validate it before commit (#10766)
-
-
 
 .. _version-5.7.0b1:
 
