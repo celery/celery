@@ -715,7 +715,8 @@ class Request:
                 self.acknowledge()
             # Emit the success event so Flower/events.State do not stay STARTED.
             try:
-                result = self.task.backend.get_result(self.id)
+                meta = self.task.backend._get_task_meta_for(self.id)
+                result = meta.get('result')
             except Exception:  # pylint: disable=broad-except
                 result = None
             self.send_event(
@@ -841,9 +842,9 @@ class Request:
         if callable(as_uri) and as_uri() == 'rpc://':
             return False
         try:
-            return backend.get_state(self.id) == states.SUCCESS
+            meta = backend._get_task_meta_for(self.id)
+            return meta['status'] == states.SUCCESS
         except Exception:  # pylint: disable=broad-except
-            # No backend, or it can't be reached: keep the failure handling.
             return False
 
     def _worker_lost_info(self, exc):

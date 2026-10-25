@@ -1137,8 +1137,9 @@ class test_Request(RequestCase):
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.backend = Mock()
-        req.task.backend.get_state.return_value = states.SUCCESS
-        req.task.backend.get_result.return_value = 42
+        req.task.backend._get_task_meta_for.return_value = {
+            'status': states.SUCCESS, 'result': 42
+        }
         req.task.backend.as_uri.return_value = 'redis://localhost'
 
         req.on_failure(einfo)
@@ -1166,8 +1167,9 @@ class test_Request(RequestCase):
         req.task.retry_on_worker_lost = True
         req.task.max_retries = 3
         req.task.backend = Mock()
-        req.task.backend.get_state.return_value = states.SUCCESS
-        req.task.backend.get_result.return_value = 7
+        req.task.backend._get_task_meta_for.return_value = {
+            'status': states.SUCCESS, 'result': 7
+        }
         req.task.backend.as_uri.return_value = 'redis://localhost'
 
         with patch('celery.canvas.Signature.apply_async') as apply_async:
@@ -2056,6 +2058,146 @@ class test_Request(RequestCase):
         group_index = 42
         job = self.xRequest(id=uuid(), group_index=group_index)
         assert job.group_index == group_index
+
+    # Tests for the blocking issue in PR #10752.
+    # These tests verify that `_success_was_stored` and the `task-succeeded`
+    # event block do not block the worker when the backend is down, by
+    # bypassing `_ensure_retryable` via `_get_task_meta_for`.
+    def _setup_blocking_backend(self, req):
+        """Configure req.task.backend to raise ConnectionError on every read.
+
+        Returns (read_calls, sleep_calls) so the test can assert on retries.
+        """
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 3
+        backend.base_sleep_between_retries_ms = 50
+        backend.max_sleep_between_retries_ms = 50
+        backend.url = 'cache+memory://'
+        backend._cache.clear()
+
+        read_calls = []
+        sleep_calls = []
+
+        def failing_meta(task_id):
+            read_calls.append(task_id)
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+        backend._sleep = lambda amount: sleep_calls.append(amount)
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+        return read_calls, sleep_calls
+
+    def test_repro_10752_get_state_retries_on_backend_down(self):
+        """
+        `_success_was_stored` must not go through `_ensure_retryable`.
+        Expected: 0 retries (uses `_get_task_meta_for` directly).
+        """
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        read_calls, sleep_calls = self._setup_blocking_backend(req)
+        result = req._success_was_stored()
+
+        assert result is False
+        print(f"\n[REPRO-1] reads={len(read_calls)}, sleeps={len(sleep_calls)}")
+        assert len(sleep_calls) == 0, (
+            f"Expected 0 retries, got {len(sleep_calls)} sleeps ({len(read_calls)} reads)."
+        )
+
+    def test_repro_10752_event_block_retries_on_backend_down(self):
+        """
+        The `task-succeeded` event block must not go through `_ensure_retryable`.
+        Expected: 0 retries.
+        """
+        from unittest.mock import patch
+
+        from billiard.einfo import ExceptionInfo
+        from billiard.exceptions import WorkerLostError as BWorkerLostError
+
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 3
+        backend.base_sleep_between_retries_ms = 50
+        backend.max_sleep_between_retries_ms = 50
+        backend.url = 'cache+memory://'
+        backend._cache.clear()
+
+        sleep_calls = []
+
+        def failing_meta(task_id):
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+        backend._sleep = lambda amount: sleep_calls.append(amount)
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+
+        try:
+            raise BWorkerLostError()
+        except BWorkerLostError:
+            einfo = ExceptionInfo()
+
+        # Force `_success_was_stored` to return True so we enter the event block.
+        with patch.object(req, '_success_was_stored', return_value=True):
+            req.on_failure(einfo, send_failed_event=False)
+
+        print(f"\n[REPRO-2] event path sleeps={len(sleep_calls)}")
+        assert len(sleep_calls) == 0, (
+            f"Expected 0 retries in event block, got {len(sleep_calls)} sleeps."
+        )
+
+    def test_repro_10752_no_hangs_with_inf_retries(self):
+        """
+        With `max_retries=inf`, `_success_was_stored` must finish quickly
+        (not hang) because it bypasses `_ensure_retryable`.
+        """
+        import threading
+
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = float('inf')
+        backend.url = 'cache+memory://'
+        backend._cache.clear()
+
+        retry_count = [0]
+
+        def failing_meta(task_id):
+            retry_count[0] += 1
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+        backend._sleep = lambda amount: None
+
+        finished = [False]
+
+        def run():
+            try:
+                req._success_was_stored()
+            finally:
+                finished[0] = True
+
+        t = threading.Thread(target=run, daemon=True)
+        t.start()
+        t.join(timeout=3.0)
+
+        assert finished[0], (
+            "_success_was_stored hung with max_retries=inf. "
+            "It should bypass _ensure_retryable and finish quickly."
+        )
+        assert retry_count[0] == 0, (
+            f"Expected 0 retries, got {retry_count[0]}."
+        )
+        print(f"\n[REPRO-3] finished=True, retries={retry_count[0]}")
 
 
 class test_create_request_class(RequestCase):
