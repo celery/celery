@@ -42,6 +42,7 @@ def add_unlock_chord_task(app):
     """
     from celery.backends.base import _create_chord_error_with_cause
     from celery.canvas import maybe_signature
+    from celery.exceptions import Reject
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
@@ -66,21 +67,32 @@ def add_unlock_chord_task(app):
         retry_options = {}
         if exchange_type is not None:
             retry_options['exchange_type'] = exchange_type
+        callback = maybe_signature(callback, app=app)
         try:
-            ready = deps.ready()
-        except Exception as exc:
-            raise self.retry(
-                exc=exc, countdown=interval, max_retries=max_retries,
-                **retry_options,
-            )
-        else:
-            if not ready:
+            try:
+                ready = deps.ready()
+            except Exception as exc:
                 raise self.retry(
-                    countdown=interval, max_retries=max_retries,
+                    exc=exc, countdown=interval, max_retries=max_retries,
                     **retry_options,
                 )
+            else:
+                if not ready:
+                    raise self.retry(
+                        countdown=interval, max_retries=max_retries,
+                        **retry_options,
+                    )
+        except Reject as exc:
+            # The broker refused the retry, so nothing will poll this chord
+            # again: fail it instead of leaving the body PENDING forever.
+            logger.exception('Chord %r raised: %r', group_id, exc)
+            chord_error = _create_chord_error_with_cause(
+                message=f'Unable to retry chord_unlock: {exc.reason!r}',
+                original_exc=exc.reason,
+            )
+            app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
+            raise
 
-        callback = maybe_signature(callback, app=app)
         try:
             with allow_join_result():
                 ret = j(
