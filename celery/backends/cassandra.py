@@ -285,7 +285,9 @@ class CassandraBackend(BaseBackend):
         self._get_connection(write=True)
 
         # Create the table before reading, and keep the first SUCCESS result.
-        if self._get_task_meta_for(task_id)['status'] == states.SUCCESS:
+        # Only the status is needed; do not decode the stored payload.
+        row = self._session.execute(self._read_stmt, (task_id,)).one()
+        if row is not None and row[0] == states.SUCCESS:
             return
 
         self._session.execute(self._write_stmt, (

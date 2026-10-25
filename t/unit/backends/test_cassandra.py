@@ -218,6 +218,41 @@ class test_CassandraBackend:
         assert meta['result'] == 'successful result'
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state', [
+        states.STARTED, states.FAILURE, states.SUCCESS,
+    ])
+    @pytest.mark.parametrize('column', [1, 3, 4], ids=[
+        'result', 'traceback', 'children',
+    ])
+    def test_store_result_does_not_decode_existing_payload(
+            self, module, monkeypatch, state, column):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        self.app.conf.result_serializer = 'json'
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        result = ValueError('first run failed') if state == states.FAILURE else 'first result'
+        first.store_result('task_id', result, state)
+
+        # A later worker may not be able to decode an older worker's payload.
+        row = list(table.rows['task_id'])
+        row[column] = b'not valid json'
+        original_row = table.rows['task_id'] = tuple(row)
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', 'successful result', states.SUCCESS)
+
+        if state == states.SUCCESS:
+            assert table.rows['task_id'] == original_row
+        else:
+            meta = second._get_task_meta_for('task_id')
+            assert meta['status'] == states.SUCCESS
+            assert meta['result'] == 'successful result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
     @pytest.mark.parametrize('read_session', [False, True])
     def test_store_result_creates_table_before_read(
             self, module, monkeypatch, read_session):
