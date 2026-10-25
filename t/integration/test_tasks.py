@@ -19,10 +19,11 @@ from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connect
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
                     add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
                     print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
-                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable,
-                    retry_with_args_after_kwargs, retry_with_kwargs_after_args, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+                    retry_once, retry_once_headers, retry_once_ignore_result, retry_once_priority,
+                    retry_once_with_result, retry_unpickleable, retry_with_args_after_kwargs,
+                    retry_with_kwargs_after_args, return_properties, return_request_time_limits,
+                    second_order_replace1, sleeping, soft_time_limit_must_exceed_time_limit,
+                    task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -806,6 +807,38 @@ class test_task_redis_result_backend:
 
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
+
+    def test_retry_preserves_ignore_result_false(self, manager):
+        # Explicitly request that the task result is not ignored.
+        result = retry_once_ignore_result.apply_async(ignore_result=False)
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        try:
+            manager.wait_for(assert_completed, catch=(AssertionError,))
+            meta = result.backend.get_task_meta(result.id)
+
+            assert meta['status'] == celery.states.SUCCESS
+            assert meta['result'] == 1
+        finally:
+            result.forget()
+
+    def test_retry_preserves_ignore_result_true(self, manager):
+        # Explicitly request that the task result is ignored.
+        result = retry_once_with_result.apply_async(ignore_result=True)
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        try:
+            manager.wait_for(assert_completed, catch=(AssertionError,))
+            meta = result.backend.get_task_meta(result.id)
+
+            assert meta['status'] == celery.states.PENDING
+            assert meta['result'] is None
+        finally:
+            result.forget()
 
     @flaky
     def test_asyncresult_forget_cancels_subscription(self, manager):
