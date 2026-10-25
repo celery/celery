@@ -6,7 +6,7 @@ from billiard.einfo import ExceptionInfo
 from kombu.exceptions import EncodeError
 
 from celery import group, signals, states, uuid
-from celery.app.task import Context
+from celery.app.task import Context, Task
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
                               log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
@@ -539,6 +539,44 @@ class test_trace(TraceCase):
                 None,
                 app=self.app,
             )
+
+    def test_build_tracer__unbound_task_raises_helpful_error(self):
+        # Issue #7173: a Task instance added with app.tasks.register() is never
+        # bound, so it has no request stack. Both attributes are set on the
+        # class so the test does not depend on whether the base Task class was
+        # bound elsewhere in the session.
+        class UnboundTask(Task):
+            name = 'unbound_task_7173'
+            __bound__ = False
+            request_stack = None
+
+            def run(self):
+                return 1
+
+        self.app.tasks.register(UnboundTask())
+        task = self.app.tasks['unbound_task_7173']
+        with pytest.raises(
+            RuntimeError,
+            match=(
+                r"'unbound_task_7173' \(t\.unit\.tasks\.test_trace\..*\.UnboundTask\) is not bound"
+                r".*`app\.register_task\(\)`"
+            ),
+        ):
+            build_tracer(task.name, task, app=self.app)
+
+    def test_build_tracer__register_task_binds_task_for_tracing(self):
+        class BoundTask(Task):
+            name = 'bound_task_7173'
+            __bound__ = False
+            request_stack = None
+
+            def run(self):
+                return 1
+
+        self.app.register_task(BoundTask())
+        task = self.app.tasks['bound_task_7173']
+        assert task.request_stack is not None
+        assert callable(build_tracer(task.name, task, app=self.app))
 
     def test_fast_trace_task__no_content_type(self):
         self.app.tasks[self.add.name].__trace__ = build_tracer(
