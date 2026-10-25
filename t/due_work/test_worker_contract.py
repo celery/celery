@@ -149,31 +149,24 @@ CHORD = worker_history(
 
 CONTRACT = worker_contract(
     name='celery: the worker running a task',
-    history=SEND_MESSAGE,
-    gap=(
-        'once the link is published, a failure still runs the failure path: a child lost after the link, before '
-        'the store, records FAILURE for a task whose effect and link happened, and fires the error callback '
-        'beside the link (https://github.com/celery/celery/issues/10949); and a link the broker refuses records '
-        'FAILURE and acknowledges the message, so the link is never sent '
-        '(https://github.com/celery/celery/issues/10725). '
-        'FINDINGS pins each history'
-    ),
-)
-# worker_contract binds one history; the chord is a second process handoff of the same contract.
-CONTRACT = CONTRACT.model_copy(
-    update={
-        'process_handoffs': (*CONTRACT.process_handoffs, CHORD),
-        'handoff_gaps': {
-            **CONTRACT.handoff_gaps,
-            CHORD.name: (
-                'a chord whose body the broker refuses, or whose header task is lost after its effect and before '
-                'its store, fails for good with ChordError though every message was sent; the body never runs '
-                '(https://github.com/celery/celery/issues/10725#issuecomment-6318108091, '
-                'https://github.com/celery/celery/issues/10949). '
-                'CHORD_FINDINGS pins each history'
-            ),
-        },
-    }
+    process_handoffs=(SEND_MESSAGE, CHORD),
+    handoff_gaps={
+        SEND_MESSAGE.name: (
+            'once the link is published, a failure still runs the failure path: a child lost after the link, before '
+            'the store, records FAILURE for a task whose effect and link happened, and fires the error callback '
+            'beside the link (https://github.com/celery/celery/issues/10949); and a link the broker refuses records '
+            'FAILURE and acknowledges the message, so the link is never sent '
+            '(https://github.com/celery/celery/issues/10725). '
+            'FINDINGS pins each history'
+        ),
+        CHORD.name: (
+            'a chord whose body the broker refuses, or whose header task is lost after its effect and before '
+            'its store, fails for good with ChordError though every message was sent; the body never runs '
+            '(https://github.com/celery/celery/issues/10725#issuecomment-6318108091, '
+            'https://github.com/celery/celery/issues/10949). '
+            'CHORD_FINDINGS pins each history'
+        ),
+    },
 )
 
 
