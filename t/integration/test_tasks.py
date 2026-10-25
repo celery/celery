@@ -17,11 +17,11 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
-                    add_not_typed, add_pydantic, add_pydantic_string_annotations, add_with_result, fail, fail_unpickleable,
-                    print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
-                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable,
-                    retry_with_args_after_kwargs, retry_with_kwargs_after_args, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
+                    add_not_typed, add_pydantic, add_pydantic_string_annotations, add_with_result, fail,
+                    fail_unpickleable, print_unicode, record_replaced_task_nesting, reject_then_succeed,
+                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
+                    retry_unpickleable, retry_with_args_after_kwargs, retry_with_kwargs_after_args,
+                    return_properties, return_request_time_limits, second_order_replace1, sleeping,
                     soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
