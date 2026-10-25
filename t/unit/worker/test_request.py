@@ -1191,6 +1191,123 @@ class test_Request(RequestCase):
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
 
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
+    def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 42
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        succeeded = [
+            c for c in req.eventer.send.call_args_list
+            if c.args and c.args[0] == 'task-succeeded'
+        ]
+        assert succeeded
+        # Payload is saferepr'd like a normal success event, not the raw result.
+        assert succeeded[0].kwargs['result'] == '42'
+
+    def test_on_failure_WorkerLostError_after_success_skips_retry_on_worker_lost(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 7
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        req.on_ack.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_for_rpc_backend(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.as_uri.return_value = 'rpc://'
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_when_ignore_result(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        # Request-level ignore_result (e.g. apply_async(ignore_result=True)),
+        # not only the task default.
+        req._ignore_result = True
+        req.task.ignore_result = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_backend_unavailable(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.get_state.side_effect = ConnectionError()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once()
+
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:
             raise WorkerLostError()

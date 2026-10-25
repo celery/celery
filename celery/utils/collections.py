@@ -583,7 +583,19 @@ class LimitedSet:
         if not other:
             return
         if isinstance(other, LimitedSet):
-            self._data.update(other._data)
+            # Give the entries sequence numbers of this set, in the other
+            # set's order: its own numbers can be the same as ours, and two
+            # entries with the same insertion time and sequence number make
+            # the heap compare the items themselves.
+            entries = sorted(
+                other._data.values(),
+                # insertion time, then the other set's sequence number
+                key=lambda entry: entry[:2],
+            )
+            for inserted, other_seq, item in entries:
+                # other_seq was only needed for the order above: the entry
+                # gets a sequence number of this set instead.
+                self._data[item] = (inserted, next(self._seq), item)
             self._refresh_heap()
             self.purge()
         elif isinstance(other, dict):
@@ -630,22 +642,29 @@ class LimitedSet:
         # time based expiring:
         if self.expires:
             while len(self._data) > self.minlen >= 0:
-                inserted_time = self._heap[0][0]
-                if inserted_time + self.expires > now:
+                entry = self._heap[0]
+                if not self._is_current(entry):
+                    # left behind by discard(), or by re-adding the item
+                    heappop(self._heap)
+                    continue
+                if entry[0] + self.expires > now:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
-            _, _, item = heappop(self._heap)
-            try:
-                self._data.pop(item)
-            except KeyError:
-                pass
-            else:
-                return item
+            entry = heappop(self._heap)
+            if self._is_current(entry):
+                del self._data[entry[2]]
+                return entry[2]
         return default
+
+    def _is_current(self, entry):
+        # type: (Tuple[float, int, Any]) -> bool
+        # discard() doesn't remove an item's heap entry, so the heap can
+        # still hold an outdated entry for an item that was re-added since.
+        return self._data.get(entry[2]) is entry
 
     def as_dict(self):
         # type: () -> Dict
