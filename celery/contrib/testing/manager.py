@@ -43,7 +43,7 @@ class ManagerMixin:
 
     def warn(self, s):
         # type: (str) -> None
-        print(s, file=self.stderr)
+        self.stderr.write(s + '\n')
 
     def missing_results(self, r):
         # type: (Sequence[AsyncResult]) -> Sequence[str]
