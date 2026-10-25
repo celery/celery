@@ -132,6 +132,24 @@ class test_trace(TraceCase):
         with pytest.raises(Reject):
             self.trace(add_with_rejecting_success, (2, 2), {}, eager=False)
 
+    def test_trace_after_return_raises_reject_is_not_swallowed(self):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=Reject('no', requeue=False)))
+        def add_with_rejecting_after_return(x, y):
+            return x + y
+
+        with pytest.raises(Reject):
+            self.trace(add_with_rejecting_after_return, (2, 2), {}, eager=False)
+
+    def test_trace_on_success_raises_memory_error_propagates(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=MemoryError('oom')))
+        def add_with_oom_success(x, y):
+            return x + y
+
+        with pytest.raises(MemoryError):
+            self.trace(add_with_oom_success, (2, 2), {}, eager=False)
+
     @pytest.mark.parametrize('fails', [False, True])
     def test_trace_after_return_raises(self, fails):
         @self.app.task(shared=False,

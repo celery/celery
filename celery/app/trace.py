@@ -635,7 +635,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         if task_on_success:
                             try:
                                 task_on_success(retval, uuid, args, kwargs)
-                            except Reject:
+                            except (Reject, MemoryError):
                                 raise
                             except Exception as exc:
                                 # The outcome is already stored: recording a
@@ -669,7 +669,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             task_after_return(
                                 state, retval, uuid, args, kwargs, None,
                             )
-                        except Reject:
+                        except (Reject, MemoryError):
                             raise
                         except Exception as exc:
                             # Same as on_success: the outcome is already
