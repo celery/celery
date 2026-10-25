@@ -25,6 +25,6 @@ jobs:
       group: contract-report-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
       cancel-in-progress: false
     steps:
-      - uses: gigaverse-app/pytest-obligation/publish@4423240031d2af607a778d3ece4f9ef1a8d92f2c # unreleased: pytest-obligation#162; v1 once released
+      - uses: gigaverse-app/pytest-obligation/publish@8100b177f9017c60d42a60c482f95083acb1301d # unreleased: pytest-obligation#162; v1 once released
         with:
           sticky-key: celery-worker-contract

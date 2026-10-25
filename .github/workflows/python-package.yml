@@ -171,7 +171,7 @@ jobs:
         run: tox --verbose --verbose -e 3.13-due_work -- --due-work-profile-report=obligation-profiles.json
       - name: Report what the contract proved
         if: ${{ !cancelled() }}
-        uses: gigaverse-app/pytest-obligation/report@4423240031d2af607a778d3ece4f9ef1a8d92f2c # same revision as publish (artifact layout); v1 once released
+        uses: gigaverse-app/pytest-obligation/report@8100b177f9017c60d42a60c482f95083acb1301d # same revision as publish (artifact layout); v1 once released
         with:
           application-paths: t/due_work
           report-path: obligation-profiles.json
