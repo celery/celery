@@ -161,6 +161,12 @@ def _saferepr(o, maxlen=None, maxlevels=3, seen=None):
     for token, it in reprstream(stack, seen=seen, maxlevels=maxlevels):
         if maxlen is not None and maxlen <= 0:
             yield ', ...'
+            # If the just-consumed token is a closing bracket it won't be
+            # in `it` any more, so the dangling-paren pass below would
+            # skip it. Re-insert it at the front of the stack so it is
+            # processed first.
+            if isinstance(token, _literal) and token.direction < 0:
+                stack.appendleft(iter([token]))
             # move rest back to stack, so that we can include
             # dangling parens.
             stack.append(it)

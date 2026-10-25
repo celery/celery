@@ -138,6 +138,20 @@ class test_saferepr:
     def test_text_maxlen(self):
         assert saferepr(D_D_TEXT, 100).endswith("...', ...}}")
 
+    def test_truncated_last_element_keeps_closing_bracket(self):
+        # When the last element of a container is truncated, the closing
+        # bracket must still appear in the output (issue #10760).
+        result = saferepr(['v' * 100], 30)
+        assert result.endswith(']'), repr(result)
+
+    def test_truncated_last_element_keeps_closing_bracket_tuple(self):
+        result = saferepr(('v' * 100,), 30)
+        assert result.endswith(')'), repr(result)
+
+    def test_truncated_last_element_keeps_closing_bracket_dict(self):
+        result = saferepr({'a': ['v' * 100]}, 30)
+        assert result.endswith('}'), repr(result)
+
     def test_maxlevels(self):
         saferepr(D_ALL, maxlevels=1)
 
