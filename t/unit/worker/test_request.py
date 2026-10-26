@@ -1070,6 +1070,26 @@ class test_Request(RequestCase):
         finally:
             revoked_stamps.clear()
 
+    def test_revoked_by_header_after_missing_stamp_value(self):
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+
+            job._message.headers['stamps'] = {'b': 'y'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+
+            job._request_dict['stamps'] = {'b': 'y'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+
+            revoked_stamps.update({
+                'a': ['x'],
+                'b': ['y'],
+            })
+
+            assert job.revoked()
+        finally:
+            revoked_stamps.clear()
+
     def test_execute_does_not_execute_revoked(self):
         job = self.xRequest()
         revoked.add(job.id)
