@@ -18,8 +18,8 @@ from celery import current_app, signals, states
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
-                               TimeLimitExceeded, WorkerLostError)
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
@@ -845,23 +845,23 @@ class Request:
         if callable(as_uri) and as_uri() == 'rpc://':
             return False
 
-        # Use a bounded retry to handle transient network blips without
-        # blocking the worker's main process indefinitely.
-        # We temporarily cap max_retries. However, in unit tests, max_retries
-        # might be a Mock. We check if it's an actual number to avoid a
-        # TypeError on min() in newer Python versions (e.g., Python 3.14+).
-        original_max_retries = getattr(backend, 'max_retries', None)
-        if isinstance(original_max_retries, (int, float)):
-            backend.max_retries = min(original_max_retries, 3)
-
+        # Bounded retry: keep the retry for transient blips, but cap it at
+        # 3 attempts so a down backend can't block the worker's main process
+        # indefinitely. Pass max_retries explicitly instead of mutating
+        # backend.max_retries, which is shared across threads when
+        # result_backend_thread_safe=True.
         try:
-            return backend.get_task_meta(self.id, cache=False)['status'] == states.SUCCESS
+            meta = backend._ensure_retryable(
+                backend._get_task_meta_for,
+                fallback_exc=BackendGetMetaError,
+                fallback_msg="failed to get meta",
+                task_id=self.id,
+                max_retries=3,
+            )
+            return meta['status'] == states.SUCCESS
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False
-        finally:
-            if isinstance(original_max_retries, (int, float)):
-                backend.max_retries = original_max_retries
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):

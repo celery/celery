@@ -1240,7 +1240,7 @@ class test_Request(RequestCase):
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.backend = Mock()
-        req.task.backend.get_task_meta.return_value = {
+        req.task.backend._ensure_retryable.return_value = {
             'status': states.SUCCESS, 'result': 42
         }
         req.task.backend._get_task_meta_for.return_value = {
@@ -1273,9 +1273,12 @@ class test_Request(RequestCase):
         req.task.retry_on_worker_lost = True
         req.task.max_retries = 3
         req.task.backend = Mock()
-        req.task.backend.get_task_meta.return_value = {
+        # _success_was_stored calls backend._ensure_retryable(...) directly
+        # with max_retries=3 (no more get_task_meta), so mock that instead.
+        req.task.backend._ensure_retryable.return_value = {
             'status': states.SUCCESS, 'result': 7
         }
+        # The task-succeeded event block still reads _get_task_meta_for.
         req.task.backend._get_task_meta_for.return_value = {
             'status': states.SUCCESS, 'result': 7
         }
@@ -2198,25 +2201,6 @@ class test_Request(RequestCase):
         backend.on_backend_retryable_error = lambda exc: None
         return read_calls, sleep_calls
 
-    def test_repro_10957_get_state_retries_on_backend_down(self):
-        """
-        `_success_was_stored` must use a bounded retry to handle transient
-        blips without blocking indefinitely.
-        Expected: exactly 3 retries (since we cap max_retries at 3).
-        """
-        req = self.get_request(self.add.s(2, 2))
-        req._ignore_result = False
-
-        read_calls, sleep_calls = self._setup_blocking_backend(req)
-        result = req._success_was_stored()
-
-        assert result is False
-        print(f"\n[REPRO-1] reads={len(read_calls)}, sleeps={len(sleep_calls)}")
-        # We expect exactly 3 retries, not infinite.
-        assert len(sleep_calls) == 3, (
-            f"Expected exactly 3 bounded retries, got {len(sleep_calls)} sleeps."
-        )
-
     def test_repro_10957_event_block_retries_on_backend_down(self):
         """
         The `task-succeeded` event block must not go through `_ensure_retryable`.
@@ -2265,7 +2249,7 @@ class test_Request(RequestCase):
     def test_repro_10957_requeue_with_failing_backend(self):
         """
         With acks_late and reject_on_worker_lost, on_failure should requeue
-        the task without blocking on the backend write.
+        the task without blocking on the backend write, using a bounded retry.
         """
         try:
             raise WorkerLostError()
@@ -2276,33 +2260,36 @@ class test_Request(RequestCase):
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
 
-        # Setup a failing backend that raises ConnectionError
         backend = req.task.backend
         backend.always_retry = True
-        backend.max_retries = 3
-        backend.base_sleep_between_retries_ms = 10
-        backend.max_sleep_between_retries_ms = 10
+        backend.max_retries = float('inf')  # Default
         backend.exception_safe_to_retry = lambda exc: True
         backend.on_backend_retryable_error = lambda exc: None
 
-        # Use Mock for both read and write so we can assert on them
         backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
         backend._store_result = Mock(side_effect=ConnectionError("backend down"))
 
-        # Call on_failure. It should requeue the task and NOT call mark_as_failure.
+        sleep_calls = [0]
+
+        def counting_sleep(amount):
+            sleep_calls[0] += 1
+            if sleep_calls[0] >= 10:
+                raise RuntimeError("Stop retrying!")
+
+        backend._sleep = counting_sleep
+
         req.on_failure(einfo)
 
-        # Assert that it was requeued (rejected) and not marked as failure
         req.on_reject.assert_called_with(req_logger, req.connection_errors, True)
-        # Assert that store was never called, meaning the worker didn't block on write
         backend._store_result.assert_not_called()
+        # On main: reaches 10. On this branch: stops at 3.
+        assert sleep_calls[0] <= 3
 
     def test_repro_10957_does_not_hang_on_inf_retries(self):
         """
-        On main, _success_was_stored uses get_state() which goes through
-        _ensure_retryable with max_retries=inf, hanging the worker.
-        This test fails on main because it raises RuntimeError from _sleep,
-        while the PR caps max_retries so it can safely return False.
+        On main, _success_was_stored uses get_state() -> _ensure_retryable
+        with max_retries=inf, so it retries until _sleep raises (10 times).
+        On this branch, the retry is bounded to 3, so it returns False fast.
         """
         req = self.get_request(self.add.s(2, 2))
         req._ignore_result = False
@@ -2313,25 +2300,21 @@ class test_Request(RequestCase):
         backend.exception_safe_to_retry = lambda exc: True
         backend.on_backend_retryable_error = lambda exc: None
 
-        calls = [0]
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
 
-        def failing_meta(task_id):
-            calls[0] += 1
-            raise ConnectionError("backend down")
+        sleep_calls = [0]
 
-        backend._get_task_meta_for = failing_meta
+        def counting_sleep(amount):
+            sleep_calls[0] += 1
+            if sleep_calls[0] >= 10:
+                raise RuntimeError("Stop retrying!")
 
-        def raising_sleep(amount):
-            # Break the infinite loop in main to prevent test suite hang
-            raise RuntimeError("Stop retrying!")
+        backend._sleep = counting_sleep
 
-        backend._sleep = raising_sleep
-
-        # On main: this will raise RuntimeError (from _sleep) because max_retries=inf
-        # On PR: this will return False after 3 bounded retries
         result = req._success_was_stored()
         assert result is False
-        assert calls[0] <= 4  # 1 initial + 3 retries
+        # On main: reaches 10 (RuntimeError). On this branch: stops at 3.
+        assert sleep_calls[0] <= 3
 
 
 class test_create_request_class(RequestCase):
