@@ -631,6 +631,41 @@ class test_ResultSet:
         x.add(self.app.AsyncResult(2))
         assert len(x) == 2
 
+    def test_add_after_ready(self):
+        x = self.app.ResultSet([self.app.AsyncResult(uuid()) for _ in range(2)])
+        for result in x.results:
+            self.app.backend.mark_as_done(result.id, 1)
+        assert x.ready()
+        new = self.app.AsyncResult(uuid())
+        x.add(new)
+        assert len(x) == 3
+        assert not x.ready()
+        self.app.backend.mark_as_done(new.id, 1)
+        assert x.ready()
+
+    def test_then_waits_for_result_added_after_ready(self):
+        x = self.app.ResultSet([self.app.AsyncResult(uuid())])
+        done, pending = self.app.AsyncResult(uuid()), self.app.AsyncResult(uuid())
+        first, second, third = Mock(name='first'), Mock(name='second'), Mock(name='third')
+        with patch.object(type(x.backend), 'is_async', True):
+            x.then(first)
+            for result in (x.results[0], done):
+                self.app.backend.mark_as_done(result.id, 1)
+            assert x.ready()
+            assert done.ready()
+            first.assert_called_once()
+            # Adding a result that is ready already keeps the set ready.
+            x.add(done)
+            x.then(second)
+            second.assert_called_once()
+            x.add(pending)
+            x.then(third)
+            third.assert_not_called()
+            self.app.backend.mark_as_done(pending.id, 1)
+            assert x.ready()
+            third.assert_called_once()
+        first.assert_called_once()
+
     def test_iter_native_finalizes_barrier_when_built_via_add(self):
         x = self.app.ResultSet([])
         for _ in range(3):
