@@ -1425,6 +1425,17 @@ class test_result_set:
         assert rs.get(timeout=TIMEOUT) == [2, 4]
 
     @flaky
+    def test_result_set_add_after_ready(self, manager):
+        assert_ping(manager)
+
+        rs = ResultSet([add.delay(1, 1), add.delay(2, 2)])
+        # Collecting the results fires the set's barrier, so add() then
+        # appends to a set whose results are all ready.
+        assert rs.get(timeout=TIMEOUT) == [2, 4]
+        rs.add(add.delay(3, 3))
+        assert rs.get(timeout=TIMEOUT) == [2, 4, 6]
+
+    @flaky
     def test_join_exhausted_timeout(self, manager):
         """A spent positive join budget must not become an unlimited wait."""
         if not manager.app.conf.result_backend.startswith(('redis', 'rpc')):
