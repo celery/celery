@@ -699,7 +699,7 @@ Use the ``tox -e`` option if you only want to test specific Python versions:
 
 .. code-block:: console
 
-    $ tox -e 3.7
+    $ tox -e 3.14-unit
 
 Building the documentation
 --------------------------
@@ -1099,48 +1099,12 @@ is following the conventions.
         import time
 
         from collections import deque
-        from Queue import Queue, Empty
+        from queue import Queue, Empty
 
         from .platforms import Pidfile
         from .utils.time import maybe_timedelta
 
 * Wild-card imports must not be used (`from xxx import *`).
-
-* For distributions where Python 2.5 is the oldest support version,
-  additional rules apply:
-
-    * Absolute imports must be enabled at the top of every module::
-
-        from __future__ import absolute_import
-
-    * If the module uses the :keyword:`with` statement and must be compatible
-      with Python 2.5 (celery isn't), then it must also enable that::
-
-        from __future__ import with_statement
-
-    * Every future import must be on its own line, as older Python 2.5
-      releases didn't support importing multiple features on the
-      same future import line::
-
-        # Good
-        from __future__ import absolute_import
-        from __future__ import with_statement
-
-        # Bad
-        from __future__ import absolute_import, with_statement
-
-     (Note that this rule doesn't apply if the package doesn't include
-     support for Python 2.5)
-
-
-* Note that we use "new-style" relative imports when the distribution
-  doesn't support Python versions below 2.5
-
-    This requires Python 2.5 or later:
-
-    .. code-block:: python
-
-        from . import submodule
 
 
 .. _feature-with-extras:
@@ -1506,8 +1470,7 @@ Commands to make a new public stable release:
 
     $ make distcheck  # checks pep8, autodoc index, runs tests and more
     $ make dist  # NOTE: Runs git clean -xdf and removes files not in the repo.
-    $ python setup.py sdist upload --sign --identity='Celery Security Team'
-    $ python setup.py bdist_wheel upload --sign --identity='Celery Security Team'
+    $ twine upload --sign --identity='Celery Security Team' dist/*
 
 If this is a new release series then you also need to do the
 following:
