@@ -20,7 +20,7 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
-from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
+from celery.exceptions import Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -510,11 +510,12 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             if deduplicate_successful_tasks and redelivered:
                 if task_request.id in successful_requests:
                     return trace_ok_t(R, I, T, Rstr)
-                r = AsyncResult(task_request.id, app=app)
+                r = AsyncResult(task_request.id, app=app, backend=task.backend)
 
                 try:
-                    state = r.state
-                except BackendGetMetaError:
+                    _meta = r.backend._get_task_meta_for(r.id)
+                    state = _meta['status']
+                except Exception:
                     pass
                 else:
                     if state == SUCCESS:
@@ -527,13 +528,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         _priority = task_request.delivery_info.get('priority') if \
                             inherit_parent_priority else None
                         try:
-                            _meta = r._get_task_meta()
                             stored_retval = _meta.get('result')
-                            # Children are populated by mark_as_done on the
-                            # original execution.  If present, callbacks were
-                            # already dispatched — skip to avoid duplicates.
-                            # Requires the backend to persist extended result
-                            # metadata (result_extended=True).
                             _children = _meta.get('children')
                             _callbacks = task_request.callbacks
                             _chain = task_request.chain
@@ -547,10 +542,6 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         except MemoryError:
                             raise
                         except Exception as exc:
-                            # Permanent failures (malformed signature, etc.)
-                            # will requeue indefinitely.  Broker-level
-                            # dead-letter / max-delivery-count policies are
-                            # the intended circuit-breaker.
                             logger.error(
                                 'Failed to dispatch chain/callbacks for '
                                 'deduplicated task %s',

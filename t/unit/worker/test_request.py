@@ -183,6 +183,38 @@ class test_trace_task(RequestCase):
         assert ret == 256
         assert not self.app.AsyncResult(task_id).ready()
 
+    def test_deduplicate_successful_tasks_uses_get_task_meta_for(self):
+        """Deduplication should bypass _ensure_retryable by using _get_task_meta_for."""
+        self.app.conf.task_acks_late = True
+        self.app.conf.worker_deduplicate_successful_tasks = True
+        self.app.backend.persistent = True
+
+        # Mock AsyncResult to simulate a completed task
+        with patch('celery.app.trace.AsyncResult') as MockAsyncResult:
+            mock_r = MockAsyncResult.return_value
+            mock_r.id = 'test-id'
+            mock_r.state = states.SUCCESS
+            mock_r.backend._get_task_meta_for.return_value = {
+                'status': states.SUCCESS, 'result': 42
+            }
+            mock_r.backend.get_state = Mock()  # This should not be called
+
+            @self.app.task(shared=False)
+            def dummy_task(): return "done"
+
+            # Fake request with redelivered=True to trigger deduplication
+            request = {
+                'id': 'test-id', 'delivery_info': {'redelivered': True},
+                'args': (), 'kwargs': {}
+            }
+
+            trace = build_tracer('dummy_task', dummy_task, app=self.app)
+            trace('test-id', (), {}, request)
+
+            # Verify _get_task_meta_for was called and get_state was not
+            mock_r.backend._get_task_meta_for.assert_called_once_with('test-id')
+            mock_r.backend.get_state.assert_not_called()
+
 
 class test_Request(RequestCase):
 

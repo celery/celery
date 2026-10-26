@@ -320,7 +320,7 @@ class Backend:
             already_failed = (
                 'chord' in chain_elem_ctx.options and
                 chain_elem_ctx.id is not None and
-                self.get_state(chain_elem_ctx.id) in states.PROPAGATE_STATES
+                self._get_task_meta_for(chain_elem_ctx.id)['status'] in states.PROPAGATE_STATES
             )
             # If the state should be propagated, we'll do so for all
             # elements of the chain. This is only truly important so
@@ -1496,3 +1496,4 @@ class DisabledBackend(BaseBackend):
 
     get_state = get_status = get_result = get_traceback = _is_disabled
     get_task_meta_for = wait_for = get_many = _is_disabled
+    _get_task_meta_for = _is_disabled
