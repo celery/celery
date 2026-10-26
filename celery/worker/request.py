@@ -24,6 +24,7 @@ from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
+from celery.utils.saferepr import saferepr
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
@@ -703,6 +704,27 @@ class Request:
             return self.on_retry(exc_info)
 
         is_worker_lost = isinstance(exc, WorkerLostError)
+        if is_worker_lost and self._success_was_stored():
+            # The pool child stored SUCCESS and was lost afterwards, e.g. in
+            # on_success, a task_postrun receiver or process_cleanup.
+            # Recording a failure here would fire the errbacks and count a
+            # chord header twice, and requeueing would run the task again.
+            warn('Task %s[%s] succeeded before the worker was lost: %r',
+                 self.name, self.id, exc)
+            if self.task.acks_late:
+                self.acknowledge()
+            # Emit the success event so Flower/events.State do not stay STARTED.
+            try:
+                result = self.task.backend.get_result(self.id)
+            except Exception:  # pylint: disable=broad-except
+                result = None
+            self.send_event(
+                'task-succeeded',
+                result=saferepr(result, self.task.resultrepr_maxsize),
+                runtime=None,
+            )
+            return
+
         max_retries_exceeded = False
         if is_worker_lost and self.task.retry_on_worker_lost:
             max_retries = self.task.max_retries
@@ -805,6 +827,24 @@ class Request:
             task.request_stack.pop()
         info('Task %s[%s] retry: %s', self.task_name, self.id, reason)
         return True
+
+    def _success_was_stored(self):
+        # ignore_result never writes SUCCESS, and rpc:// results live on the
+        # caller's queue: a lookup here would always see PENDING and would
+        # declare a durable per-worker reply queue as a side effect.
+        # Use the request's ignore_result so apply_async(ignore_result=...)
+        # is honored, not only the task-level default.
+        if self.ignore_result:
+            return False
+        backend = self.task.backend
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
+        try:
+            return backend.get_state(self.id) == states.SUCCESS
+        except Exception:  # pylint: disable=broad-except
+            # No backend, or it can't be reached: keep the failure handling.
+            return False
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):

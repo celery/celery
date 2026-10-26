@@ -289,6 +289,26 @@ def retry_unpickleable(self, foo, bar, *, retry_kwargs):
     raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
 
 
+@shared_task(bind=True, max_retries=1)
+def retry_with_args_after_kwargs(self, foo, bar, label=None):
+    if not self.request.retries:
+        raise self.retry(args=(foo + 1, bar + 1), countdown=0)
+    return {
+        'foo': foo, 'bar': bar, 'label': label,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
+
+
+@shared_task(bind=True, max_retries=1)
+def retry_with_kwargs_after_args(self, foo, bar):
+    if not self.request.retries:
+        raise self.retry(kwargs={'foo': foo + 1}, countdown=0)
+    return {
+        'foo': foo, 'bar': bar,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
+
+
 @shared_task(bind=True, expires=120.0, max_retries=1)
 def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
