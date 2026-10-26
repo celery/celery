@@ -32,6 +32,11 @@ Unreleased
   the limit is left out entirely instead of leaving a stray closing bracket.
   This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
   (#10760).
+- The MongoDB result backend now keeps the first ``SUCCESS`` stored for a
+  task and ignores later writes for that task id. That includes calling
+  ``AbortableAsyncResult.abort()`` on a finished task and reusing a task
+  id, until ``forget()`` clears the stored result (#10944).
+
 
 .. _version-5.7.0rc1:
 
