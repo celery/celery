@@ -24,14 +24,14 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.url import maybe_sanitize_url
 
 import celery.exceptions
-from celery import current_app, group, maybe_signature, states
+from celery import chord, current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.app.task import Context
 from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
                                NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
 from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
-from celery.utils.functional import LRUCache, arity_greater
+from celery.utils.functional import LRUCache, arity_greater, maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls, ensure_serializable, get_pickleable_exception,
                                         get_pickled_exception, raise_with_context)
@@ -161,6 +161,26 @@ def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **ext
         "task": task_name,
         **extra
     })
+
+
+def _result_errbacks(sig, app):
+    """Return the id of the result of ``sig`` and the errbacks linked to it.
+
+    A chord's result is that of its body, which the chord's own errbacks
+    are linked to when it runs. For a group, the errbacks of its tasks are
+    collected along with its own; for a chain, only its own. The ids are
+    those given by freezing.
+    """
+    sig = maybe_signature(sig, app=app)
+    errbacks = []
+    while isinstance(sig, chord) and sig.body is not None:
+        errbacks.extend(maybe_list(sig.options.get("link_error")) or [])
+        sig = maybe_signature(sig.body, app=app)
+    errbacks.extend(maybe_list(sig.options.get("link_error")) or [])
+    if isinstance(sig, group):
+        for task in sig.tasks:
+            errbacks.extend(_result_errbacks(task, app)[1])
+    return sig.options.get("task_id"), errbacks
 
 
 class _nulldict(dict):
@@ -509,13 +529,25 @@ class Backend:
                 # Store the failures before broadcasting the revoke, so the
                 # revoke handler finds them and keeps them (see _revoke()).
 
+                # Each task calls its own errbacks, which chord.link_error()
+                # links there, and those of the group, each one once.
+                group_errbacks = maybe_list(group_callback.options.get("link_error")) or []
+                task_errbacks = dict(
+                    _result_errbacks(task, self.app)
+                    for task in group_callback.tasks
+                )
+
                 # Handle each task in the group individually
                 for result in frozen_group.results:
                     try:
+                        errbacks = []
+                        for errback in (*task_errbacks.get(result.id, ()), *group_errbacks):
+                            if errback not in errbacks:
+                                errbacks.append(errback)
                         # Create fake request for error callbacks
                         fake_request = _create_fake_task_request(
                             task_id=result.id,
-                            errbacks=group_callback.options.get("link_error", []),
+                            errbacks=errbacks,
                             task_name=getattr(result, 'task', 'unknown')
                         )
 
@@ -822,11 +854,7 @@ class Backend:
                         self._sleep(sleep_amount)
                     else:
                         if fallback_exc:
-                            exc_kwargs = {}
-                            for key in ("task_id", "state"):
-                                if key in kwargs:
-                                    exc_kwargs[key] = kwargs[key]
-                            raise_with_context(fallback_exc(fallback_msg, **exc_kwargs))
+                            raise_with_context(fallback_exc(fallback_msg))
                         raise
                 else:
                     raise
@@ -840,14 +868,13 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        kwargs.update({'task_id': task_id, 'state': state})
-
+        # Pass the values by position, as 5.6 did: backends outside Celery,
+        # such as django-celery-results, name these parameters differently.
         self._ensure_retryable(
             self._store_result,
-            fallback_exc=BackendStoreError,
+            task_id, result, state, traceback,
+            fallback_exc=partial(BackendStoreError, task_id=task_id, state=state),
             fallback_msg="failed to store result on the backend",
-            result=result,
-            traceback=traceback,
             request=request,
             **kwargs
         )
@@ -855,7 +882,7 @@ class Backend:
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
-        self._ensure_retryable(self._forget, task_id=task_id)
+        self._ensure_retryable(self._forget, task_id)
 
     def _forget(self, task_id):
         raise NotImplementedError('backend does not implement forget.')
@@ -919,9 +946,9 @@ class Backend:
 
         meta = self._ensure_retryable(
             self._get_task_meta_for,
-            fallback_exc=BackendGetMetaError,
+            task_id,
+            fallback_exc=partial(BackendGetMetaError, task_id=task_id),
             fallback_msg="failed to get meta",
-            task_id=task_id
         )
 
         if cache and meta.get('status') == states.SUCCESS:
@@ -955,7 +982,7 @@ class Backend:
             except KeyError:
                 pass
 
-        meta = self._ensure_retryable(self._restore_group, group_id=group_id)
+        meta = self._ensure_retryable(self._restore_group, group_id)
         if cache and meta is not None:
             self._cache[group_id] = meta
         return meta
@@ -968,15 +995,11 @@ class Backend:
 
     def save_group(self, group_id, result):
         """Store the result of an executed group."""
-        return self._ensure_retryable(
-            self._save_group,
-            group_id=group_id,
-            result=result
-        )
+        return self._ensure_retryable(self._save_group, group_id, result)
 
     def delete_group(self, group_id):
         self._cache.pop(group_id, None)
-        return self._ensure_retryable(self._delete_group, group_id=group_id)
+        return self._ensure_retryable(self._delete_group, group_id)
 
     def cleanup(self):
         """Backend cleanup."""

@@ -9,6 +9,35 @@ in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
 an overview of what's new in Celery 5.6.
 
 
+Unreleased
+==========
+
+- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
+  worker is now logged at ``ERROR`` level instead of being recorded as a task
+  failure. The task's errbacks no longer run for a task that succeeded, and a
+  failed task is no longer recorded a second time. Broken hooks therefore no
+  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
+  execution still propagates the exception (#10724).
+- The Redis result backend now counts each chord header task only once,
+  even when the task runs again, as it can after a lost worker with
+  ``acks_late``. Header results are now saved with a Lua script. If your
+  Redis user has an ACL that lists the commands it can run, add
+  ``EVALSHA``, ``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. Without them,
+  header tasks fail when they store their results, and neither the chord
+  body nor its error callbacks run. A Redis-compatible service or proxy has
+  to support ``EVALSHA`` and ``SCRIPT LOAD`` too (#10919).
+- ``saferepr`` no longer drops or unbalances closing brackets when ``maxlen``
+  is reached: a container whose last element was truncated is now closed,
+  without a misleading ``, ...``, and a nested container that starts after
+  the limit is left out entirely instead of leaving a stray closing bracket.
+  This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
+  (#10760).
+- The MongoDB result backend now keeps the first ``SUCCESS`` stored for a
+  task and ignores later writes for that task id. That includes calling
+  ``AbortableAsyncResult.abort()`` on a finished task and reusing a task
+  id, until ``forget()`` clears the stored result (#10944).
+
+
 .. _version-5.7.0rc1:
 
 5.7.0rc1
@@ -104,8 +133,6 @@ Other
 
 - Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
 - Fix invalid Bandit baseline JSON and validate it before commit (#10766)
-
-
 
 .. _version-5.7.0b1:
 

@@ -987,6 +987,109 @@ class test_Request(RequestCase):
             assert job._already_revoked
             assert job.acknowledged
 
+    def _stamp(self, job, stamps):
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = list(stamps)
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = list(stamps)
+
+    def test_revoked_by_second_stamped_header(self):
+        """Test that revocation works when a later stamped header matches.
+
+        Regression test for issue where the loop broke unconditionally after
+        checking the first header in revoked_stamps, even if it didn't match.
+        """
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'a': ['other'], 'b': ['y']})
+            with self.assert_signal_called(
+                    task_revoked, sender=job.task, request=job._context,
+                    terminated=False, expired=False, signum=None):
+                assert job.revoked()
+                assert job._already_revoked
+                assert job.acknowledged
+        finally:
+            revoked_stamps.clear()
+
+    def test_not_revoked_when_no_stamped_header_matches(self):
+        """Test that task is not revoked when no stamped header matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'a': ['other'], 'b': ['nope']})
+            assert not job.revoked()
+            assert not job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_later_list_valued_stamped_header(self):
+        """Test that revocation works when a later list-valued stamped header matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': ['y1', 'y2']})
+            revoked_stamps.update({'a': ['other'], 'b': ['y2']})
+            assert job.revoked()
+            assert job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_skips_unflagged_headers(self):
+        """Test that revocation works when only one header is flagged and it matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'b': ['y']})
+            assert job.revoked()
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_handles_missing_stamp_value(self):
+        """Test that revocation handles missing stamped header values gracefully.
+
+        Regression test for case where a header is listed in stamped_headers
+        and flagged in revoked_stamps, but has no corresponding value in stamps.
+        This should not raise KeyError and should not revoke the task.
+        """
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            # 'b' is in stamped_headers but not in stamps
+            job._message.headers['stamps'] = {'a': 'x'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+            job._request_dict['stamps'] = {'a': 'x'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+            revoked_stamps.update({'a': ['other'], 'b': ['y']})
+            # Should not raise KeyError
+            assert not job.revoked()
+            assert not job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_after_missing_stamp_value(self):
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+
+            job._message.headers['stamps'] = {'b': 'y'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+
+            job._request_dict['stamps'] = {'b': 'y'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+
+            revoked_stamps.update({
+                'a': ['x'],
+                'b': ['y'],
+            })
+
+            assert job.revoked()
+        finally:
+            revoked_stamps.clear()
+
     def test_execute_does_not_execute_revoked(self):
         job = self.xRequest()
         revoked.add(job.id)
@@ -1107,6 +1210,123 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
+    def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 42
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        succeeded = [
+            c for c in req.eventer.send.call_args_list
+            if c.args and c.args[0] == 'task-succeeded'
+        ]
+        assert succeeded
+        # Payload is saferepr'd like a normal success event, not the raw result.
+        assert succeeded[0].kwargs['result'] == '42'
+
+    def test_on_failure_WorkerLostError_after_success_skips_retry_on_worker_lost(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        req.task.backend.get_state.return_value = states.SUCCESS
+        req.task.backend.get_result.return_value = 7
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        req.on_ack.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_for_rpc_backend(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.as_uri.return_value = 'rpc://'
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_when_ignore_result(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        # Request-level ignore_result (e.g. apply_async(ignore_result=True)),
+        # not only the task default.
+        req._ignore_result = True
+        req.task.ignore_result = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_backend_unavailable(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.get_state.side_effect = ConnectionError()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once()
 
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:
