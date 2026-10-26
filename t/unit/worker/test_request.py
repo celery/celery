@@ -2172,9 +2172,10 @@ class test_Request(RequestCase):
         assert job.group_index == group_index
 
     # Tests for the blocking issue in PR #10752.
-    # These tests verify that `_success_was_stored` and the `task-succeeded`
-    # event block do not block the worker when the backend is down, by
-    # bypassing `_ensure_retryable` via `_get_task_meta_for`.
+    # These tests verify that `_success_was_stored` uses a bounded retry so
+    # that a down backend cannot block the worker's main process, and that
+    # the `task-succeeded` event block bypasses `_ensure_retryable` via
+    # `_get_task_meta_for`.
     def _setup_blocking_backend(self, req):
         """Configure req.task.backend to raise ConnectionError on every read.
 
@@ -2201,16 +2202,11 @@ class test_Request(RequestCase):
         backend.on_backend_retryable_error = lambda exc: None
         return read_calls, sleep_calls
 
-    def test_repro_10957_event_block_retries_on_backend_down(self):
+    def test_repro_10957_event_block_does_not_retry_on_backend_down(self):
         """
         The `task-succeeded` event block must not go through `_ensure_retryable`.
         Expected: 0 retries.
         """
-        from unittest.mock import patch
-
-        from billiard.einfo import ExceptionInfo
-        from billiard.exceptions import WorkerLostError as BWorkerLostError
-
         req = self.get_request(self.add.s(2, 2))
         req._ignore_result = False
 
@@ -2233,15 +2229,14 @@ class test_Request(RequestCase):
         backend.on_backend_retryable_error = lambda exc: None
 
         try:
-            raise BWorkerLostError()
-        except BWorkerLostError:
+            raise WorkerLostError()
+        except WorkerLostError:
             einfo = ExceptionInfo()
 
         # Force `_success_was_stored` to return True so we enter the event block.
         with patch.object(req, '_success_was_stored', return_value=True):
             req.on_failure(einfo, send_failed_event=False)
 
-        print(f"\n[REPRO-2] event path sleeps={len(sleep_calls)}")
         assert len(sleep_calls) == 0, (
             f"Expected 0 retries in event block, got {len(sleep_calls)} sleeps."
         )
