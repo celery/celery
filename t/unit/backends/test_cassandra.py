@@ -43,6 +43,10 @@ class FakeCassandraTable:
                 status, result, date_done, traceback, children)
             return Mock(name='write-result')
         task_id, = parameters
+        query = getattr(statement, 'query', None)
+        if isinstance(query, str) and query.lstrip().startswith('DELETE'):
+            self.rows.pop(task_id, None)
+            return Mock(name='delete-result')
         return Mock(one=Mock(return_value=self.rows.get(task_id)))
 
 
@@ -272,6 +276,78 @@ class test_CassandraBackend:
         meta = x._get_task_meta_for('task_id')
         assert meta['status'] == states.SUCCESS
         assert meta['result'] == 'first result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_forget_allows_task_id_reuse(self, module, monkeypatch):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        first.store_result('task_id', None, states.STARTED)
+        first.store_result('task_id', 'monday', states.SUCCESS)
+        first.store_result('other_task_id', 'untouched', states.SUCCESS)
+
+        result = self.app.AsyncResult('task_id', backend=first)
+        assert result.result == 'monday'
+        assert first.get_result('task_id') == 'monday'
+        result.forget()
+
+        assert 'task_id' not in table.rows
+        assert first.get_state('task_id') == states.PENDING
+        assert result.state == states.PENDING
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', None, states.STARTED)
+        assert second.get_state('task_id') == states.STARTED
+        second.store_result('task_id', 'tuesday', states.SUCCESS)
+
+        assert result.result == 'tuesday'
+        assert second.get_result('task_id') == 'tuesday'
+        assert second.get_result('other_task_id') == 'untouched'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('read_session', [False, True])
+    def test_forget_creates_table_and_uses_write_consistency(
+            self, module, monkeypatch, read_session):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+        mod.cassandra.ConsistencyLevel = Bunch(ONE=1, ALL=5, LOCAL_QUORUM=4)
+        self.app.conf.update(
+            cassandra_table='custom_results',
+            cassandra_read_consistency='ONE',
+            cassandra_write_consistency='ALL',
+        )
+
+        table = FakeCassandraTable()
+        session = mod.cassandra.cluster.Cluster.return_value.connect.return_value
+        session.execute = Mock(side_effect=table)
+        backend = mod.CassandraBackend(app=self.app)
+        if read_session:
+            backend._get_connection()
+        assert not table.created
+
+        # Forgetting an unknown task, including repeated calls, is harmless.
+        task_id = "missing'task"
+        backend.forget(task_id)
+        backend.forget(task_id)
+
+        assert table.created
+        calls = session.execute.call_args_list
+        assert [call.args[0].query.split()[0] for call in calls] == [
+            'CREATE', 'DELETE', 'DELETE',
+        ]
+        for call in calls[1:]:
+            statement, parameters = call.args
+            # Omitting date_done deletes every row in the task's partition.
+            assert statement.query.strip() == (
+                'DELETE FROM custom_results WHERE task_id=%s')
+            assert statement.consistency_level == 5
+            assert parameters == (task_id,)
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
     def test_store_result_compressed(self, module, monkeypatch):

@@ -49,6 +49,10 @@ WHERE task_id=%s
 LIMIT 1
 """
 
+Q_DELETE_RESULT = """
+DELETE FROM {table} WHERE task_id=%s
+"""
+
 Q_CREATE_RESULT_TABLE = """
 CREATE TABLE {table} (
     task_id text,
@@ -298,6 +302,15 @@ class CassandraBackend(BaseBackend):
             buf_t(self.encode(traceback)),
             buf_t(self.encode(self.current_task_children(request)))
         ))
+
+    def _forget(self, task_id):
+        """Delete all state entries for a task."""
+        self._get_connection(write=True)
+        stmt = cassandra.query.SimpleStatement(
+            Q_DELETE_RESULT.format(table=self.table),
+        )
+        stmt.consistency_level = self.write_consistency
+        self._session.execute(stmt, (task_id,))
 
     def as_uri(self, include_password=True):
         return 'cassandra://'
