@@ -2517,6 +2517,25 @@ class test_App:
         uuid.UUID(thread_oid)
         assert main_oid != thread_oid
 
+    def test_thread_oid_not_reused_with_thread_ident(self):
+        # The OS hands the ident of a finished thread to the next one,
+        # which must still get its own thread_oid (Issue #4039).
+        from concurrent.futures import ThreadPoolExecutor
+
+        def oids_in_new_thread():
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    lambda: (self.app.thread_oid, self.app.thread_oid))
+            return future.result()
+
+        with patch('kombu.common.threading') as threading:
+            threading.get_ident.return_value = 1234
+            first = oids_in_new_thread()
+            second = oids_in_new_thread()
+        assert first[0] == first[1]
+        assert second[0] == second[1]
+        assert first[0] != second[0]
+
     def test_thread_backend_thread_safe(self):
         # Should share the backend object across threads
         from concurrent.futures import ThreadPoolExecutor

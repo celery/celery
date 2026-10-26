@@ -1715,7 +1715,10 @@ class Celery:
         try:
             return self._local.oid
         except AttributeError:
-            self._local.oid = new_oid = oid_from(self, threads=True)
+            # not derived from the thread ident: the OS reuses it for new
+            # threads, which would then share a finished thread's reply
+            # queue (and its still attached RPC consumer).
+            self._local.oid = new_oid = uuid()
             return new_oid
 
     @cached_property
