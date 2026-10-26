@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
+from kombu.exceptions import EncodeError, OperationalError
 
 from celery import group, signals, states, uuid
 from celery.app.task import Context
@@ -460,6 +460,86 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         sig.apply_async.side_effect = EncodeError()
         retval, einfo, _ = self.trace(self.add, (2, 2), {}, request=request)
+        assert einfo.state == states.FAILURE
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__broker_refused_requeues(self, maybe_signature):
+        # The body ran. A refused link must not be stored as FAILURE.
+        # Late ack still holds the message, so the broker can deliver it again.
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = OperationalError('Connection refused')
+        self.add.acks_late = True
+        with patch.object(self.add.backend, 'mark_as_failure') as mark_as_failure:
+            with pytest.raises(Reject) as raised:
+                self.trace(self.add, (2, 2), {}, request=request, eager=False)
+        assert raised.value.requeue is True
+        assert isinstance(raised.value.reason, OperationalError)
+        mark_as_failure.assert_not_called()
+        assert self.add.backend.get_state('id-1') == states.PENDING
+
+    @patch('celery.canvas.maybe_signature')
+    def test_chain__broker_refused_requeues(self, maybe_signature):
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'chain': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = OperationalError('Connection refused')
+        self.add.acks_late = True
+        with pytest.raises(Reject) as raised:
+            self.trace(self.add, (2, 2), {}, request=request, eager=False)
+        assert raised.value.requeue is True
+        sig.apply_async.assert_called_once()
+
+    def test_broker_refused_after_result_stored_clears_success(self):
+        # mark_as_done stores SUCCESS, then the chord body publish refuses.
+        # A deduplicating worker would skip the redelivery if SUCCESS stayed.
+        self.add.acks_late = True
+        original = self.add.backend.mark_as_done
+
+        def mark(*args, **kwargs):
+            original(*args, **kwargs)
+            raise OperationalError('Connection refused')
+
+        self.add.backend.mark_as_done = mark
+        with pytest.raises(Reject) as raised:
+            self.trace(self.add, (2, 2), {}, eager=False)
+        assert raised.value.requeue is True
+        assert self.add.backend.get_state('id-1') == states.PENDING
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__broker_refused_eager_propagates(self, maybe_signature):
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = OperationalError('Connection refused')
+        self.add.acks_late = True
+        with pytest.raises(OperationalError):
+            self.trace(self.add, (2, 2), {}, request=request)
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__broker_refused_early_ack_records_failure(self, maybe_signature):
+        # The message was acked before the body ran, so it cannot be redelivered.
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = OperationalError('Connection refused')
+        self.add.acks_late = False
+        _, einfo, _ = self.trace(
+            self.add, (2, 2), {}, request=request, eager=False,
+        )
+        assert einfo.state == states.FAILURE
+
+    @patch('celery.canvas.maybe_signature')
+    def test_callbacks__other_publish_error_records_failure(self, maybe_signature):
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        sig.apply_async.side_effect = RuntimeError('bad link')
+        self.add.acks_late = True
+        _, einfo, _ = self.trace(
+            self.add, (2, 2), {}, request=request, eager=False,
+        )
         assert einfo.state == states.FAILURE
 
     @patch('celery.canvas.maybe_signature')

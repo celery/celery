@@ -42,6 +42,7 @@ def add_unlock_chord_task(app):
     """
     from celery.backends.base import _create_chord_error_with_cause
     from celery.canvas import maybe_signature
+    from celery.exceptions import OperationalError, Reject
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
@@ -99,6 +100,16 @@ def add_unlock_chord_task(app):
         else:
             try:
                 callback.delay(ret)
+            except OperationalError as exc:
+                # The header is ready and the body was not sent. Requeue this
+                # unlock message so a later delivery can publish the body.
+                # A permanent error still fails the chord below. The retry
+                # used while the header is unfinished is a different path.
+                logger.error(
+                    'Chord %r body publish refused by the broker: %r',
+                    group_id, exc,
+                )
+                raise Reject(exc, requeue=True)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', group_id, exc)
                 chord_error = _create_chord_error_with_cause(message=f'Callback error: {exc!r}', original_exc=exc)

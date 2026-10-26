@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from google.cloud.exceptions import NotFound
+from kombu.exceptions import OperationalError
 
 from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
@@ -618,3 +619,41 @@ class test_GCSBackend:
         # Verify cleanup still happens
         mock_deps.delete.assert_called_once()
         mock_delete_chord_key.assert_called_once()
+
+    @patch('celery.backends.gcs.maybe_signature')
+    @patch.object(GCSBackend, 'incr')
+    @patch.object(GCSBackend, '_restore_deps')
+    @patch.object(GCSBackend, '_delete_chord_key')
+    @patch.object(GCSBackend, '_rollback_chord_incr')
+    @patch.object(GCSBackend, 'chord_error_from_stack')
+    @patch('celery.backends.gcs.allow_join_result')
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    def test_on_chord_part_return_callback_publish_refused(
+        self,
+        mock_firestore_ttl,
+        mock_allow_join_result_,
+        mock_chord_error_from_stack,
+        mock_rollback,
+        mock_delete_chord_key,
+        mock_restore_deps,
+        mock_incr,
+        mock_maybe_signature,
+    ):
+        request = MagicMock()
+        request.group = 'group_id'
+        request.chord = {'chord_size': 2}
+        mock_firestore_ttl.return_value = True
+        mock_incr.return_value = 2
+        mock_deps = MagicMock()
+        mock_restore_deps.return_value = mock_deps
+        mock_deps.join_native.return_value = ['result1', 'result2']
+        mock_callback = MagicMock()
+        mock_maybe_signature.return_value = mock_callback
+        mock_callback.delay.side_effect = OperationalError('Connection refused')
+        backend = GCSBackend(app=self.app)
+        with pytest.raises(OperationalError):
+            backend.on_chord_part_return(request, 'SUCCESS', ['x'])
+        mock_chord_error_from_stack.assert_not_called()
+        mock_delete_chord_key.assert_not_called()
+        mock_deps.delete.assert_not_called()
+        mock_rollback.assert_called_once()

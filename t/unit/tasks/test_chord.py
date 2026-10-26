@@ -2,10 +2,11 @@ from contextlib import contextmanager
 from unittest.mock import Mock, PropertyMock, patch, sentinel
 
 import pytest
+from kombu.exceptions import OperationalError
 
 from celery import canvas, group, result, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, Retry
+from celery.exceptions import ChordError, Reject, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 
@@ -130,6 +131,25 @@ class test_unlock_chord_task(ChordCase):
             fail.assert_called()
             assert fail.call_args[0][0] == cb.id
             assert isinstance(fail.call_args[1]['exc'], ChordError)
+
+    def test_callback_publish_refused_requeues(self):
+        # The header is ready and the broker refused the body. The unlock
+        # message is requeued instead of failing the chord.
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        def setup(callback):
+            callback.apply_async.side_effect = OperationalError(
+                'Connection refused')
+
+        with pytest.raises(Reject) as raised:
+            with self._chord_context(AlwaysReady, setup):
+                pass
+        assert raised.value.requeue is True
+        assert isinstance(raised.value.reason, OperationalError)
+        self.app.backend.fail_from_current_stack.assert_not_called()
 
     def test_unlock_ready_failed(self):
 

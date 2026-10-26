@@ -11,7 +11,7 @@ from collections import namedtuple
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
-from kombu.exceptions import EncodeError
+from kombu.exceptions import EncodeError, OperationalError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import safe_repr, safe_str
@@ -435,7 +435,9 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         Note: dispatch is not atomic.  If callbacks succeed but the
         chain step fails (or vice-versa), a Reject + redeliver may
         re-dispatch the already-sent callbacks.  This is acceptable
-        under Celery's at-least-once delivery model.
+        under Celery's at-least-once delivery model.  A broker
+        OperationalError after the body ran is turned into that Reject
+        when the message is still unacked.
         """
         if callbacks:
             if len(callbacks) > 1:
@@ -629,6 +631,35 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         I, R, state, retval = on_error(task_request, exc)
                         # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                         traceback_clear(exc)
+                    except OperationalError as exc:
+                        # The body ran. The broker refused the link, the next
+                        # chain step, or the chord body (mark_as_done publishes
+                        # that). With late ack the message is still unacked, so
+                        # reject it and let the broker deliver it again. That is
+                        # the same recovery the dedup fast path uses when
+                        # callback dispatch fails. A stored SUCCESS would make
+                        # that fast path skip the redelivery, so drop it.
+                        # EncodeError above stays a permanent failure.
+                        # Early ack has already removed the message, and eager
+                        # execution has none, so both keep the old behavior.
+                        if eager or not (app.conf.task_acks_late or task.acks_late):
+                            raise
+                        logger.error(
+                            'Task %s[%s] link or chord publish refused by the '
+                            'broker: %r',
+                            get_task_name(task_request, name), uuid, exc,
+                            exc_info=True,
+                        )
+                        try:
+                            task.backend.forget(uuid)
+                        except Exception as forget_exc:  # pylint: disable=broad-except
+                            logger.warning(
+                                'Could not clear the result of task %s[%s] '
+                                'after a refused publish: %r',
+                                get_task_name(task_request, name), uuid,
+                                forget_exc,
+                            )
+                        raise Reject(exc, requeue=True)
                     else:
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start

@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 from uuid import UUID
 
 import pytest
+from kombu.exceptions import OperationalError
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 
@@ -1909,6 +1910,26 @@ class test_KeyValueStoreBackend:
             exc = args[1]['exc']
             assert isinstance(exc, ChordError)
             assert 'Dependency culprit raised' in str(exc)
+
+    def test_chord_part_return_publish_refused_keeps_the_chord(self):
+        # The body publish was refused. The group stays, the counter is
+        # undone, and the same header can publish the body on the next try.
+        with self._chord_part_context(self.b) as (task, deps, _callback):
+            key = self.b.get_key_for_chord(task.request.group)
+            callback = Mock(name='callback')
+            callback.delay.side_effect = OperationalError('Connection refused')
+            with patch('celery.backends.base.maybe_signature', return_value=callback):
+                with pytest.raises(OperationalError):
+                    self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            self.b.fail_from_current_stack.assert_not_called()
+            deps.delete.assert_not_called()
+            self.b.client.incr.assert_any_call(key, -1)
+
+            callback.delay.side_effect = None
+            with patch('celery.backends.base.maybe_signature', return_value=callback):
+                self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            callback.delay.assert_called()
+            deps.delete.assert_called_once()
 
     def test_restore_group_from_json(self):
         b = KVBackend(serializer='json', app=self.app)
