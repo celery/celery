@@ -847,15 +847,21 @@ class Request:
 
         # Use a bounded retry to handle transient network blips without
         # blocking the worker's main process indefinitely.
-        original_max_retries = backend.max_retries
-        backend.max_retries = min(original_max_retries, 3)
+        # We temporarily cap max_retries. However, in unit tests, max_retries
+        # might be a Mock. We check if it's an actual number to avoid a
+        # TypeError on min() in newer Python versions (e.g., Python 3.14+).
+        original_max_retries = getattr(backend, 'max_retries', None)
+        if isinstance(original_max_retries, (int, float)):
+            backend.max_retries = min(original_max_retries, 3)
+
         try:
             return backend.get_task_meta(self.id, cache=False)['status'] == states.SUCCESS
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False
         finally:
-            backend.max_retries = original_max_retries
+            if isinstance(original_max_retries, (int, float)):
+                backend.max_retries = original_max_retries
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):

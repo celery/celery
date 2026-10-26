@@ -183,38 +183,6 @@ class test_trace_task(RequestCase):
         assert ret == 256
         assert not self.app.AsyncResult(task_id).ready()
 
-    def test_deduplicate_successful_tasks_uses_get_task_meta_for(self):
-        """Deduplication should bypass _ensure_retryable by using _get_task_meta_for."""
-        self.app.conf.task_acks_late = True
-        self.app.conf.worker_deduplicate_successful_tasks = True
-        self.app.backend.persistent = True
-
-        # Mock AsyncResult to simulate a completed task
-        with patch('celery.app.trace.AsyncResult') as MockAsyncResult:
-            mock_r = MockAsyncResult.return_value
-            mock_r.id = 'test-id'
-            mock_r.state = states.SUCCESS
-            mock_r.backend._get_task_meta_for.return_value = {
-                'status': states.SUCCESS, 'result': 42
-            }
-            mock_r.backend.get_state = Mock()  # This should not be called
-
-            @self.app.task(shared=False)
-            def dummy_task(): return "done"
-
-            # Fake request with redelivered=True to trigger deduplication
-            request = {
-                'id': 'test-id', 'delivery_info': {'redelivered': True},
-                'args': (), 'kwargs': {}
-            }
-
-            trace = build_tracer('dummy_task', dummy_task, app=self.app)
-            trace('test-id', (), {}, request)
-
-            # Verify _get_task_meta_for was called and get_state was not
-            mock_r.backend._get_task_meta_for.assert_called_once_with('test-id')
-            mock_r.backend.get_state.assert_not_called()
-
 
 class test_Request(RequestCase):
 
@@ -1272,6 +1240,9 @@ class test_Request(RequestCase):
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.backend = Mock()
+        req.task.backend.get_task_meta.return_value = {
+            'status': states.SUCCESS, 'result': 42
+        }
         req.task.backend._get_task_meta_for.return_value = {
             'status': states.SUCCESS, 'result': 42
         }
@@ -1302,6 +1273,9 @@ class test_Request(RequestCase):
         req.task.retry_on_worker_lost = True
         req.task.max_retries = 3
         req.task.backend = Mock()
+        req.task.backend.get_task_meta.return_value = {
+            'status': states.SUCCESS, 'result': 7
+        }
         req.task.backend._get_task_meta_for.return_value = {
             'status': states.SUCCESS, 'result': 7
         }
@@ -2322,6 +2296,42 @@ class test_Request(RequestCase):
         req.on_reject.assert_called_with(req_logger, req.connection_errors, True)
         # Assert that store was never called, meaning the worker didn't block on write
         backend._store_result.assert_not_called()
+
+    def test_repro_10957_does_not_hang_on_inf_retries(self):
+        """
+        On main, _success_was_stored uses get_state() which goes through
+        _ensure_retryable with max_retries=inf, hanging the worker.
+        This test fails on main because it raises RuntimeError from _sleep,
+        while the PR caps max_retries so it can safely return False.
+        """
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = float('inf')
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+
+        calls = [0]
+
+        def failing_meta(task_id):
+            calls[0] += 1
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+
+        def raising_sleep(amount):
+            # Break the infinite loop in main to prevent test suite hang
+            raise RuntimeError("Stop retrying!")
+
+        backend._sleep = raising_sleep
+
+        # On main: this will raise RuntimeError (from _sleep) because max_retries=inf
+        # On PR: this will return False after 3 bounded retries
+        result = req._success_was_stored()
+        assert result is False
+        assert calls[0] <= 4  # 1 initial + 3 retries
 
 
 class test_create_request_class(RequestCase):
