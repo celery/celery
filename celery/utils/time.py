@@ -348,7 +348,7 @@ def yearmonth(name: str) -> int:
 
 
 def humanize_seconds(
-        secs: int, prefix: str = '', sep: str = '', now: str = 'now',
+        secs: int, *, prefix: str = '', sep: str = '', now: str = 'now',
         microseconds: bool = False) -> str:
     """Show seconds in human form.
 

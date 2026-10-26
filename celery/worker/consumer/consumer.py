@@ -644,7 +644,7 @@ class Consumer:
             elif interval > 0:
                 self.broker_connection_retry_attempt += 1
             next_step = next_step.format(
-                when=humanize_seconds(interval, 'in', ' '),
+                when=humanize_seconds(interval, prefix='in', sep=' '),
                 retries=self.broker_connection_retry_attempt,
                 max_retries=self.app.conf.broker_connection_max_retries)
             error(CONNECTION_ERROR, conn.as_uri(), exc, next_step)

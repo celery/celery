@@ -736,7 +736,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tts = next(intervals)
         logger.error(
             E_LOST.strip(),
-            retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
+            retries, max_retries or 'Inf', humanize_seconds(tts, prefix='in '))
         return tts
 
     def _set_with_state(self, key, value, state):

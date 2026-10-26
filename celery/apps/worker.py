@@ -217,7 +217,7 @@ class Worker(WorkController):
         def _error_handler(exc, interval):
             logger.error(
                 'purge: Connection error: %s. Trying again %s...',
-                exc, humanize_seconds(interval, 'in', ' '),
+                exc, humanize_seconds(interval, prefix='in', sep=' '),
             )
 
         return connection.ensure_connection(

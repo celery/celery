@@ -72,7 +72,7 @@ class ManagerMixin:
             interval = next(intervals)
             if emit_warning:
                 self.warn(E_STILL_WAITING.format(
-                    desc, when=humanize_seconds(interval, 'in', ' '), exc=exc,
+                    desc, when=humanize_seconds(interval, prefix='in', sep=' '), exc=exc,
                 ))
             if errback:
                 errback(exc, interval, retries)
