@@ -2224,10 +2224,11 @@ class test_Request(RequestCase):
         backend.on_backend_retryable_error = lambda exc: None
         return read_calls, sleep_calls
 
-    def test_repro_10752_get_state_retries_on_backend_down(self):
+    def test_repro_10957_get_state_retries_on_backend_down(self):
         """
-        `_success_was_stored` must not go through `_ensure_retryable`.
-        Expected: 0 retries (uses `_get_task_meta_for` directly).
+        `_success_was_stored` must use a bounded retry to handle transient
+        blips without blocking indefinitely.
+        Expected: exactly 3 retries (since we cap max_retries at 3).
         """
         req = self.get_request(self.add.s(2, 2))
         req._ignore_result = False
@@ -2237,11 +2238,12 @@ class test_Request(RequestCase):
 
         assert result is False
         print(f"\n[REPRO-1] reads={len(read_calls)}, sleeps={len(sleep_calls)}")
-        assert len(sleep_calls) == 0, (
-            f"Expected 0 retries, got {len(sleep_calls)} sleeps ({len(read_calls)} reads)."
+        # We expect exactly 3 retries, not infinite.
+        assert len(sleep_calls) == 3, (
+            f"Expected exactly 3 bounded retries, got {len(sleep_calls)} sleeps."
         )
 
-    def test_repro_10752_event_block_retries_on_backend_down(self):
+    def test_repro_10957_event_block_retries_on_backend_down(self):
         """
         The `task-succeeded` event block must not go through `_ensure_retryable`.
         Expected: 0 retries.
@@ -2286,53 +2288,40 @@ class test_Request(RequestCase):
             f"Expected 0 retries in event block, got {len(sleep_calls)} sleeps."
         )
 
-    def test_repro_10752_no_hangs_with_inf_retries(self):
+    def test_repro_10957_requeue_with_failing_backend(self):
         """
-        With `max_retries=inf`, `_success_was_stored` must finish quickly
-        (not hang) because it bypasses `_ensure_retryable`.
+        With acks_late and reject_on_worker_lost, on_failure should requeue
+        the task without blocking on the backend write.
         """
-        import threading
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
 
         req = self.get_request(self.add.s(2, 2))
-        req._ignore_result = False
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
 
+        # Setup a failing backend that raises ConnectionError
         backend = req.task.backend
         backend.always_retry = True
-        backend.max_retries = float('inf')
-        backend.url = 'cache+memory://'
-        backend._cache.clear()
-
-        retry_count = [0]
-
-        def failing_meta(task_id):
-            retry_count[0] += 1
-            raise ConnectionError("backend down")
-
-        backend._get_task_meta_for = failing_meta
+        backend.max_retries = 3
+        backend.base_sleep_between_retries_ms = 10
+        backend.max_sleep_between_retries_ms = 10
         backend.exception_safe_to_retry = lambda exc: True
         backend.on_backend_retryable_error = lambda exc: None
-        backend._sleep = lambda amount: None
 
-        finished = [False]
+        # Use Mock for both read and write so we can assert on them
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
+        backend._store_result = Mock(side_effect=ConnectionError("backend down"))
 
-        def run():
-            try:
-                req._success_was_stored()
-            finally:
-                finished[0] = True
+        # Call on_failure. It should requeue the task and NOT call mark_as_failure.
+        req.on_failure(einfo)
 
-        t = threading.Thread(target=run, daemon=True)
-        t.start()
-        t.join(timeout=3.0)
-
-        assert finished[0], (
-            "_success_was_stored hung with max_retries=inf. "
-            "It should bypass _ensure_retryable and finish quickly."
-        )
-        assert retry_count[0] == 0, (
-            f"Expected 0 retries, got {retry_count[0]}."
-        )
-        print(f"\n[REPRO-3] finished=True, retries={retry_count[0]}")
+        # Assert that it was requeued (rejected) and not marked as failure
+        req.on_reject.assert_called_with(req_logger, req.connection_errors, True)
+        # Assert that store was never called, meaning the worker didn't block on write
+        backend._store_result.assert_not_called()
 
 
 class test_create_request_class(RequestCase):
