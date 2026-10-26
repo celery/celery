@@ -361,6 +361,13 @@ def enable_events(state):
     dispatcher = state.consumer.event_dispatcher
     if dispatcher is None:
         return nok('event dispatcher unavailable')
+    if dispatcher._all_groups_disabled is True:
+        # disable_events restricted the "every group" set of a worker
+        # started with -E: put it back so that every group is sent again.
+        dispatcher.groups.clear()
+        dispatcher._all_groups_disabled = False
+        logger.info('Events of group {task} enabled by remote.')
+        return ok('task events enabled')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
         logger.info('Events of group {task} enabled by remote.')
@@ -377,8 +384,12 @@ def disable_events(state):
     groups = dispatcher.groups
     # An empty set of groups means events of every group are sent
     # (this is the case for workers started with -E), so there's no 'task'
-    # to discard: keep only the 'worker' events instead.
+    # to discard: keep only the 'worker' events instead, and remember that
+    # the set was empty so that enable_events can restore it. Until then
+    # the groups other than 'worker' are not sent either.
     if not groups or 'task' in groups:
+        if not groups:
+            dispatcher._all_groups_disabled = True
         groups.discard('task')
         if not groups:
             groups.add('worker')
