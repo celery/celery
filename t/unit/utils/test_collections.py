@@ -539,6 +539,44 @@ class test_LimitedSet:
         assert len(s) == 100
         assert 0 in s
 
+    # Sequence numbers copied by update() from another LimitedSet.
+    def test_add_after_update_from_limited_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet()
+        s.update(other)
+        # Same insertion time as the copied entry.
+        s.add(1, now=5.0)
+        assert list(s) == ['x', 1]
+        assert s.pop() == 'x'
+        assert s.pop() == 1
+
+    def test_update_from_limited_set_into_non_empty_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet()
+        s.add(1, now=5.0)
+        s.update(other)
+        assert list(s) == [1, 'x']
+
+    def test_init_from_limited_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet(data=other)
+        s.add(1, now=5.0)
+        assert list(s) == ['x', 1]
+
+    def test_update_from_limited_set_keeps_its_order(self):
+        other = LimitedSet()
+        for i in range(3):
+            other.add(f'item{i}', now=1.0)
+        s = LimitedSet(maxlen=2)
+        s.update(other)
+        # Same insertion time: the item added first there is the oldest.
+        assert list(s) == ['item1', 'item2']
+        assert len(s._heap) == len(s)
+        assert other.as_dict() == {f'item{i}': 1.0 for i in range(3)}
+
 
 class test_AttributeDict:
 
