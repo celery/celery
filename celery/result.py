@@ -593,8 +593,11 @@ class ResultSet(ResultBase):
     def __init__(self, results, app=None, ready_barrier=None, **kwargs):
         self._app = app
         self.results = results
+        self._set_ready_barrier(ready_barrier or barrier(results))
+
+    def _set_ready_barrier(self, ready_barrier):
         self.on_ready = promise(args=(proxy(self),))
-        self._on_full = ready_barrier or barrier(results)
+        self._on_full = ready_barrier
         if self._on_full:
             self._on_full.then(promise(self._on_ready, weak=True))
 
@@ -606,7 +609,19 @@ class ResultSet(ResultBase):
         if result not in self.results:
             self.results.append(result)
             if self._on_full:
-                self._on_full.add(result)
+                if self._on_full.p.ready:
+                    # The barrier has fired, so it won't wait for new
+                    # results. Wait for this one with a new barrier, which
+                    # finalize() fulfills at once if the result is ready.
+                    # This also replaces on_ready: then() callbacks added
+                    # from now on wait for the new result, but anything
+                    # that subscribed to the old promise (e.g. the barrier
+                    # of a parent GroupResult) keeps the one that fired.
+                    self._set_ready_barrier(barrier())
+                    self._on_full.add(result)
+                    self._on_full.finalize()
+                else:
+                    self._on_full.add(result)
 
     def _on_ready(self):
         if self.backend.is_async:
