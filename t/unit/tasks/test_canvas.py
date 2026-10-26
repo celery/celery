@@ -14,7 +14,7 @@ from celery._state import _task_stack
 from celery.canvas import (Signature, _chain, _clear_chord_option, _fold_chain, _maybe_group, _merge_chain_step,
                            _merge_dictionaries, _strip_chord_header_links, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
-from celery.exceptions import Ignore, Reject
+from celery.exceptions import CPendingDeprecationWarning, Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
 from t.canvas_helpers import ids_in_as_tuple
 
@@ -3089,16 +3089,98 @@ class test_chord(CanvasCase):
         assert not any(task.options.get('link') for task in x.body.tasks)
 
     @pytest.mark.parametrize('eager', [False, True])
-    @pytest.mark.parametrize('make_body', [
-        lambda self: group(self.xsum.s(), self.xsum.s(), app=self.app),
-        lambda self: chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()),
-    ], ids=['group', 'chord'])
-    def test_link_error_option_stays_on_group_or_chord_body(self, make_body, eager):
+    def test_link_error_option_on_group_body_is_like_chord_link_error(self, eager):
+        # chord.link_error() links each task of a group body, which keeps its
+        # own errbacks; the group itself gets none, as it would replace them
+        def make_chord():
+            failing = self.xsum.s()
+            failing.link_error(self.mul.si(4))
+            return chord([self.add.s(2, 2)],
+                         body=group(failing, self.xsum.s(), app=self.app))
+
+        expected = make_chord()
+        expected.link_error(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            [self.mul.si(4), self.div.si(2)], [self.div.si(2)]]
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            task.options.get('link_error') for task in expected.body.tasks]
+        assert not body.options.get('link_error')
+        assert [task.options.get('link_error') for task in x.body.tasks] == [
+            [self.mul.si(4)], None]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_error_option_stays_on_chord_body(self, eager):
         # The chord's error handling reads it there when the header fails
-        x = chord([self.add.s(2, 2)], body=make_body(self))
+        x = chord([self.add.s(2, 2)],
+                  body=chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()))
         body = self._body_to_run(x, eager, link_error=self.div.si(2))
         assert body.options['link_error'] == [self.div.si(2)]
         assert not x.body.options.get('link_error')
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('own_is_empty', [False, True])
+    def test_link_error_option_on_group_body_with_own_link_error(self, own_is_empty, eager):
+        # When the group runs, its tasks get their errbacks from its own
+        # link_error, even an empty one, and a chord in it passes them on to
+        # its body, so linking them there as well would call them twice
+        own = [] if own_is_empty else self.mul.si(4)
+        x = chord([self.add.s(2, 2)], body=group(
+            self.xsum.s(),
+            chord([self.xsum.s()], body=group(self.xsum.s(), self.xsum.s(), app=self.app)),
+            app=self.app,
+        ).set(link_error=own))
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert body.options['link_error'] == (
+            [self.div.si(2)] if own_is_empty else [self.mul.si(4), self.div.si(2)])
+        task, member = body.tasks
+        assert not task.options.get('link_error')
+        assert [t.options.get('link_error') for t in member.body.tasks] == [None, None]
+        assert x.body.options['link_error'] == own
+
+    def test_link_error_option_on_group_in_group_body_goes_to_its_tasks(self):
+        # A group in the group is flattened before it runs, which drops its
+        # own link_error
+        x = chord([self.add.s(2, 2)], body=group(
+            group(self.xsum.s(), self.xsum.s(), app=self.app).set(link_error=[self.mul.si(4)]),
+            self.xsum.s(), app=self.app,
+        ))
+        body = self._body_to_run(x, False, link_error=self.div.si(2))
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            [self.div.si(2)], [self.div.si(2)], [self.div.si(2)]]
+
+    @pytest.mark.parametrize('allow_header_errbacks', [False, True])
+    def test_link_error_option_on_chord_in_group_body_goes_to_its_body(
+            self, allow_header_errbacks, recwarn):
+        # As for a chord body, the header of the chord gets none
+        self.app.conf.task_allow_error_cb_on_chord_header = allow_header_errbacks
+        x = chord([self.add.s(2, 2)], body=group(
+            chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()),
+            chord([self.xsum.s()], body=chord([self.xsum.s(), self.xsum.s()],
+                                              body=self.xsum.s())),
+            self.xsum.s(), app=self.app,
+        ))
+        body = self._body_to_run(x, False, link_error=self.div.si(2))
+
+        def header_errbacks(c):
+            # Freezing the body made the header of each chord a group
+            return [task.options.get('link_error') for task in c.tasks.tasks]
+
+        inner, outer, task = body.tasks
+        assert inner.body.options['link_error'] == [self.div.si(2)]
+        assert header_errbacks(inner) == [None, None]
+        assert not inner.options.get('link_error')
+        assert outer.body.body.options['link_error'] == [self.div.si(2)]
+        assert header_errbacks(outer) == [None]
+        assert header_errbacks(outer.body) == [None, None]
+        assert not outer.options.get('link_error')
+        assert not outer.body.options.get('link_error')
+        assert task.options['link_error'] == [self.div.si(2)]
+        assert not x.body.tasks[0].body.options.get('link_error')
+        assert not x.body.tasks[1].body.body.options.get('link_error')
+        assert not [w for w in recwarn
+                    if issubclass(w.category, CPendingDeprecationWarning)]
 
     def test_link_option_on_empty_group_body(self):
         x = chord([self.add.s(2, 2)], body=group([], app=self.app))

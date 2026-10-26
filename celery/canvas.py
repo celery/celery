@@ -2561,17 +2561,22 @@ class _chord(Signature):
         """Move ``link`` and ``link_error`` from ``options`` to the body.
 
         ``link`` is linked to the body as :meth:`link` does. ``link_error``
-        is appended to the ``link_error`` option of the body itself: the
-        chord's error handling reads it there when the header fails, while
-        :meth:`link_error` links the tasks of a group or chord body instead.
-        Unlike :meth:`link_error` with ``task_allow_error_cb_on_chord_header``
-        enabled, it is not added to the header tasks. Neither may reach the
-        header: a group refuses them.
+        is linked to each task of a group body, as :meth:`link_error` does,
+        so the tasks keep their own errbacks. If the group has its own
+        ``link_error``, which replaces theirs when it runs, it is added
+        there instead, with the group's own errbacks. Any other body gets
+        it in its own ``link_error`` option, where the chord's error
+        handling reads it when the header fails. Unlike :meth:`link_error`
+        with ``task_allow_error_cb_on_chord_header`` enabled, it is not
+        added to the header tasks, nor to the header of a chord that is a
+        task of a group body. Neither may reach the header: a group refuses
+        them.
 
         Returns the body to use: a copy when there are callbacks to link.
         """
         callbacks = maybe_list(options.pop('link', None)) or []
-        if callbacks:
+        errbacks = maybe_list(options.pop('link_error', None)) or []
+        if callbacks or errbacks:
             # Linking changes the signatures in a group or chord, which
             # clone() shares with the caller's.
             body = _clone_with_members(body)
@@ -2581,8 +2586,12 @@ class _chord(Signature):
                 body.append_to_list_option('link', callback)
             else:
                 body.link(callback)
-        for errback in maybe_list(options.pop('link_error', None)) or []:
-            body.append_to_list_option('link_error', errback)
+        for errback in errbacks:
+            if isinstance(body, group):
+                _link_error_to_body_tasks(
+                    body, maybe_signature(errback, app=body._app))
+            else:
+                body.append_to_list_option('link_error', errback)
         return body
 
     def run(self, header, body, partial_args, app=None, interval=None,
@@ -2841,6 +2850,29 @@ def _clone_with_members(sig):
     elif isinstance(sig, _chord):
         sig.body = _clone_with_members(sig.body)
     return sig
+
+
+def _link_error_to_body_tasks(sig, errback, runs_as_group=True):
+    """Link ``errback`` to each task of ``sig``, the group body of a chord.
+
+    It goes on to the tasks of a group, as ``group.link_error()`` does, and
+    to the body of a chord but not to its header. A group that runs as one
+    and has its own ``link_error``, even an empty one, gets it there
+    instead, with its own errbacks: when the group runs, that option
+    replaces the errbacks of its tasks and is passed on to a chord in it,
+    which would otherwise call it twice. A group in a group is flattened,
+    dropping its options, first.
+    """
+    if isinstance(sig, group):
+        if runs_as_group and sig.options.get('link_error') is not None:
+            sig.append_to_list_option('link_error', errback.clone())
+        else:
+            for task in sig.tasks:
+                _link_error_to_body_tasks(task, errback, runs_as_group=False)
+    elif isinstance(sig, _chord):
+        _link_error_to_body_tasks(sig.body, errback)
+    else:
+        sig.link_error(errback.clone())
 
 
 def maybe_signature(d, app=None, clone=False):
