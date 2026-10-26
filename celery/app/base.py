@@ -26,7 +26,7 @@ from kombu.utils.objects import cached_property
 from kombu.utils.uuid import uuid
 from vine import starpromise
 
-from celery import platforms, signals
+from celery import maybe_patch_concurrency, platforms, signals
 from celery._state import (_announce_app_finalized, _deregister_app, _register_app, _set_current_app, _task_stack,
                            connect_on_app_finalize, get_current_app, get_current_worker_task, set_default_app)
 from celery.exceptions import AlwaysEagerIgnored, DuplicateTaskNameWarning, ImproperlyConfigured, OperationalError
@@ -612,12 +612,19 @@ class Celery:
 
         Uses :data:`sys.argv` if `argv` is not specified.
         """
+        if argv is None:
+            argv = sys.argv
+
+        # Apply the eventlet/gevent monkey patches selected by -P/--pool
+        # before the command runs, like the celery umbrella command does,
+        # otherwise the worker receives tasks but never runs them
+        # (Issue #8168).
+        if 'multi' not in argv:
+            maybe_patch_concurrency(argv)
+
         from celery.bin.celery import celery
 
         celery.params[0].default = self
-
-        if argv is None:
-            argv = sys.argv
 
         try:
             celery.main(args=argv, standalone_mode=False)
