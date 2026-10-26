@@ -5,6 +5,7 @@ import socket
 import sys
 import threading
 import time
+from collections import deque
 from unittest.mock import Mock, patch
 
 import pytest
@@ -819,3 +820,42 @@ class test_AsyncBackendMixin:
         cancel_for.assert_not_called()
         backend.remove_pending_result(second)
         cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('first_weak,second_weak', [
+        (False, False), (True, True), (True, False), (False, True),
+    ])
+    def test_same_result_added_twice_is_tracked_once(
+            self, app, first_weak, second_weak):
+        # e.g. result.then() and then result.get() on the same object
+        backend = self._backend(app, RedisBackend)
+        result = app.AsyncResult('tid')
+
+        backend.add_pending_result(result, weak=first_weak)
+        backend.add_pending_result(result, weak=second_weak)
+
+        backend.result_consumer.consume_from.assert_called_once_with('tid')
+        assert sum(len(m.get('tid', {})) for m in backend._pending_results) == 1
+        backend.remove_pending_result(result)
+        assert not any(backend._pending_results)
+        backend.result_consumer.cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_native_join_gets_each_member_once_with_a_duplicate_waiter(
+            self, app, backend_cls):
+        # Issue #4925 at the iter_native level: a member is collected into
+        # the group's bucket exactly once, resolved, while another
+        # AsyncResult for its id is also waiting.
+        backend = self._backend(app, backend_cls)
+        member = app.AsyncResult('tid')
+        backend.add_pending_result(member, weak=True)
+        bucket = deque()
+        backend._collect_into(member, bucket)
+        duplicate = app.AsyncResult('tid')
+        backend.add_pending_result(duplicate)
+
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+
+        assert [node.id for node in bucket] == ['tid']
+        assert bucket[0]._cache['result'] == 42
+        assert member._cache['result'] == 42
+        assert duplicate._cache['result'] == 42
