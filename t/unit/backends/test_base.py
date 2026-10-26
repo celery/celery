@@ -959,11 +959,9 @@ class test_BaseBackend_dict:
         options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
         member = signature('member', options=options)
 
-        with patch.object(self.b, 'store_result'), patch.object(
-            self.b, '_get_task_meta_for', side_effect=[
-                {'status': states.PENDING}, {'status': states.FAILURE}
-            ]
-        ), patch.object(self.b, 'on_chord_part_return') as part_return:
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state', side_effect=[states.PENDING, states.FAILURE]), \
+                patch.object(self.b, 'on_chord_part_return') as part_return:
             self.b._fail_chain([member], ValueError('header failed'))
             self.b._fail_chain([member], ValueError('header failed'))
 
@@ -988,23 +986,19 @@ class test_BaseBackend_dict:
         # get_state should not be called for plain chain elements
         get_state.assert_not_called()
 
-    def test_fail_chain_bypasses_retry_loop_for_chord_member(self):
-        """Ensure chord members bypass _ensure_retryable by using _get_task_meta_for."""
+    def test_fail_chain_calls_get_state_for_chord_member(self):
+        """Ensure chord members still perform state lookup for duplicate failure protection."""
+        # Chord member has 'chord' in options
         options = {'task_id': 'member-id', 'chord': signature('outer'), 'group_id': 'gid'}
         member = signature('member', options=options)
 
-        with patch.object(self.b, 'store_result'), patch.object(
-            self.b, '_get_task_meta_for', return_value={'status': states.PENDING}
-        ) as mock_get_meta, patch.object(
-            self.b, 'get_state'
-        ) as mock_get_state, patch.object(
-            self.b, 'on_chord_part_return'
-        ):
+        with patch.object(self.b, 'store_result'), \
+                patch.object(self.b, 'get_state', return_value=states.PENDING) as get_state, \
+                patch.object(self.b, 'on_chord_part_return'):
             self.b._fail_chain([member], ValueError('header failed'))
 
-        # _get_task_meta_for should be called, get_state should NOT be called
-        mock_get_meta.assert_called_once_with('member-id')
-        mock_get_state.assert_not_called()
+        # get_state should be called for chord members
+        get_state.assert_called_once_with('member-id')
 
     def test_chord_error_from_stack_resolves_the_current_exception_for_the_chain(self):
         after = signature('after', options={'task_id': 'after-id'})
