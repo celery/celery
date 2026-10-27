@@ -210,3 +210,56 @@ class test_saferepr:
 
     def test_bytes_with_unicode_py2_and_3(self):
         assert saferepr([b'foo', 'a®rgs'.encode()])
+
+    @pytest.mark.parametrize('value,expected', [
+        (['v' * 100], "['V...']"),
+        (('v' * 100,), "('V...',)"),
+        ({'v' * 100}, "{'V...'}"),
+        ({'k': 'v' * 100}, "{'k': 'V...'}"),
+        ({'a': ['v' * 100]}, "{'a': ['V...']}"),
+        # more values follow the truncated one, so they're elided.
+        (['v' * 100, 1, 2], "['V...', ...]"),
+        ([['v' * 100], 1, 2], "[['V...'], ...]"),
+        ({'a': ['v' * 100], 'b': 2}, "{'a': ['V...'], ...}"),
+    ])
+    def test_maxlen_keeps_closing_parens(self, value, expected):
+        # the parens used to be dropped when the truncated value was the
+        # last one in its container (Issue #10760).
+        result = saferepr(value, maxlen=30)
+        # V stands for however many characters of the value were kept.
+        assert result == expected.replace('V', 'v' * result.count('v'))
+        assert result.count('v') < 100
+
+    @pytest.mark.parametrize('value,maxlen,expected', [
+        # the limit is reached right before a nested container: neither of
+        # its parens is shown.
+        ([1, [2]], 4, '[1, , ...]'),
+        ([[1, 2]], 1, '[, ...]'),
+        ([({'a': 1},)], 1, '[, ...]'),
+        ({'k': [1]}, 6, "{'k': , ...}"),
+        # the placeholder for a container below maxlevels is kept whole.
+        ([[[(5,)]]], 4, '[[[(...,)]]]'),
+        ([[[[5], 6]]], 4, '[[[[...], ...]]]'),
+    ])
+    def test_maxlen_skips_parens_of_omitted_container(
+            self, value, maxlen, expected):
+        assert saferepr(value, maxlen=maxlen) == expected
+
+    @pytest.mark.parametrize('value', [
+        [], {}, [[]], [()], [{}], [1, [2]], [[1, 2], [3, [4, (5,)]]],
+        {'a': [1, {'b': (2, 3)}], 'c': {4, }},
+        ([1, 2], {'k': ['v', ('w',)]}, [[[]]]),
+        [1, {'a': ()}, [[2], 3], 'text'],
+    ])
+    def test_maxlen_parens_are_balanced(self, value):
+        closing = {')': '(', ']': '[', '}': '{'}
+        for maxlen in range(1, len(repr(value)) + 2):
+            result = saferepr(value, maxlen=maxlen)
+            opened = []
+            for char in result:
+                if char in closing.values():
+                    opened.append(char)
+                elif char in closing:
+                    assert opened and opened.pop() == closing[char], (
+                        maxlen, result)
+            assert not opened, (maxlen, result)
