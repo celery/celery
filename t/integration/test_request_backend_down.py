@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from billiard.einfo import ExceptionInfo
+
 from celery import Celery
 from celery.exceptions import WorkerLostError
 from celery.worker.request import Request
