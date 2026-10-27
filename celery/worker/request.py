@@ -847,16 +847,25 @@ class Request:
 
         # Bounded retry: keep the retry for transient blips, but cap it at
         # 3 attempts so a down backend can't block the worker's main process
-        # indefinitely. Pass max_retries explicitly instead of mutating
-        # backend.max_retries, which is shared across threads when
-        # result_backend_thread_safe=True.
+        # indefinitely. Respect a lower user-configured
+        # result_backend_max_retries via min(). Pass max_retries explicitly
+        # instead of mutating backend.max_retries, which is shared across
+        # threads when result_backend_thread_safe=True. The isinstance guard
+        # is only around the min() computation to tolerate Mock backends in
+        # tests (a non-numeric max_retries falls back to the 3-attempt cap).
+        configured_max_retries = backend.max_retries
+        if isinstance(configured_max_retries, (int, float)):
+            bounded_max_retries = min(configured_max_retries, 3)
+        else:
+            bounded_max_retries = 3
+
         try:
             meta = backend._ensure_retryable(
                 backend._get_task_meta_for,
                 fallback_exc=BackendGetMetaError,
                 fallback_msg="failed to get meta",
                 task_id=self.id,
-                max_retries=3,
+                max_retries=bounded_max_retries,
             )
             return meta['status'] == states.SUCCESS
         except Exception:  # pylint: disable=broad-except
