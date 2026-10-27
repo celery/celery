@@ -3,10 +3,52 @@ from unittest.mock import Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
+from kombu.exceptions import EncodeError, OperationalError
 
 from celery import signals, uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.utils.time import to_utc
+
+
+@pytest.mark.parametrize('error', [EncodeError('bad payload'), ValueError('bad callback')])
+def test_callback_publish_does_not_retry_permanent_errors(app, error):
+    publish = Mock(side_effect=error)
+    with pytest.raises(type(error)):
+        app.amqp._retry_publish(publish, 4)
+    publish.assert_called_once_with(4)
+
+
+@pytest.mark.parametrize('setting', ['task_publish_retry', 'task_always_eager'])
+def test_callback_publish_can_bypass_retry(app, setting):
+    app.conf[setting] = setting == 'task_always_eager'
+    publish = Mock(side_effect=OperationalError('refused'))
+    with pytest.raises(OperationalError):
+        app.amqp._retry_publish(publish)
+    publish.assert_called_once_with()
+
+
+def test_callback_publish_retries_only_the_publish(app):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 2, 'interval_start': 1, 'interval_step': 1, 'interval_max': 2,
+    }
+    publish = Mock(side_effect=[OperationalError('refused'), OperationalError('refused'), 'sent'])
+    with patch('kombu.utils.functional.sleep') as sleep:
+        assert app.amqp._retry_publish(publish, 4, priority=3) == 'sent'
+    assert publish.call_count == 3
+    publish.assert_called_with(4, priority=3)
+    assert sum(call.args[0] for call in sleep.call_args_list) == 3
+
+
+def test_callback_publish_stops_at_the_retry_limit(app):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    error = OperationalError('refused')
+    publish = Mock(side_effect=error)
+    with pytest.raises(OperationalError) as raised:
+        app.amqp._retry_publish(publish)
+    assert raised.value is error
+    assert publish.call_count == 3
 
 
 class test_TaskConsumer:

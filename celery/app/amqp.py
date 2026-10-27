@@ -6,7 +6,8 @@ from weakref import WeakValueDictionary
 
 from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
-from kombu.utils.functional import maybe_list
+from kombu.exceptions import OperationalError
+from kombu.utils.functional import maybe_list, retry_over_time
 from kombu.utils.objects import cached_property
 
 from celery import signals
@@ -261,6 +262,19 @@ class AMQP:
             2: self.as_task_v2,
         }
         self.app._conf.bind_to(self._handle_conf_update)
+
+    def _retry_publish(self, publish, *args, **kwargs):
+        """Retry a refused callback publish without rerunning its parent task."""
+        if not self.app.conf.task_publish_retry or self.app.conf.task_always_eager:
+            return publish(*args, **kwargs)
+        policy = self.app.conf.task_publish_retry_policy
+        return retry_over_time(
+            publish, (OperationalError,), args=args, kwargs=kwargs,
+            max_retries=policy.get('max_retries', 3),
+            interval_start=policy.get('interval_start', 0),
+            interval_step=policy.get('interval_step', 0.2),
+            interval_max=policy.get('interval_max', 1),
+        )
 
     @cached_property
     def create_task_message(self):

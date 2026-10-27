@@ -6,7 +6,7 @@ from kombu.exceptions import OperationalError
 
 from celery import canvas, group, result, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, Reject, Retry
+from celery.exceptions import ChordError, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 
@@ -118,38 +118,35 @@ class test_unlock_chord_task(ChordCase):
             unlock_chord('groupid', Mock(), result=[Mock()],
                          GroupResult=GroupResult, result_from_tuple=Mock())
 
-    def test_callback_fails(self):
+    @pytest.mark.parametrize('error', [IOError, OperationalError])
+    def test_callback_fails(self, error):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
 
         class AlwaysReady(TSR):
             is_ready = True
             value = [2, 4, 8, 6]
 
         def setup(callback):
-            callback.apply_async.side_effect = IOError()
+            callback.apply_async.side_effect = error()
 
         with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
             fail.assert_called()
             assert fail.call_args[0][0] == cb.id
             assert isinstance(fail.call_args[1]['exc'], ChordError)
 
-    def test_callback_publish_refused_requeues(self):
-        # The header is ready and the broker refused the body. The unlock
-        # message is requeued instead of failing the chord.
-
+    def test_callback_publish_retry_keeps_the_ready_header(self):
         class AlwaysReady(TSR):
-            is_ready = True
-            value = [2, 4, 8, 6]
+            value = [2, 4]
 
         def setup(callback):
-            callback.apply_async.side_effect = OperationalError(
-                'Connection refused')
+            callback.apply_async.side_effect = [OperationalError('refused'), None]
 
-        with pytest.raises(Reject) as raised:
-            with self._chord_context(AlwaysReady, setup):
-                pass
-        assert raised.value.requeue is True
-        assert isinstance(raised.value.reason, OperationalError)
-        self.app.backend.fail_from_current_stack.assert_not_called()
+        with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
+            assert cb.type.apply_async.call_count == 2
+            retry.assert_not_called()
+            fail.assert_not_called()
 
     def test_unlock_ready_failed(self):
 

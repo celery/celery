@@ -19,7 +19,7 @@ from celery import states
 from celery._state import task_join_will_block
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
-from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured, OperationalError
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.functional import _regen, dictfilter
 from celery.utils.log import get_logger
@@ -888,20 +888,8 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                                 pipeline = pipe.lrange(jkey, 0, total)
                             resl, = pipeline.execute()
                         resl = [unpack(tup, decode) for tup in resl]
-                    # Keep the chord keys when the broker refuses the body.
-                    # The part is already recorded, so a redelivery of this
-                    # header runs the script again and publishes the body.
-                    # Any other error still fails the chord and drops the keys.
-                    refused = False
                     try:
-                        callback.delay(resl)
-                    except OperationalError as exc:
-                        refused = True
-                        logger.error(
-                            'Chord %r body publish refused by the broker: %r',
-                            request.group, exc,
-                        )
-                        raise
+                        app.amqp._retry_publish(callback.delay, resl)
                     except Exception as exc:  # pylint: disable=broad-except
                         logger.exception(
                             'Chord callback for %r raised: %r', request.group, exc)
@@ -910,16 +898,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             ChordError(f'Callback error: {exc!r}'),
                         )
                     finally:
-                        if not refused:
-                            with client.pipeline() as pipe:
-                                pipe \
-                                    .delete(jkey) \
-                                    .delete(tkey) \
-                                    .delete(skey) \
-                                    .delete(dkey) \
-                                    .execute()
-            except OperationalError:
-                raise
+                        with client.pipeline() as pipe:
+                            pipe \
+                                .delete(jkey) \
+                                .delete(tkey) \
+                                .delete(skey) \
+                                .delete(dkey) \
+                                .execute()
             except ChordError as exc:
                 logger.exception('Chord %r raised: %r', request.group, exc)
                 try:

@@ -372,6 +372,14 @@ Celery will automatically retry sending messages in the event of connection
 failure, and retry behavior can be configured -- like how often to retry, or a maximum
 number of retries -- or disabled all together.
 
+Workers also retry refused callback, chain and chord-body publications using
+:setting:`task_publish_retry` and :setting:`task_publish_retry_policy`.
+These retries wait in the worker and repeat the publication rather than the
+parent task's body. Once the policy is exhausted, the usual failure and errback
+handling applies. Keep the retry limit finite to avoid holding a worker slot
+indefinitely. Retrying a callback group may publish already accepted members
+again, so its tasks must be idempotent.
+
 To disable retry you can set the ``retry`` execution option to :const:`False`:
 
 .. code-block:: python

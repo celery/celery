@@ -2384,33 +2384,23 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
+    @pytest.mark.parametrize('ordered', [False, True])
+    def test_on_chord_part_return_retries_only_the_body_publish(self, ordered):
+        self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        with self.chord_context(1) as (_, request, callback):
+            callback.delay.side_effect = [OperationalError('refused'), None]
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            assert callback.delay.call_args_list == [call([10]), call([10])]
+            assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
+
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
             callback.delay.side_effect = KeyError(10)
             task = self.app._tasks['add'] = Mock(name='add_task')
-            skey = self.b.get_key_for_group(request.group, '.s')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
                 callback.id, exc=ANY,
             )
-            assert skey not in self.b.client.keyspace
-
-    def test_on_chord_part_return__callback_publish_refused(self):
-        # The last header finished and the broker refused the body.
-        # The chord stays, and the same header can publish the body later.
-        with self.chord_context(1) as (_, request, callback):
-            callback.delay.side_effect = OperationalError('Connection refused')
-            task = self.app._tasks['add'] = Mock(name='add_task')
-            skey = self.b.get_key_for_group(request.group, '.s')
-            with pytest.raises(OperationalError):
-                self.b.on_chord_part_return(request, states.SUCCESS, 10)
-            task.backend.fail_from_current_stack.assert_not_called()
-            assert skey in self.b.client.keyspace
-            callback.delay.side_effect = None
-            callback.delay.reset_mock()
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
-            callback.delay.assert_called_once_with([10])
-            task.backend.fail_from_current_stack.assert_not_called()
 
     def test_on_chord_part_return__callback_raises__unordered(self):
         self.app.conf.result_backend_transport_options = dict(

@@ -2,13 +2,48 @@ from decimal import Decimal
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
+from kombu.exceptions import OperationalError
+from moto import mock_aws
 
-from celery import states, uuid
+from celery import Celery, states, uuid
+from celery.app.task import Context
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('boto3')
+
+
+def test_chord_publish_retry_does_not_increment_dynamodb_again():
+    with mock_aws(), Celery('chord-retry', backend='dynamodb://@us-east-1',
+                            set_as_current=False) as app:
+        app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        backend = app.backend
+        group_id = uuid()
+        header = app.AsyncResult(uuid())
+        backend.store_result(header.id, 4, states.SUCCESS)
+        app.GroupResult(group_id, [header]).save(backend=backend)
+        key = backend.get_key_for_chord(group_id)
+        backend.client.put_item(**backend._prepare_init_count_request(str(key)))
+        counts = []
+
+        def publish(values):
+            item = backend.client.get_item(**backend._prepare_get_request(str(key)))['Item']
+            counts.append(item['chord_count']['N'])
+            if len(counts) == 1:
+                raise OperationalError('refused')
+
+        callback = Mock()
+        callback.delay.side_effect = publish
+        request = Context(group=group_id, chord={'chord_size': 1})
+        with patch('celery.backends.base.maybe_signature', return_value=callback):
+            backend.on_chord_part_return(request, states.SUCCESS, 4)
+        assert counts == ['1', '1']
+        assert callback.delay.call_args_list == [call([4]), call([4])]
+        assert 'Item' not in backend.client.get_item(**backend._prepare_get_request(str(key)))
+        assert header.state == states.SUCCESS
 
 
 class test_DynamoDBBackend:

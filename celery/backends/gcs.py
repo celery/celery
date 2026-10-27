@@ -10,7 +10,7 @@ from kombu.utils.url import url_to_parts
 
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
-from celery.exceptions import ChordError, ImproperlyConfigured, OperationalError
+from celery.exceptions import ChordError, ImproperlyConfigured
 from celery.result import GroupResult, allow_join_result
 from celery.utils.log import get_logger
 
@@ -248,14 +248,6 @@ class GCSBackend(GCSBackendBase):
         )
         return resp.transform_results[0].integer_value
 
-    def _rollback_chord_incr(self, key):
-        """Undo one header count after the body publish was refused."""
-        doc = self._firestore_document(key)
-        doc.set(
-            {self._field_count: firestore.Increment(-1)},
-            merge=True,
-        )
-
     def on_chord_part_return(self, request, state, result, **kwargs):
         """Chord part return callback.
 
@@ -289,59 +281,38 @@ class GCSBackend(GCSBackendBase):
                 return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native
-            # A refused body publish must leave the chord so a redelivery of
-            # this header can publish the body. Join errors and any other
-            # callback error still fail the chord and drop its bookkeeping.
-            refused = False
             try:
+                with allow_join_result():
+                    ret = j(
+                        timeout=app.conf.result_chord_join_timeout,
+                        propagate=True,
+                    )
+            except Exception as exc:  # pylint: disable=broad-except
                 try:
-                    with allow_join_result():
-                        ret = j(
-                            timeout=app.conf.result_chord_join_timeout,
-                            propagate=True,
-                        )
-                except Exception as exc:  # pylint: disable=broad-except
-                    try:
-                        culprit = next(deps._failed_join_report())
-                        reason = 'Dependency {0.id} raised {1!r}'.format(
-                            culprit,
-                            exc,
-                        )
-                    except StopIteration:
-                        reason = repr(exc)
+                    culprit = next(deps._failed_join_report())
+                    reason = 'Dependency {0.id} raised {1!r}'.format(
+                        culprit,
+                        exc,
+                    )
+                except StopIteration:
+                    reason = repr(exc)
 
-                    logger.exception('Chord %r raised: %r', gid, reason)
-                    chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
-                    self.chord_error_from_stack(callback, chord_error)
-                else:
-                    try:
-                        callback.delay(ret)
-                    except OperationalError as exc:
-                        refused = True
-                        logger.error(
-                            'Chord %r body publish refused by the broker: %r',
-                            gid, exc,
-                        )
-                        try:
-                            self._rollback_chord_incr(key)
-                        except Exception:  # pylint: disable=broad-except
-                            logger.warning(
-                                'Could not roll back the chord counter for %r '
-                                'after a refused body publish', gid,
-                                exc_info=True,
-                            )
-                        raise
-                    except Exception as exc:  # pylint: disable=broad-except
-                        logger.exception('Chord %r raised: %r', gid, exc)
-                        self.chord_error_from_stack(
-                            callback,
-                            ChordError(f'Callback error: {exc!r}'),
-                        )
+                logger.exception('Chord %r raised: %r', gid, reason)
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback, chord_error)
+            else:
+                try:
+                    app.amqp._retry_publish(callback.delay, ret)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception('Chord %r raised: %r', gid, exc)
+                    self.chord_error_from_stack(
+                        callback,
+                        ChordError(f'Callback error: {exc!r}'),
+                    )
             finally:
-                if not refused:
-                    deps.delete()
-                    # Firestore doesn't have an exact ttl policy, so delete the key.
-                    self._delete_chord_key(key)
+                deps.delete()
+                # Firestore doesn't have an exact ttl policy, so delete the key.
+                self._delete_chord_key(key)
 
     def _restore_deps(self, gid, request):
         app = self.app

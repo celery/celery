@@ -28,7 +28,7 @@ from celery import chord, current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.app.task import Context
 from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
-                               NotRegistered, OperationalError, SecurityError, TaskRevokedError, TimeoutError)
+                               NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
 from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater, maybe_list
@@ -1240,29 +1240,6 @@ class BaseKeyValueStoreBackend(Backend):
     def incr(self, key):
         raise NotImplementedError('Does not implement incr')
 
-    def _rollback_chord_incr(self, key):
-        """Undo one header count after the body publish was refused.
-
-        The part is counted before the body is published. A redelivery has
-        to be able to reach the chord size again. Best effort: backends
-        whose client cannot decrement log and leave the counter as it is.
-        The Redis backend does not use this. Its chord script is idempotent
-        per header task.
-        """
-        client = getattr(self, 'client', None)
-        if client is None:
-            return
-        try:
-            if getattr(type(client), 'decr', None) is not None:
-                client.decr(key)
-                return
-            client.incr(key, -1)
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                'Could not roll back the chord counter for %r after a '
-                'refused body publish', key, exc_info=True,
-            )
-
     def expire(self, key, value):
         pass
 
@@ -1488,53 +1465,38 @@ class BaseKeyValueStoreBackend(Backend):
         elif val == size:
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
-            # A refused body publish must leave the group and the counter so
-            # a redelivery of this header can publish the body. Join errors
-            # and any other callback error still fail the chord and drop the
-            # bookkeeping.
-            refused = False
             try:
+                with allow_join_result():
+                    ret = j(
+                        timeout=app.conf.result_chord_join_timeout,
+                        propagate=True)
+            except Exception as exc:  # pylint: disable=broad-except
                 try:
-                    with allow_join_result():
-                        ret = j(
-                            timeout=app.conf.result_chord_join_timeout,
-                            propagate=True)
+                    culprit = next(deps._failed_join_report())
+                    reason = 'Dependency {0.id} raised {1!r}'.format(
+                        culprit, exc,
+                    )
+                except StopIteration:
+                    reason = repr(exc)
+                logger.exception('Chord %r raised: %r', gid, reason)
+                chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                self.chord_error_from_stack(callback=callback, exc=chord_error)
+            else:
+                try:
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
-                    try:
-                        culprit = next(deps._failed_join_report())
-                        reason = 'Dependency {0.id} raised {1!r}'.format(
-                            culprit, exc,
-                        )
-                    except StopIteration:
-                        reason = repr(exc)
-                    logger.exception('Chord %r raised: %r', gid, reason)
-                    chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+                    logger.exception('Chord %r raised: %r', gid, exc)
+                    chord_error = _create_chord_error_with_cause(
+                        message=f'Callback error: {exc!r}', original_exc=exc
+                    )
                     self.chord_error_from_stack(callback=callback, exc=chord_error)
-                else:
-                    try:
-                        callback.delay(ret)
-                    except OperationalError as exc:
-                        refused = True
-                        logger.error(
-                            'Chord %r body publish refused by the broker: %r',
-                            gid, exc,
-                        )
-                        self._rollback_chord_incr(key)
-                        raise
-                    except Exception as exc:  # pylint: disable=broad-except
-                        logger.exception('Chord %r raised: %r', gid, exc)
-                        chord_error = _create_chord_error_with_cause(
-                            message=f'Callback error: {exc!r}', original_exc=exc
-                        )
-                        self.chord_error_from_stack(callback=callback, exc=chord_error)
             finally:
-                if not refused:
-                    deps.delete()
-                    self.delete(key)
-                    # The chord is done: give the header results back their
-                    # normal lifetime.
-                    for dep in deps.results:
-                        self.expire(self.get_key_for_task(dep.id), self.expires)
+                deps.delete()
+                self.delete(key)
+                # The chord is done: give the header results back their
+                # normal lifetime.
+                for dep in deps.results:
+                    self.expire(self.get_key_for_task(dep.id), self.expires)
         else:
             self.expire(key, self.chord_expires)
             # The last part joins every header result, so keep this one too.

@@ -53,6 +53,49 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @patch('celery.canvas.maybe_signature')
+    def test_refused_publish_retries_without_rerunning_body(self, maybe_signature, dispatch, acks_late):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+        sig = maybe_signature.return_value
+        sig.apply_async.side_effect = [OperationalError('refused'), None]
+        request = {dispatch: [sig], 'root_id': 'root'}
+        with patch.object(self.add, 'run', wraps=self.add.run) as run:
+            result, info, _ = self.trace(self.add, (2, 2), {}, request=request, eager=False)
+        assert result == 4
+        assert info is None
+        assert sig.apply_async.call_count == 2
+        run.assert_called_once_with(2, 2)
+        assert self.add.backend.get_state('id-1') == states.SUCCESS
+
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    def test_refused_publish_exhaustion_is_a_task_failure(self, dispatch, acks_late):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+        task_id = uuid()
+        sig = self.add.s().set(task_id=uuid())
+        with patch.object(sig, 'apply_async', side_effect=OperationalError('refused')) as publish, \
+                patch.object(self.add, 'run', wraps=self.add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        assert info.state == states.FAILURE
+        assert publish.call_count == 3
+        run.assert_called_once_with(2, 2)
+        internal_error.assert_not_called()
+        assert self.add.backend.get_state(task_id) == states.FAILURE
+        if dispatch == 'chain':
+            assert self.add.backend.get_state(sig.id) == states.FAILURE
+
     def test_trace_successful(self):
         retval, info, _ = self.trace(self.add, (2, 2), {})
         assert info is None
@@ -460,104 +503,6 @@ class test_trace(TraceCase):
         maybe_signature.return_value = sig
         sig.apply_async.side_effect = EncodeError()
         retval, einfo, _ = self.trace(self.add, (2, 2), {}, request=request)
-        assert einfo.state == states.FAILURE
-
-    @patch('celery.canvas.maybe_signature')
-    def test_callbacks__broker_refused_requeues(self, maybe_signature):
-        # The body ran. A refused link must not be stored as FAILURE.
-        # Late ack still holds the message, so the broker can deliver it again.
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        sig.apply_async.side_effect = OperationalError('Connection refused')
-        self.add.acks_late = True
-        with patch.object(self.add.backend, 'mark_as_failure') as mark_as_failure:
-            with pytest.raises(Reject) as raised:
-                self.trace(self.add, (2, 2), {}, request=request, eager=False)
-        assert raised.value.requeue is True
-        assert isinstance(raised.value.reason, OperationalError)
-        mark_as_failure.assert_not_called()
-        assert self.add.backend.get_state('id-1') == states.PENDING
-
-    @patch('celery.canvas.maybe_signature')
-    def test_chain__broker_refused_requeues(self, maybe_signature):
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'chain': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        sig.apply_async.side_effect = OperationalError('Connection refused')
-        self.add.acks_late = True
-        with pytest.raises(Reject) as raised:
-            self.trace(self.add, (2, 2), {}, request=request, eager=False)
-        assert raised.value.requeue is True
-        sig.apply_async.assert_called_once()
-
-    def test_broker_refused_after_result_stored_clears_success(self):
-        # mark_as_done stores SUCCESS, then the chord body publish refuses.
-        # A deduplicating worker would skip the redelivery if SUCCESS stayed.
-        self.add.acks_late = True
-        original = self.add.backend.mark_as_done
-
-        def mark(*args, **kwargs):
-            original(*args, **kwargs)
-            raise OperationalError('Connection refused')
-
-        self.add.backend.mark_as_done = mark
-        with pytest.raises(Reject) as raised:
-            self.trace(self.add, (2, 2), {}, eager=False)
-        assert raised.value.requeue is True
-        assert self.add.backend.get_state('id-1') == states.PENDING
-
-    @patch('celery.canvas.maybe_signature')
-    def test_callbacks__broker_refused_eager_propagates(self, maybe_signature):
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        sig.apply_async.side_effect = OperationalError('Connection refused')
-        self.add.acks_late = True
-        with pytest.raises(OperationalError):
-            self.trace(self.add, (2, 2), {}, request=request)
-
-    @patch('celery.canvas.maybe_signature')
-    def test_callbacks__broker_refused_with_failed_forget(self, maybe_signature, caplog):
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        error = OperationalError('Connection refused')
-        sig.apply_async.side_effect = error
-        self.add.acks_late = True
-        with patch.object(self.add.backend, 'forget', side_effect=RuntimeError('Backend unavailable')) as forget:
-            with patch.object(self.add.backend, 'mark_as_failure') as mark_as_failure:
-                with pytest.raises(Reject) as raised:
-                    self.trace(self.add, (2, 2), {}, request=request, eager=False)
-        assert raised.value.requeue is True
-        assert raised.value.reason is error
-        forget.assert_called_once_with('id-1')
-        mark_as_failure.assert_not_called()
-        assert 'Could not clear the result of task' in caplog.text
-
-    @patch('celery.canvas.maybe_signature')
-    def test_callbacks__broker_refused_early_ack_records_failure(self, maybe_signature):
-        # The message was acked before the body ran, so it cannot be redelivered.
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        sig.apply_async.side_effect = OperationalError('Connection refused')
-        self.add.acks_late = False
-        _, einfo, _ = self.trace(
-            self.add, (2, 2), {}, request=request, eager=False,
-        )
-        assert einfo.state == states.FAILURE
-
-    @patch('celery.canvas.maybe_signature')
-    def test_callbacks__other_publish_error_records_failure(self, maybe_signature):
-        sig = Mock(name='sig')
-        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
-        maybe_signature.return_value = sig
-        sig.apply_async.side_effect = RuntimeError('bad link')
-        self.add.acks_late = True
-        _, einfo, _ = self.trace(
-            self.add, (2, 2), {}, request=request, eager=False,
-        )
         assert einfo.state == states.FAILURE
 
     @patch('celery.canvas.maybe_signature')
