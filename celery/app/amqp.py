@@ -2,6 +2,7 @@
 import numbers
 from collections import namedtuple
 from collections.abc import Mapping
+from contextvars import ContextVar
 from weakref import WeakValueDictionary
 
 from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
@@ -31,6 +32,11 @@ key={0.routing_key}
 
 task_message = namedtuple('task_message',
                           ('headers', 'properties', 'body', 'sent_event'))
+
+# Set while AMQP._retry_publish applies task_publish_retry_policy.
+# Producer.publish retries connection errors with that same policy, and a
+# publisher nack is reported as a connection error, so the inner retry stays off.
+_callback_publish_retry = ContextVar('_callback_publish_retry', default=False)
 
 
 def utf8dict(d, encoding='utf-8'):
@@ -268,13 +274,17 @@ class AMQP:
         if not self.app.conf.task_publish_retry or self.app.conf.task_always_eager:
             return publish(*args, **kwargs)
         policy = self.app.conf.task_publish_retry_policy
-        return retry_over_time(
-            publish, (OperationalError,), args=args, kwargs=kwargs,
-            max_retries=policy.get('max_retries', 3),
-            interval_start=policy.get('interval_start', 0),
-            interval_step=policy.get('interval_step', 0.2),
-            interval_max=policy.get('interval_max', 1),
-        )
+        token = _callback_publish_retry.set(True)
+        try:
+            return retry_over_time(
+                publish, (OperationalError,), args=args, kwargs=kwargs,
+                max_retries=policy.get('max_retries', 3),
+                interval_start=policy.get('interval_start', 0),
+                interval_step=policy.get('interval_step', 0.2),
+                interval_max=policy.get('interval_max', 1),
+            )
+        finally:
+            _callback_publish_retry.reset(token)
 
     @cached_property
     def create_task_message(self):
@@ -567,6 +577,10 @@ class AMQP:
 
             # merge default and custom policy
             retry = default_retry if retry is None else retry
+            # Callback retries already wrap this publish. Leaving the inner
+            # connection retry on would apply the same policy twice.
+            if _callback_publish_retry.get():
+                retry = False
             _rp = (
                 dict(default_policy, **retry_policy)
                 if retry_policy

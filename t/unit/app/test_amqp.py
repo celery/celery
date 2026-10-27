@@ -39,6 +39,28 @@ def test_callback_publish_retries_only_the_publish(app):
     assert sum(call.args[0] for call in sleep.call_args_list) == 3
 
 
+def test_callback_publish_retry_does_not_stack_with_connection_retry(app):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 1, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    message = app.amqp.as_task_v2(uuid(), 'foo', create_sent_event=False)
+    seen = []
+
+    def publish():
+        producer = Mock()
+        app.amqp.send_task_message(producer, 'foo', message)
+        seen.append(producer.publish.call_args[1]['retry'])
+        raise OperationalError('refused')
+
+    with pytest.raises(OperationalError):
+        app.amqp._retry_publish(publish)
+    assert seen == [False, False]
+
+    producer = Mock()
+    app.amqp.send_task_message(producer, 'foo', message)
+    assert producer.publish.call_args[1]['retry'] is True
+
+
 def test_callback_publish_stops_at_the_retry_limit(app):
     app.conf.task_publish_retry_policy = {
         'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
