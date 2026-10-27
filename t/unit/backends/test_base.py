@@ -1634,6 +1634,16 @@ class test_KeyValueStoreBackend:
         assert not self.b.implements_incr
         self.b.on_chord_part_return(None, None, None)
 
+    def test_rollback_chord_incr_without_client(self):
+        self.b._rollback_chord_incr(b'chord-key')
+
+    def test_rollback_chord_incr_uses_decr(self):
+        self.b.client = Mock()
+        with patch.object(type(self.b.client), 'decr', create=True) as decr:
+            self.b._rollback_chord_incr(b'chord-key')
+        decr.assert_called_once_with(b'chord-key')
+        self.b.client.incr.assert_not_called()
+
     def test_get_store_delete_result(self):
         tid = uuid()
         self.b.mark_as_done(tid, 'Hello world')
@@ -2010,6 +2020,7 @@ class test_KeyValueStoreBackend:
         # undone, and the same header can publish the body on the next try.
         with self._chord_part_context(self.b) as (task, deps, _callback):
             key = self.b.get_key_for_chord(task.request.group)
+            deps.results = [self.app.AsyncResult('header')]
             callback = Mock(name='callback')
             callback.delay.side_effect = OperationalError('Connection refused')
             with patch('celery.backends.base.maybe_signature', return_value=callback):
@@ -2017,6 +2028,7 @@ class test_KeyValueStoreBackend:
                     self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             self.b.fail_from_current_stack.assert_not_called()
             deps.delete.assert_not_called()
+            self.b.expire.assert_not_called()
             self.b.client.incr.assert_any_call(key, -1)
 
             callback.delay.side_effect = None
@@ -2024,6 +2036,24 @@ class test_KeyValueStoreBackend:
                 self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
             callback.delay.assert_called()
             deps.delete.assert_called_once()
+            self.b.expire.assert_called_once_with(
+                self.b.get_key_for_task('header'), self.b.expires,
+            )
+
+    def test_chord_publish_refused_with_failed_rollback(self, caplog):
+        with self._chord_part_context(self.b) as (task, deps, _callback):
+            self.b.client.incr.side_effect = RuntimeError('Backend unavailable')
+            callback = Mock()
+            error = OperationalError('Connection refused')
+            callback.delay.side_effect = error
+            with patch('celery.backends.base.maybe_signature', return_value=callback):
+                with pytest.raises(OperationalError) as raised:
+                    self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            assert raised.value is error
+            self.b.fail_from_current_stack.assert_not_called()
+            deps.delete.assert_not_called()
+            self.b.expire.assert_not_called()
+            assert 'Could not roll back the chord counter' in caplog.text
 
     def test_restore_group_from_json(self):
         b = KVBackend(serializer='json', app=self.app)

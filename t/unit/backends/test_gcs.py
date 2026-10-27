@@ -511,6 +511,7 @@ class test_GCSBackend:
     @patch.object(GCSBackend, 'chord_error_from_stack')
     @patch('celery.backends.gcs.allow_join_result')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @pytest.mark.parametrize('has_culprit', [False, True])
     def test_on_chord_part_return_join_exception(
         self,
         mock_firestore_ttl,
@@ -520,6 +521,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        has_culprit,
     ):
         """Test on_chord_part_return when join_native raises exception."""
         request = MagicMock()
@@ -540,7 +542,8 @@ class test_GCSBackend:
         # Make join_native raise an exception
         join_exception = ValueError('Join failed')
         mock_deps.join_native.side_effect = join_exception
-        mock_deps._failed_join_report.return_value = iter([])  # No culprit found
+        culprits = [Mock(id='failed-header')] if has_culprit else []
+        mock_deps._failed_join_report.return_value = iter(culprits)
 
         backend = GCSBackend(app=self.app)
         backend.on_chord_part_return(request, state, result)
@@ -551,6 +554,8 @@ class test_GCSBackend:
         assert call_args[0][0] == mock_callback  # callback argument
         chord_error_arg = call_args[0][1]  # exc argument
         assert 'ValueError' in str(chord_error_arg)
+        if has_culprit:
+            assert 'Dependency failed-header raised' in str(chord_error_arg)
         assert chord_error_arg.__cause__ == join_exception
 
         # Verify cleanup still happens
@@ -624,20 +629,23 @@ class test_GCSBackend:
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
     @patch.object(GCSBackend, '_delete_chord_key')
-    @patch.object(GCSBackend, '_rollback_chord_incr')
+    @patch.object(GCSBackend, '_firestore_document')
     @patch.object(GCSBackend, 'chord_error_from_stack')
     @patch('celery.backends.gcs.allow_join_result')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @pytest.mark.parametrize('rollback_fails', [False, True])
     def test_on_chord_part_return_callback_publish_refused(
         self,
         mock_firestore_ttl,
         mock_allow_join_result_,
         mock_chord_error_from_stack,
-        mock_rollback,
+        mock_firestore_document,
         mock_delete_chord_key,
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        rollback_fails,
+        caplog,
     ):
         request = MagicMock()
         request.group = 'group_id'
@@ -649,11 +657,24 @@ class test_GCSBackend:
         mock_deps.join_native.return_value = ['result1', 'result2']
         mock_callback = MagicMock()
         mock_maybe_signature.return_value = mock_callback
-        mock_callback.delay.side_effect = OperationalError('Connection refused')
+        error = OperationalError('Connection refused')
+        mock_callback.delay.side_effect = error
+        document = mock_firestore_document.return_value
+        if rollback_fails:
+            document.set.side_effect = RuntimeError('Firestore unavailable')
         backend = GCSBackend(app=self.app)
-        with pytest.raises(OperationalError):
+        with pytest.raises(OperationalError) as raised:
             backend.on_chord_part_return(request, 'SUCCESS', ['x'])
+        assert raised.value is error
         mock_chord_error_from_stack.assert_not_called()
         mock_delete_chord_key.assert_not_called()
         mock_deps.delete.assert_not_called()
-        mock_rollback.assert_called_once()
+        mock_firestore_document.assert_called_once_with(
+            backend.get_key_for_chord(request.group),
+        )
+        document.set.assert_called_once()
+        args, kwargs = document.set.call_args
+        assert args[0][backend._field_count].value == -1
+        assert kwargs == {'merge': True}
+        if rollback_fails:
+            assert 'Could not roll back the chord counter' in caplog.text

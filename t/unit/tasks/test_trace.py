@@ -518,6 +518,24 @@ class test_trace(TraceCase):
             self.trace(self.add, (2, 2), {}, request=request)
 
     @patch('celery.canvas.maybe_signature')
+    def test_callbacks__broker_refused_with_failed_forget(self, maybe_signature, caplog):
+        sig = Mock(name='sig')
+        request = {'id': 'id-1', 'callbacks': [sig], 'root_id': 'root'}
+        maybe_signature.return_value = sig
+        error = OperationalError('Connection refused')
+        sig.apply_async.side_effect = error
+        self.add.acks_late = True
+        with patch.object(self.add.backend, 'forget', side_effect=RuntimeError('Backend unavailable')) as forget:
+            with patch.object(self.add.backend, 'mark_as_failure') as mark_as_failure:
+                with pytest.raises(Reject) as raised:
+                    self.trace(self.add, (2, 2), {}, request=request, eager=False)
+        assert raised.value.requeue is True
+        assert raised.value.reason is error
+        forget.assert_called_once_with('id-1')
+        mark_as_failure.assert_not_called()
+        assert 'Could not clear the result of task' in caplog.text
+
+    @patch('celery.canvas.maybe_signature')
     def test_callbacks__broker_refused_early_ack_records_failure(self, maybe_signature):
         # The message was acked before the body ran, so it cannot be redelivered.
         sig = Mock(name='sig')
