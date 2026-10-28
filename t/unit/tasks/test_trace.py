@@ -17,6 +17,7 @@ from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
 from celery.result import AsyncResult
 from celery.states import PENDING
 from celery.worker.state import successful_requests
+from t.unit.utils.test_dispatcher import garbage_collect
 
 
 def trace(
@@ -236,6 +237,36 @@ class test_trace(TraceCase):
             assert runtime == expected_runtime
         finally:
             signals.task_success.receivers[:] = []
+
+    @pytest.mark.parametrize('signal', [
+        signals.task_prerun,
+        signals.task_postrun,
+        signals.task_success,
+    ], ids=lambda signal: signal.name)
+    def test_trace_works_after_receivers_disconnect_and_connect(self, signal):
+        received_senders = []
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(sender, **kwargs):
+            received_senders.append(sender)
+
+        signal.connect(temporary_receiver)
+        try:
+            tracer = build_tracer(self.add.name, self.add, app=self.app)
+            signal.disconnect(temporary_receiver)
+            del temporary_receiver
+            garbage_collect()
+
+            signal.connect(receiver)
+            result = tracer('id-1', (2, 2), {})
+        finally:
+            signal.disconnect(receiver)
+
+        assert result.info is None
+        assert result.retval == 4
+        assert received_senders == [self.add]
 
     def test_when_chord_part(self):
         @self.app.task(shared=False)
