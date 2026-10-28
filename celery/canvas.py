@@ -2467,6 +2467,10 @@ class _chord(Signature):
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
                 header_delay[key] = options.pop(key)
+        # Cloning with link= would replace the body's own callbacks: run()
+        # adds them to the body instead.
+        callbacks = {key: options.pop(key)
+                     for key in ('link', 'link_error') if key in options}
         body = body.clone(**self._body_options(options))
         app = self._get_app(body)
         tasks = self.tasks
@@ -2479,11 +2483,13 @@ class _chord(Signature):
                 tasks = tasks[:]
             tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
+            # apply() does not use the options of the chord, unlike run()
+            body = self._add_body_callbacks(body, dict(self.options, **callbacks))
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options, **options)
+        merged_options = dict(self.options, **options, **callbacks)
         # Keep countdown/eta off run()'s kwargs so they don't replace the unlock
         # retry interval; run() still sees .set() values via self.options.
         for key in ('countdown', 'eta'):
@@ -2550,6 +2556,44 @@ class _chord(Signature):
         """Options passed on to the body: the header task that fires the body is its parent."""
         return {k: v for k, v in options.items() if k != 'parent_id'}
 
+    @staticmethod
+    def _add_body_callbacks(body, options):
+        """Move ``link`` and ``link_error`` from ``options`` to the body.
+
+        ``link`` is linked to the body as :meth:`link` does. ``link_error``
+        is linked to each task of a group body, as :meth:`link_error` does,
+        so the tasks keep their own errbacks. If the group has its own
+        ``link_error``, which replaces theirs when it runs, it is added
+        there instead, with the group's own errbacks. Any other body gets
+        it in its own ``link_error`` option, where the chord's error
+        handling reads it when the header fails. Unlike :meth:`link_error`
+        with ``task_allow_error_cb_on_chord_header`` enabled, it is not
+        added to the header tasks, nor to the header of a chord that is a
+        task of a group body. Neither may reach the header: a group refuses
+        them.
+
+        Returns the body to use: a copy when there are callbacks to link.
+        """
+        callbacks = maybe_list(options.pop('link', None)) or []
+        errbacks = maybe_list(options.pop('link_error', None)) or []
+        if callbacks or errbacks:
+            # Linking changes the signatures in a group or chord, which
+            # clone() shares with the caller's.
+            body = _clone_with_members(body)
+        for callback in callbacks:
+            callback = _clone_with_members(maybe_signature(callback, app=body._app))
+            if isinstance(body, group) and not body.tasks:
+                body.append_to_list_option('link', callback)
+            else:
+                body.link(callback)
+        for errback in errbacks:
+            if isinstance(body, group):
+                _link_error_to_body_tasks(
+                    body, maybe_signature(errback, app=body._app))
+            else:
+                body.append_to_list_option('link_error', errback)
+        return body
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, header_delay=None, **options):
@@ -2587,6 +2631,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
+            body = self._add_body_callbacks(body, options)
             body.options.update(self._body_options(options))
 
         # Freezing a nested chain first would embed its whole remaining tail
@@ -2790,6 +2835,44 @@ def signature(varies, *args, **kwargs):
 
 
 subtask = signature  # XXX compat
+
+
+def _clone_with_members(sig):
+    """Clone ``sig`` and the signatures in it that ``link()`` changes.
+
+    ``clone()`` keeps the tasks of a group, so linking a callback to the
+    clone would change the original group as well. ``link()`` goes on to
+    the tasks of a group and to the body of a chord.
+    """
+    sig = maybe_signature(sig, clone=True)
+    if isinstance(sig, group):
+        sig.tasks = [_clone_with_members(task) for task in sig.tasks]
+    elif isinstance(sig, _chord):
+        sig.body = _clone_with_members(sig.body)
+    return sig
+
+
+def _link_error_to_body_tasks(sig, errback, runs_as_group=True):
+    """Link ``errback`` to each task of ``sig``, the group body of a chord.
+
+    It goes on to the tasks of a group, as ``group.link_error()`` does, and
+    to the body of a chord but not to its header. A group that runs as one
+    and has its own ``link_error``, even an empty one, gets it there
+    instead, with its own errbacks: when the group runs, that option
+    replaces the errbacks of its tasks and is passed on to a chord in it,
+    which would otherwise call it twice. A group in a group is flattened,
+    dropping its options, first.
+    """
+    if isinstance(sig, group):
+        if runs_as_group and sig.options.get('link_error') is not None:
+            sig.append_to_list_option('link_error', errback.clone())
+        else:
+            for task in sig.tasks:
+                _link_error_to_body_tasks(task, errback, runs_as_group=False)
+    elif isinstance(sig, _chord):
+        _link_error_to_body_tasks(sig.body, errback)
+    else:
+        sig.link_error(errback.clone())
 
 
 def maybe_signature(d, app=None, clone=False):
