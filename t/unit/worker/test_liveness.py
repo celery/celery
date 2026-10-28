@@ -93,6 +93,13 @@ class test_Liveness(LivenessCase):
         assert not os.path.exists(self.path)
         step.create(c)  # no file is fine too
 
+    def test_create_refuses_to_start_when_the_old_file_stays(self):
+        os.mkdir(self.path)  # can't be unlinked
+        c = self.Consumer()
+        step = Liveness(c)
+        with pytest.raises(ImproperlyConfigured, match='worker_liveness_file'):
+            step.create(c)
+
     def test_start_amqp_probe_queue(self):
         c, step, consumer, producer = self.started('amqp')
         queue = consumer.call_args[0][1][0]

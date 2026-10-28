@@ -416,7 +416,7 @@ The same ``test`` command works in a Docker ``HEALTHCHECK`` or an Amazon ECS
 
 When the worker starts, it deletes any file left by an earlier process, and
 writes a new one once it has connected to the broker. The startup probe
-fails until then.
+fails until then. If the worker can't delete the old file, it doesn't start.
 
 Keep the file in a directory that only the worker can write, such as a path
 inside the container. In a directory shared with other users, like a host's

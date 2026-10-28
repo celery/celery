@@ -83,6 +83,10 @@ class Liveness(bootsteps.StartStopStep):
             os.unlink(self.path)
         except FileNotFoundError:
             pass
+        except OSError as exc:
+            raise ImproperlyConfigured(
+                f'Cannot remove the old worker_liveness_file {self.path!r}: '
+                f'{exc.strerror or exc}') from exc
 
     def start(self, c):
         from celery.concurrency.prefork import TaskPool
