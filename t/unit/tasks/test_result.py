@@ -1,7 +1,9 @@
+import asyncio
 import copy
 import datetime
 import doctest
 import platform
+import threading
 import traceback
 from contextlib import contextmanager
 from unittest.mock import Mock, call, patch
@@ -12,8 +14,8 @@ from celery import _state, states, uuid
 from celery.app.task import Context
 from celery.backends.base import Backend, SyncBackendMixin
 from celery.exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
-from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, assert_will_not_block,
-                           denied_join_result, result_from_tuple)
+from celery.result import (AsyncResult, EagerResult, GroupResult, ResultSet, allow_join_result,
+                           assert_will_not_block, denied_join_result, result_from_tuple)
 from celery.utils.serialization import pickle
 
 PYTRACEBACK = """\
@@ -1274,6 +1276,107 @@ class test_EagerResult:
             reconstructed.get()
         assert exc_info.value.args == (3, 3)
         assert reconstructed.get(propagate=False) is reconstructed.result
+
+
+class test_join_result_guards:
+
+    @pytest.fixture(autouse=True)
+    def real_task_join_will_block(self, patching):
+        # The autouse conftest fixture stubs this out to always return False.
+        patching('celery.result.task_join_will_block',
+                 _state.orig_task_join_will_block)
+
+    def test_overlapping_eager_apply_async_in_threads(self):
+        # Regression: the restores used to interleave and leave the flag True
+        # for the whole process, see #3189.
+        self.app.conf.task_always_eager = True
+        a_inside = threading.Event()
+        b_inside = threading.Event()
+        a_returned = threading.Event()
+
+        @self.app.task(shared=False)
+        def task_a():
+            a_inside.set()
+            b_inside.wait(5)
+
+        @self.app.task(shared=False)
+        def task_b():
+            b_inside.set()
+            a_returned.wait(5)
+            return 42
+
+        def run_a():
+            task_a.apply_async()
+            a_returned.set()
+
+        def run_b():
+            a_inside.wait(5)
+            task_b.apply_async()
+
+        threads = [threading.Thread(target=run_a),
+                   threading.Thread(target=run_b)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(10)
+
+        assert _state.orig_task_join_will_block() is False
+        a_returned.set()
+        assert task_b.apply_async().get() == 42
+
+    def test_override_is_not_visible_on_other_threads(self):
+        seen = []
+
+        def check():
+            seen.append(_state.orig_task_join_will_block())
+
+        with denied_join_result():
+            assert _state.orig_task_join_will_block() is True
+            t = threading.Thread(target=check)
+            t.start()
+            t.join(10)
+        assert seen == [False]
+
+    def test_override_is_not_shared_between_asyncio_tasks(self):
+        async def guarded(entered, other_entered):
+            with denied_join_result():
+                entered.set()
+                await other_entered.wait()
+            return _state.orig_task_join_will_block()
+
+        async def main():
+            a_entered, b_entered = asyncio.Event(), asyncio.Event()
+            results = await asyncio.gather(
+                guarded(a_entered, b_entered),
+                guarded(b_entered, a_entered),
+            )
+            return results, _state.orig_task_join_will_block()
+
+        assert asyncio.run(main()) == ([False, False], False)
+
+    def test_nesting_restores_previous_value(self):
+        with denied_join_result():
+            with allow_join_result():
+                assert _state.orig_task_join_will_block() is False
+                with denied_join_result():
+                    assert _state.orig_task_join_will_block() is True
+                assert _state.orig_task_join_will_block() is False
+            assert _state.orig_task_join_will_block() is True
+            with pytest.raises(KeyError):
+                with allow_join_result():
+                    raise KeyError()
+            assert _state.orig_task_join_will_block() is True
+        assert _state.orig_task_join_will_block() is False
+
+    def test_process_wide_value_honored_without_override(self):
+        _state._set_task_join_will_block(True)
+        assert _state.orig_task_join_will_block() is True
+        with pytest.raises(RuntimeError, match='Never call result.get'):
+            assert_will_not_block()
+        with allow_join_result():
+            assert _state.orig_task_join_will_block() is False
+            assert_will_not_block()
+        assert _state.orig_task_join_will_block() is True
 
 
 class test_tuples:
