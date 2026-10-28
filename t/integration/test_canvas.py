@@ -211,7 +211,6 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [64, 65, 66, 67]
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
     def test_group_results_in_chain(self, manager):
         # This adds in an explicit test for the special case added in commit
         # 1e3fcaa969de6ad32b52a3ed8e74281e5e5360e6
@@ -648,8 +647,7 @@ class test_chain:
         res = c()
         assert res.get(timeout=TIMEOUT) == [8, 8]
 
-    @pytest.mark.xfail(raises=TimeoutError, reason="Task is timeout")
-    def test_nested_chain_group_lone(self, manager):  # Fails with Redis 5.x
+    def test_nested_chain_group_lone(self, manager):
         """
         Test that a lone group in a chain completes.
         """
