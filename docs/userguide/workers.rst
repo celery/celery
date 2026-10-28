@@ -410,6 +410,7 @@ the default interval. On Kubernetes:
           - test $(( $(date +%s) - $(stat -c %Y /tmp/celery-liveness) )) -lt 60
       periodSeconds: 30
       failureThreshold: 5
+      terminationGracePeriodSeconds: 30
 
 The same ``test`` command works in a Docker ``HEALTHCHECK`` or an Amazon ECS
 ``CMD-SHELL`` health check.
@@ -456,11 +457,19 @@ A restart stops the tasks the worker is running. Tasks with
 :setting:`task_acks_late` enabled are delivered again (on Redis, once the
 visibility timeout has passed). Other running tasks are lost.
 
+When the liveness probe fails, Kubernetes waits for the pod's
+``terminationGracePeriodSeconds`` before it kills the worker, unless the
+probe sets its own. To restart a stuck worker sooner than your longest task
+takes, set a shorter one on the probe, as the example does. Kubernetes reads
+this setting on probes since 1.25 (see `probe-level
+terminationGracePeriodSeconds
+<https://kubernetes.io/docs/concepts/workloads/pods/probes/#probe-level-terminationgraceperiodseconds>`__).
+
 The file stops being updated as soon as a warm shutdown starts, while the
 worker finishes its running tasks:
 
-- Kubernetes 1.25 and later stops running liveness probes once a pod starts
-  shutting down, so the stale file doesn't cause a restart. Set
+- Kubernetes stops running liveness probes on a pod that's being deleted,
+  so the stale file doesn't cause a restart. Set the pod's
   ``terminationGracePeriodSeconds`` to cover your longest task.
 - Amazon ECS keeps running health checks while it stops a container, so a
   long shutdown can show the container as unhealthy. Set ``stopTimeout`` to
