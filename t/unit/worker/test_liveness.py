@@ -17,7 +17,8 @@ def test_off_by_default(app):
 
 def test_registered_after_the_task_consumer():
     assert 'celery.worker.consumer.liveness:Liveness' in Consumer.Blueprint.default_steps
-    assert Liveness.requires == (Tasks,)
+    # A built blueprint turns ``requires`` into a list, so compare contents.
+    assert list(Liveness.requires) == [Tasks]
 
 
 class FakeRequest:
