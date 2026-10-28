@@ -22,6 +22,7 @@ from kombu.exceptions import OperationalError
 from kombu.utils.encoding import ensure_bytes
 
 from celery import signature, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -2398,11 +2399,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             producer.publish.side_effect = [OperationalError('refused'), None]
 
             def delay(ret):
-                self.app.amqp._retry_publish(
-                    lambda: self.app.amqp.send_task_message(
-                        producer, 'foobarbaz', message,
-                    ),
-                )
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'foobarbaz', message)
 
             callback.delay = Mock(side_effect=delay)
             self.b.on_chord_part_return(request, states.SUCCESS, 10)

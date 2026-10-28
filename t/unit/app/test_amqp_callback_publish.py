@@ -4,6 +4,7 @@ import pytest
 from kombu.exceptions import EncodeError, OperationalError, TimeoutError
 
 from celery import signals, uuid
+from celery.app.amqp import _callback_publish_retry
 
 
 def _callback_message(app):
@@ -67,10 +68,10 @@ def test_callback_publish_can_bypass_retry(app):
 
 def test_callback_publish_skipped_when_always_eager(app):
     app.conf.task_always_eager = True
-    publish = Mock(side_effect=OperationalError('refused'))
-    with pytest.raises(OperationalError):
-        app.amqp._retry_publish(publish)
+    publish = Mock(side_effect=_callback_publish_retry.get)
+    assert app.amqp._retry_publish(publish) is False
     publish.assert_called_once_with()
+    assert _callback_publish_retry.get() is False
 
 
 def test_callback_publish_retries_each_message(app):
@@ -176,7 +177,7 @@ def test_callback_publish_caps_unbounded_max_retries(app, caplog):
     with pytest.raises(OperationalError):
         _publish_in_callback_context(app, publish)
     assert producer.publish.call_count == 4
-    assert 'max_retries=None is ignored for worker callback publishes' in caplog.text
+    assert 'Unbounded max_retries for worker callback' in caplog.text
 
 
 @pytest.mark.parametrize('default_limit, expected_attempts', [(2, 3), (None, 4)])
@@ -214,3 +215,36 @@ def test_callback_retries_preserve_message_and_emit_publish_signals_once(app):
     first, second = producer.publish.call_args_list
     assert first == second
     assert first.kwargs['headers']['id'] == message.headers['id']
+
+
+@pytest.mark.parametrize('signature_policy', [False, True])
+@pytest.mark.parametrize('refused', [False, True])
+def test_unbounded_policy_warns_only_on_first_refusal(app, caplog, signature_policy, refused):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 2 if signature_policy else None,
+        'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    producer = _producer([OperationalError('refused')] * 2 + [None] if refused else None)
+    policy = {'max_retries': None} if signature_policy else None
+    app.amqp._retry_publish(
+        app.amqp.send_task_message, producer, 'foo', _callback_message(app), retry_policy=policy,
+    )
+    warnings = [record.getMessage() for record in caplog.records if 'Unbounded max_retries' in record.getMessage()]
+    assert len(warnings) == int(refused)
+    if refused:
+        assert 'task_publish_retry_policy' not in warnings[0]
+    else:
+        assert not caplog.records
+
+
+def test_callback_publish_revives_after_transport_connection_error(app):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 1, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    producer = _producer([ConnectionResetError('connection lost'), None])
+    connection = producer.connection
+    connection.recoverable_connection_errors = (ConnectionResetError,)
+    app.amqp._retry_publish(app.amqp.send_task_message, producer, 'foo', _callback_message(app))
+    assert producer.publish.call_count == 2
+    producer.revive.assert_called_once_with(connection)
+    assert _callback_publish_retry.get() is False

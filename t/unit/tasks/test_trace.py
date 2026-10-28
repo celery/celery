@@ -6,6 +6,7 @@ from billiard.einfo import ExceptionInfo
 from kombu.exceptions import EncodeError, OperationalError
 
 from celery import group, signals, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
@@ -54,6 +55,31 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
+    @pytest.mark.parametrize('group_as_link', [False, True])
+    def test_grouped_callbacks_publish_in_retry_context(self, group_as_link):
+        @self.app.task(shared=False)
+        def link(value, extra):
+            return value + extra
+
+        callbacks = [link.s(1), link.s(2)]
+        if group_as_link:
+            callbacks = [group(callbacks, app=self.app), link.s(3)]
+        contexts = []
+
+        def publish(*args, **kwargs):
+            contexts.append(_callback_publish_retry.get())
+
+        producer, acquire = self._producer_for_publish(publish)
+        with acquire:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'callbacks': callbacks}, eager=False,
+            )
+        assert result == 4
+        assert info is None
+        assert producer.publish.call_count == len(contexts)
+        assert contexts == [True] * (3 if group_as_link else 2)
+        assert _callback_publish_retry.get() is False
+
     def _producer_for_publish(self, side_effect):
         from contextlib import contextmanager
 

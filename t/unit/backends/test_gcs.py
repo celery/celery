@@ -6,6 +6,7 @@ from google.cloud.exceptions import NotFound
 from kombu.exceptions import OperationalError
 
 from celery import uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -405,11 +406,8 @@ class test_GCSBackend:
             producer.publish.side_effect = [OperationalError('refused'), None]
 
             def delay(ret):
-                self.app.amqp._retry_publish(
-                    lambda: self.app.amqp.send_task_message(
-                        producer, 'callback', message,
-                    ),
-                )
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'callback', message)
 
             mock_maybe_signature.return_value.delay.side_effect = delay
 

@@ -63,11 +63,6 @@ def _callback_publish_max_retries(retry_policy, default_policy):
     capped = default_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
     if capped is None:
         capped = _CALLBACK_PUBLISH_MAX_RETRIES
-    logger.warning(
-        'task_publish_retry_policy max_retries=None is ignored for worker '
-        'callback publishes; giving up after %s retries instead.',
-        capped,
-    )
     return capped
 
 
@@ -630,6 +625,11 @@ class AMQP:
                 conn = producer.connection
 
                 def on_publish_retry(exc, intervals, retries):
+                    if retries == 0 and _rp.get('max_retries') is None:
+                        logger.warning(
+                            'Unbounded max_retries for worker callback %r; '
+                            'using %s retries instead.', name, max_retries,
+                        )
                     producer.revive(conn)
                     wait = next(intervals)
                     logger.warning(
