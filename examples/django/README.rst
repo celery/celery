@@ -33,7 +33,7 @@ Installing requirements
 The settings file assumes that ``rabbitmq-server`` is running on ``localhost``
 using the default ports. More information here:
 
-https://docs.celeryq.dev/en/latest/getting-started/brokers/rabbitmq.html
+https://docs.celeryq.dev/en/latest/getting-started/backends-and-brokers/rabbitmq.html
 
 In addition, some Python requirements must also be satisfied:
 
