@@ -386,8 +386,10 @@ errback handling (including for :meth:`~celery.app.task.Task.apply`).
 
     Refused callback publishes are retried per message with the callback's own
     ``retry`` / ``retry_policy`` options. An unbounded ``max_retries`` policy
-    is capped on workers so a permanently refused callback cannot hold a worker
-    slot forever.
+    uses the application's finite retry limit, or three retries if that limit
+    is also unbounded. Exhaustion uses the normal failure path instead of
+    emitting :signal:`task_internal_error`; :meth:`~celery.app.task.Task.apply`
+    returns a :state:`FAILURE` result instead of raising the publish error.
 
 To disable retry you can set the ``retry`` execution option to :const:`False`:
 

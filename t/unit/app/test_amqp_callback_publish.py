@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import pytest
 from kombu.exceptions import EncodeError, OperationalError, TimeoutError
 
-from celery import uuid
+from celery import signals, uuid
 
 
 def _callback_message(app):
@@ -23,10 +23,11 @@ def _publish_in_callback_context(app, publish):
 
 
 @pytest.mark.parametrize('error', [OperationalError('refused'), TimeoutError('slow')])
-def test_callback_publish_honours_retry_errors(app, error):
+@pytest.mark.parametrize('retry_errors', [(TimeoutError,), [TimeoutError]])
+def test_callback_publish_honours_retry_errors(app, error, retry_errors):
     app.conf.task_publish_retry_policy = {
         'max_retries': 1, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
-        'retry_errors': (TimeoutError,),
+        'retry_errors': retry_errors,
     }
     message = _callback_message(app)
     producer = _producer([error, None])
@@ -176,3 +177,40 @@ def test_callback_publish_caps_unbounded_max_retries(app, caplog):
         _publish_in_callback_context(app, publish)
     assert producer.publish.call_count == 4
     assert 'max_retries=None is ignored for worker callback publishes' in caplog.text
+
+
+@pytest.mark.parametrize('default_limit, expected_attempts', [(2, 3), (None, 4)])
+def test_callback_publish_caps_signature_unbounded_retries(app, default_limit, expected_attempts):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': default_limit, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    producer = _producer(OperationalError('refused'))
+    message = _callback_message(app)
+    with pytest.raises(OperationalError):
+        app.amqp._retry_publish(
+            app.amqp.send_task_message, producer, 'foo', message,
+            retry_policy={'max_retries': None},
+        )
+    assert producer.publish.call_count == expected_attempts
+
+
+def test_callback_retries_preserve_message_and_emit_publish_signals_once(app):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 1, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    message = _callback_message(app)
+    producer = _producer([OperationalError('refused'), None])
+    before, after = Mock(), Mock()
+    signals.before_task_publish.connect(before)
+    signals.after_task_publish.connect(after)
+    try:
+        app.amqp._retry_publish(app.amqp.send_task_message, producer, 'foo', message)
+    finally:
+        signals.before_task_publish.disconnect(before)
+        signals.after_task_publish.disconnect(after)
+    before.assert_called_once()
+    after.assert_called_once()
+    assert producer.publish.call_count == 2
+    first, second = producer.publish.call_args_list
+    assert first == second
+    assert first.kwargs['headers']['id'] == message.headers['id']
