@@ -283,6 +283,9 @@ class AsyncBackendMixin:
         result._maybe_set_cache(self._pending_messages.take(result.id))
 
     def _add_pending_result(self, task_id, result, weak=False):
+        # Every waiter is kept until its task is ready or forgotten (Issue
+        # #4925), so a get() that timed out keeps its result object alive
+        # until then: one object per call for a task that never finishes.
         if any(r is result for r in _waiting_on(self._pending_results, task_id)):
             return
         concrete, weak_ = self._pending_results
