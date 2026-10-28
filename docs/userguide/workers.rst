@@ -365,6 +365,156 @@ each time a task that was running before the connection was lost is complete.
 This feature is enabled by default, but can be disabled by setting False
 to :setting:`worker_enable_prefetch_count_reduction`.
 
+.. _worker-health-checks:
+
+Health checks
+=============
+
+.. versionadded:: 5.8
+
+A worker can keep running after it stops doing work: its event loop can
+freeze, or it can lose its broker connection and never consume again. A
+check that only looks for the process misses that.
+
+Set :setting:`worker_liveness_file`, or pass
+:option:`--liveness-file <celery worker --liveness-file>`, and the worker
+touches that file every :setting:`worker_liveness_interval` seconds (30 by
+default) while it's healthy:
+
+.. code-block:: console
+
+    $ celery -A proj worker --liveness-file=/tmp/celery-liveness
+
+A health check then only has to read the file's age. Unlike
+``celery inspect ping``, it doesn't start a process that loads your app and
+connects to the broker.
+
+Setting up the health check
+---------------------------
+
+Treat the file as stale when it's older than two intervals: 60 seconds with
+the default interval. On Kubernetes:
+
+.. code-block:: yaml
+
+    startupProbe:
+      exec:
+        command: [test, -e, /tmp/celery-liveness]
+      periodSeconds: 5
+      failureThreshold: 60
+    livenessProbe:
+      exec:
+        command:
+          - /bin/sh
+          - -c
+          - test $(( $(date +%s) - $(stat -c %Y /tmp/celery-liveness) )) -lt 60
+      periodSeconds: 30
+      failureThreshold: 5
+
+The same ``test`` command works in a Docker ``HEALTHCHECK`` or an Amazon ECS
+``CMD-SHELL`` health check.
+
+When the worker starts, it deletes any file left by an earlier process, and
+writes a new one once it has connected to the broker. The startup probe
+fails until then.
+
+Keep the file in a directory that only the worker can write, such as a path
+inside the container. In a directory shared with other users, like a host's
+``/tmp``, someone else could create or touch the file, and a stuck worker
+would pass the check. If several workers run in one container, give each its
+own file with ``%n`` (see :ref:`worker-files`).
+
+Conditions for a fresh file
+---------------------------
+
+The worker touches the file only when all of these are true:
+
+- On RabbitMQ and Redis, the worker sent itself a test message through the
+  broker and received it. Other transports skip this step (see the limits
+  below).
+- The channel the worker reads tasks from is open.
+- On the prefork pool, every running task is within its hard time limit,
+  plus an interval of slack. The pool kills a task at that limit, so a task
+  that runs well past it means the pool lost track of it. The file stops
+  being updated within three intervals after the limit.
+
+The test message uses a channel of its own, so long tasks and a full
+prefetch window don't delay it. A busy worker passes the check.
+
+Broker outages, restarts and shutdown
+-------------------------------------
+
+When the broker is down, every worker's file goes stale, and restarting the
+workers doesn't bring the broker back. Once the broker is back, each worker
+can take up to 30 more seconds to reconnect, because it waits longer
+between each retry. Set the liveness probe's ``periodSeconds`` and
+``failureThreshold`` so that a broker restart doesn't restart every worker.
+In the example above, Kubernetes restarts a worker once its file has been
+stale for about two and a half minutes.
+
+A restart stops the tasks the worker is running. Tasks with
+:setting:`task_acks_late` enabled are delivered again (on Redis, once the
+visibility timeout has passed). Other running tasks are lost.
+
+The file stops being updated as soon as a warm shutdown starts, while the
+worker finishes its running tasks:
+
+- Kubernetes 1.25 and later stops running liveness probes once a pod starts
+  shutting down, so the stale file doesn't cause a restart. Set
+  ``terminationGracePeriodSeconds`` to cover your longest task.
+- Amazon ECS keeps running health checks while it stops a container, so a
+  long shutdown can show the container as unhealthy. Set ``stopTimeout`` to
+  cover your longest task.
+
+Don't use the file for a readiness probe. It goes stale during every warm
+shutdown, and workers don't serve traffic.
+
+Limits
+------
+
+- The solo pool runs tasks inside the event loop. The file goes stale while
+  a task runs longer than your threshold. The same happens on the gevent and
+  eventlet pools when a task uses the CPU without yielding.
+- On the gevent and eventlet pools, when a task arrives and every slot is
+  busy, the event loop waits until a task finishes. The worker counts that
+  wait as busy, not stuck, and keeps touching the file. So a task that never
+  returns can keep the check passing, and a lost broker connection is only
+  noticed once a task finishes. Set a hard time limit
+  (:setting:`task_time_limit`) on these pools.
+- The check doesn't see every problem inside the pool. Tasks that wait
+  behind a long task while another process is idle don't make the file
+  stale.
+- On Redis the test message uses connections of its own, so it doesn't
+  test the connection the worker reads tasks from. kombu checks that
+  connection separately (see the ``health_check_interval`` transport
+  option).
+- Transports other than RabbitMQ and Redis don't send the test message.
+  Neither does a worker that runs without its event loop, as on Windows
+  with the solo or threads pool. The worker then touches the file on its
+  timer while the channel it reads tasks from is open, which doesn't prove
+  that the broker still answers.
+
+Load on the broker
+------------------
+
+On RabbitMQ the check adds one channel and one exclusive queue per worker,
+and sends one small message each interval. On Redis it adds two connections
+per worker and publishes one message each interval, plus a few commands a
+minute. If a worker is killed, kombu removes its leftover key from Redis
+within about an hour, as long as another worker is running.
+
+Platforms with only HTTP or TCP probes
+--------------------------------------
+
+Some platforms, such as Google Cloud Run and Azure Container Apps, only run
+HTTP or TCP probes, so they can't read the file. A second container (a
+sidecar) can serve the file's age over HTTP from a shared volume. Define the
+probe on the worker container and point it at the sidecar's port: a failed
+probe restarts the container it's defined on, so a probe on the sidecar
+would only restart the sidecar. Check that your platform allows a probe on
+one container to use another container's port. This setup hasn't been tested
+on those platforms.
+
 .. _worker-process-signals:
 
 Process Signals
