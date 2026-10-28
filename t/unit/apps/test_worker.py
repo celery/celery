@@ -254,3 +254,49 @@ class test_autoreload:
         with patch('celery.worker.autoreload.Autoreloader') as Reloader:
             worker_module.Worker.start_autoreloader(w)
         Reloader.assert_not_called()
+
+    @pytest.fixture
+    def make_worker(self, app):
+        def _make(**kwargs):
+            return Worker(app=app, hostname='test@example.com',
+                          concurrency=2, pool='solo', **kwargs)
+        return _make
+
+    def test_autoreload_disabled_by_default(self, make_worker):
+        assert make_worker().autoreload is False
+
+    @pytest.mark.parametrize('autoreload, started', [(True, 1), (False, 0)])
+    def test_on_start_starts_autoreloader_if_enabled(
+            self, make_worker, autoreload, started):
+        w = make_worker(autoreload=autoreload, quiet=True)
+        assert w.autoreload is autoreload
+        w.redirect_stdouts = False
+        w._custom_logging = True
+        with patch.object(WorkController, 'on_start'), \
+                patch.object(w, 'install_platform_tweaks'), \
+                patch.object(w, 'set_process_status'), \
+                patch.object(w, 'start_autoreloader') as start:
+            w.on_start()
+        assert start.call_count == started
+
+    def test_restart_worker(self, monkeypatch):
+        from celery.apps import worker as worker_module
+        monkeypatch.setattr(state, 'should_stop', None)
+        with patch.object(worker_module, 'safe_say') as say, \
+                patch('atexit.register') as register:
+            worker_module.restart_worker()
+        say.assert_called_once()
+        assert 'Restarting celery worker' in say.call_args[0][0]
+        register.assert_called_once_with(worker_module._reload_current_worker)
+        assert state.should_stop == worker_module.EX_OK
+
+    def test_sighup_handler_restarts_worker(self):
+        from celery.apps import worker as worker_module
+        with patch.object(worker_module.platforms, 'signals') as signals:
+            worker_module.install_worker_restart_handler(Mock())
+        (sig, handler), _ = signals.__setitem__.call_args
+        assert sig == 'SIGHUP'
+        with patch.object(worker_module, 'restart_worker') as restart, \
+                patch.object(worker_module, 'set_in_sighandler'):
+            handler()
+        restart.assert_called_once_with()

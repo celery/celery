@@ -58,6 +58,17 @@ class test_Autoreloader:
         assert not reloader.is_alive()
         on_change.assert_called_once_with(os.path.realpath(project_module))
 
+    @pytest.mark.parametrize('first_scan', [None, OSError('boom')])
+    def test_run_keeps_scanning_until_a_change(self, first_scan):
+        on_change = Mock()
+        reloader = Autoreloader(on_change, interval=0.01)
+        reloader.find_changes = Mock(side_effect=[first_scan, '/mod.py'])
+        reloader._mtimes['/seen.py'] = 1  # skip the baseline scan
+        reloader.start()
+        reloader.join(timeout=5)
+        assert not reloader.is_alive()
+        on_change.assert_called_once_with('/mod.py')
+
     def test_stop(self):
         reloader = Autoreloader(Mock(), interval=0.01)
         reloader.start()
