@@ -790,7 +790,8 @@ class Task:
             **request.as_execution_options(),
             # Resolve ignore_result here because Context defaults to False even when no override was provided.
             'ignore_result': get_actual_ignore_result(self, request),
-            **extra_options}
+            **extra_options
+        }
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:
