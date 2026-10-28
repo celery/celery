@@ -10,6 +10,7 @@ import pytest
 
 import celery
 from celery import chain, chord, group
+from celery.app.routes import Router
 from celery.canvas import StampingVisitor
 from celery.signals import before_task_publish, task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -612,6 +613,22 @@ class test_tasks:
     def test_properties(self, celery_session_worker):
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
+
+    @flaky
+    def test_router_fun__returned_dict_is_not_modified(self, manager):
+        # A router may return the same dict for every call, e.g. a value
+        # looked up in a settings mapping.
+        route = {'queue': 'celery'}
+        router = Router([lambda *args, **kwargs: route],
+                        manager.app.amqp.queues, app=manager.app)
+        first = return_properties.apply_async(router=router,
+                                              priority=7, expires=60)
+        second = return_properties.apply_async(router=router)
+        assert first.get(timeout=TIMEOUT)['priority'] == 7
+        properties = second.get(timeout=TIMEOUT)
+        assert not properties.get('priority')
+        assert 'expiration' not in properties
+        assert route == {'queue': 'celery'}
 
     @flaky
     def test_soft_time_limit_exceeding_time_limit(self):
