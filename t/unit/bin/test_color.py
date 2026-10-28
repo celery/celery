@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import click
 import pytest
 from click.testing import CliRunner
@@ -93,3 +95,32 @@ def test_color_applies_to_app_load_errors(options, expected, monkeypatch):
     assert result.exit_code == 2
     assert 'Unable to load celery application' in result.stderr
     assert ('\x1b[' in result.stderr) is expected
+
+
+@pytest.mark.parametrize('options,env', (
+    (['-C'], {}),
+    (['--no-color'], {}),
+    ([], {'NO_COLOR': '1'}),
+))
+def test_amqp_without_color(celery_app, monkeypatch, options, env):
+    monkeypatch.delenv('NO_COLOR', raising=False)
+    monkeypatch.delenv('CELERY_NO_COLOR', raising=False)
+    connection = Mock()
+    connection.as_uri.return_value = 'memory://'
+    monkeypatch.setattr(celery_app, 'connection', Mock(return_value=connection))
+
+    result = CliRunner().invoke(
+        celery, [*options, 'amqp', 'exchange.declare', 'color-test', 'direct'],
+        default_map={'app': celery_app}, auto_envvar_prefix='CELERY',
+        color=True, env=env,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert '-> connected.' in result.stdout
+    assert 'OK' in result.stdout
+    assert '\x1b[' not in result.output
+    connection.connect.assert_called_once_with()
+    connection.default_channel.exchange_declare.assert_called_once_with(
+        exchange='color-test', type='direct', passive=False,
+        durable=False, auto_delete=False,
+    )
