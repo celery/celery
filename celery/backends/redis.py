@@ -779,11 +779,12 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     def _unpack_chord_result(self, tup, decode,
                              EXCEPTION_STATES=states.EXCEPTION_STATES,
-                             PROPAGATE_STATES=states.PROPAGATE_STATES):
+                             PROPAGATE_STATES=states.PROPAGATE_STATES,
+                             propagate=True):
         _, tid, state, retval = decode(tup)
         if state in EXCEPTION_STATES:
             retval = self.exception_to_python(retval)
-        if state in PROPAGATE_STATES:
+        if propagate and state in PROPAGATE_STATES:
             chord_error = _create_chord_error_with_cause(
                 message=f'Dependency {tid} raised {retval!r}', original_exc=retval
             )
@@ -852,6 +853,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if chord_size_bytes:
             try:
+                propagate = self.chord_propagates(request.chord)
                 callback = maybe_signature(request.chord, app=app)
                 total = int(chord_size_bytes) + totaldiff
                 if readycount == total:
@@ -874,7 +876,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         with allow_join_result():
                             resl = join_func(
                                 timeout=app.conf.result_chord_join_timeout,
-                                propagate=True
+                                propagate=propagate
                             )
                     else:
                         # Otherwise simply extract and decode the results we
@@ -887,7 +889,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             else:
                                 pipeline = pipe.lrange(jkey, 0, total)
                             resl, = pipeline.execute()
-                        resl = [unpack(tup, decode) for tup in resl]
+                        resl = [unpack(tup, decode, propagate=propagate) for tup in resl]
+                    if not propagate:
+                        resl = self.prepare_chord_results(resl)
                     try:
                         callback.delay(resl)
                     except Exception as exc:  # pylint: disable=broad-except

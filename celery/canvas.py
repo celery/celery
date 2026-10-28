@@ -2505,9 +2505,11 @@ class _chord(Signature):
         return self.run(tasks, body, args, **run_kwargs)
 
     def apply(self, args=None, kwargs=None,
-              propagate=True, body=None, **options):
+              propagate=None, body=None, **options):
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        if propagate is None:
+            propagate = self.options.get('propagate', True)
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
@@ -2554,7 +2556,7 @@ class _chord(Signature):
     @staticmethod
     def _body_options(options):
         """Options passed on to the body: the header task that fires the body is its parent."""
-        return {k: v for k, v in options.items() if k != 'parent_id'}
+        return {k: v for k, v in options.items() if k not in ('parent_id', 'propagate')}
 
     @staticmethod
     def _add_body_callbacks(body, options):
@@ -2624,6 +2626,11 @@ class _chord(Signature):
         group_id = header.options.get('task_id') or uuid()
         root_id = body.options.get('root_id')
         options = dict(self.options, **options)
+        # With propagate=False the body also runs when header tasks fail, and
+        # gets their exceptions in place of their results. The flag travels
+        # with the body, which every header task carries as its chord.
+        if not options.pop('propagate', True):
+            body['chord_propagate'] = False
         header_delay = dict(header_delay or {})
         for key in ('countdown', 'eta'):
             if key not in header_delay and options.get(key) is not None:
