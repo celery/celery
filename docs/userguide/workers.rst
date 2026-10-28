@@ -339,6 +339,29 @@ isn't recommended in production:
     :sig:`HUP` is disabled on macOS because of a limitation on
     that platform.
 
+.. _worker-autoreload:
+
+Restarting automatically when code changes
+------------------------------------------
+
+During development you can start the worker with the
+:option:`--autoreload <celery worker --autoreload>` option to have it
+restart itself whenever the source file of any module it has imported
+changes, including modules imported by your tasks modules:
+
+.. code-block:: console
+
+    $ celery -A proj worker -l INFO --autoreload
+
+Modules in the standard library and in ``site-packages`` aren't watched, and
+modules first imported after startup are picked up on the next scan.
+The files are polled once per second, so no file descriptor is held open per
+module.  The worker restarts the same way as for :sig:`HUP`, so tasks that
+are running are given the chance to finish first, and the option isn't
+supported on macOS.  It has been tested with the ``prefork``, ``solo``,
+``threads``, ``gevent`` and ``eventlet`` pools.  This is meant for
+development, don't use it in production.
+
 Automatic re-connection on connection loss to broker
 ====================================================
 

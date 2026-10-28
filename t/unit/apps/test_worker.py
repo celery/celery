@@ -231,3 +231,26 @@ class test_shutdown_handler:
         callback.assert_not_called()
         safe_say_mock.assert_not_called()
         assert state.should_stop == 0
+
+
+class test_autoreload:
+
+    def test_start_autoreloader(self):
+        from celery.apps import worker as worker_module
+        w = Mock(autoreload=True)
+        w.app.IS_macOS = False
+        with patch('celery.worker.autoreload.Autoreloader') as Reloader, \
+                patch.object(worker_module, 'restart_worker') as restart:
+            worker_module.Worker.start_autoreloader(w)
+            on_change = Reloader.call_args[0][0]
+            Reloader.return_value.start.assert_called_once_with()
+            on_change('/path/mod.py')
+            restart.assert_called_once_with()
+
+    def test_start_autoreloader_not_supported_on_macos(self):
+        from celery.apps import worker as worker_module
+        w = Mock(autoreload=True)
+        w.app.IS_macOS = True
+        with patch('celery.worker.autoreload.Autoreloader') as Reloader:
+            worker_module.Worker.start_autoreloader(w)
+        Reloader.assert_not_called()
