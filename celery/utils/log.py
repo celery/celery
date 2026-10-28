@@ -227,10 +227,37 @@ class LoggingProxy:
         if data and not self.closed:
             self._thread.recurse_protection = True
             try:
-                safe_data = safe_str(data).rstrip('\n')
-                if safe_data:
-                    self.logger.log(self.loglevel, safe_data)
-                    return len(safe_data)
+                text = safe_str(data)
+                orig_len = len(data)
+                buffer = getattr(self._thread, "buffer", "")
+                if "\n" not in text:
+                    self._thread.buffer = buffer + text
+                    return orig_len
+                # Combine any buffered partial line with the new text.
+                text = buffer + text
+                self._thread.buffer = ""
+
+                # Split into lines, keeping newline characters so we can
+                # distinguish complete lines from a final partial line.
+                lines = text.splitlines(keepends=True)
+
+                # Log all complete lines except possibly the last.
+                for line in lines[:-1]:
+                    log_message = line.rstrip("\n")
+                    if log_message:
+                        self.logger.log(self.loglevel, log_message)
+
+                # Handle the final line separately: it may be complete or partial.
+                last_line = lines[-1]
+                if last_line.endswith("\n"):
+                    log_message = last_line.rstrip("\n")
+                    if log_message:
+                        self.logger.log(self.loglevel, log_message)
+                    self._thread.buffer = ""
+                else:
+                    # Incomplete line: keep it in the buffer for the next write/flush.
+                    self._thread.buffer = last_line
+                return orig_len
             finally:
                 self._thread.recurse_protection = False
         return 0
@@ -246,14 +273,24 @@ class LoggingProxy:
             self.write(part)
 
     def flush(self):
-        # This object is not buffered so any :meth:`flush`
-        # requests are ignored.
-        pass
+        if getattr(self._thread, 'recurse_protection', False):
+            return
+
+        buffer = getattr(self._thread, "buffer", "")
+        if buffer:
+            self._thread.recurse_protection = True
+            try:
+                self.logger.log(self.loglevel, buffer)
+                self._thread.buffer = ""
+            finally:
+                self._thread.recurse_protection = False
 
     def close(self):
         # when the object is closed, no write requests are
         # forwarded to the logging object anymore.
         self.closed = True
+        if hasattr(self._thread, "buffer"):
+            self._thread.buffer = ""
 
     def isatty(self):
         """Here for file support."""
