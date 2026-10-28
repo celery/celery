@@ -1,0 +1,30 @@
+# Posts the worker contract's report as one PR comment, for fork PRs too.
+#
+# The Celery workflow's Due-work job renders pytest-obligation's report and uploads its evidence as an
+# artifact; a fork PR's token cannot comment. This workflow runs after it, from the default branch,
+# with a token that can: it downloads that evidence, renders it again with pytest-obligation's own
+# reporter, and updates the comment on the open PR whose head is the run's commit. It never checks out
+# or runs the PR's code.
+name: Contract report
+
+on:
+  workflow_run:
+    workflows: [Celery]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  publish:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read # the triggering run's artifact
+      pull-requests: write # the one report comment
+    concurrency:
+      group: contract-report-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    steps:
+      - uses: gigaverse-app/pytest-obligation/publish@v1 # the same major as report: publish reads the evidence layout report writes
+        with:
+          sticky-key: celery-worker-contract
