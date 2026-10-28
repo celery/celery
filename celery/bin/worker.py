@@ -213,6 +213,12 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Worker Options",
               help="Disable broker prefetching. The worker will only fetch a task when a process slot is available. "
                    "Only supported with Redis brokers.")
+@click.option('--max-idle',
+              type=float,
+              cls=CeleryOption,
+              help_group="Worker Options",
+              help="Shut down the worker after it has been idle for this "
+                   "many seconds.")
 @click.option('-c',
               '--concurrency',
               type=str,
