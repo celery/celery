@@ -1307,7 +1307,7 @@ class basetest_RedisBackend:
                 self.create_task(i, group_id=request.group)
                 for i in range(size)
             ]
-            callback = ms.return_value = Signature('foobarbaz')
+            callback = ms.return_value = Signature('add')
             callback.id = 'id1'
             self.b.set_chord_size(group_id, size)
             callback.delay = Mock(name='callback.delay')
@@ -2391,6 +2391,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
         }
         with self.chord_context(1) as (_, request, callback):
+            callback.task = 'foobarbaz'
             message = self.app.amqp.as_task_v2(uuid(), 'foobarbaz', create_sent_event=False)
             producer = Mock(name='producer')
             producer.connection.recoverable_connection_errors = ()
