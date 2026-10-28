@@ -609,22 +609,31 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     raise
                 else:
                     try:
-                        # callback tasks must be applied before the result is
-                        # stored, so that result.children is populated.
-
+                        # Store SUCCESS before publishing links/chain so a
+                        # pool-child death between the two cannot record
+                        # FAILURE after the link already went out (#10954).
+                        # #10752 then keeps on_failure from overwriting that
+                        # SUCCESS. Children for #1936 are written on the
+                        # second store after callbacks populate the trail.
                         # groups are called inline and will store trail
                         # separately, so need to call them separately
                         # so that the trail's not added multiple times :(
                         # (Issue #1936)
+                        task.backend.mark_as_done(
+                            uuid, retval, task_request, publish_result,
+                        )
                         _dispatch_callbacks_and_chain(
                             retval, task.request.callbacks,
                             task_request.chain,
                             parent_id=uuid, root_id=root_id,
                             priority=task_priority,
                         )
-                        task.backend.mark_as_done(
-                            uuid, retval, task_request, publish_result,
-                        )
+                        if (publish_result
+                                and getattr(task_request, 'children', None)):
+                            # Refresh meta so result.children matches #1936.
+                            task.backend.store_result(
+                                uuid, retval, SUCCESS, request=task_request,
+                            )
                     except EncodeError as exc:
                         I, R, state, retval = on_error(task_request, exc)
                         # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)

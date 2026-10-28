@@ -75,6 +75,48 @@ class test_trace(TraceCase):
         self.trace(add_with_success, (2, 2), {})
         add_with_success.on_success.assert_called()
 
+    def test_trace_stores_success_before_publishing_link(self):
+        # #10954: SUCCESS must be stored before the link is published so a
+        # WorkerLost between the two cannot record FAILURE after the link.
+        order = []
+
+        @self.app.task(shared=False)
+        def add_parent(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def announce(result):
+            return result
+
+        add_parent.backend = Mock(name='backend')
+        add_parent.backend.mark_as_done.side_effect = (
+            lambda *a, **k: order.append('mark_as_done')
+        )
+        add_parent.backend.store_result.side_effect = (
+            lambda *a, **k: order.append('store_result')
+        )
+        add_parent.backend.process_cleanup = Mock()
+
+        real_apply = announce.apply_async
+
+        def tracking_apply(*a, **k):
+            order.append('link')
+            return real_apply(*a, **k)
+
+        announce.apply_async = tracking_apply
+        try:
+            self.trace(
+                add_parent, (2, 2), {},
+                request={'callbacks': [announce.s()]},
+                eager=False,
+            )
+        finally:
+            announce.apply_async = real_apply
+
+        assert order[0] == 'mark_as_done'
+        assert 'link' in order
+        assert order.index('mark_as_done') < order.index('link')
+
     def test_trace_on_success_raises_after_success_was_stored(self):
         @self.app.task(shared=False,
                        on_success=Mock(side_effect=RuntimeError('hook failed')),
