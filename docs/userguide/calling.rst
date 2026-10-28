@@ -850,6 +850,14 @@ setting or by using the ``ignore_result`` option:
   >>> result.get()
   3
 
+.. versionchanged:: 5.7
+
+   :meth:`~@send_task` now correctly respects the task's ``ignore_result``
+   setting when the option is omitted.
+
+   Pass ``ignore_result=False`` explicitly if you need to retrieve the result
+   of a task configured with ``ignore_result=True``.
+
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.
 
