@@ -1,4 +1,5 @@
 """Elasticsearch result store backend."""
+from base64 import b64decode, b64encode
 from datetime import datetime, timezone
 
 from kombu.utils.encoding import bytes_to_str
@@ -20,6 +21,8 @@ except ImportError:
     elastic_transport = None
 
 __all__ = ('ElasticsearchBackend',)
+
+_BINARY_PREFIX = 'celery-binary-base64:'
 
 E_LIB_MISSING = """\
 You need to install the elasticsearch library to use the Elasticsearch \
@@ -230,28 +233,54 @@ class ElasticsearchBackend(KeyValueStoreBackend):
                                                       self.scheme, self.host, self.port)), None)
         return res
 
+    @staticmethod
+    def _encode_binary(payload):
+        if isinstance(payload, bytes):
+            return _BINARY_PREFIX + b64encode(payload).decode('ascii')
+        return payload
+
+    def _decode_binary(self, payload):
+        if (self.content_encoding == 'binary' and
+                isinstance(payload, str) and payload.startswith(_BINARY_PREFIX)):
+            return b64decode(payload[len(_BINARY_PREFIX):])
+        return payload
+
     def encode(self, data):
         if self.es_save_meta_as_text:
-            return super().encode(data)
+            return self._encode_binary(super().encode(data))
         else:
             if not isinstance(data, dict):
-                return super().encode(data)
-            if data.get("result"):
-                data["result"] = self._encode(data["result"])[2]
-            if data.get("traceback"):
-                data["traceback"] = self._encode(data["traceback"])[2]
+                return self._encode_binary(super().encode(data))
+            # Preserve native JSON values, but serialize every non-None
+            # pickle value so falsy results retain their Python types.
+            for key in ('result', 'traceback'):
+                value = data.get(key)
+                if value is not None and (
+                        self.serializer == 'pickle' or value or isinstance(value, bytes)):
+                    data[key] = self._encode_binary(self._encode(value)[2])
+            # Extended metadata can contain binary task arguments, too.
+            if self.content_encoding == 'binary':
+                for key in ('args', 'kwargs'):
+                    if key in data and data[key] is not None:
+                        data[key] = self._encode_binary(self._encode(data[key])[2])
             return data
 
     def decode(self, payload):
         if self.es_save_meta_as_text:
-            return super().decode(payload)
+            return super().decode(self._decode_binary(payload))
         else:
             if not isinstance(payload, dict):
-                return super().decode(payload)
+                return super().decode(self._decode_binary(payload))
             if payload.get("result"):
-                payload["result"] = super().decode(payload["result"])
+                payload["result"] = super().decode(self._decode_binary(payload["result"]))
             if payload.get("traceback"):
-                payload["traceback"] = super().decode(payload["traceback"])
+                payload["traceback"] = super().decode(self._decode_binary(payload["traceback"]))
+            # Keep older, unencoded extended metadata intact.
+            if self.content_encoding == 'binary':
+                for key in ('args', 'kwargs'):
+                    value = payload.get(key)
+                    if isinstance(value, str) and value.startswith(_BINARY_PREFIX):
+                        payload[key] = super().decode(self._decode_binary(value))
             return payload
 
     def mget(self, keys):
