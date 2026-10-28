@@ -4028,6 +4028,10 @@ Send task-related events so that tasks can be monitored using tools like
 `flower`. Sets the default value for the workers
 :option:`-E <celery worker -E>` argument.
 
+A worker that sends task events can be told to stop sending them, and to
+resume, with the ``disable_events`` and ``enable_events`` remote control
+commands, see :ref:`worker-enable-events`.
+
 .. setting:: task_send_sent_event
 
 ``task_send_sent_event``
