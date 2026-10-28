@@ -1307,7 +1307,7 @@ class basetest_RedisBackend:
                 self.create_task(i, group_id=request.group)
                 for i in range(size)
             ]
-            callback = ms.return_value = Signature('add')
+            callback = ms.return_value = Signature('foobarbaz')
             callback.id = 'id1'
             self.b.set_chord_size(group_id, size)
             callback.delay = Mock(name='callback.delay')
@@ -2387,10 +2387,25 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     @pytest.mark.parametrize('ordered', [False, True])
     def test_on_chord_part_return_retries_only_the_body_publish(self, ordered):
         self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
         with self.chord_context(1) as (_, request, callback):
-            callback.delay.side_effect = [OperationalError('refused'), None]
+            message = self.app.amqp.as_task_v2(uuid(), 'foobarbaz', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                self.app.amqp._retry_publish(
+                    lambda: self.app.amqp.send_task_message(
+                        producer, 'foobarbaz', message,
+                    ),
+                )
+
+            callback.delay = Mock(side_effect=delay)
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
-            assert callback.delay.call_args_list == [call([10]), call([10])]
+            assert producer.publish.call_count == 2
             assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
 
     def test_on_chord_part_return__callback_raises(self):

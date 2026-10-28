@@ -12,12 +12,19 @@ from kombu.utils.functional import maybe_list, retry_over_time
 from kombu.utils.objects import cached_property
 
 from celery import signals
+from celery.utils.log import get_logger
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.time import add_seconds_to_datetime, maybe_make_aware
 
 from . import routes as _routes
+
+logger = get_logger(__name__)
+
+# Default cap for worker callback publishes when the policy leaves max_retries
+# unset (None would retry forever in apply_async() on the client).
+_CALLBACK_PUBLISH_MAX_RETRIES = 3
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
@@ -33,10 +40,35 @@ key={0.routing_key}
 task_message = namedtuple('task_message',
                           ('headers', 'properties', 'body', 'sent_event'))
 
-# Set while AMQP._retry_publish applies task_publish_retry_policy.
-# Producer.publish retries connection errors with that same policy, and a
-# publisher nack is reported as a connection error, so the inner retry stays off.
+# Set while AMQP._retry_publish sends a callback, so that each of its
+# messages is retried on its own, waiting as its retry policy says.
 _callback_publish_retry = ContextVar('_callback_publish_retry', default=False)
+
+
+def _publish_retry_errors(retry_policy, connection):
+    retry_errors = retry_policy.get('retry_errors') or ()
+    if retry_errors and not isinstance(retry_errors, tuple):
+        retry_errors = tuple(retry_errors)
+    return (
+        OperationalError,
+        *connection.recoverable_connection_errors,
+        *retry_errors,
+    )
+
+
+def _callback_publish_max_retries(retry_policy, default_policy):
+    max_retries = retry_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if max_retries is not None:
+        return max_retries
+    capped = default_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if capped is None:
+        capped = _CALLBACK_PUBLISH_MAX_RETRIES
+    logger.warning(
+        'task_publish_retry_policy max_retries=None is ignored for worker '
+        'callback publishes; giving up after %s retries instead.',
+        capped,
+    )
+    return capped
 
 
 def utf8dict(d, encoding='utf-8'):
@@ -270,19 +302,12 @@ class AMQP:
         self.app._conf.bind_to(self._handle_conf_update)
 
     def _retry_publish(self, publish, *args, **kwargs):
-        """Retry a refused callback publish without rerunning its parent task."""
-        if not self.app.conf.task_publish_retry or self.app.conf.task_always_eager:
+        """Publish a callback, waiting between its publish retries."""
+        if self.app.conf.task_always_eager:
             return publish(*args, **kwargs)
-        policy = self.app.conf.task_publish_retry_policy
         token = _callback_publish_retry.set(True)
         try:
-            return retry_over_time(
-                publish, (OperationalError,), args=args, kwargs=kwargs,
-                max_retries=policy.get('max_retries', 3),
-                interval_start=policy.get('interval_start', 0),
-                interval_step=policy.get('interval_step', 0.2),
-                interval_max=policy.get('interval_max', 1),
-            )
+            return publish(*args, **kwargs)
         finally:
             _callback_publish_retry.reset(token)
 
@@ -577,10 +602,6 @@ class AMQP:
 
             # merge default and custom policy
             retry = default_retry if retry is None else retry
-            # Callback retries already wrap this publish. Leaving the inner
-            # connection retry on would apply the same policy twice.
-            if _callback_publish_retry.get():
-                retry = False
             _rp = (
                 dict(default_policy, **retry_policy)
                 if retry_policy
@@ -594,8 +615,7 @@ class AMQP:
                     declare=declare, headers=headers2,
                     properties=properties, retry_policy=_rp,
                 )
-            ret = producer.publish(
-                body,
+            publish_kwargs = dict(
                 exchange=exchange,
                 routing_key=routing_key,
                 serializer=serializer or default_serializer,
@@ -606,6 +626,42 @@ class AMQP:
                 timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
+            if retry and _callback_publish_retry.get():
+                # The parent task already ran, so retry only this message,
+                # waiting as the policy says and reconnecting when needed.
+                max_retries = _callback_publish_max_retries(_rp, default_policy)
+                conn = producer.connection
+
+                def on_publish_retry(exc, intervals, retries):
+                    producer.revive(conn)
+                    wait = next(intervals)
+                    logger.warning(
+                        'Retrying refused callback publish for %r '
+                        '(%s/%s, waiting %ss): %r',
+                        name, retries + 1, max_retries, wait, exc,
+                    )
+                    return wait
+
+                try:
+                    ret = retry_over_time(
+                        producer.publish,
+                        _publish_retry_errors(_rp, conn),
+                        args=(body,),
+                        kwargs=dict(publish_kwargs, retry=False),
+                        errback=on_publish_retry,
+                        max_retries=max_retries,
+                        interval_start=_rp.get('interval_start', 0),
+                        interval_step=_rp.get('interval_step', 0.2),
+                        interval_max=_rp.get('interval_max', 1),
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        'Giving up refused callback publish for %r: %r',
+                        name, exc,
+                    )
+                    raise
+            else:
+                ret = producer.publish(body, **publish_kwargs)
             if after_receivers:
                 send_after_publish(sender=name, body=body, headers=headers2,
                                    exchange=exchange, routing_key=routing_key)

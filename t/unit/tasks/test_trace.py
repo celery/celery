@@ -53,22 +53,50 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
+    def _producer_for_publish(self, side_effect):
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = side_effect
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        return producer, patch.object(self.app, 'producer_or_acquire', acquire)
+
     @pytest.mark.parametrize('acks_late', [False, True])
     @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
     @patch('celery.canvas.maybe_signature')
-    def test_refused_publish_retries_without_rerunning_body(self, maybe_signature, dispatch, acks_late):
+    def test_refused_publish_retries_without_rerunning_body(
+        self, maybe_signature, dispatch, acks_late,
+    ):
         self.app.conf.task_publish_retry_policy = {
             'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
         }
         self.add.acks_late = acks_late
-        sig = maybe_signature.return_value
-        sig.apply_async.side_effect = [OperationalError('refused'), None]
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2)
+        maybe_signature.return_value = sig
         request = {dispatch: [sig], 'root_id': 'root'}
-        with patch.object(self.add, 'run', wraps=self.add.run) as run:
-            result, info, _ = self.trace(self.add, (2, 2), {}, request=request, eager=False)
+        producer, acquire = self._producer_for_publish(
+            [OperationalError('refused'), None],
+        )
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request=request, eager=False,
+            )
         assert result == 4
         assert info is None
-        assert sig.apply_async.call_count == 2
+        assert producer.publish.call_count == 2
         run.assert_called_once_with(2, 2)
         assert self.add.backend.get_state('id-1') == states.SUCCESS
 
@@ -80,16 +108,21 @@ class test_trace(TraceCase):
         }
         self.add.acks_late = acks_late
         task_id = uuid()
-        sig = self.add.s().set(task_id=uuid())
-        with patch.object(sig, 'apply_async', side_effect=OperationalError('refused')) as publish, \
-                patch.object(self.add, 'run', wraps=self.add.run) as run, \
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2).set(task_id=uuid())
+        producer, acquire = self._producer_for_publish(OperationalError('refused'))
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run, \
                 patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
             _, info, _ = self.trace(
                 self.add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
                 task_id=task_id, eager=False,
             )
         assert info.state == states.FAILURE
-        assert publish.call_count == 3
+        assert producer.publish.call_count == 3
         run.assert_called_once_with(2, 2)
         internal_error.assert_not_called()
         assert self.add.backend.get_state(task_id) == states.FAILURE

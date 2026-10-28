@@ -372,13 +372,22 @@ Celery will automatically retry sending messages in the event of connection
 failure, and retry behavior can be configured -- like how often to retry, or a maximum
 number of retries -- or disabled all together.
 
-Workers also retry refused callback, chain and chord-body publications using
-:setting:`task_publish_retry` and :setting:`task_publish_retry_policy`.
-These retries wait in the worker and repeat the publication rather than the
-parent task's body. Once the policy is exhausted, the usual failure and errback
-handling applies. Keep the retry limit finite to avoid holding a worker slot
-indefinitely. Retrying a callback group may publish already accepted members
-again, so its tasks must be idempotent.
+Workers also wait between retries when a broker refuses a link, chain step,
+or chord-body publish. Each refused message is retried on its own using
+:setting:`task_publish_retry` and :setting:`task_publish_retry_policy`, or the
+``retry`` / ``retry_policy`` options on that callback signature. The worker
+repeats the publication rather than the parent task's body, and the pool slot
+(or the whole solo worker) stays busy until the policy gives up or the broker
+accepts the message. With the default policy, retries stop after about 0.6 s.
+Once the policy is exhausted, the task fails through the normal failure and
+errback handling (including for :meth:`~celery.app.task.Task.apply`).
+
+.. versionchanged:: 5.7
+
+    Refused callback publishes are retried per message with the callback's own
+    ``retry`` / ``retry_policy`` options. An unbounded ``max_retries`` policy
+    is capped on workers so a permanently refused callback cannot hold a worker
+    slot forever.
 
 To disable retry you can set the ``retry`` execution option to :const:`False`:
 

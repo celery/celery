@@ -206,6 +206,33 @@ def test_transient_callback_refusal(callback_app, tmp_path, kind):
 @pytest.mark.timeout(180)
 @pytest.mark.parametrize('acks_late', [False, True])
 @pytest.mark.parametrize('kind', ['link', 'chain', 'chord'])
+def test_callback_refused_briefly_is_published_once_accepted(callback_app, tmp_path, kind):
+    app = callback_app
+    _skip_unless_header_publishes_chord_body(app, kind)
+    app.conf.task_publish_retry_policy = {
+        'max_retries': 2, 'interval_start': 1, 'interval_step': 0, 'interval_max': 1,
+    }
+    blocked = app.amqp.queues[app.conf.task_routes['callback_retry.body']['queue']]
+    with _worker(app, app.conf.task_default_queue):
+        parent, result = _submit(app, kind)
+        _wait_for_lines(tmp_path / 'parent', 1)
+        sleep(0.5)
+        with app.connection_for_write() as connection:
+            filler = blocked(connection).get(no_ack=False)
+            assert filler.payload == 'filler'
+            filler.ack()
+        with allow_join_result():
+            assert parent.get(timeout=30) == 4
+    with _worker(app, blocked.name):
+        with allow_join_result():
+            assert result.get(timeout=30) == _expected(kind)
+    assert (tmp_path / 'parent').read_text().splitlines() == ['run']
+    assert not (tmp_path / 'errback').exists()
+
+
+@pytest.mark.timeout(180)
+@pytest.mark.parametrize('acks_late', [False, True])
+@pytest.mark.parametrize('kind', ['link', 'chain', 'chord'])
 def test_exhausted_callback_refusal(callback_app, tmp_path, kind):
     app = callback_app
     _skip_unless_header_publishes_chord_body(app, kind)

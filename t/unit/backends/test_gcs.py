@@ -5,6 +5,7 @@ import pytest
 from google.cloud.exceptions import NotFound
 from kombu.exceptions import OperationalError
 
+from celery import uuid
 from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -396,8 +397,21 @@ class test_GCSBackend:
             'result2',
         ]
         mock_maybe_signature.return_value = MagicMock()
+        mock_maybe_signature.return_value.id = 'callback-id'
         if refused:
-            mock_maybe_signature.return_value.delay.side_effect = [OperationalError('refused'), None]
+            message = self.app.amqp.as_task_v2(uuid(), 'callback', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                self.app.amqp._retry_publish(
+                    lambda: self.app.amqp.send_task_message(
+                        producer, 'callback', message,
+                    ),
+                )
+
+            mock_maybe_signature.return_value.delay.side_effect = delay
 
         b = GCSBackend(app=self.app)
         b.on_chord_part_return(request, state, result)
@@ -412,10 +426,10 @@ class test_GCSBackend:
             timeout=self.app.conf.result_chord_join_timeout,
             propagate=True,
         )
-        mock_maybe_signature.return_value.delay.assert_called_with(
+        assert mock_maybe_signature.return_value.delay.call_count == 1
+        assert mock_maybe_signature.return_value.delay.call_args == call(
             ['result1', 'result2']
         )
-        assert mock_maybe_signature.return_value.delay.call_count == (2 if refused else 1)
         mock_delete_chord_key.assert_called_once_with(group_key)
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')

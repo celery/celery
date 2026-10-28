@@ -137,16 +137,35 @@ class test_unlock_chord_task(ChordCase):
             assert isinstance(fail.call_args[1]['exc'], ChordError)
 
     def test_callback_publish_retry_keeps_the_ready_header(self):
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
         class AlwaysReady(TSR):
             value = [2, 4]
 
-        def setup(callback):
-            callback.apply_async.side_effect = [OperationalError('refused'), None]
+        from celery.app.task import Task
 
-        with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
-            assert cb.type.apply_async.call_count == 2
-            retry.assert_not_called()
-            fail.assert_not_called()
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = [OperationalError('refused'), None]
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+
+        def setup(callback):
+            callback.apply_async = Task.apply_async.__get__(
+                callback, callback.__class__,
+            )
+
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        with patch.object(self.app, 'producer_or_acquire', acquire):
+            with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
+                assert producer.publish.call_count == 2
+                retry.assert_not_called()
+                fail.assert_not_called()
 
     def test_unlock_ready_failed(self):
 
