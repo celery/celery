@@ -540,9 +540,7 @@ class AMQP:
         default_delivery_mode = self.app.conf.task_default_delivery_mode
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
-        before_receivers = signals.before_task_publish.receivers
         send_after_publish = signals.after_task_publish.send
-        after_receivers = signals.after_task_publish.receivers
 
         send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
         sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
@@ -608,13 +606,12 @@ class AMQP:
                 else dict(default_policy)
             )
 
-            if before_receivers:
-                send_before_publish(
-                    sender=name, body=body,
-                    exchange=exchange, routing_key=routing_key,
-                    declare=declare, headers=headers2,
-                    properties=properties, retry_policy=_rp,
-                )
+            send_before_publish(
+                sender=name, body=body,
+                exchange=exchange, routing_key=routing_key,
+                declare=declare, headers=headers2,
+                properties=properties, retry_policy=_rp,
+            )
             publish_kwargs = dict(
                 exchange=exchange,
                 routing_key=routing_key,
@@ -662,9 +659,10 @@ class AMQP:
                     raise
             else:
                 ret = producer.publish(body, **publish_kwargs)
-            if after_receivers:
-                send_after_publish(sender=name, body=body, headers=headers2,
-                                   exchange=exchange, routing_key=routing_key)
+            send_after_publish(
+                sender=name, body=body, headers=headers2,
+                exchange=exchange, routing_key=routing_key,
+            )
             if sent_receivers:  # XXX deprecated
                 if isinstance(body, tuple):  # protocol version 2
                     send_task_sent(
