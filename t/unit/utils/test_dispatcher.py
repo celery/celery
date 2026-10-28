@@ -2,6 +2,8 @@ import gc
 import sys
 import time
 
+import pytest
+
 from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
@@ -78,6 +80,23 @@ class test_Signal:
         result = a_signal.send(sender=self, val='test')
         assert result == expected
         self._testIsClean(a_signal)
+
+    @pytest.mark.parametrize('disconnect', [False, True])
+    def test_dead_receiver_cleanup_preserves_list_identity(self, disconnect):
+        signal = Signal()
+        receivers = signal.receivers
+        receiver = Callable()
+        signal.connect(receiver, sender=self)
+        if disconnect:
+            signal.disconnect(receiver, sender=self)
+        del receiver
+        garbage_collect()
+
+        signal.connect(receiver_1_arg, sender=self, weak=False)
+
+        assert signal.receivers is receivers
+        assert len(receivers) == 1
+        assert signal.send(sender=self, val='test') == [(receiver_1_arg, 'test')]
 
     def test_multiple_registration(self):
         a = Callable()
