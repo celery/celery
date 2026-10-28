@@ -1381,7 +1381,7 @@ class test_BaseBackend_dict:
         frozen_group.revoke = Mock()
         return frozen_group
 
-    def _setup_group_chord_error_test(self, exc=None, errbacks=None, task_ids=None):
+    def _setup_group_chord_error_test(self, exc=None, errbacks=None, task_ids=None, task_errbacks=None):
         """Common setup for group chord error tests."""
         if exc is None:
             exc = ValueError("test error")
@@ -1389,6 +1389,8 @@ class test_BaseBackend_dict:
             errbacks = []
         if task_ids is None:
             task_ids = ["task-id-1"]
+        if task_errbacks is None:
+            task_errbacks = [[] for _ in task_ids]
 
         backend = Mock()
         backend._call_task_errbacks = Mock()
@@ -1397,6 +1399,11 @@ class test_BaseBackend_dict:
 
         group_callback = Mock(spec=group)
         group_callback.options = {"link_error": errbacks}
+        # The tasks of a frozen group carry the ids of their results
+        group_callback.tasks = [
+            signature("test.task", options={"task_id": task_id, "link_error": task_eb})
+            for task_id, task_eb in zip(task_ids, task_errbacks)
+        ]
 
         frozen_group = self._create_mock_frozen_group(task_ids=task_ids)
         group_callback.freeze.return_value = frozen_group
@@ -1479,6 +1486,89 @@ class test_BaseBackend_dict:
         assert fake_request.errbacks == errbacks
         assert fake_request.task == "test.task"
 
+    def test_handle_group_chord_error_calls_errbacks_of_each_task(self):
+        """Each task calls its own errbacks, as chord.link_error() links them, then the group's."""
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(
+            errbacks=["group-eb", "shared-eb"],
+            task_ids=["task-id-1", "task-id-2"],
+            task_errbacks=[["own-eb", "shared-eb"], []],
+        )
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        errbacks = {
+            c[0][0].id: c[0][0].errbacks
+            for c in backend._call_task_errbacks.call_args_list
+        }
+        assert errbacks == {
+            "task-id-1": ["own-eb", "shared-eb", "group-eb"],
+            "task-id-2": ["group-eb", "shared-eb"],
+        }
+
+    def test_handle_group_chord_error_errbacks_given_as_a_signature(self):
+        """A link_error option can be one signature rather than a list."""
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(
+            errbacks=signature("group.eb"),
+            task_ids=["task-id-1", "task-id-2"],
+            task_errbacks=[signature("own.eb"), []],
+        )
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        errbacks = {
+            c[0][0].id: c[0][0].errbacks
+            for c in backend._call_task_errbacks.call_args_list
+        }
+        assert errbacks == {
+            "task-id-1": [signature("own.eb"), signature("group.eb")],
+            "task-id-2": [signature("group.eb")],
+        }
+
+    def test_handle_group_chord_error_calls_errbacks_of_chord_in_group(self):
+        """The result of a chord in the group is that of its body, which has its errbacks."""
+        eb, own = signature("eb"), signature("own")
+        group_callback = group(
+            chord([signature("header")], signature("body", link_error=[eb])),
+            chord([signature("header")], group(
+                signature("body", link_error=[own, eb]),
+                signature("body", link_error=[eb]),
+            )).set(link_error=[signature("chord.eb")]),
+            chord([signature("header")], chord(
+                [signature("header")], signature("body", link_error=[eb]))),
+            signature("task", link_error=[eb]),
+            app=self.app,
+        )
+        backend = Mock()
+
+        with patch.object(GroupResult, "revoke"):
+            self.b._handle_group_chord_error(group_callback, backend, ValueError())
+
+        calls = [c[0][0] for c in backend._call_task_errbacks.call_args_list]
+        member, group_member, chord_member, task = group_callback.tasks
+        assert [request.id for request in calls] == [
+            member.body.id, group_member.body.id, chord_member.body.body.id, task.id]
+        # Each errback once for each result
+        assert [request.errbacks for request in calls] == [
+            [eb], [signature("chord.eb"), own, eb], [eb], [eb]]
+
+    def test_handle_group_chord_error_chord_without_body_in_group(self):
+        """A chord without a body in the group doesn't stop the other tasks' errbacks."""
+        b, backend, group_callback, frozen_group, exc = self._setup_group_chord_error_test(
+            task_ids=["task-id-1", "task-id-2"],
+        )
+        group_callback.tasks = [
+            chord([signature("header")]),
+            signature("task", task_id="task-id-2", link_error=["own-eb"]),
+        ]
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        errbacks = {
+            c[0][0].id: c[0][0].errbacks
+            for c in backend._call_task_errbacks.call_args_list
+        }
+        assert errbacks == {"task-id-1": [], "task-id-2": ["own-eb"]}
+
     def test_handle_group_chord_error_cleanup_exception_handling(self):
         """Test _handle_group_chord_error handles cleanup exceptions gracefully."""
         b = self.b
@@ -1507,6 +1597,10 @@ class test_BaseBackend_dict:
         # Mock group callback
         group_callback = Mock(spec=group)
         group_callback.options = {"link_error": []}
+        group_callback.tasks = [
+            signature("test.task", options={"task_id": task_id})
+            for task_id in ("task-id-1", "task-id-2")
+        ]
 
         # Mock frozen group with multiple results
         mock_result1 = Mock()

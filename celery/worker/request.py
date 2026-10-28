@@ -488,7 +488,9 @@ class Request:
             for stamp in self.stamped_headers:
                 if stamp in revoked_stamps:
                     revoked_header = revoked_stamps[stamp]
-                    stamped_header = self._message.headers['stamps'][stamp]
+                    stamped_header = self.stamps.get(stamp)
+                    if stamped_header is None:
+                        continue
 
                     if isinstance(stamped_header, (list, tuple)):
                         for stamped_value in stamped_header:
@@ -502,7 +504,8 @@ class Request:
                             stamped_header == revoked_header,  # When the header is a single set value
                         ])
                         revoking_header = {stamp: stamped_header}
-                    break
+                    if revoked_by_header:
+                        break
 
         if any((expired, revoked_by_id, revoked_by_header)):
             log_msg = 'Discarding revoked task: %s[%s]'
