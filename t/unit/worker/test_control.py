@@ -1191,3 +1191,8 @@ class test_ControlPanel:
         assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
 
         worker_state.active_requests.clear()
+
+    def test_rate_limit_invalid(self):
+        r = self.panel.handle('rate_limit', arguments={
+            'task_name': self.mytask.name, 'rate_limit': '10/x'})
+        assert 'Invalid rate limit string' in r.get('error')

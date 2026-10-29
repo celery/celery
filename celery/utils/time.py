@@ -312,6 +312,8 @@ def rate(r: str) -> float:
     if r:
         if isinstance(r, str):
             ops, _, modifier = r.partition('/')
+            if modifier and modifier not in RATE_MODIFIER_MAP:
+                raise ValueError("Invalid unit. Valid units are: s, m, h")
             return RATE_MODIFIER_MAP[modifier or 's'](float(ops)) or 0
         return r or 0
     return 0

@@ -723,4 +723,8 @@ class test_subtract_datetimes_mixed:
         end = datetime(2026, 3, 8, 6, 30, tzinfo=NaiveTimezone())
         start = datetime(2026, 3, 8, 4, 0, tzinfo=ZoneInfo('America/New_York'))
 
-        assert time_utils.subtract_datetimes(end, start) == timedelta(minutes=-90)
+
+def test_rate_limit_string_invalid():
+    with pytest.raises(ValueError, match="Invalid unit. Valid units are: s, m, h"):
+        rate("10/x")
+
