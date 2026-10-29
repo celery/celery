@@ -1139,32 +1139,56 @@ def test_check_privileges_without_c_force_root_and_with_suspicious_group(
 
 
 @fails_on_win32
-@pytest.mark.parametrize('accept_content', [
-    {'pickle'},
-    {'application/group-python-serialize'},
-    {'pickle', 'application/group-python-serialize'}
+@pytest.mark.parametrize(('accept_content', 'force_root'), [
+    ({'json'}, False),
+    ({'json'}, True),
+    ({'pickle'}, True),
+    ({'application/group-python-serialize'}, True),
+    ({'pickle', 'application/group-python-serialize'}, True),
 ])
+@pytest.mark.parametrize('missing_entry', [0, 1])
 @patch('celery.platforms.os')
 @patch('celery.platforms.grp')
-def test_check_privileges_with_c_force_root_and_no_group_entry(
-    grp_module, os_module, accept_content, recwarn
+def test_check_privileges_non_root_with_no_group_entry(
+    grp_module, os_module, accept_content, force_root, missing_entry, recwarn
 ):
-    os_module.environ = {'C_FORCE_ROOT': 'true'}
+    os_module.environ = {'C_FORCE_ROOT': 'true'} if force_root else {}
     os_module.getuid.return_value = 60
     os_module.getgid.return_value = 60
     os_module.geteuid.return_value = 60
-    os_module.getegid.return_value = 60
+    os_module.getegid.return_value = 61
 
-    grp_module.getgrgid.side_effect = KeyError
-
-    expected_message = ROOT_DISCOURAGED.format(uid=60, euid=60,
-                                               gid=60, egid=60)
+    grp_module.getgrgid.side_effect = [('users',)] * missing_entry + [KeyError()]
 
     check_privileges(accept_content)
-    assert len(recwarn) == 2
+    assert len(recwarn) == 1
 
     assert recwarn[0].message.args[0] == ASSUMING_ROOT
-    assert recwarn[1].message.args[0] == expected_message
+    assert recwarn[0].category is SecurityWarning
+
+
+@fails_on_win32
+@pytest.mark.parametrize(('uid', 'euid'), [(0, 60), (60, 0)])
+@pytest.mark.parametrize('missing_entry', [0, 1])
+@patch('celery.platforms.os')
+@patch('celery.platforms.grp')
+def test_check_privileges_root_with_no_group_entry(
+    grp_module, os_module, uid, euid, missing_entry, recwarn
+):
+    os_module.environ = {}
+    os_module.getuid.return_value = uid
+    os_module.getgid.return_value = 60
+    os_module.geteuid.return_value = euid
+    os_module.getegid.return_value = 61
+    grp_module.getgrgid.side_effect = [('users',)] * missing_entry + [KeyError()]
+
+    check_privileges({'json'})
+
+    assert len(recwarn) == 2
+    assert recwarn[0].message.args[0] == ASSUMING_ROOT
+    assert recwarn[1].message.args[0] == ROOT_DISCOURAGED.format(
+        uid=uid, euid=euid, gid=60, egid=61,
+    )
 
 
 @fails_on_win32
@@ -1173,21 +1197,22 @@ def test_check_privileges_with_c_force_root_and_no_group_entry(
     {'application/group-python-serialize'},
     {'pickle', 'application/group-python-serialize'}
 ])
+@pytest.mark.parametrize('missing_entry', [0, 1])
 @patch('celery.platforms.os')
 @patch('celery.platforms.grp')
 def test_check_privileges_without_c_force_root_and_no_group_entry(
-    grp_module, os_module, accept_content, recwarn
+    grp_module, os_module, accept_content, missing_entry, recwarn
 ):
     os_module.environ = {}
     os_module.getuid.return_value = 60
     os_module.getgid.return_value = 60
     os_module.geteuid.return_value = 60
-    os_module.getegid.return_value = 60
+    os_module.getegid.return_value = 61
 
-    grp_module.getgrgid.side_effect = KeyError
+    grp_module.getgrgid.side_effect = [('users',)] * missing_entry + [KeyError()]
 
     expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
-                                                        gid=60, egid=60))
+                                                        gid=60, egid=61))
     with pytest.raises(SecurityError,
                        match=expected_message):
         check_privileges(accept_content)

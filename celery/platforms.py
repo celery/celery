@@ -874,7 +874,8 @@ def check_privileges(accept_content):
     except KeyError:
         warnings.warn(SecurityWarning(ASSUMING_ROOT), stacklevel=2)
         _warn_or_raise_security_error(egid, euid, gid, uid,
-                                      pickle_or_serialize)
+                                      pickle_or_serialize,
+                                      warn_root=uid == 0 or euid == 0)
         return
 
     # Get the group and effective group name based on gid
@@ -894,13 +895,17 @@ def check_privileges(accept_content):
                                       pickle_or_serialize)
 
 
-def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize):
+def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize,
+                                  *, warn_root=True):
     c_force_root = os.environ.get('C_FORCE_ROOT', False)
 
     if pickle_or_serialize and not c_force_root:
         raise SecurityError(ROOT_DISALLOWED.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         ))
+
+    if not warn_root:
+        return
 
     warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
         uid=uid, euid=euid, gid=gid, egid=egid,
