@@ -1198,24 +1198,34 @@ def test_check_privileges_root_with_no_group_entry(
     {'pickle', 'application/group-python-serialize'}
 ])
 @pytest.mark.parametrize('missing_entry', [0, 1])
+@pytest.mark.parametrize(('uid', 'euid'), [(60, 60), (0, 60), (60, 0)])
 @patch('celery.platforms.os')
 @patch('celery.platforms.grp')
 def test_check_privileges_without_c_force_root_and_no_group_entry(
-    grp_module, os_module, accept_content, missing_entry, recwarn
+    grp_module, os_module, accept_content, missing_entry, uid, euid, recwarn
 ):
     os_module.environ = {}
-    os_module.getuid.return_value = 60
+    os_module.getuid.return_value = uid
     os_module.getgid.return_value = 60
-    os_module.geteuid.return_value = 60
+    os_module.geteuid.return_value = euid
     os_module.getegid.return_value = 61
 
     grp_module.getgrgid.side_effect = [('users',)] * missing_entry + [KeyError()]
 
-    expected_message = re.escape(ROOT_DISALLOWED.format(uid=60, euid=60,
-                                                        gid=60, egid=61))
+    expected_message = (
+        re.escape(ROOT_DISALLOWED.format(uid=uid, euid=euid, gid=60, egid=61))
+        if uid == 0 or euid == 0 else 'group database'
+    )
     with pytest.raises(SecurityError,
-                       match=expected_message):
+                       match=expected_message) as exc_info:
         check_privileges(accept_content)
+
+    if uid != 0 and euid != 0:
+        message = str(exc_info.value)
+        assert 'treated as privileged' in message
+        assert 'superuser privileges' not in message
+        assert 'C_FORCE_ROOT' in message
+        assert f'uid={uid} euid={euid} gid=60 egid=61' in message
 
     assert recwarn[0].message.args[0] == ASSUMING_ROOT
 
