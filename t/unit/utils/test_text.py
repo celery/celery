@@ -64,7 +64,10 @@ def test_truncate_text(s, maxsize, expected):
     (('ABCDEFGHI', 6), 'ABC...'),
     (('ABCDEFGHI', 20), 'ABCDEFGHI'),
     (('ABCDEFGHI', 6, None), 'ABCDEF'),
-])
+    (('abcdefgh', 2), 'ab'),
+    (('abcdefgh', 3), '...'),
+    (('abcdefgh', 1), 'a'),
+    (('abcdefgh', 0), ''),])
 def test_abbr(args, expected):
     assert abbr(*args) == expected
 
