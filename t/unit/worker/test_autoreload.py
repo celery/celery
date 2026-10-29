@@ -173,9 +173,12 @@ class test_Autoreloader:
         ])
 
     def test_does_not_restart_if_any_changed_file_is_broken(self, tmp_path):
-        good, bad = str(tmp_path / 'good.py'), str(tmp_path / 'bad.py')
-        open(good, 'w').write('X = 1\n')
-        open(bad, 'w').write('def broken(:\n')
+        good_path, bad_path = tmp_path / 'good.py', tmp_path / 'bad.py'
+        # write_text() closes the file: an unclosed write isn't flushed yet
+        # on PyPy, and an empty file compiles.
+        good_path.write_text('X = 1\n')
+        bad_path.write_text('def broken(:\n')
+        good, bad = str(good_path), str(bad_path)
         on_change = Mock()
         reloader = Autoreloader(on_change, interval=0.01)
         reloader._mtimes['/seen.py'] = 1  # skip the baseline scan
@@ -188,7 +191,7 @@ class test_Autoreloader:
         time.sleep(0.2)
         on_change.assert_not_called()
         assert reloader._broken == {bad}
-        open(bad, 'w').write('X = 2\n')
+        bad_path.write_text('X = 2\n')
         scans.append([bad])
         reloader.join(timeout=5)
         assert not reloader.is_alive()
