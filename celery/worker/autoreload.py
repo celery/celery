@@ -43,8 +43,8 @@ class Autoreloader(threading.Thread):
     """Poll modules' mtimes and call ``on_change(path)`` when one changes.
 
     Arguments:
-        on_change (Callable): Called once, with the path of the first
-            modified file found.
+        on_change (Callable): Called once, with the path of a modified
+            file, when every modified file compiles.
         interval (float): Seconds between two scans.
     """
 
@@ -58,6 +58,9 @@ class Autoreloader(threading.Thread):
                          os.path.realpath(os.path.expanduser('~'))}
         self._mtimes = {}
         self._resolved = {}
+        # files that changed but don't compile, re-checked on every change.
+        self._broken = set()
+        self._last_error = None
         self._stopped = threading.Event()
 
     def _resolve(self, filename):
@@ -127,10 +130,11 @@ class Autoreloader(threading.Thread):
         return files
 
     def find_changes(self):
-        """Return the first changed file since the previous call, if any.
+        """Return the files changed since the previous call.
 
         Files seen for the first time are only recorded.
         """
+        changed = []
         for filename in self.project_files():
             try:
                 mtime = os.stat(filename).st_mtime
@@ -141,38 +145,60 @@ class Autoreloader(threading.Thread):
             previous = self._mtimes.setdefault(filename, mtime)
             if mtime != previous:
                 self._mtimes[filename] = mtime
-                return filename
+                changed.append(filename)
+        return changed
+
+    def _scan(self):
+        try:
+            changed = self.find_changes()
+        except Exception as exc:  # pylint: disable=broad-except
+            # only log a traceback once, not on every interval.
+            if repr(exc) != self._last_error:
+                self._last_error = repr(exc)
+                logger.exception('Autoreload scan failed: %r', exc)
+            return []
+        self._last_error = None
+        return changed
 
     def run(self):
         if not self._mtimes:
-            self.find_changes()  # baseline
+            self._scan()  # baseline
         while not self._stopped.wait(self.interval):
-            try:
-                changed = self.find_changes()
-            except Exception as exc:  # pylint: disable=broad-except
-                logger.exception('Autoreload scan failed: %r', exc)
-                continue
+            changed = self._scan()
             if not changed:
                 continue
-            error = self._check_source(changed)
-            if error:
+            # a file saved broken earlier would still crash the new process.
+            errors = {}
+            for filename in sorted(set(changed) | self._broken):
+                error = self._check_source(filename)
+                if error:
+                    errors[filename] = error
+            self._broken = set(errors)
+            if errors:
                 # restarting would only crash on import and leave nothing
                 # watching, so wait for the next save instead.
-                logger.warning(
-                    'Detected change in %s but not restarting: %s',
-                    changed, error)
+                for filename, error in errors.items():
+                    logger.warning(
+                        "Not restarting, %s doesn't compile: %s",
+                        filename, error)
                 continue
-            logger.info('Detected change in %s, restarting...', changed)
-            self.on_change(changed)
+            if self._stopped.is_set():
+                return
+            logger.info('Detected change in %s', ', '.join(sorted(changed)))
+            self.on_change(changed[0])
             return
 
     @staticmethod
     def _check_source(filename):
-        """Return why ``filename`` can't be imported right now, if so."""
+        """Return why ``filename`` doesn't compile, if it doesn't."""
         try:
             with open(filename, 'rb') as f:
-                compile(f.read(), filename, 'exec', dont_inherit=True)
-        except (SyntaxError, ValueError, OSError) as exc:
+                source = f.read()
+        except OSError:
+            return None  # gone, nothing left to break the import.
+        try:
+            compile(source, filename, 'exec', dont_inherit=True)
+        except (SyntaxError, ValueError) as exc:
             return exc
 
     def stop(self):

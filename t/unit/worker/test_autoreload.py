@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -37,17 +37,17 @@ class test_Autoreloader:
 
     def test_detects_change_in_dependency(self, project_module):
         reloader = Autoreloader(Mock())
-        assert reloader.find_changes() is None  # baseline
-        assert reloader.find_changes() is None
+        assert reloader.find_changes() == []  # baseline
+        assert reloader.find_changes() == []
         touch(project_module)
-        assert reloader.find_changes() == os.path.realpath(project_module)
-        assert reloader.find_changes() is None
+        assert reloader.find_changes() == [os.path.realpath(project_module)]
+        assert reloader.find_changes() == []
 
     def test_deleted_file_is_ignored(self, project_module):
         reloader = Autoreloader(Mock())
         reloader.find_changes()
         project_module.unlink()
-        assert reloader.find_changes() is None
+        assert reloader.find_changes() == []
 
     def test_run_calls_on_change_once(self, project_module):
         on_change = Mock()
@@ -59,11 +59,11 @@ class test_Autoreloader:
         assert not reloader.is_alive()
         on_change.assert_called_once_with(os.path.realpath(project_module))
 
-    @pytest.mark.parametrize('first_scan', [None, OSError('boom')])
+    @pytest.mark.parametrize('first_scan', [[], OSError('boom')])
     def test_run_keeps_scanning_until_a_change(self, first_scan):
         on_change = Mock()
         reloader = Autoreloader(on_change, interval=0.01)
-        reloader.find_changes = Mock(side_effect=[first_scan, '/mod.py'])
+        reloader.find_changes = Mock(side_effect=[first_scan, ['/mod.py']])
         reloader._check_source = Mock(return_value=None)
         reloader._mtimes['/seen.py'] = 1  # skip the baseline scan
         reloader.start()
@@ -89,8 +89,8 @@ class test_Autoreloader:
         reloader = Autoreloader(Mock())
         reloader.find_changes()
         touch(lazy)
-        assert reloader.find_changes() == os.path.join(
-            os.path.realpath(lazy.parent), lazy.name)
+        assert reloader.find_changes() == [os.path.join(
+            os.path.realpath(lazy.parent), lazy.name)]
 
     def test_skips_hidden_cache_and_virtualenv_dirs(self, project_module):
         pkg = project_module.parent
@@ -131,8 +131,7 @@ class test_Autoreloader:
         bad.write_text('def broken(:\n')
         assert Autoreloader._check_source(str(good)) is None
         assert isinstance(Autoreloader._check_source(str(bad)), SyntaxError)
-        assert isinstance(
-            Autoreloader._check_source(str(tmp_path / 'gone.py')), OSError)
+        assert Autoreloader._check_source(str(tmp_path / 'gone.py')) is None
 
     def test_does_not_restart_on_syntax_error(self, project_module):
         on_change = Mock()
@@ -150,6 +149,82 @@ class test_Autoreloader:
         reloader.join(timeout=5)
         assert not reloader.is_alive()
         on_change.assert_called_once_with(os.path.realpath(project_module))
+
+    def test_reports_every_changed_file(self, project_module):
+        other = project_module.parent / 'other.py'
+        other.write_text('X = 1\n')
+        reloader = Autoreloader(Mock())
+        reloader.find_changes()
+        touch(project_module)
+        touch(other)
+        assert sorted(reloader.find_changes()) == sorted([
+            os.path.realpath(project_module),
+            os.path.join(os.path.realpath(other.parent), other.name),
+        ])
+
+    def test_does_not_restart_if_any_changed_file_is_broken(self, tmp_path):
+        good, bad = str(tmp_path / 'good.py'), str(tmp_path / 'bad.py')
+        open(good, 'w').write('X = 1\n')
+        open(bad, 'w').write('def broken(:\n')
+        on_change = Mock()
+        reloader = Autoreloader(on_change, interval=0.01)
+        reloader._mtimes['/seen.py'] = 1  # skip the baseline scan
+        # both change together, then only the good one changes again: the
+        # bad one must still block the restart until it's fixed.
+        scans = [[good, bad], [good], [bad]]
+        reloader.find_changes = Mock(
+            side_effect=lambda: scans.pop(0) if scans else [])
+        reloader.start()
+        time.sleep(0.2)
+        on_change.assert_not_called()
+        assert reloader._broken == {bad}
+        open(bad, 'w').write('X = 2\n')
+        scans.append([bad])
+        reloader.join(timeout=5)
+        assert not reloader.is_alive()
+        on_change.assert_called_once_with(bad)
+
+    def test_baseline_scan_error_does_not_kill_the_thread(self):
+        on_change = Mock()
+        reloader = Autoreloader(on_change, interval=0.01)
+        reloader.find_changes = Mock(
+            side_effect=[TypeError('bad __file__'), [], ['/mod.py']])
+        reloader._check_source = Mock(return_value=None)
+        reloader.start()
+        reloader.join(timeout=5)
+        on_change.assert_called_once_with('/mod.py')
+
+    def test_repeated_scan_error_is_logged_once(self):
+        reloader = Autoreloader(Mock())
+        reloader.find_changes = Mock(side_effect=OSError('boom'))
+        with patch('celery.worker.autoreload.logger') as logger:
+            for _ in range(3):
+                assert reloader._scan() == []
+            assert logger.exception.call_count == 1
+            reloader.find_changes = Mock(return_value=[])
+            reloader._scan()
+            reloader.find_changes = Mock(side_effect=OSError('boom'))
+            reloader._scan()
+            assert logger.exception.call_count == 2
+
+    def test_no_restart_once_stopped(self):
+        on_change = Mock()
+        reloader = Autoreloader(on_change, interval=0.01)
+        reloader._mtimes['/seen.py'] = 1  # skip the baseline scan
+
+        scans = iter([[], ['/mod.py']])
+
+        def scan():
+            changed = next(scans)
+            if changed:
+                reloader.stop()  # shutdown starts while scanning
+            return changed
+        reloader.find_changes = Mock(side_effect=scan)
+        reloader._check_source = Mock(return_value=None)
+        # the stop event is only checked between scans, so call run() here.
+        reloader._stopped.wait = Mock(return_value=False)
+        reloader.run()
+        on_change.assert_not_called()
 
     def test_stop(self):
         reloader = Autoreloader(Mock(), interval=0.01)

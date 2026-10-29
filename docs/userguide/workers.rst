@@ -360,14 +360,15 @@ runs in a child process) is picked up too.  Hidden directories,
 modules in the standard library and in ``site-packages``.  The files are
 polled once per second, so no file descriptor is held open per module.
 
-If the modified file has a syntax error the worker isn't restarted, and a
-warning is logged instead: it restarts on the next save.  Other errors, such
+If a modified file has a syntax error the worker isn't restarted, and a
+warning is logged instead: it restarts once every modified file compiles.  Other errors, such
 as an exception raised when the module is imported, aren't detected, and will
 make the worker exit.
 
 The worker restarts the same way as for :sig:`HUP`, so tasks that
 are running are given the chance to finish first, and the option isn't
-supported on macOS.  The watcher runs in a thread of the main process, so with
+supported on macOS or Windows.  A change saved while the worker is shutting
+down doesn't turn the shutdown into a restart.  The watcher runs in a thread of the main process, so with
 the prefork pool the children are forked while it's running (Python 3.12+ may
 warn about this with ``-W default``).  It has been tested with the ``prefork``,
 ``solo``, ``threads``, ``gevent`` and ``eventlet`` pools.  This is meant for

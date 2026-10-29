@@ -100,6 +100,8 @@ def safe_say(msg, f=sys.__stderr__):
 class Worker(WorkController):
     """Worker as a program."""
 
+    _autoreloader = None
+
     def on_before_init(self, quiet=False, **kwargs):
         self.quiet = quiet
         trace.setup_worker_optimizations(self.app, self.hostname)
@@ -178,11 +180,32 @@ class Worker(WorkController):
 
     def start_autoreloader(self):
         from celery.worker.autoreload import Autoreloader
-        if self.app.IS_macOS:
-            # same limitation as SIGHUP: can't exec from a threaded process.
-            logger.warning('--autoreload is not supported on macOS.')
+
+        # Same limitations as restarting with SIGHUP: macOS can't exec from a
+        # threaded process, and Windows has no exec that keeps the process.
+        if self.app.IS_macOS or self.app.IS_WINDOWS:
+            logger.warning('--autoreload is not supported on %s.',
+                           'macOS' if self.app.IS_macOS else 'Windows')
             return
-        Autoreloader(lambda path: restart_worker()).start()
+        self._autoreloader = Autoreloader(self._on_autoreload)
+        self._autoreloader.start()
+
+    def _on_autoreload(self, path):
+        from celery.worker import state
+
+        # a change saved during a shutdown must not turn it into a restart.
+        # on_close() is too late to prevent this: a warm shutdown only closes
+        # the blueprint once the running tasks are done.
+        if state.should_stop is not None or \
+                state.should_terminate is not None:
+            logger.info('Not restarting: the worker is shutting down.')
+            return
+        restart_worker()
+
+    def on_close(self):
+        if self._autoreloader is not None:
+            self._autoreloader.stop()
+        super().on_close()
 
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
