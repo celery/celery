@@ -3906,6 +3906,37 @@ may be appended to the file name (depending on Python version).
 
 Can also be set via the :option:`celery worker --statedb` argument.
 
+.. setting:: worker_liveness_file
+
+``worker_liveness_file``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.8
+
+Default: :const:`None` (the check is off).
+
+A file that the worker touches every :setting:`worker_liveness_interval`
+seconds while it's healthy. A container health check can restart the worker
+when the file gets too old. See :ref:`worker-health-checks`.
+
+The path can use the node name replacements described in
+:ref:`worker-files`, like ``%n``.
+
+Can also be set via the :option:`celery worker --liveness-file` argument.
+
+.. setting:: worker_liveness_interval
+
+``worker_liveness_interval``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.8
+
+Default: 30.0 seconds.
+
+How often the worker checks its health and touches
+:setting:`worker_liveness_file`. Must be greater than zero. Treat the file
+as stale when it's older than two intervals.
+
 .. setting:: worker_timer_precision
 
 ``worker_timer_precision``
