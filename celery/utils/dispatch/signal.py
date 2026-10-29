@@ -25,7 +25,9 @@ def _make_id(target):  # pragma: no cover
         # see Issue #2475
         return target
     if hasattr(target, '__func__'):
-        return id(target.__func__)
+        # Bound methods of different instances share the same __func__,
+        # so the instance is part of the id (a staticmethod has none).
+        return (id(getattr(target, '__self__', None)), id(target.__func__))
     return id(target)
 
 
@@ -298,7 +300,7 @@ class Signal:  # pragma: no cover
                 if isinstance(r[1], weakref.ReferenceType) and r[1]() is None:
                     continue
                 new_receivers.append(r)
-            self.receivers = new_receivers
+            self.receivers[:] = new_receivers
 
     def _live_receivers(self, sender):
         """Filter sequence of receivers to get resolved, live receivers.

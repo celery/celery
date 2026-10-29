@@ -12,39 +12,239 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
-- Fix ``%%`` in node and host format strings to produce a literal percent sign.
-  Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
-  percent sign. Log and pid file paths passed through ``celery multi`` are formatted
-  twice and require ``%%%%`` to preserve a literal percent sign in the final
-  worker path. ``multi`` uses the same final pidfile path when stopping workers
-  (#10663).
-- The ``retry_policy`` argument passed to ``before_task_publish`` signal receivers
-  and used to publish ``task-sent`` events is now always a dictionary containing
-  the merged configured and per-call retry options, never ``None`` (#10708).
-- ``countdown`` / ``eta`` on a chord (including ``group | task``) now delay the
-  header tasks, not the callback body or ``chord_unlock`` retries (#7851).
-- A chain in which groups are followed by tasks, ``chain(task, group, task,
-  group, task, ...)``, no longer nests the rest of the chain into each chord
-  body when it is run. The first message grew by (header size + 2) per group;
-  it now grows linearly. ``prepare_steps()`` returns ``chord(header, a), b, c``
-  where it returned ``chord(header, chain(a, b, c))``, which code inspecting
-  prepared canvases may notice (#10743).
-- A chord body's ``parent_id`` is the header task that fires it, for every
-  body shape. A single-task body previously reported the task before the
-  chord as its parent while a chain body reported the header task (#10743).
-- In a chain of chords, a header failure now fails the chords after it. The
-  chain is kept flat since 5.6.3 (#10171), and a failing header left the
-  following chords pending, so joining the chain's result hung.
-- Add ``--concurrency=auto`` / ``worker_concurrency = "auto"`` to size the
-  prefork pool from the cgroup CPU quota and the CPU affinity mask (#10328).
-  ``worker_concurrency`` is no longer coerced to an integer at config load, so
-  code reading ``app.conf.worker_concurrency`` directly may see ``"auto"`` or a
-  numeric string such as ``"4"``; the worker converts it at startup.
+- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
+  worker is now logged at ``ERROR`` level instead of being recorded as a task
+  failure. The task's errbacks no longer run for a task that succeeded, and a
+  failed task is no longer recorded a second time. Broken hooks therefore no
+  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
+  execution still propagates the exception (#10724).
+- The Redis result backend now counts each chord header task only once,
+  even when the task runs again, as it can after a lost worker with
+  ``acks_late``. Header results are now saved with a Lua script. If your
+  Redis user has an ACL that lists the commands it can run, add
+  ``EVALSHA``, ``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. Without them,
+  header tasks fail when they store their results, and neither the chord
+  body nor its error callbacks run. A Redis-compatible service or proxy has
+  to support ``EVALSHA`` and ``SCRIPT LOAD`` too (#10919).
+- ``saferepr`` no longer drops or unbalances closing brackets when ``maxlen``
+  is reached: a container whose last element was truncated is now closed,
+  without a misleading ``, ...``, and a nested container that starts after
+  the limit is left out entirely instead of leaving a stray closing bracket.
+  This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
+  (#10760).
+- The MongoDB result backend now keeps the first ``SUCCESS`` stored for a
+  task and ignores later writes for that task id. That includes calling
+  ``AbortableAsyncResult.abort()`` on a finished task and reusing a task
+  id, until ``forget()`` clears the stored result (#10944).
+- The Cassandra result backend now preserves a stored ``SUCCESS`` across
+  later state updates. Each attempted write first reads the newest row
+  using ``cassandra_read_consistency``, adding a read and making writes
+  depend on that read succeeding. Concurrent writers can still race.
+  ``forget()`` now deletes all rows for a task so its id can be reused
+  without waiting for entries to expire (#10945).
+
+
+.. _version-5.7.0rc1:
+
+5.7.0rc1
+========
+
+:release-date: 2026-10-18
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0rc1 Release Candidate 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add ``result_failure_expires`` setting for Redis result backend chord keys (#10826)
+- Add ``task_retry_on_worker_lost`` setting to limit requeues after worker loss (#10843)
+- Accept Pydantic models when calling tasks with ``pydantic=True`` (#10844)
+
+Canvas
+~~~~~~
+
+- Keep eager group application from accessing the result backend (#10750)
+- Avoid geometric message growth in standalone chord bodies (#10824)
+- Fix empty group and empty chain handling in chains (#10834)
+- Build chains in a single pass instead of folding with ``|`` (#10840)
+- Fix duplicate nodes in a chain's ``as_tuple()`` after a group (#10829)
+- Fix errback arity classification with stored signature arguments (#10838)
+- Fix chain/group representations mangling task names and arguments (#10855)
+- Prevent nested groups from taking their parent group's ID (#10857)
+- Fire chain links only once, on the last task in eager chains (#10864)
+- Fix exponential message growth in chains of groups (#10873)
+
+Workers
+~~~~~~~
+
+- Fix prefork write generators raising ``StopIteration`` (PEP 479) (#10842)
+- Send the worker hostname as the ``worker_process_init`` signal sender (#10849)
+- Reset autoscale keepalive for immediate tasks (#10839)
+- Avoid calling ``setup_defaults`` twice when creating a worker (#10828)
+- Skip exited children in ``AsynPool._help_stuff_finish`` (#10861)
+- Pass preload options only to commands that accept them (#10837)
+- Fix worker expiration checks during DST fall back (#10868)
+- Add source replacement support to ``regen`` during cached iteration (#10823)
+
+Task Publishing and Execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Fix ``send_task`` ETA and expiration calculations across DST transitions (#10813)
+- Fix task execution after ETA conversion failure (#10876)
+- Copy only declared stamps into task execution options (#10853)
+
+Results
+~~~~~~~
+
+- Fix MongoDB result cleanup across DST transitions (#10852)
+- Add ``result_chord_expires`` for Redis chord keys (#10827)
+- Keep cache backend chords alive past ``result_expires`` (#10830)
+- Avoid calling ``get_state`` for plain chain failures (#10836)
+- Fix database backend cleanup timezone handling (#10866)
+
+Beat
+~~~~
+
+- Fix relative schedule rounding across DST transitions (#10818)
+
+Security
+~~~~~~~~
+
+- Redact Azure credentials in diagnostic output (#10822)
+
+Documentation
+~~~~~~~~~~~~~
+
+- Fix ``broker_use_ssl`` setting target being swallowed into the previous paragraph (#10847)
+- Fix unresolved mailing-list and IRC links in the contributing guide and introduction (#10848)
+- Fix stray RST markup in changelog entries (#10851)
+
+Dependencies
+~~~~~~~~~~~~
+
+- Update ``cryptography`` to 50.0.2 (#10815)
+- Update the minimum ``boto3`` requirement to 1.43.113 (#10820, #10869)
+- Update ``azure-storage-blob`` to 12.31.0 (#10825)
+- Update ``azure-identity`` to 1.26.0 (#10863)
+- Update ``tox`` to 4.64.9 (#10832)
+- Align the minimum ``pymemcache`` version with ``RetryingClient`` support and update it to 4.0.0 (#10831, #10859)
+- Update GitHub CodeQL Action to 4.38.3 (#10860)
+- Update Kombu to 5.7.0rc1 (#10882)
+
+Other
+~~~~~
+
+- Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
+- Fix invalid Bandit baseline JSON and validate it before commit (#10766)
+
+.. _version-5.7.0b1:
+
+5.7.0b1
+=======
+
+:release-date: 2026-10-06
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0b1 Beta 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add opt-in remote control (inspect ping) support to ``celery beat`` (#10422)
+- Add ``pymemcache`` result backend support (#9977)
+- Make ``--concurrency=auto`` aware of cgroup CPU limits (#10328)
+
+Results
+~~~~~~~
+
+- Fix Couchbase missing-document handling to raise instead of returning
+  ``None`` (#10680)
+- Preserve ``propagate`` when joining nested native results (#10689)
+- Keep ``forget()`` idempotent on Elasticsearch and CouchDB backends (#10697)
+- Keep ``forget()`` idempotent on Azure Blob Storage and CosmosDB (#10714)
+- Handle missing ArangoDB documents when deleting results (#10701)
+- Upsert CosmosDB results so later task states are stored correctly (#10746)
+- Publish the Cassandra session only once the connection is ready (#10657)
+- Avoid holding the Redis pubsub lock while waiting for messages (#10715)
+- Defer re-entrant ``cancel_for`` to avoid Redis pubsub deadlocks (#10716)
+- Preserve ``EagerResult.name`` when copying or pickling (#10773)
+- Raise ``TaskRevokedError`` from ``EagerResult.get()`` after ``revoke()`` (#10772)
+- Finish a half-read child result on prefork shutdown and acknowledge it
+  during the join (#10768)
+
+Canvas
+~~~~~~
+
+- Apply ``countdown`` and ``eta`` to chord headers (#10735)
+- Fail chords after a chord whose header failed (#10767)
+- Fix geometric message bloat in chains of implicit chords (#10743)
+- Resolve the app of a chain or chord through its tasks (#10749)
+- Avoid raising in ``chain.app`` when the first task's canvas contains a
+  dict (#10792)
+
+Workers
+~~~~~~~
+
+- Flush buffered events with ``hub.call_soon()`` (#10736)
+- Synchronize ``EventDispatcher`` shutdown with publishing (#10745)
+- Preserve pending operation order in the consumer (#10734)
+- Fix consumer reconnect prefetch reduction for green pools (#10804)
+- Fix Beat scheduler connection cleanup on shutdown (#10776)
+- Fix ``countdown``, expiration, and Beat intervals across DST transitions
+  (#10769)
+- Limit Django fixup signal handlers to its own app (#10731)
+- Tell apart signal receivers bound to different instances (#10699)
+
+Task Publishing
+~~~~~~~~~~~~~~~
+
+* Use the merged retry policy for `before_task_publish` and task-sent
+  events (#10708)
+* Avoid calling `isoformat()` on protocol v1 ETA and expiration strings
+  (#10720)
+
+Command Line
+~~~~~~~~~~~~
+
+- Apply index lists such as ``-c:1,2`` to named nodes in ``celery multi``
+  (#10661)
+- Expand ``~`` in ``--workdir`` for spawned workers (#10739)
+- Replace deprecated ``codecs.open`` in ``celery upgrade`` settings (#10706)
+- Fix escaped percent signs in node formatting (#10663)
+
+Utilities
+~~~~~~~~~
+
+- Fix ``BufferMap`` handling of ``bufmaxsize`` and total size accounting
+  (#10705)
+- Fix regeneration iteration when consumed elsewhere during the loop
+  (#10756)
+- Stop ``firstmethod()`` from swallowing ``AttributeError`` (#10774)
+- Handle ``AttributeError`` in ``iterate_file_descriptors_safely()`` after
+  connection loss (#10318)
+
+Docker
+~~~~~~
+
+- Fix cache directory ownership in Docker builds (#10707)
+
+Packaging
+~~~~~~~~~
+
+- Update the ``billiard`` dependency to 4.3.1 or later (#10802)
+- Update the Kombu dependency to 5.7.0b1 (#10809)
+- Remove version constraints for Redis requirements (#10810)
+
 
 
 .. _version-5.7.0a1:
 
-5.7.0b1
+5.7.0a1
 =======
 
 :release-date: 2026-09-22
@@ -1090,7 +1290,7 @@ What's Changed
 - Added Blacksmith.sh to the Sponsors section in the README (#9323)
 - Revert "Added Blacksmith.sh to the Sponsors section in the README" (#9324)
 - Added Blacksmith.sh to the Sponsors section in the README (#9325)
-- Added missing " |oc-sponsor-3|” in README (#9326)
+- Added missing ``|oc-sponsor-3|`` in README (#9326)
 - Use Blacksmith SVG logo (#9327)
 - Updated Blacksmith SVG logo (#9328)
 - Revert "Updated Blacksmith SVG logo" (#9329)
@@ -1917,7 +2117,7 @@ What's Changed
 - Added Blacksmith.sh to the Sponsors section in the README (#9323)
 - Revert "Added Blacksmith.sh to the Sponsors section in the README" (#9324)
 - Added Blacksmith.sh to the Sponsors section in the README (#9325)
-- Added missing " |oc-sponsor-3|” in README (#9326)
+- Added missing ``|oc-sponsor-3|`` in README (#9326)
 - Use Blacksmith SVG logo (#9327)
 - Updated Blacksmith SVG logo (#9328)
 - Revert "Updated Blacksmith SVG logo" (#9329)
@@ -2692,7 +2892,7 @@ The code changes are mostly fix for regressions. More details can be found below
 - Remove tox version limit (#8464)
 - Fixed AttributeError: 'str' object has no attribute (#8463)
 - Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
-- Document need for CELERY_ prefix on CLI env vars (#8469)
+- Document need for ``CELERY_`` prefix on CLI env vars (#8469)
 - Use string value for CELERY_SKIP_CHECKS envvar (#8462)
 - Revert "store children with database backend" (#8475)
 - Revert "Fix eager tasks does not populate name field" (#8476)

@@ -2,6 +2,7 @@
 import logging
 import pickle
 from contextlib import contextmanager
+from datetime import datetime, timezone
 
 from kombu.utils.encoding import ensure_bytes
 
@@ -18,6 +19,7 @@ from .session import SessionManager
 try:
     from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
     from sqlalchemy.orm import defer
+    from sqlalchemy.orm.attributes import flag_modified
     from sqlalchemy.orm.exc import StaleDataError
 except ImportError:
     raise ImproperlyConfigured(
@@ -67,8 +69,12 @@ class DatabaseBackend(BaseBackend):
         # Override retry defaults to preserve backward compatibility.
         # Previously, DatabaseBackend used a custom @retry decorator that always
         # retried with max_retries=3. We maintain this behavior by default.
-        self.always_retry = conf.get('result_backend_always_retry', True)
-        self.max_retries = conf.get('result_backend_max_retries', 3)
+        # Both settings always have a value, so check if the user set them.
+        # None also means the default.
+        if not conf.value_set_for('result_backend_always_retry') or self.always_retry is None:
+            self.always_retry = True
+        if not conf.value_set_for('result_backend_max_retries') or self.max_retries is None:
+            self.max_retries = 3
 
         if self.extended_result:
             self.task_cls = TaskExtended
@@ -137,10 +143,14 @@ class DatabaseBackend(BaseBackend):
             short_lived_sessions=self.short_lived_sessions,
             **self.engine_options)
 
-    def _query_task(self, session, task_id):
+    def _query_task(self, session, task_id, for_update=False):
         """Query task by id, falling back to deferring missing columns from database."""
+        query = session.query(self.task_cls)
+        if for_update:
+            # Lock the row, and read it again even if the session has it.
+            query = query.with_for_update().populate_existing()
         try:
-            tasks = list(session.query(self.task_cls).filter(self.task_cls.task_id == task_id))
+            tasks = list(query.filter(self.task_cls.task_id == task_id))
             return tasks and tasks[0]
         except DatabaseError as exc:
             exc_str = str(exc).lower()
@@ -150,7 +160,7 @@ class DatabaseBackend(BaseBackend):
             if 'stamps' in exc_str and hasattr(self.task_cls, 'stamps'):
                 defers.append(defer(self.task_cls.stamps))
             if defers:
-                tasks = list(session.query(self.task_cls).options(*defers).filter(
+                tasks = list(query.options(*defers).filter(
                     self.task_cls.task_id == task_id
                 ))
                 return tasks and tasks[0]
@@ -162,13 +172,28 @@ class DatabaseBackend(BaseBackend):
         session = self.ResultSession()
         with session_cleanup(session):
             task = self._query_task(session, task_id)
+            if task:
+                # Lock the row and read it again, so a run that stores SUCCESS
+                # at the same time can't be written over. Only an existing row
+                # is locked: on MySQL, locking a missing row takes a gap lock,
+                # which deadlocks concurrent inserts.
+                task = self._query_task(session, task_id, for_update=True)
             if not task:
                 task = self.task_cls(task_id)
                 task.task_id = task_id
                 session.add(task)
                 session.flush()
+            elif task.status == states.SUCCESS:
+                # Like BaseKeyValueStoreBackend, ignore any write after a
+                # SUCCESS is saved, so a repeated run of the task doesn't
+                # replace its result.
+                return
 
             self._update_result(task, result, state, traceback=traceback, request=request)
+            # Write the state even if it looks unchanged. Without row locks, as
+            # on SQLite, another run may have saved a SUCCESS after we read the
+            # row, and that SUCCESS must not stay next to the result written here.
+            flag_modified(task, 'status')
             session.commit()
 
     def _update_result(self, task, result, state, traceback=None,
@@ -334,7 +359,7 @@ class DatabaseBackend(BaseBackend):
     def _cleanup(self):
         session = self.ResultSession()
         expires = self.expires
-        now = self.app.now()
+        now = datetime.now(timezone.utc)
         with session_cleanup(session):
             session.query(self.task_cls).filter(
                 self.task_cls.date_done < (now - expires)).delete()

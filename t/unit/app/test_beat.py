@@ -4,6 +4,7 @@ import pickle
 import socket
 import sys
 import time
+from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 from pickle import dumps, loads
 from threading import Event
@@ -14,7 +15,7 @@ import pytest
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
-from celery.schedules import crontab, schedule
+from celery.schedules import crontab, schedule, solar
 from celery.utils.objects import Bunch
 
 if sys.version_info >= (3, 9):
@@ -174,6 +175,15 @@ class mocked_schedule(schedule):
 
     def is_due(self, last_run_at):
         return self._is_due, self._next_run_at
+
+
+class raising_schedule(mocked_schedule):
+
+    def __init__(self):
+        super().__init__(False, 1)
+
+    def is_due(self, last_run_at):
+        raise RuntimeError('cannot calculate next run')
 
 
 always_due = mocked_schedule(True, 1)
@@ -405,6 +415,35 @@ class test_Scheduler:
         assert scheduler.tick() == 0
         error.assert_called()
 
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_in_populate_heap(self, error):
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(name='broken', task='c.broken',
+                      schedule=raising_schedule())
+        scheduler.add(name='healthy', task='c.healthy', schedule=always_due)
+        assert scheduler.tick() == 0
+        assert [s['name'] for s in scheduler.sent] == ['c.healthy']
+        error.assert_called()
+        assert 'broken' in error.call_args[0]
+        broken_event = next(
+            e for e in scheduler._heap if e[2].name == 'broken')
+        assert broken_event[0] == pytest.approx(scheduler._when(
+            broken_event[2], scheduler.max_interval), abs=1)
+
+    @patch('celery.beat.error')
+    def test_tick_survives_entry_failing_when_due(self, error):
+        scheduler = mScheduler(app=self.app)
+        broken = scheduler.add(name='broken', task='c.broken',
+                               schedule=raising_schedule())
+        # so populate_heap() doesn't run and override our setup
+        scheduler.old_schedulers = scheduler.schedule
+        scheduler._heap = [event_t(scheduler._when(broken, 0) - 1, 5, broken)]
+        assert scheduler.tick() == scheduler.adjust(scheduler.max_interval)
+        assert not scheduler.sent
+        error.assert_called()
+        assert scheduler._heap[0][0] == pytest.approx(
+            scheduler._when(broken, scheduler.max_interval), abs=1)
+
     def test_pending_tick(self):
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
@@ -444,6 +483,79 @@ class test_Scheduler:
         # ensure those 0.2 seconds on now_ts don't get dropped
         expected_time = now_ts + 0.5 - 0.010
         assert scheduler._heap[0].time == expected_time
+
+    @pytest.mark.parametrize('now,last_run_at,after_sunrise', [
+        pytest.param(
+            datetime.fromisoformat('2026-03-08T01:30:00-05:00'),
+            datetime.fromisoformat('2026-03-07T03:00:00-05:00'),
+            datetime.fromisoformat('2026-03-08T03:08:00-04:00'),
+            id='spring-forward',
+        ),
+        pytest.param(
+            datetime.fromisoformat('2026-11-01T01:45:00-04:00'),
+            datetime.fromisoformat('2026-10-31T03:00:00-04:00'),
+            datetime.fromisoformat('2026-11-01T01:41:00-05:00'),
+            id='fall-back',
+        ),
+    ])
+    def test_tick_solar_across_dst(self, now, last_run_at, after_sunrise):
+        pytest.importorskip('ephem')
+        tz = self.app.timezone = ZoneInfo('America/New_York')
+        now_utc = now.astimezone(timezone.utc)
+        s = solar('sunrise', 0, -15, app=self.app, nowfun=lambda: now_utc.astimezone(tz))
+        scheduler = mScheduler(app=self.app, lazy=True)
+        entry = scheduler.add(
+            name='sunrise', task='t.fake.task', schedule=s,
+            last_run_at=last_run_at,
+        )
+
+        delays = []
+        for _ in range(5):
+            delays.append(scheduler.tick())
+            now_utc += timedelta(seconds=1)
+
+        assert scheduler.sent == []
+        assert all(delay > 0 for delay in delays)
+
+        now_utc = after_sunrise.astimezone(timezone.utc)
+        scheduler.tick()
+        assert [sent['name'] for sent in scheduler.sent] == ['t.fake.task']
+        reserved = scheduler.schedule[entry.name]
+        assert reserved.total_run_count == 1
+        assert reserved.last_run_at.astimezone(timezone.utc) == now_utc
+
+        now_utc += timedelta(seconds=1)
+        assert scheduler.tick() > 0
+        assert len(scheduler.sent) == 1
+
+    def test_tick_daily_relative_spring_forward(self, monkeypatch):
+        self.app.conf.timezone = 'America/New_York'
+        tz = ZoneInfo('America/New_York')
+        now = datetime(2026, 3, 8, tzinfo=tz)
+        monkeypatch.setattr(self.app, 'now', lambda: now)
+        scheduler = mScheduler(app=self.app, lazy=True)
+        entry = scheduler.add(
+            name='daily', task='t.fake.task',
+            schedule=timedelta(days=1), relative=True,
+            last_run_at=datetime(2026, 3, 7, tzinfo=tz),
+        )
+
+        assert scheduler.tick() == 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        # The next midnight is 23 elapsed hours away, including heap drift.
+        next_delay = scheduler._heap[0].time - now.timestamp()
+        assert next_delay == pytest.approx(82800, abs=0.02, rel=0)
+
+        now = datetime(2026, 3, 8, 23, 59, 59, tzinfo=tz)
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 1
+
+        now = datetime(2026, 3, 9, tzinfo=tz)
+        assert scheduler.tick() == 0
+        assert scheduler.schedule[entry.name].total_run_count == 2
+        assert scheduler.tick() > 0
+        assert scheduler.schedule[entry.name].total_run_count == 2
 
     def test_ticks_schedule_change(self):
         # initialise schedule and check heap is not initialized
@@ -816,6 +928,217 @@ def create_persistent_scheduler_w_call_logging(shelv=None):
     return MockPersistentScheduler, shelv
 
 
+class test_SchedulerShutdown:
+
+    @pytest.fixture(params=[beat.Scheduler, beat.PersistentScheduler])
+    def scheduler(self, request):
+        if request.param is beat.PersistentScheduler:
+            return create_persistent_scheduler()[0](
+                app=self.app, schedule_filename='schedule',
+            )
+        return beat.Scheduler(app=self.app, lazy=True)
+
+    def test_close_releases_connection_and_channel(self, scheduler):
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            assert connection.connected
+            assert not channel.closed
+
+            with patch.object(
+                connection, 'release', wraps=connection.release,
+            ) as release:
+                scheduler.close()
+
+                assert not connection.connected
+                assert channel.closed
+                assert 'connection' not in scheduler.__dict__
+                assert 'producer' not in scheduler.__dict__
+                if isinstance(scheduler, beat.PersistentScheduler):
+                    assert scheduler._store.synced
+                    assert scheduler._store.closed
+                scheduler.close()
+                release.assert_called_once_with()
+
+    def test_close_releases_plain_subclass_attributes(self):
+        class CustomScheduler(beat.Scheduler):
+            connection = None
+            producer = None
+
+        scheduler = CustomScheduler(app=self.app, lazy=True)
+        with self.app.connection_for_write() as connection:
+            scheduler.connection = connection
+            scheduler.producer = scheduler.Producer(connection)
+            channel = scheduler.producer.channel
+
+            scheduler.close()
+
+            assert not connection.connected
+            assert channel.closed
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+
+    def test_base_publishing_resources_recreated_after_close(self):
+        scheduler = beat.Scheduler(app=self.app, lazy=True)
+        with scheduler.connection as old_connection:
+            old_producer = scheduler.producer
+            old_channel = old_producer.channel
+            scheduler.close()
+
+            with scheduler.connection as connection:
+                producer = scheduler.producer
+                channel = producer.channel
+                try:
+                    producer.publish({'probe': True})
+                    assert connection is not old_connection
+                    assert producer is not old_producer
+                    assert channel is not old_channel
+                    assert connection.connected
+                    assert not channel.closed
+                    assert not old_connection.connected
+                    assert old_channel.closed
+                finally:
+                    scheduler.close()
+
+    def test_persistent_close_twice_with_real_shelf(self, tmp_path):
+        scheduler = beat.PersistentScheduler(
+            app=self.app, schedule_filename=str(tmp_path / 'schedule'),
+        )
+        scheduler.close()
+        with patch.object(scheduler, '_open_schedule') as open_schedule, \
+                patch.object(self.app, 'connection_for_write') as connect:
+            scheduler.close()
+        open_schedule.assert_not_called()
+        connect.assert_not_called()
+
+    def test_close_does_not_create_broker_resources(self, scheduler):
+        with patch.object(self.app, 'connection_for_write') as connect, \
+                patch.object(scheduler, 'Producer') as producer:
+            scheduler.close()
+        connect.assert_not_called()
+        producer.assert_not_called()
+
+    @pytest.mark.parametrize('use_connection', [False, True])
+    def test_persistent_close_before_schedule_setup(self, use_connection):
+        scheduler = beat.PersistentScheduler(app=self.app, lazy=True)
+        with ExitStack() as resources:
+            if use_connection:
+                connection = resources.enter_context(scheduler.connection)
+                channel = scheduler.producer.channel
+            with patch.object(scheduler, '_open_schedule') as open_schedule, \
+                    patch.object(self.app, 'connection_for_write') as connect:
+                scheduler.close()
+            assert scheduler._store is None
+            open_schedule.assert_not_called()
+            connect.assert_not_called()
+            if use_connection:
+                assert not connection.connected
+                assert channel.closed
+
+    def test_close_releases_connection_after_producer_creation_fails(
+        self, scheduler,
+    ):
+        with scheduler.connection as connection:
+            with patch.object(
+                scheduler, 'Producer',
+                side_effect=RuntimeError('producer failed'),
+            ):
+                with pytest.raises(RuntimeError, match='producer failed'):
+                    scheduler.producer
+            assert connection.connected
+
+            scheduler.close()
+
+            assert not connection.connected
+
+    def test_close_releases_resources_when_sync_fails(self, scheduler):
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            with patch.object(
+                scheduler, 'sync', side_effect=RuntimeError('sync failed'),
+            ):
+                with pytest.raises(RuntimeError, match='sync failed'):
+                    scheduler.close()
+
+            assert not connection.connected
+            assert channel.closed
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize(
+        'error_type', ['connection_errors', 'channel_errors'],
+    )
+    def test_close_ignores_broker_errors(self, scheduler, error_type):
+        with scheduler.connection as connection:
+            scheduler.producer.channel
+            error = getattr(connection, error_type)[0]('broker unavailable')
+            with patch.object(
+                connection, 'release', side_effect=error,
+            ) as release:
+                scheduler.close()
+            release.assert_called_once_with()
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize('sync_fails', [False, True])
+    def test_close_prioritizes_sync_over_unexpected_release_error(
+        self, scheduler, sync_fails,
+    ):
+        sync_error = RuntimeError('sync failed')
+        release_error = RuntimeError('unexpected release failure')
+        with scheduler.connection as connection:
+            scheduler.producer.channel
+            with patch.object(
+                connection, 'release', side_effect=release_error,
+            ) as release, patch.object(
+                scheduler, 'sync', wraps=scheduler.sync,
+                side_effect=sync_error if sync_fails else None,
+            ), patch('celery.beat.error') as log_error:
+                with pytest.raises(RuntimeError) as exc:
+                    scheduler.close()
+            assert exc.value is (sync_error if sync_fails else release_error)
+            release.assert_called_once_with()
+            if sync_fails:
+                log_error.assert_called_once()
+                assert log_error.call_args.kwargs['exc_info']
+            else:
+                log_error.assert_not_called()
+            assert 'connection' not in scheduler.__dict__
+            assert 'producer' not in scheduler.__dict__
+            if isinstance(scheduler, beat.PersistentScheduler):
+                assert scheduler._store.closed
+
+    @pytest.mark.parametrize('sync_fails', [False, True])
+    def test_persistent_close_releases_connection_when_store_close_fails(
+        self, sync_fails,
+    ):
+        scheduler = create_persistent_scheduler()[0](
+            app=self.app, schedule_filename='schedule',
+        )
+        with scheduler.connection as connection:
+            channel = scheduler.producer.channel
+            sync_error = RuntimeError('sync failed')
+            store_error = RuntimeError('store close failed')
+            with patch.object(
+                scheduler._store, 'close',
+                side_effect=store_error,
+            ), patch.object(
+                scheduler, 'sync', wraps=scheduler.sync,
+                side_effect=sync_error if sync_fails else None,
+            ), patch('celery.beat.error') as log_error:
+                with pytest.raises(RuntimeError) as exc:
+                    scheduler.close()
+            assert exc.value is (sync_error if sync_fails else store_error)
+            if sync_fails:
+                log_error.assert_called_once()
+                assert log_error.call_args.kwargs['exc_info']
+            else:
+                log_error.assert_not_called()
+            assert not connection.connected
+            assert channel.closed
+
+
 class test_PersistentScheduler:
 
     @patch('os.remove')
@@ -904,6 +1227,39 @@ class test_PersistentScheduler:
 
         s._create_schedule()
         s._store.__setitem__.assert_called_with("entries", {})
+
+    def test_create_schedule_invalid_stored_crontab(self):
+        """
+        Test that entries stored by an older version, containing a crontab
+        that is now rejected (e.g. the 30th of February), are recreated
+        """
+        stored = crontab(day_of_month=28, month_of_year=2)
+        stored._orig_day_of_month = '30'
+        pickled_entries = pickle.dumps({'invalid': stored})
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+
+        # self._store['entries'] will throw a ValueError when unpickled
+        s._store.__getitem__.side_effect = lambda key: pickle.loads(pickled_entries)
+
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_called_once()
+        assert isinstance(warning.call_args[0][1], ValueError)
+
+    def test_create_schedule_missing_entries_not_logged(self):
+        """
+        Test that creating the entries of a new schedule db doesn't log a warning
+        """
+        s = create_persistent_scheduler()[0](app=self.app, schedule_filename="schedule")
+        s._store = MagicMock()
+        s._store.__getitem__.side_effect = KeyError('entries')
+
+        with patch('celery.beat.warning') as warning:
+            s._create_schedule()
+        s._store.__setitem__.assert_called_with("entries", {})
+        warning.assert_not_called()
 
     def test_setup_schedule(self):
         s = create_persistent_scheduler()[0](app=self.app,

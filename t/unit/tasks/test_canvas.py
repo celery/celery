@@ -1,16 +1,22 @@
 import json
 import math
+import operator
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from functools import reduce
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
 
-from celery import states
+from celery import _state, states
 from celery._state import _task_stack
-from celery.canvas import (Signature, _chain, _maybe_group, _merge_dictionaries, chain, chord, chunks, group,
+from celery.canvas import (Signature, _chain, _clear_chord_option, _fold_chain, _maybe_group, _merge_chain_step,
+                           _merge_dictionaries, _strip_chord_header_links, chain, chord, chunks, group,
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
-from celery.exceptions import Ignore, Reject
+from celery.exceptions import CPendingDeprecationWarning, Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
+from t.canvas_helpers import ids_in_as_tuple
 
 SIG = Signature({
     'task': 'TASK',
@@ -54,6 +60,26 @@ def _group_result_sizes_on_spine(result):
             sizes.append(len(node.results))
         node = node.parent
     return sizes
+
+
+@contextmanager
+def current_app_in_this_thread(app, default):
+    """Make ``app`` the current app of this thread only, and ``default`` the default app.
+
+    current_app is thread-local: a thread other than the one that made an app
+    current falls back to the default app, in production one without a result
+    backend (#6197). The unit tests replace the thread-local with a trap that
+    is the same in every thread, so it is swapped for a real one here.
+    """
+    prev_tls, prev_default_app = _state._tls, _state.default_app
+    _state._tls = _state._TLS()
+    try:
+        app.set_current()
+        default.set_default()
+        yield
+    finally:
+        _state._tls = prev_tls
+        _state.set_default_app(prev_default_app)
 
 
 class test_maybe_unroll_group:
@@ -520,6 +546,146 @@ class test_chain(CanvasCase):
         s = self.add.s(1, 1)
         assert chain([chain(s)]).tasks == list(chain(s).tasks)
 
+    def test_chain_construction_handles_nested_canvas_shapes(self):
+        add = self.add
+        # a group followed by a task collapses into a chord
+        built = chain(group([add.si(1, 1), add.si(2, 2)]), add.si(3, 3))
+        assert isinstance(built, chord)
+        # a chord followed by a task extends the chord body
+        built = chain(chord([add.si(1, 1)], add.si(2, 2)), add.si(3, 3))
+        assert isinstance(built.tasks[0], chord)
+        assert isinstance(built.tasks[0].body, _chain)
+        assert len(built.tasks[0].body.tasks) == 2
+        # nested chains are flattened
+        built = chain(chain(add.si(1, 1), add.si(2, 2)),
+                      chain(add.si(3, 3), add.si(4, 4)))
+        assert len(built.tasks) == 4
+        # empty groups are skipped
+        built = chain(add.si(1, 1), group([]))
+        assert len(built.tasks) == 1
+        # a group of one is unrolled rather than turned into a chord
+        built = chain(group([add.si(1, 1)]), add.si(2, 2))
+        assert isinstance(built, _chain)
+        assert len(built.tasks) == 2
+
+    def test_chain_with_nested_chain_led_by_a_group(self):
+        # The first step of the inner chain turns the outer chain into a
+        # chord; the steps after it still have to be composed onto the
+        # chord body rather than dropped.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        built = chain(inner, add.s(20))
+        assert isinstance(built, chord)
+        assert isinstance(built.body, _chain)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_with_deserialised_chain_led_by_a_group(self):
+        # signature() of a serialised chain returns a _chain, so a chain
+        # that arrives over the wire takes the same path as the one above.
+        add = self.add
+        inner = _chain(group(add.si(1), add.si(2)), add.s(10))
+        restored = signature(json.loads(json.dumps(inner, default=str)))
+        built = chain(restored, add.s(20))
+        assert isinstance(built, chord)
+        assert len(built.body.tasks) == 2
+
+    def test_chain_construction_matches_the_or_operator(self):
+        # _fold_chain repeats rules that live in _chain.__or__, group.__or__
+        # and Signature.__or__; this catches the two drifting apart.
+        add = self.add
+
+        def linked_chain():
+            built = _chain(add.si(1), add.si(2))
+            built.link(add.si(97))
+            built.link_error(add.si(96))
+            return built
+
+        shapes = (
+            lambda: [_chain(group(add.si(1), add.si(2)), add.s(10)), add.s(20)],
+            lambda: [group([group([add.si(1), add.si(2)])]), add.s(3)],
+            lambda: [chord([add.si(1)], add.si(2)), group([add.si(3), add.si(4)])],
+            lambda: [group([add.si(1)]), chord([add.si(2)], add.si(3)), group([add.si(4)])],
+            lambda: [linked_chain(), add.s(5)],
+            lambda: [add.si(1), linked_chain(), group([add.si(2), add.si(3)])],
+            lambda: [group([]), _chain(group(add.si(1)), add.s(2)), add.s(3)],
+        )
+        for build in shapes:
+            expected = reduce(operator.or_, build(), _chain())
+            assert (json.dumps(_fold_chain(build()), sort_keys=True, default=str) ==
+                    json.dumps(expected, sort_keys=True, default=str))
+
+    def test_chain_does_not_clone_the_final_task(self):
+        # `|` never clones its right-hand side, so the last task ends up in
+        # the chain as the caller passed it and stays linkable afterwards.
+        add = self.add
+        first, second, last = add.si(1), add.si(2), add.si(3)
+        built = chain(first, second, last)
+        assert built.tasks[-1] is last
+        last.link(add.si(4))
+        assert built.tasks[-1].options['link']
+
+    def test_chain_with_an_unsupported_operand(self):
+        # Anything the single pass does not understand is handed back to
+        # `|`, which raises the same TypeError as before.
+        with pytest.raises(TypeError):
+            chain(self.add.si(1), object())
+
+    def test_merge_chain_step_reports_unsupported_operands(self):
+        assert _merge_chain_step([], object()) is NotImplemented
+
+    def test_chain_with_an_unsupported_operand_inside_a_nested_chain(self):
+        # The inner chain is expanded through unchain_tasks(), so an operand
+        # it cannot handle has to abort the single pass there too.
+        unsupported = Mock()
+        unsupported.clone.return_value = unsupported
+        inner = _chain(unsupported, self.add.si(1))
+        with pytest.raises(TypeError):
+            chain(inner, self.add.si(2))
+
+    def test_chain_does_not_share_errbacks_between_steps(self):
+        # unchain_tasks() hands the same errback object to every task of an
+        # inner chain. If the steps keep sharing it, a visitor that stamps
+        # per signature writes two steps' stamps into the one errback.
+        add = self.add
+        inner = _chain([add.s(5), chord([add.s(4), add.s(5)], add.s(9)), add.s(8)])
+        inner.link_error(add.si(99))
+        built = chain(chord([add.s(0), add.s(1)], add.s(4)), inner)
+
+        def errback_ids(sig, found):
+            for errback in (sig.options or {}).get('link_error') or []:
+                found.append(id(errback))
+            if isinstance(sig, chord):
+                header = sig.tasks
+                for task in (header if isinstance(header, (list, tuple)) else [header]):
+                    errback_ids(task, found)
+                errback_ids(sig.body, found)
+            elif isinstance(sig, (_chain, group)):
+                for task in sig.tasks:
+                    errback_ids(task, found)
+            return found
+
+        found = errback_ids(built, [])
+        assert found
+        assert len(found) == len(set(found))
+
+    def test_chain_clones_each_task_once(self):
+        # Building the chain by folding with `|` re-cloned every task already
+        # collected, so an n-task chain cost n * (n - 1) / 2 clones.
+        n = 40
+        sigs = [self.add.si(i, i) for i in range(n)]
+        calls = []
+        original_clone = Signature.clone
+
+        def counting_clone(self, *args, **kwargs):
+            calls.append(self)
+            return original_clone(self, *args, **kwargs)
+
+        with patch.object(Signature, 'clone', counting_clone):
+            built = chain(*sigs)
+
+        assert len(built.tasks) == n
+        assert len(calls) <= 2 * n
+
     @pytest.mark.parametrize("chain_type", (_chain, chain_subclass))
     def test_clone_preserves_state(self, chain_type):
         x = chain_type(self.add.s(i, i) for i in range(10))
@@ -599,6 +765,56 @@ class test_chain(CanvasCase):
     def test_app_falls_back_to_default(self):
         from celery._state import current_app
         assert chain().app is current_app
+
+    def test_app_when_first_task_is_chord(self):
+        # A chord has no app of its own: it resolves one through its tasks.
+        c = chain(
+            chord(group(self.add.s(1, 1), self.add.s(2, 2)), self.xsum.s()),
+            self.add.s(1),
+        )
+        assert isinstance(c, _chain)
+        assert c.tasks[0]._app is None
+        assert c.app is self.app
+
+    def test_apply_async_in_another_thread_when_first_task_is_chord(self):
+        # #6197: in a thread other than the one that made the app current, the
+        # chain fell back to the default app, which has no result backend, and
+        # could not start its chord.
+        def apply():
+            return chain(
+                chord(group(self.add.s(1, 1), self.add.s(2, 2)), self.xsum.s()),
+                self.add.s(1),
+            ).apply_async()
+
+        with self.Celery(backend='disabled') as default_app, \
+                current_app_in_this_thread(self.app, default=default_app), \
+                ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(apply).result()
+        assert isinstance(result.parent.parent, GroupResult)
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('first', [
+        lambda add: group([dict(add.s(1, 1)), dict(add.s(2, 2))]),
+        lambda add: chain(dict(add.s(1, 1)), add.s(1), task_id='x'),
+    ], ids=['group', 'chain'])
+    def test_app_when_first_task_canvas_has_dict(self, first):
+        # A group, or a chain built with options, keeps a dict as a task until
+        # it is frozen and cannot resolve an app through it, so the chain falls
+        # back to the default app.
+        from celery._state import current_app
+        c = chain(first(self.add), self.add.s(1), task_id='y')
+        assert isinstance(c, _chain)
+        assert isinstance(c.tasks[0].tasks[0], dict)
+        assert c.app is current_app
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    @pytest.mark.parametrize('first', [
+        lambda add: group([dict(add.s(1, 1)), dict(add.s(2, 2))]),
+        lambda add: chain(dict(add.s(1, 1)), add.s(1), task_id='x'),
+    ], ids=['group', 'chain'])
+    def test_apply_async_when_first_task_canvas_has_dict(self, first):
+        c = chain(first(self.add), self.add.s(1), task_id='y')
+        assert isinstance(c.apply_async(), AsyncResult)
 
     def test_handles_dicts(self):
         c = chain(
@@ -883,6 +1099,59 @@ class test_chain(CanvasCase):
             f"First message grows geometrically with the number of groups: {sizes}"
         )
 
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('frozen', [False, True])
+    @pytest.mark.parametrize('as_chord_body', [False, True])
+    def test_chain_of_groups_message_size_linear(self, serialized, frozen, as_chord_body):
+        sizes = []
+        for n_groups in (3, 6):
+            workflow = chain(
+                group(self.add.si(i, j) for j in range(3))
+                for i in range(n_groups)
+            )
+            if as_chord_body:
+                workflow = chord([self.add.si(0, 0), self.add.si(1, 1)], workflow)
+            if frozen:
+                workflow.freeze()
+            if serialized:
+                workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+
+            with patch.object(self.app.amqp, 'send_task_message') as send:
+                workflow.apply_async()
+
+            messages = [
+                call.args[2].body for call in send.call_args_list
+                if call.args[1] == self.add.name
+            ]
+            assert len(messages) == (2 if as_chord_body else 3)
+            sizes.append(len(json.dumps(messages[0])))
+
+        assert sizes[-1] < 3 * sizes[0], (
+            f"Doubling the number of groups multiplies the message size: {sizes}"
+        )
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('wrapped', ['direct', 'chain', 'header'])
+    def test_dispatch_preserves_frozen_nested_chord(self, serialized, wrapped):
+        workflow = chord(
+            [self.add.si(1, 2), self.add.si(3, 4)],
+            chord([self.add.si(5, 6), self.add.si(7, 8)], self.add.s(9)),
+            app=self.app,
+        )
+        if wrapped == 'chain':
+            workflow = chain(self.add.si(0, 0), workflow)
+        elif wrapped == 'header':
+            workflow = chord([workflow, self.add.si(0, 0)], self.add.s(10))
+        workflow.freeze()
+        if serialized:
+            workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+        before = json.dumps(workflow)
+
+        with patch.object(self.app.amqp, 'send_task_message'):
+            workflow.apply_async()
+
+        assert json.dumps(workflow) == before
+
     def test_split_chord_body_keeps_the_chain_options_on_its_first_task(self):
         body = chain(self.add.s(10), self.add.s(100)).set(queue="q2", priority=7)
         c = chain(self.add.s(0, 0), chord([self.add.s(3, 3), self.add.s(4, 4)], body, app=self.app))
@@ -1063,6 +1332,72 @@ class test_chain(CanvasCase):
         finally:
             _state.task_join_will_block = fixture_task_join_will_block
             result.task_join_will_block = fixture_task_join_will_block
+
+    def test_chain_link_fires_once_in_eager(self):
+        # A chain-level link must fire once, on the last task, mirroring
+        # _chain.run (worker path extends it onto the last task only).
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(4, 4) | self.add.s(8)
+        res = c.apply_async(link=record.s())
+        assert res.get() == 16
+        assert fired == [16]
+
+    def test_chain_link_option_fires_once_in_eager(self):
+        # Same as above, but with the link set as a chain option.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = (self.add.s(4, 4) | self.add.s(8)).set(link=record.s())
+        res = c.apply_async()
+        assert res.get() == 16
+        assert fired == [16]
+
+    def test_chain_link_fires_once_on_trailing_chord_in_eager(self):
+        # A chain ending in a chord routes the link to the chord body,
+        # since _chord.apply only applies the body.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value):
+            fired.append(value)
+
+        c = self.add.s(1, 1) | chord(
+            [self.add.s(10), self.add.s(20)], self.xsum.s())
+        res = c.apply_async(link=record.s())
+        assert res.get() == 34
+        assert fired == [34]
+
+    def test_chain_link_does_not_leak_into_canvas(self):
+        # The link must not mutate the caller's canvas: rerunning the
+        # same chain, with or without a link, must not refire callbacks
+        # from earlier runs.
+        self.app.conf.task_always_eager = True
+        fired = []
+
+        @self.app.task(shared=False)
+        def record(value, tag):
+            fired.append((tag, value))
+
+        c = self.add.s(1, 1) | chord(
+            [self.add.s(10), self.add.s(20)],
+            group(self.xsum.s(), self.xsum.s()))
+        c.apply_async(link=record.s(tag='L'))
+        assert fired == [('L', 34), ('L', 34)]
+        c.apply_async()
+        assert fired == [('L', 34), ('L', 34)]
+        c.apply_async(link=record.s(tag='M'))
+        assert fired == [('L', 34), ('L', 34), ('M', 34), ('M', 34)]
 
     def test_apply(self):
         x = chain(self.add.s(4, 4), self.add.s(8), self.add.s(10))
@@ -1254,9 +1589,12 @@ class test_chain(CanvasCase):
         assert signature(flat_chain.tasks[1].options['link'][0]) == signature('link_b')
         assert signature(flat_chain.tasks[1].options['link_error'][0]) == signature('link_ab')
 
-    def test_group_in_center_of_chain(self):
+    @pytest.mark.parametrize('options', [{}, {'task_id': 'last-task-id'}])
+    def test_group_in_center_of_chain(self, options):
+        # With an option, chain() keeps its steps and the group is upgraded
+        # in prepare_steps, which must not link the body's result twice.
         t1 = chain(self.add.si(1, 1), group(self.add.si(1, 1), self.add.si(1, 1)),
-                   self.add.si(1, 1) | self.add.si(1, 1))
+                   self.add.si(1, 1) | self.add.si(1, 1), **options)
         t2 = chord([self.add.si(1, 1), self.add.si(1, 1)], t1)
         t2.freeze()  # should not raise
 
@@ -1292,6 +1630,48 @@ class test_chain(CanvasCase):
             _group_result_sizes_on_spine(restored),
         ):
             assert sizes.count(n) >= 2, sizes
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    @pytest.mark.parametrize('method', ['apply_async', 'freeze'])
+    @pytest.mark.parametrize('task_id', [None, 'last-task-id'])
+    def test_groups_in_chain_as_tuple_holds_each_task_once(self, task_id, method, task_protocol):
+        # Regression for #9608: as_tuple() must hold every task of the chain
+        # once, with or without a task_id. The task after a group becomes the
+        # body of a chord, and the rest of the chain must be linked to the
+        # chord's result only, not to the body's result as well.
+        self.app.conf.task_protocol = task_protocol
+        n = 3
+        options = {'task_id': task_id} if task_id else {}
+        canvas = chain(
+            self.add.si(0, 0),
+            group([chain(self.add.si(i, 0), self.add.si(0, i)) for i in range(n)]),
+            group([chain(self.add.si(i, 1), self.add.si(1, i)) for i in range(n)]),
+            self.add.si(2, 0),
+            self.add.s(3),
+            **options,
+        )
+        ids = ids_in_as_tuple(getattr(canvas, method)().as_tuple())
+
+        # The first task, 2 * n tasks and a GroupResult per group, two last tasks.
+        assert len(ids) == len(set(ids)) == 1 + 2 * (2 * n + 1) + 2, ids
+
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_group_before_chord_in_chain_as_tuple_holds_each_task_once(self, task_protocol):
+        # Regression for #9608: here the rest of the chain is linked to the
+        # task after the group through the GroupResult of the next chord.
+        self.app.conf.task_protocol = task_protocol
+        canvas = chain(
+            self.add.si(0, 0),
+            group(self.add.si(1, 1), self.add.si(1, 2)),
+            self.add.si(2, 2),
+            chord([self.add.si(3, 3), self.add.si(3, 4)], self.add.si(4, 4)),
+            self.add.si(5, 5),
+            task_id='last-task-id',
+        )
+        ids = ids_in_as_tuple(canvas.apply_async().as_tuple())
+
+        # Eight tasks and two GroupResults.
+        assert len(ids) == len(set(ids)) == 10, ids
 
     def test_upgrade_to_chord_on_chain(self):
         group1 = group(self.add.si(10, 10), self.add.si(10, 10))
@@ -1532,6 +1912,51 @@ class test_chain(CanvasCase):
         assert isinstance(res, GroupResult)
         assert res.id is not None
 
+    def test_chain_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()) -- the step after the empty group is empty too.
+
+        The empty chain is spliced away, so stripping the leading empty
+        group would leave no step at all.  The group is kept instead, as
+        for a chain made up of empty groups only.
+        Regression test for PR #10646.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        tasks, results = c.prepare_steps((), {}, c.tasks)
+        assert len(tasks) == 1
+        assert isinstance(tasks[0], group)
+        assert not tasks[0].tasks
+        assert len(results) == 1
+        assert isinstance(results[0], GroupResult)
+
+    @pytest.mark.parametrize('trailing', [
+        lambda app: [chain(app=app)],
+        lambda app: [chain(chain(app=app), app=app)],
+        lambda app: [chain(app=app), chain(app=app)],
+        lambda app: [group(app=app), chain(app=app)],
+    ], ids=[
+        'empty_chain', 'nested_empty_chain', 'two_empty_chains',
+        'empty_group_then_empty_chain',
+    ])
+    def test_freeze_empty_group_followed_by_empty_chain(self, trailing):
+        """Freezing an empty group followed by empty chains returns a result.
+
+        Regression test for PR #10646, which raised ``IndexError``.
+        """
+        c = chain(group(app=self.app), *trailing(self.app), app=self.app)
+        res = c.freeze()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
+
+    def test_apply_async_empty_group_followed_by_empty_chain(self):
+        """chain(group(), chain()).apply_async() returns the group's result.
+
+        Regression test for PR #10646, which returned ``None``.
+        """
+        c = chain(group(app=self.app), chain(app=self.app), app=self.app)
+        res = c.apply_async()
+        assert isinstance(res, GroupResult)
+        assert res.get(timeout=1) == []
+
     def test_nested_chain_with_leading_empty_group(self):
         """_chain(_chain(group(), add.s(x)), add.s(y)) -- inner empty group stripped.
 
@@ -1650,6 +2075,16 @@ class test_group(CanvasCase):
         x = group([self.add.s(2, 2), self.add.s(4, 4)])
         assert repr(x)
 
+    def test_repr_keeps_unrelated_module_names(self):
+        x = group([
+            signature('app.tasks.a', args=(1,), app=self.app),
+            signature('webapp.tasks.b', args=(2,), app=self.app),
+            signature('my-app.tasks.c', args=(3,), app=self.app),
+        ])
+        assert repr(x) == (
+            'group([app.tasks.a(1), webapp.tasks.b(2), my-app.tasks.c(3)])'
+        )
+
     def test_repr_empty_group(self):
         x = group([])
         assert repr(x) == 'group(<empty>)'
@@ -1767,6 +2202,19 @@ class test_group(CanvasCase):
         finally:
             _task_stack.pop()
 
+    @pytest.mark.parametrize('task_protocol', [2, 1])
+    def test_group_ending_a_chain_in_a_group_gets_its_own_id(self, task_protocol):
+        # group_id names the group a signature belongs to, so the inner
+        # group must not adopt the outer group's id as its own.
+        self.app.conf.task_protocol = task_protocol
+        res = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        ).apply_async()
+        inner = res.results[1]
+        assert isinstance(inner, GroupResult)
+        assert inner.id != res.id
+
     @pytest.mark.parametrize("group_type", (group, group_subclass))
     def test_from_dict(self, group_type):
         x = group_type([self.add.s(2, 2), self.add.s(4, 4)])
@@ -1862,6 +2310,55 @@ class test_group(CanvasCase):
         x = group([self.add.s(), self.add.s()])
         res = self.helper_test_get_delay(x.delay(x=1, y=1))
         assert res == [2, 2]
+
+    def test_apply_chain_ending_in_group_skips_result_backend(self):
+        # Issue #4405
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chain(self.add.si(2, 2), group(self.add.si(3, 3), self.add.si(4, 4))),
+        )
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = x.delay()
+        assert res.get() == [2, [6, 8]]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_apply_member_runs_under_its_result_id(self):
+        @self.app.task(shared=False, bind=True)
+        def request_id(self):
+            return self.request.id
+
+        res = group(request_id.si().set(task_id='preset'), request_id.si()).apply()
+        assert res.results[0].id == 'preset'
+        assert [r.get() for r in res.results] == [r.id for r in res.results]
+
+    def test_apply_runs_member_link_and_link_error(self):
+        self.app.conf.task_always_eager = True
+        calls = []
+
+        @self.app.task(shared=False)
+        def record(*args):
+            calls.append(args)
+
+        x = group(
+            self.add.si(1, 1).set(link=record.s()),
+            chain(self.add.si(2, 2), self.div.si(1, 0).set(link_error=record.si('failed'))),
+        )
+        res = x.apply()
+        assert res.results[0].get() == 2
+        assert isinstance(res.results[1].result, ZeroDivisionError)
+        assert calls == [(2,), ('failed',)]
+
+    def test_apply_chord_member(self):
+        self.app.conf.task_always_eager = True
+        x = group(
+            self.add.si(1, 1),
+            chord([self.add.si(2, 2), self.add.si(3, 3)], self.xsum.s()),
+        )
+        assert x.apply().get() == [2, 10]
 
     def test_kwargs_delay_partial(self):
         self.app.conf.task_always_eager = True
@@ -2132,6 +2629,36 @@ class test_group(CanvasCase):
         assert len(res.results) == 1
 
 
+class test_chord_header_links(CanvasCase):
+    def test_clear_outer_callback_preserves_nested_chord_header(self):
+        outer_body = self.xsum.s()
+        errback = self.add.s(9)
+        body = self.xsum.s().set(queue='callbacks', link_error=[errback])
+        nested = chord([self.add.si(1, 2), self.add.si(3, 4)], body, app=self.app)
+        result = nested.freeze(chord=outer_body)
+        header_before = [(task.id, task.args) for task in nested.tasks.tasks]
+        assert nested.body.options['chord'] == outer_body
+
+        _clear_chord_option(nested)
+
+        assert 'chord' not in nested.body.options
+        assert nested.body.id == result.id
+        assert nested.body.options['queue'] == 'callbacks'
+        assert nested.body.options['link_error'] == [errback]
+        assert [(task.id, task.args) for task in nested.tasks.tasks] == header_before
+        assert all(task.options['chord'] is nested.body for task in nested.tasks.tasks)
+
+    def test_strip_header_links_preserves_chord_without_body(self):
+        pending = chord([self.add.si(1, 2), self.add.si(3, 4)], app=self.app)
+        pending.freeze()
+        before = json.dumps(pending)
+
+        _strip_chord_header_links(pending)
+
+        assert pending.body is None
+        assert json.dumps(pending) == before
+
+
 class test_chord(CanvasCase):
     def test__get_app_does_not_exhaust_generator(self):
         def build_generator():
@@ -2175,6 +2702,14 @@ class test_chord(CanvasCase):
                 assert apply_call.kwargs.get(key) == value
         # chord.unlock retries keep their own default countdown
         assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
+    def test_group_body_does_not_take_the_header_id(self):
+        res = chord(
+            group(self.add.si(1, 1), self.add.si(2, 2)),
+            group(self.add.si(3, 3), self.add.si(4, 4)),
+        ).apply_async()
+        assert isinstance(res, GroupResult)
+        assert res.id != res.parent.id
 
     def test_group_or_task_apply_async_countdown_delays_header(self):
         """countdown on group|task must delay the header, not only the body.
@@ -2232,6 +2767,68 @@ class test_chord(CanvasCase):
     def test_app_when_header_is_empty(self):
         x = chord([], self.add.s(4, 4))
         assert x.app is self.add.app
+
+    def test_app_when_header_has_no_app(self):
+        x = chord([signature('h1')], self.add.s(4, 4))
+        assert x.app is self.app
+
+    @pytest.mark.parametrize('body', [chain, group, chord])
+    def test_app_when_header_has_no_app_and_body_is_canvas(self, body):
+        x = chord([signature('h1')], body(self.xsum.s(), self.add.s(1)))
+        assert x.body._app is None
+        assert x.app is self.app
+
+    @pytest.mark.parametrize('header', [chain, group, chord])
+    @pytest.mark.parametrize('body', [None, chain, group, chord])
+    def test_app_when_header_and_body_are_canvases(self, header, body):
+        # A chain, group or chord built from task signatures has no app of its
+        # own but resolves one through its tasks.
+        header = header(self.add.s(1, 1), self.add.s(2, 2))
+        body = body(self.xsum.s(), self.add.s(1)) if body else None
+        x = chord([header], body)
+        assert x.tasks[0]._app is None
+        assert body is None or x.body._app is None
+        assert x.app is self.app
+
+    def test_app_when_header_canvas_has_dict(self):
+        # A chain built with options keeps a dict as a task until it is frozen
+        # (without them chain() turns it into a signature) and cannot resolve
+        # an app through it, so the chord falls back to the body's app.
+        x = chord(
+            [group([chain(dict(self.add.s(1, 1)), self.add.s(1), task_id='x')])],
+            self.xsum.s(),
+        )
+        assert x.app is self.app
+
+    def test_apply_async_in_another_thread_when_header_and_body_are_chains(self):
+        # #6197: a chord whose header starts with a chain and whose body is a
+        # chain fell back to the default app of the thread, which has no
+        # result backend.
+        def apply():
+            return chord(
+                [chain(self.add.s(1, 1), self.add.s(1))], chain(self.xsum.s(), self.add.s(1)),
+            ).apply_async()
+
+        with self.Celery(backend='disabled') as default_app, \
+                current_app_in_this_thread(self.app, default=default_app), \
+                ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(apply).result()
+        assert isinstance(result.parent, GroupResult)
+
+    @pytest.mark.parametrize('options,expected_id,uuid_calls', [
+        ({'task_id': 'existing-id'}, 'existing-id', 0),
+        ({'task_id': None}, 'generated-id', 1),
+        ({}, 'generated-id', 1),
+    ])
+    def test_apply_async_header_id(self, options, expected_id, uuid_calls):
+        workflow = chord([self.add.s(1, 2)], self.xsum.s(), app=self.app).set(**options)
+        with patch('celery.canvas.uuid', return_value='generated-id') as uuid, \
+                patch.object(workflow, 'run') as run:
+            workflow.apply_async()
+
+        header = run.call_args.args[0]
+        assert header.options['task_id'] == expected_id
+        assert uuid.call_count == uuid_calls
 
     def test_freeze_empty_group_body_returns_result(self):
         """An empty group body still exists and should be frozen.
@@ -2448,6 +3045,250 @@ class test_chord(CanvasCase):
 
         assert x.tasks
         assert x.body
+
+    @pytest.mark.parametrize('allow_header_errbacks', [False, True])
+    @pytest.mark.parametrize('key', ['link', 'link_error'])
+    def test_link_option_goes_to_body_not_header(self, key, allow_header_errbacks):
+        # Unlike chord.link_error(), the option is not added to the header
+        # tasks even with task_allow_error_cb_on_chord_header enabled
+        self.app.conf.task_allow_error_cb_on_chord_header = allow_header_errbacks
+        callback = self.div.s(2)
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            # The header group used to get the option too, and raise TypeError
+            x.apply_async(**{key: callback})
+        body = apply_chord.call_args[0][1]
+        assert body.options[key] == [callback]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert key not in header_call.kwargs
+
+    def _body_to_run(self, x, eager, **options):
+        """Apply the chord ``x`` and return the body it was going to run."""
+        if eager:
+            self.app.conf.task_always_eager = True
+            with patch.object(chord, 'apply') as apply:
+                x.apply_async(**options)
+            return apply.call_args.kwargs['body']
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async'):
+            x.apply_async(**options)
+        return apply_chord.call_args[0][1]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('key', ['link', 'link_error'])
+    def test_link_option_keeps_body_callbacks(self, key, eager):
+        own_callback = self.div.s(2)
+        callback = self.add.s(1)
+        body = self.mul.s(4)
+        body.extend_list_option(key, own_callback)
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=body)
+        body = self._body_to_run(x, eager, **{key: callback})
+        assert body.options[key] == [own_callback, callback]
+        # The signature of the user is not changed
+        assert x.body.options[key] == [own_callback]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_none_keeps_body_callbacks(self, eager):
+        body = self.mul.s(4)
+        body.link(self.div.s(2))
+        body.link_error(self.add.s(1))
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=body)
+        body = self._body_to_run(x, eager, link=None, link_error=None)
+        assert body.options['link'] == [self.div.s(2)]
+        assert body.options['link_error'] == [self.add.s(1)]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_replaces_link_set_on_chord(self, eager):
+        # As for any signature, the link given to apply_async() wins
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        x.set(link=[self.div.s(2)])
+        body = self._body_to_run(x, eager, link=self.add.s(1))
+        assert body.options['link'] == [self.add.s(1)]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_set_on_chord_goes_to_body(self, eager):
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        x.set(link=[self.div.s(2)])
+        body = self._body_to_run(x, eager)
+        assert body.options['link'] == [self.div.s(2)]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_on_group_body_is_like_chord_link(self, eager):
+        # chord.link() links a group body once, on its first task
+        def make_chord():
+            return chord([self.add.s(2, 2)],
+                         body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+
+        expected = make_chord()
+        expected.link(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link=self.div.si(2))
+        assert [task.options.get('link') for task in body.tasks] == [
+            task.options.get('link') for task in expected.body.tasks]
+        assert not body.options.get('link')
+        assert not any(task.options.get('link') for task in x.body.tasks)
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_error_option_on_group_body_is_like_chord_link_error(self, eager):
+        # chord.link_error() links each task of a group body, which keeps its
+        # own errbacks; the group itself gets none, as it would replace them
+        def make_chord():
+            failing = self.xsum.s()
+            failing.link_error(self.mul.si(4))
+            return chord([self.add.s(2, 2)],
+                         body=group(failing, self.xsum.s(), app=self.app))
+
+        expected = make_chord()
+        expected.link_error(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            [self.mul.si(4), self.div.si(2)], [self.div.si(2)]]
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            task.options.get('link_error') for task in expected.body.tasks]
+        assert not body.options.get('link_error')
+        assert [task.options.get('link_error') for task in x.body.tasks] == [
+            [self.mul.si(4)], None]
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_error_option_stays_on_chord_body(self, eager):
+        # The chord's error handling reads it there when the header fails
+        x = chord([self.add.s(2, 2)],
+                  body=chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()))
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert body.options['link_error'] == [self.div.si(2)]
+        assert not x.body.options.get('link_error')
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('own_is_empty', [False, True])
+    def test_link_error_option_on_group_body_with_own_link_error(self, own_is_empty, eager):
+        # When the group runs, its tasks get their errbacks from its own
+        # link_error, even an empty one, and a chord in it passes them on to
+        # its body, so linking them there as well would call them twice
+        own = [] if own_is_empty else self.mul.si(4)
+        x = chord([self.add.s(2, 2)], body=group(
+            self.xsum.s(),
+            chord([self.xsum.s()], body=group(self.xsum.s(), self.xsum.s(), app=self.app)),
+            app=self.app,
+        ).set(link_error=own))
+        body = self._body_to_run(x, eager, link_error=self.div.si(2))
+        assert body.options['link_error'] == (
+            [self.div.si(2)] if own_is_empty else [self.mul.si(4), self.div.si(2)])
+        task, member = body.tasks
+        assert not task.options.get('link_error')
+        assert [t.options.get('link_error') for t in member.body.tasks] == [None, None]
+        assert x.body.options['link_error'] == own
+
+    def test_link_error_option_on_group_in_group_body_goes_to_its_tasks(self):
+        # A group in the group is flattened before it runs, which drops its
+        # own link_error
+        x = chord([self.add.s(2, 2)], body=group(
+            group(self.xsum.s(), self.xsum.s(), app=self.app).set(link_error=[self.mul.si(4)]),
+            self.xsum.s(), app=self.app,
+        ))
+        body = self._body_to_run(x, False, link_error=self.div.si(2))
+        assert [task.options.get('link_error') for task in body.tasks] == [
+            [self.div.si(2)], [self.div.si(2)], [self.div.si(2)]]
+
+    @pytest.mark.parametrize('allow_header_errbacks', [False, True])
+    def test_link_error_option_on_chord_in_group_body_goes_to_its_body(
+            self, allow_header_errbacks, recwarn):
+        # As for a chord body, the header of the chord gets none
+        self.app.conf.task_allow_error_cb_on_chord_header = allow_header_errbacks
+        x = chord([self.add.s(2, 2)], body=group(
+            chord([self.xsum.s(), self.xsum.s()], body=self.xsum.s()),
+            chord([self.xsum.s()], body=chord([self.xsum.s(), self.xsum.s()],
+                                              body=self.xsum.s())),
+            self.xsum.s(), app=self.app,
+        ))
+        body = self._body_to_run(x, False, link_error=self.div.si(2))
+
+        def header_errbacks(c):
+            # Freezing the body made the header of each chord a group
+            return [task.options.get('link_error') for task in c.tasks.tasks]
+
+        inner, outer, task = body.tasks
+        assert inner.body.options['link_error'] == [self.div.si(2)]
+        assert header_errbacks(inner) == [None, None]
+        assert not inner.options.get('link_error')
+        assert outer.body.body.options['link_error'] == [self.div.si(2)]
+        assert header_errbacks(outer) == [None]
+        assert header_errbacks(outer.body) == [None, None]
+        assert not outer.options.get('link_error')
+        assert not outer.body.options.get('link_error')
+        assert task.options['link_error'] == [self.div.si(2)]
+        assert not x.body.tasks[0].body.options.get('link_error')
+        assert not x.body.tasks[1].body.body.options.get('link_error')
+        assert not [w for w in recwarn
+                    if issubclass(w.category, CPendingDeprecationWarning)]
+
+    def test_link_option_on_empty_group_body(self):
+        x = chord([self.add.s(2, 2)], body=group([], app=self.app))
+        body = self._body_to_run(x, False, link=self.div.si(2))
+        assert body.options['link'] == [self.div.si(2)]
+
+    def test_link_option_does_not_change_callback_group(self):
+        callback = group(self.div.s(2), self.mul.s(4), app=self.app)
+        x = chord([self.add.s(2, 2)],
+                  body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+        self._body_to_run(x, False, link=callback)
+        assert not any(task.immutable for task in callback.tasks)
+
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('make_inner_body', [
+        lambda self: self.xsum.s(),
+        lambda self: group(self.xsum.s(), self.xsum.s(), app=self.app),
+    ], ids=['task', 'group'])
+    def test_link_option_on_chord_body_goes_to_its_body(self, make_inner_body, eager):
+        # As with chord.link(), the callback goes to the body of the chord
+        def make_chord():
+            inner = chord([self.xsum.s(), self.xsum.s()], body=make_inner_body(self))
+            return chord([self.add.s(2, 2)], body=inner)
+
+        def links(inner_body):
+            tasks = inner_body.tasks if isinstance(inner_body, group) else [inner_body]
+            return [task.options.get('link') for task in tasks]
+
+        expected = make_chord()
+        expected.link(self.div.si(2))
+        x = make_chord()
+        body = self._body_to_run(x, eager, link=self.div.si(2))
+        assert links(body.body) == links(expected.body.body)
+        assert not any(links(x.body.body))
+
+    @pytest.mark.parametrize('eager', [False, True])
+    def test_link_option_is_not_kept_for_next_call(self, eager):
+        x = chord([self.add.s(2, 2)],
+                  body=group(self.xsum.s(), self.xsum.s(), app=self.app))
+        self._body_to_run(x, eager, link=self.div.si(2))
+        body = self._body_to_run(x, eager, link=self.mul.si(4))
+        assert body.tasks[0].options['link'] == [self.mul.si(4)]
+
+    def test_chain_link_to_chord_step_keeps_body_callbacks(self):
+        own_callback = self.div.s(2)
+        chain_callback = self.add.s(1)
+        body = self.xsum.s()
+        body.link(own_callback)
+        c = chain(self.add.s(1, 1),
+                  chord([self.add.s(10), self.add.s(20)], body))
+        with patch('celery.canvas.Signature.apply_async') as first_apply:
+            c.apply_async(link=chain_callback)
+        # The worker deserializes the next step of the chain and applies it
+        next_step = first_apply.call_args.kwargs['chain'][-1]
+        next_step = Signature.from_dict(json.loads(json.dumps(next_step)),
+                                        app=self.app)
+        assert isinstance(next_step, chord)
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            next_step.apply_async((2,))
+        body = apply_chord.call_args[0][1]
+        assert [cb['task'] for cb in body.options['link']] == [
+            own_callback.task, chain_callback.task]
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert 'link' not in header_call.kwargs
 
     def test_repr(self):
         x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
@@ -2852,6 +3693,78 @@ class test_chord(CanvasCase):
         assert result.id != group_id
         assert body.id is not None
         assert body.id != group_id
+
+    @pytest.mark.parametrize('task_protocol,use_link', [(1, None), (2, True)])
+    def test_link_based_body_keeps_final_result_on_inner_chord(self, task_protocol, use_link):
+        self.app.conf.task_protocol = task_protocol
+        inner_body = chain(self.add.s(10), self.add.s(100))
+        body = _chain(
+            self.add.si(0, 0),
+            chord([self.add.s(1), self.add.s(2)], inner_body, app=self.app),
+            app=self.app, use_link=use_link,
+        )
+        workflow = chord([self.add.si(1, 1)], body, app=self.app)
+
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            result = workflow.apply_async()
+
+        payload = send.call_args.args[2].body
+        published_body = (payload if task_protocol == 1 else payload[2])['chord']
+        # Link-based chains have no remaining chain field for a failed inner
+        # header to traverse, so its body must still identify the final result.
+        assert published_body.tasks[1].body.id == result.id
+
+    @pytest.mark.parametrize('serialized', [False, True])
+    @pytest.mark.parametrize('nested_chain', [False, True])
+    def test_chain_of_implicit_chords_body_message_size_linear(self, serialized, nested_chain):
+        sizes = []
+        for n_groups in range(2, 6):
+            steps = [self.add.s(0, 0)]
+            for i in range(n_groups):
+                steps.append(group(self.add.si(i, j) for j in range(2)))
+                steps.append(self.add.si(i, i))
+            body = chain(*steps)
+            if nested_chain:
+                body = _chain(body, self.add.si(1, 1), app=self.app)
+            written_body = json.dumps(body)
+            workflow = chord([self.add.si(1, 1), self.add.si(2, 2)], body, app=self.app)
+            if serialized:
+                workflow = signature(json.loads(json.dumps(workflow)), app=self.app)
+            with patch.object(self.app.amqp, 'send_task_message') as send:
+                workflow.apply_async()
+
+            assert send.call_count == 2
+            assert json.dumps(body) == written_body
+            sizes.append(len(json.dumps(send.call_args_list[0].args[2].body)))
+
+        assert sizes[-1] < 3 * sizes[0], (
+            f"Chord header messages grow geometrically with body groups: {sizes}"
+        )
+
+    def test_nested_chord_body_keeps_options_and_links(self):
+        callback = self.mul.s(3)
+        errback = self.div.s(2)
+        inner_body = chain(self.add.s(10), self.add.s(100)).set(queue='q2', priority=7)
+        inner_body.link(callback)
+        inner_body.link_error(errback)
+        body = _chain(
+            self.add.si(0, 0),
+            chord([self.add.s(1), self.add.s(2)], inner_body, app=self.app),
+            app=self.app,
+        )
+        workflow = chord([self.add.si(1, 1)], body, app=self.app)
+        written = json.dumps(body)
+
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            workflow.apply_async()
+
+        published_body = send.call_args.args[2].body[2]['chord']
+        first, last = published_body.tasks[1].body, published_body.tasks[2]
+        assert (first.options['queue'], first.options['priority']) == ('q2', 7)
+        assert 'queue' not in last.options
+        assert first.options['link_error'] == last.options['link_error'] == [errback]
+        assert last.options['link'] == [callback]
+        assert json.dumps(body) == written
 
 
 class test_maybe_signature(CanvasCase):

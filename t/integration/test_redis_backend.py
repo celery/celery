@@ -1,8 +1,11 @@
 import threading
+from types import SimpleNamespace
 
 import pytest
 
 from celery import states, uuid
+from celery.app.task import Context
+from celery.result import AsyncResult, GroupResult
 from t.integration.conftest import get_active_redis_channels
 from t.integration.tasks import identity
 
@@ -34,6 +37,24 @@ def test_decode_responses_disables_compression(app):
         assert app.conf.result_compression == 'gzip'
     finally:
         backend.forget(task_id)
+
+
+@pytest.mark.celery(result_expires=60, result_failure_expires=600)
+def test_failure_expires(app):
+    if not app.conf.result_backend.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    backend = app.backend
+    success_id, failure_id = uuid(), uuid()
+    try:
+        backend.store_result(success_id, 42, states.SUCCESS)
+        backend.store_result(failure_id, KeyError('x'), states.FAILURE)
+
+        assert 0 < backend.client.ttl(backend.get_key_for_task(success_id)) <= 60
+        assert 60 < backend.client.ttl(backend.get_key_for_task(failure_id)) <= 600
+    finally:
+        backend.forget(success_id)
+        backend.forget(failure_id)
 
 
 @pytest.mark.celery(
@@ -205,3 +226,81 @@ def test_pubsub_reentrant_cancel_from_finalizer(app):
         channel for channel in get_active_redis_channels()
         if channel.startswith(b'celery-task-meta-')]
     assert meta_channels == []
+
+
+@pytest.mark.celery(result_expires=60, result_chord_expires=600)
+def test_chord_expires(app):
+    if not app.conf.result_backend.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    backend = app.backend
+    group_id = uuid()
+    header = GroupResult(group_id, [GroupResult(uuid(), [AsyncResult(uuid())])])
+    request = SimpleNamespace(id=uuid(), group=group_id, group_index=0, chord=None)
+    keys = [backend.get_key_for_group(group_id, suffix)
+            for suffix in ('', '.j', '.s', '.d')]
+    try:
+        backend.apply_chord((group_id, header.results), None)
+        backend.set_chord_size(group_id, 2)
+        assert 60 < backend.client.ttl(keys[2]) <= 600
+        backend.on_chord_part_return(request, states.SUCCESS, 1)
+
+        for key in keys:
+            assert 60 < backend.client.ttl(key) <= 600
+        assert GroupResult.restore(group_id, backend=backend) == header
+    finally:
+        backend.client.delete(*keys)
+
+
+@pytest.mark.parametrize('ordered', (True, False))
+def test_chord_part_return_records_each_header_task_once(
+    app, celery_session_worker, ordered,
+):
+    # A chord header task that is executed twice (e.g. redelivered after its
+    # worker was lost with acks_late) must only be recorded once, even when
+    # it returned a different value: the chord body must neither run before
+    # the other header tasks finished nor receive a result twice.
+    url = app.conf.result_backend
+    if not url.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    app.conf.result_backend_transport_options = dict(
+        result_chord_ordered=ordered,
+    )
+    backend = app.backend
+    client = backend.client
+    gid = uuid()
+    body = identity.s()
+    body_id = body.freeze().id
+    keys = [backend.get_key_for_group(gid, suffix)
+            for suffix in ('.j', '.t', '.s', '.d')]
+    jkey = keys[0]
+    count = client.zcard if ordered else client.llen
+    header_ids = [uuid() for _ in range(3)]
+
+    def part_return(index, result):
+        request = Context(id=header_ids[index], group=gid,
+                          group_index=index, chord=body)
+        backend.on_chord_part_return(request, states.SUCCESS, result)
+
+    backend.set_chord_size(gid, 3)
+    try:
+        part_return(0, 1)
+        part_return(0, 42)
+        assert count(jkey) == 1
+
+        # A worker running an older version records its part without the
+        # dedupe set, which must not stall the chord.
+        encoded = backend.encode([1, header_ids[1], states.SUCCESS, 2])
+        if ordered:
+            client.zadd(jkey, {encoded: 1})
+        else:
+            client.rpush(jkey, encoded)
+        assert count(jkey) == 2
+
+        part_return(2, 3)
+        assert app.AsyncResult(body_id).get(timeout=10) == [1, 2, 3]
+        assert client.exists(*keys) == 0
+    finally:
+        client.delete(*keys)
+        backend.forget(body_id)

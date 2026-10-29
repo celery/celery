@@ -590,6 +590,12 @@ When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
 the `terminate` option is set.
 
+A worker that isn't running the task marks it ``REVOKED``, unless it has
+finished or another worker has started it. A started task shows
+``STARTED`` (with :setting:`task_track_started`) or a custom state it set.
+Without :setting:`task_track_started`, a running task shows ``PENDING``, so
+it's marked ``REVOKED`` and then stores its result when it's done.
+
 .. note::
 
     The terminate option is a last resort for administrators when
@@ -918,6 +924,12 @@ based on load:
 
 - The autoscaler adds more pool processes when there is work to do,
     - and starts removing processes when the workload is low.
+
+Before removing processes, it waits for the keepalive period (30 seconds
+by default) to pass since the last task was accepted for immediate execution
+or the pool was grown. Tasks routed through ETA/countdown or rate-limit
+scheduling do not reset this timer.
+Set the ``AUTOSCALE_KEEPALIVE`` environment variable to change this period.
 
 It's enabled by the :option:`--autoscale <celery worker --autoscale>` option,
 which needs two numbers: the maximum and minimum number of pool processes:

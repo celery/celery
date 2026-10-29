@@ -1,3 +1,4 @@
+import gc
 import logging
 import platform
 import time
@@ -10,16 +11,18 @@ import pytest
 import celery
 from celery import chain, chord, group
 from celery.canvas import StampingVisitor
-from celery.signals import task_received
+from celery.signals import before_task_publish, task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
 from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
-from .tasks import (ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result, add_not_typed, add_pydantic,
-                    add_pydantic_string_annotations, fail, fail_unpickleable, print_unicode, reject_then_succeed,
-                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
-                    retry_unpickleable, return_properties, return_request_time_limits, second_order_replace1,
-                    sleeping, soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
+                    add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
+                    print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
+                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable,
+                    retry_with_args_after_kwargs, retry_with_kwargs_after_args, return_properties,
+                    return_request_time_limits, second_order_replace1, sleeping,
+                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -205,6 +208,22 @@ class test_tasks:
             assert result.successful() is True
 
     @flaky
+    def test_pydantic_model_arguments(self, manager):
+        """Tests task call with Pydantic models passed by the caller."""
+        results = []
+        for i in range(10):
+            results.append([i + i, add_pydantic.delay(AddParameterModel(x=i, y=i))])
+        results.append([4, add_pydantic.apply_async(kwargs={'data': AddParameterModel(x=2, y=2)})])
+        results.append([6, add_pydantic.s(AddParameterModel(x=3, y=3)).delay()])
+        results.append([8, add_pydantic_string_annotations.delay(AddParameterModel(x=4, y=4))])
+        for expected, result in results:
+            value = result.get(timeout=10)
+            assert value == {'result': expected}
+            assert result.status == 'SUCCESS'
+            assert result.ready() is True
+            assert result.successful() is True
+
+    @flaky
     def test_timeout(self, manager):
         """Testing timeout of getting results from tasks."""
         result = sleeping.delay(10)
@@ -294,6 +313,22 @@ class test_tasks:
         assert result.ready() is True
         assert result.failed() is False
         assert result.successful() is False
+
+    @pytest.mark.parametrize('task_state', [celery.states.STARTED, 'PROGRESS'])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, manager, task_state):
+        if TEST_BACKEND.startswith('rpc'):
+            raise pytest.skip('Requires a backend that stores task states.')
+        backend = manager.app.backend
+        started, not_started = str(uuid4()), str(uuid4())
+        # Play another worker that has started a task. The session worker
+        # gets the revoke but doesn't run the task, so without terminate it
+        # must leave the state to the other worker.
+        backend.store_result(started, {'hostname': 'other@host'}, task_state)
+
+        # The worker replies once it has handled the revoke
+        assert manager.app.control.revoke([started, not_started], reply=True, timeout=10)
+        assert backend.get_state(started) == task_state
+        assert backend.get_state(not_started) == celery.states.REVOKED
 
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
@@ -456,6 +491,21 @@ class test_tasks:
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
+
+    def test_retry_switches_from_kwargs_to_args(self, manager):
+        result = retry_with_args_after_kwargs.apply_async(
+            kwargs={'foo': 1, 'bar': 2, 'label': 'kept'},
+        )
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 3, 'label': 'kept',
+            'retries': 1, 'is_eager': False,
+        }
+
+    def test_retry_switches_from_args_to_kwargs(self, manager):
+        result = retry_with_kwargs_after_args.apply_async(args=(1, 2))
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 2, 'retries': 1, 'is_eager': False,
+        }
 
     def test_retry_with_unpickleable_exception(self, manager):
         """Test a task that retries with an unpickleable exception.
@@ -785,6 +835,11 @@ class test_task_redis_result_backend:
 
 
 class test_task_replacement:
+    @pytest.mark.parametrize('replacements', (0, 1, 3))
+    def test_replaced_task_nesting_increments(self, manager, replacements):
+        result = record_replaced_task_nesting.delay(replacements)
+        assert result.get(timeout=TIMEOUT) == list(range(replacements + 1))
+
     def test_replaced_task_nesting_level_0(self, manager):
         @task_received.connect
         def task_received_handler(request, **kwargs):
@@ -851,6 +906,80 @@ class test_task_replacement:
         redis_messages = list(redis_connection.lrange("redis-echo", 0, -1))
         expected_messages = [b"In A", b"In B", b"In/Out C", b"Out B", b"Out A"]
         assert redis_messages == expected_messages
+
+
+class _SignalRecorder:
+    """Records the task ids seen by bound-method signal receivers."""
+
+    def __init__(self):
+        self.published = []
+        self.received = []
+
+    def on_before_task_publish(self, headers=None, **kwargs):
+        self.published.append(headers['id'])
+
+    def on_task_received(self, request=None, **kwargs):
+        self.received.append(request.id)
+
+    def connect(self):
+        before_task_publish.connect(self.on_before_task_publish)
+        task_received.connect(self.on_task_received)
+
+    def disconnect(self):
+        before_task_publish.disconnect(self.on_before_task_publish)
+        task_received.disconnect(self.on_task_received)
+
+
+class test_signal_bound_method_receivers:
+    """Bound methods of different instances are separate signal receivers.
+
+    Covers both the publishing side (``before_task_publish``) and the worker
+    side (``task_received``) with a real broker and worker.
+    """
+
+    def _run_task(self):
+        res = add.delay(1, 2)
+        assert res.get(timeout=TIMEOUT) == 3
+        return res.id
+
+    def test_each_instance_receives(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        try:
+            task_id = self._run_task()
+        finally:
+            a.disconnect()
+            b.disconnect()
+        for recorder in (a, b):
+            assert task_id in recorder.published
+            assert task_id in recorder.received
+
+    def test_disconnect_leaves_other_instance_connected(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        b.disconnect()
+        try:
+            task_id = self._run_task()
+        finally:
+            a.disconnect()
+        assert task_id in a.published
+        assert task_id in a.received
+        assert b.published == b.received == []
+
+    def test_other_instance_receives_after_garbage_collection(self, manager):
+        a, b = _SignalRecorder(), _SignalRecorder()
+        a.connect()
+        b.connect()
+        del a
+        gc.collect()
+        try:
+            task_id = self._run_task()
+        finally:
+            b.disconnect()
+        assert task_id in b.published
+        assert task_id in b.received
 
 
 class test_pool_acquire_timeout:
