@@ -5,6 +5,11 @@ Watches the source files of every module imported by the worker process
 them is modified, so changes to modules *imported by* the tasks are picked
 up as well.
 
+On the prefork pool tasks run in child processes, so a module that is only
+imported inside a task never shows up in the main process' ``sys.modules``.
+To catch those too, every ``.py`` file under the directories of the watched
+modules is watched as well.
+
 Modules that live in the standard library or in ``site-packages`` are
 ignored: they are numerous, and they don't change while developing.
 """
@@ -21,6 +26,9 @@ __all__ = ('Autoreloader',)
 logger = get_logger(__name__)
 
 DEFAULT_INTERVAL = 1.0
+
+# Directories that are never descended into when looking for source files.
+IGNORED_DIRS = frozenset({'__pycache__', 'node_modules'})
 
 
 def _ignored_prefixes():
@@ -45,6 +53,9 @@ class Autoreloader(threading.Thread):
         self.on_change = on_change
         self.interval = interval
         self._ignored = _ignored_prefixes()
+        # walking these would scan far more than the project.
+        self._no_walk = {os.path.abspath(os.sep),
+                         os.path.realpath(os.path.expanduser('~'))}
         self._mtimes = {}
         self._resolved = {}
         self._stopped = threading.Event()
@@ -80,12 +91,47 @@ class Autoreloader(threading.Thread):
                     files.add(resolved)
         return files
 
+    def _skip_dir(self, parent, name):
+        path = os.path.join(parent, name)
+        return (
+            name.startswith('.') or name in IGNORED_DIRS
+            or (path + os.sep).startswith(self._ignored)
+            # virtualenv living inside the project.
+            or os.path.isfile(os.path.join(path, 'pyvenv.cfg'))
+        )
+
+    def _roots(self, files):
+        """Return the top-most directories containing ``files``."""
+        roots = []
+        for directory in sorted({os.path.dirname(f) for f in files}):
+            if directory in self._no_walk:
+                continue
+            if not any(directory == r or directory.startswith(r + os.sep)
+                       for r in roots):
+                roots.append(directory)
+        return roots
+
+    def project_files(self):
+        """Return the files to watch: imported modules and their siblings.
+
+        Besides the imported modules this includes every ``.py`` file under
+        the directories they live in, see the module docstring.
+        """
+        files = self.module_files()
+        for root in self._roots(files):
+            for dirpath, dirnames, filenames in os.walk(root):
+                dirnames[:] = [d for d in dirnames
+                               if not self._skip_dir(dirpath, d)]
+                files.update(os.path.join(dirpath, name)
+                             for name in filenames if name.endswith('.py'))
+        return files
+
     def find_changes(self):
         """Return the first changed file since the previous call, if any.
 
         Files seen for the first time are only recorded.
         """
-        for filename in self.module_files():
+        for filename in self.project_files():
             try:
                 mtime = os.stat(filename).st_mtime
             except OSError:
@@ -106,10 +152,28 @@ class Autoreloader(threading.Thread):
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Autoreload scan failed: %r', exc)
                 continue
-            if changed:
-                logger.info('Detected change in %s, restarting...', changed)
-                self.on_change(changed)
-                return
+            if not changed:
+                continue
+            error = self._check_source(changed)
+            if error:
+                # restarting would only crash on import and leave nothing
+                # watching, so wait for the next save instead.
+                logger.warning(
+                    'Detected change in %s but not restarting: %s',
+                    changed, error)
+                continue
+            logger.info('Detected change in %s, restarting...', changed)
+            self.on_change(changed)
+            return
+
+    @staticmethod
+    def _check_source(filename):
+        """Return why ``filename`` can't be imported right now, if so."""
+        try:
+            with open(filename, 'rb') as f:
+                compile(f.read(), filename, 'exec', dont_inherit=True)
+        except (SyntaxError, ValueError, OSError) as exc:
+            return exc
 
     def stop(self):
         self._stopped.set()

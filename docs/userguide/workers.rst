@@ -353,13 +353,24 @@ changes, including modules imported by your tasks modules:
 
     $ celery -A proj worker -l INFO --autoreload
 
-Modules in the standard library and in ``site-packages`` aren't watched, and
-modules first imported after startup are picked up on the next scan.
-The files are polled once per second, so no file descriptor is held open per
-module.  The worker restarts the same way as for :sig:`HUP`, so tasks that
+Every ``.py`` file under the directories of the imported modules is watched,
+so a module that is only imported inside a task (which, with the prefork pool,
+runs in a child process) is picked up too.  Hidden directories,
+``__pycache__``, ``node_modules`` and virtual environments are skipped, as are
+modules in the standard library and in ``site-packages``.  The files are
+polled once per second, so no file descriptor is held open per module.
+
+If the modified file has a syntax error the worker isn't restarted, and a
+warning is logged instead: it restarts on the next save.  Other errors, such
+as an exception raised when the module is imported, aren't detected, and will
+make the worker exit.
+
+The worker restarts the same way as for :sig:`HUP`, so tasks that
 are running are given the chance to finish first, and the option isn't
-supported on macOS.  It has been tested with the ``prefork``, ``solo``,
-``threads``, ``gevent`` and ``eventlet`` pools.  This is meant for
+supported on macOS.  The watcher runs in a thread of the main process, so with
+the prefork pool the children are forked while it's running (Python 3.12+ may
+warn about this with ``-W default``).  It has been tested with the ``prefork``,
+``solo``, ``threads``, ``gevent`` and ``eventlet`` pools.  This is meant for
 development, don't use it in production.
 
 Automatic re-connection on connection loss to broker
