@@ -22,7 +22,7 @@ from .tasks import Tasks
 __all__ = ('Liveness',)
 
 logger = get_logger(__name__)
-debug, warning = logger.debug, logger.warning
+debug, info, warning = logger.debug, logger.info, logger.warning
 
 #: Transports whose event loop reads the probe back from the broker.
 PROBE_TRANSPORTS = frozenset({'amqp', 'redis'})
@@ -71,6 +71,12 @@ class Liveness(bootsteps.StartStopStep):
         self.overrun = None
         self._active_since = {}
         self._touch_failed = False
+        # When the file was last touched, when the step last started, and
+        # whether a warning has said the check is failing.  The touch time
+        # and the warning outlive a reconnect, so a recovery is logged once,
+        # after the warning.
+        self._last_touch = self._started_at = None
+        self._failing = False
         super().__init__(c, **kwargs)
 
     def include_if(self, c):
@@ -92,6 +98,9 @@ class Liveness(bootsteps.StartStopStep):
         from celery.concurrency.prefork import TaskPool
         self.c = c
         self.enforces_limits = isinstance(c.pool, TaskPool)
+        self._started_at = monotonic()
+        if self._last_touch is None:
+            self._last_touch = self._started_at
         driver = c.connection.transport.driver_type
         # The probe is published from the timer, which must run on the event
         # loop's thread: the event loop's hub, or a green pool's greenlets.
@@ -156,6 +165,7 @@ class Liveness(bootsteps.StartStopStep):
         self.check_time_limits()
         if self.healthy():
             self.touch()
+        self.report_failure()
 
     def send_probe(self):
         self.check_time_limits()
@@ -164,6 +174,7 @@ class Liveness(bootsteps.StartStopStep):
             # pool, which blocks until a task finishes, so it can't read the
             # probe meanwhile.  The worker is busy, not stuck.
             self.touch()
+        self.report_failure()
         try:
             self.producer.publish(
                 {'publisher_id': self.publisher_id, 'sent': monotonic()},
@@ -196,9 +207,29 @@ class Liveness(bootsteps.StartStopStep):
                 any(request not in active for request in state.reserved_requests))
 
     def healthy(self):
+        return self.overrun is None and self.task_channel_open()
+
+    def task_channel_open(self):
         task_consumer = self.c.task_consumer
-        return (self.overrun is None and task_consumer is not None and
+        return (task_consumer is not None and
                 _channel_is_open(task_consumer.channel))
+
+    def report_failure(self):
+        """Log once that the file has gone two intervals without a touch."""
+        now = monotonic()
+        # Right after a reconnect the first test message is still on its
+        # way, and Celery has already logged the outage, so count from the
+        # latest start too.
+        if self._failing or now - max(self._last_touch, self._started_at) < 2 * self.interval:
+            return
+        # A hard time limit overrun or a failed touch has already warned and
+        # set _failing, so only the other two reasons are left.
+        self._failing = True
+        if not self.task_channel_open():
+            warning('Liveness check failing: the task channel is closed.')
+        else:
+            warning('Liveness check failing: no test message back from the '
+                    'broker for %.0f seconds.', now - self._last_touch)
 
     def check_time_limits(self):
         """Note a task that has run past its hard time limit.
@@ -229,6 +260,7 @@ class Liveness(bootsteps.StartStopStep):
         if overrun and overrun != self.overrun:
             warning('Liveness check failing: task %s is still running after '
                     'its hard time limit.', overrun)
+            self._failing = True
         self.overrun = overrun
 
     def touch(self):
@@ -241,6 +273,11 @@ class Liveness(bootsteps.StartStopStep):
         except OSError as exc:
             if not self._touch_failed:
                 warning('Cannot update liveness file %r: %r', self.path, exc)
-            self._touch_failed = True
+            self._touch_failed = self._failing = True
         else:
-            self._touch_failed = False
+            now = monotonic()
+            if self._failing:
+                info('Liveness check passing again after %.0f seconds '
+                     'without an update.', now - self._last_touch)
+            self._touch_failed = self._failing = False
+            self._last_touch = now

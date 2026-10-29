@@ -442,6 +442,10 @@ The worker touches the file only when all of these are true:
 The test message uses a channel of its own, so long tasks and a full
 prefetch window don't delay it. A busy worker passes the check.
 
+When the file goes two intervals without an update, the worker logs a
+warning that gives the reason, and an info message once the file is updated
+again.
+
 Broker outages, restarts and shutdown
 -------------------------------------
 

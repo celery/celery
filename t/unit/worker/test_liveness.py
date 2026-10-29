@@ -290,6 +290,97 @@ class test_Liveness(LivenessCase):
             step.touch()
             assert warning.call_count == 2
 
+    def at(self, now):
+        return patch('celery.worker.consumer.liveness.monotonic', return_value=now)
+
+    def test_missing_test_messages_are_logged_once(self):
+        _, step, _, _ = self.started()
+        step._last_touch = step._started_at = 100.0
+        with patch('celery.worker.consumer.liveness.warning') as warning:
+            with self.at(103.9):
+                step.send_probe()  # under two intervals
+            warning.assert_not_called()
+            with self.at(104.0):
+                step.send_probe()
+            with self.at(106.0):
+                step.send_probe()
+        warning.assert_called_once_with(
+            'Liveness check failing: no test message back from the broker '
+            'for %.0f seconds.', 4.0)
+
+    def test_closed_task_channel_is_logged(self):
+        c, step, _, _ = self.started('sqs')
+        c.task_consumer.channel = Mock(is_open=False)
+        step._last_touch = step._started_at = 100.0
+        with patch('celery.worker.consumer.liveness.warning') as warning, self.at(104.0):
+            step.check()
+        warning.assert_called_once_with(
+            'Liveness check failing: the task channel is closed.')
+
+    def test_recovery_is_logged_once_after_a_warning(self):
+        _, step, _, _ = self.started()
+        step._started_at = 99.0
+        with patch('celery.worker.consumer.liveness.info') as info:
+            with self.at(100.0):
+                step.on_probe(self.own_probe(step, 99.5), Mock())
+            info.assert_not_called()  # a touch alone logs nothing
+            with self.at(105.0):
+                step.send_probe()  # warns
+            with self.at(106.0):
+                step.on_probe(self.own_probe(step, 105.5), Mock())
+            with self.at(108.0):
+                step.on_probe(self.own_probe(step, 107.5), Mock())
+        info.assert_called_once_with(
+            'Liveness check passing again after %.0f seconds without an '
+            'update.', 6.0)
+
+    def test_failing_state_survives_a_reconnect(self):
+        c, step, _, _ = self.started()
+        step._last_touch = step._started_at = 100.0
+        with self.at(105.0):
+            step.send_probe()  # warns
+        step.stop(c)
+        with patch('celery.worker.consumer.liveness.Consumer'), \
+                patch('celery.worker.consumer.liveness.Producer'), \
+                patch('celery.worker.consumer.liveness.warning') as warning, \
+                self.at(110.0):
+            step.start(c)  # the reconnect doesn't reset the clock or warn again
+        warning.assert_not_called()
+        with patch('celery.worker.consumer.liveness.info') as info, self.at(111.0):
+            step.on_probe(self.own_probe(step, 110.5), Mock())
+        info.assert_called_once_with(
+            'Liveness check passing again after %.0f seconds without an '
+            'update.', 11.0)
+
+    def test_no_warning_right_after_a_reconnect(self):
+        c, step, _, producer = self.started()
+        step._last_touch = step._started_at = 100.0
+        step.stop(c)
+        with patch('celery.worker.consumer.liveness.Consumer'), \
+                patch('celery.worker.consumer.liveness.Producer'), \
+                patch('celery.worker.consumer.liveness.warning') as warning:
+            with self.at(120.0):
+                step.start(c)  # sends a test message right away
+            with self.at(123.9):
+                step.send_probe()
+            warning.assert_not_called()  # its reply has two intervals to come back
+            with self.at(124.0):
+                step.send_probe()
+        warning.assert_called_once_with(
+            'Liveness check failing: no test message back from the broker '
+            'for %.0f seconds.', 24.0)
+
+    def test_touch_failure_is_not_logged_twice(self, tmp_path):
+        _, step, _, _ = self.started()
+        step.path = str(tmp_path / 'missing' / 'alive')
+        step._last_touch = step._started_at = 100.0
+        with patch('celery.worker.consumer.liveness.warning') as warning:
+            with self.at(101.0):
+                step.touch()
+            with self.at(105.0):
+                step.send_probe()
+        warning.assert_called_once()  # only the touch failure
+
 
 class test_Liveness_time_limits(LivenessCase):
 
@@ -322,6 +413,23 @@ class test_Liveness_time_limits(LivenessCase):
         assert not step.healthy()
         self.check_limits(step, [], now=116.0)  # the task finished
         assert step.healthy()
+
+    def test_overrun_is_not_logged_twice(self):
+        _, step = self.prefork_step()
+        request = FakeRequest('id1', time_limit=10)
+        step._last_touch = step._started_at = 100.0
+        self.check_limits(step, [request], now=100.0)
+        with patch('celery.worker.consumer.liveness.warning') as warning, \
+                patch('celery.worker.consumer.liveness.info') as info:
+            self.check_limits(step, [request], now=113.0)
+            with patch('celery.worker.state.active_requests', {request}), \
+                    patch('celery.worker.consumer.liveness.monotonic', return_value=115.0):
+                step.send_probe()
+            warning.assert_called_once()  # only the overrun
+            self.check_limits(step, [], now=116.0)  # the task finished
+            with patch('celery.worker.consumer.liveness.monotonic', return_value=117.0):
+                step.on_probe(self.own_probe(step, 116.5), Mock())
+        info.assert_called_once()
 
     def test_task_without_a_limit_is_fine(self):
         _, step = self.prefork_step()
