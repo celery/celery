@@ -510,6 +510,15 @@ class test_xmap_xstarmap(CanvasCase):
         _, call_kwargs = s.type.apply_async.call_args
         assert call_kwargs['route_name'] == 'custom.route'
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_with_route_name_call_option(self, attr):
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+
+        s.apply_async(route_name='custom.route')
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom.route'
+
 
 class test_chunks(CanvasCase):
 
