@@ -1,5 +1,5 @@
 google-cloud-storage==3.15.0
-grpcio==1.84.0
+grpcio==1.84.1
 google-cloud-firestore==2.32.0
 
 

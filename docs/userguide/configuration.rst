@@ -1977,6 +1977,17 @@ Default: None.
 The read consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
 ``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
 
+.. versionchanged:: 5.7
+
+    Workers also use this level when they store a result: each write
+    attempt first reads the newest row of the task and skips the write
+    if that row is ``SUCCESS``. This adds one read per attempted write.
+    A level stricter than :setting:`cassandra_write_consistency` can
+    make writes fail while nodes are down, and a weaker one, such as
+    ``ONE``, can miss a ``SUCCESS`` stored on another replica.
+    The read and the write are separate steps. Two runs of the same
+    task that overlap can still both write.
+
 .. setting:: cassandra_write_consistency
 
 ``cassandra_write_consistency``
