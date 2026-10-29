@@ -115,14 +115,24 @@ class test_Autoreloader:
 
     def test_roots_are_not_nested(self):
         reloader = Autoreloader(Mock())
-        roots = reloader._roots(['/a/x.py', '/a/b/y.py', '/a-b/z.py'])
-        assert roots == ['/a', '/a-b']
+        # native paths: the separator and the root differ on Windows.
+        root = os.path.abspath(os.sep)
+        a, a_b = os.path.join(root, 'a'), os.path.join(root, 'a-b')
+        roots = reloader._roots([
+            os.path.join(a, 'x.py'),
+            os.path.join(a, 'b', 'y.py'),
+            os.path.join(a_b, 'z.py'),
+        ])
+        assert roots == [a, a_b]
 
     def test_does_not_walk_home_or_filesystem_root(self):
         reloader = Autoreloader(Mock())
         home = os.path.realpath(os.path.expanduser('~'))
-        assert reloader._roots(
-            [os.path.join(home, 'tasks.py'), '/tasks.py']) == []
+        root = os.path.abspath(os.sep)
+        assert reloader._roots([
+            os.path.join(home, 'tasks.py'),
+            os.path.join(root, 'tasks.py'),
+        ]) == []
 
     def test_check_source(self, tmp_path):
         good = tmp_path / 'good.py'
