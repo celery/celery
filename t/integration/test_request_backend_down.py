@@ -23,6 +23,7 @@ def failing_app():
     return app
 
 
+@pytest.mark.timeout(30)
 def test_on_failure_returns_fast_with_unreachable_backend(failing_app):
     """
     Integration test: a real backend connection failure should not block

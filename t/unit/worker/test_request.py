@@ -2234,7 +2234,7 @@ class test_Request(RequestCase):
             einfo = ExceptionInfo()
 
         # Force `_success_was_stored` to return True so we enter the event block.
-        with patch.object(req, '_success_was_stored', return_value=True):
+        with patch.object(req, '_success_was_stored', return_value={'status': states.SUCCESS, 'result': '42'}):
             req.on_failure(einfo, send_failed_event=False)
 
         assert len(sleep_calls) == 0, (

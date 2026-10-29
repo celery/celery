@@ -684,3 +684,34 @@ class test_explicit_routing_without_default_queue:
         app.conf.task_queues = {"non_default_queue": {}}
         result = add.apply_async((1, 2), queue="non_default_queue")
         assert result.get(timeout=RESULT_TIMEOUT) == 3
+
+
+class test_unreachable_result_backend(SuiteOperations):
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        # Point the backend to an unreachable port to force ConnectionErrors
+        app.conf.result_backend = "redis://localhost:9999/0"
+        app.conf.result_backend_always_retry = True
+        app.conf.result_backend_max_retries = float("inf")
+        app.conf.result_backend_base_sleep_between_retries_ms = 10
+        app.conf.result_backend_max_sleep_between_retries_ms = 10
+        app.conf.task_acks_late = True
+        app.conf.task_reject_on_worker_lost = True
+        return app
+
+    def test_worker_survives_child_death_with_unreachable_backend(self, celery_setup: CeleryTestSetup):
+        from t.smoke.tasks import kill_child_process
+        queue = celery_setup.worker.worker_queue
+
+        # 1. Trigger a WorkerLostError by killing the child process abruptly
+        # (The task will attempt to store the failure in the unreachable backend)
+        sig = kill_child_process.si().set(queue=queue)
+        sig.delay()
+
+        # 2. Assert the worker doesn't hang and logs the "Worker exited prematurely" warning
+        celery_setup.worker.assert_log_exists("Worker exited prematurely", timeout=RESULT_TIMEOUT)
+
+        # 3. Assert the worker is still alive and can process a subsequent task normally
+        alive_sig = identity.si("alive").set(queue=queue)
+        assert alive_sig.delay().get(RESULT_TIMEOUT) == "alive"

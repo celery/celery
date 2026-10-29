@@ -707,7 +707,13 @@ class Request:
             return self.on_retry(exc_info)
 
         is_worker_lost = isinstance(exc, WorkerLostError)
-        if is_worker_lost and self._success_was_stored():
+
+        # _success_was_stored() returns the meta dictionary if the task
+        # already stored SUCCESS, or False otherwise. This allows us to reuse
+        # the fetched metadata below without a second backend round-trip.
+        success_meta = self._success_was_stored() if is_worker_lost else False
+
+        if success_meta:
             # The pool child stored SUCCESS and was lost afterwards, e.g. in
             # on_success, a task_postrun receiver or process_cleanup.
             # Recording a failure here would fire the errbacks and count a
@@ -716,12 +722,12 @@ class Request:
                  self.name, self.id, exc)
             if self.task.acks_late:
                 self.acknowledge()
+
             # Emit the success event so Flower/events.State do not stay STARTED.
-            try:
-                meta = self.task.backend._get_task_meta_for(self.id)
-                result = meta.get('result')
-            except Exception:  # pylint: disable=broad-except
-                result = None
+            # Reuse the metadata we just fetched instead of hitting the backend
+            # again from the worker's main process (which can be slow during
+            # an outage).
+            result = success_meta.get('result')
             self.send_event(
                 'task-succeeded',
                 result=saferepr(result, self.task.resultrepr_maxsize),
@@ -867,7 +873,9 @@ class Request:
                 task_id=self.id,
                 max_retries=bounded_max_retries,
             )
-            return meta['status'] == states.SUCCESS
+            if meta['status'] == states.SUCCESS:
+                return meta
+            return False
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False

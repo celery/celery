@@ -112,3 +112,9 @@ def self_termination_exhaust_memory():
     mem = []
     while True:
         mem.append(" " * 10**6)
+
+
+@shared_task
+def kill_child_process():
+    """Simulates a child process being lost abruptly (e.g., OOM killed)."""
+    os._exit(1)
