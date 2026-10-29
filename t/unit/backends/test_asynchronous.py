@@ -1,17 +1,20 @@
+import gc
 import logging
 import os
 import socket
 import sys
 import threading
 import time
+from collections import deque
 from unittest.mock import Mock, patch
 
 import pytest
 from vine import promise
 
-from celery import chain, group
+from celery import chain, group, states
 from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
 from celery.backends.base import Backend
+from celery.backends.redis import RedisBackend
 from celery.backends.rpc import RPCBackend
 from celery.utils import cached_property
 
@@ -746,3 +749,113 @@ class test_AsyncBackendMixin:
 
         result.on_ready()
         assert result.join_native(timeout=timeout) == [101, [1001, 2001]]
+
+    @staticmethod
+    def _backend(app, backend_cls):
+        backend = backend_cls(app=app)
+        backend.result_consumer.consume_from = Mock(name='consume_from')
+        backend.result_consumer.cancel_for = Mock(name='cancel_for')
+        app._backend = backend
+        return backend
+
+    @staticmethod
+    def _success(task_id):
+        return {'task_id': task_id, 'status': states.SUCCESS, 'result': 42,
+                'traceback': None, 'children': None}
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_dropping_a_duplicate_keeps_the_pending_result(
+            self, app, backend_cls):
+        # Issue #4925: a throwaway AsyncResult for an id that is already
+        # pending, e.g. a progress poll of a group member, must not take the
+        # pending one with it when it is garbage collected.
+        backend = self._backend(app, backend_cls)
+        pending = app.AsyncResult('tid')
+        backend.add_pending_result(pending, weak=True)
+
+        duplicate = app.AsyncResult('tid')
+        del duplicate
+
+        backend.result_consumer.cancel_for.assert_not_called()
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+        assert pending._cache['result'] == 42
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_every_waiter_for_an_id_is_resolved(self, app, backend_cls):
+        # Issue #4925: AsyncResult(id).get() while another AsyncResult for
+        # the same id is pending hung forever, the second one was never
+        # registered so nothing ever filled its cache.
+        backend = self._backend(app, backend_cls)
+        first, second = app.AsyncResult('tid'), app.AsyncResult('tid')
+        backend.add_pending_result(first)
+        backend.add_pending_result(second)
+
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+
+        assert first._cache['result'] == 42
+        assert second._cache['result'] == 42
+
+    def test_weak_result_freed_by_the_cycle_collector_is_untracked(self, app):
+        # The cycle collector clears weak references before it calls
+        # __del__, so the result is already gone from its waiters when
+        # __del__ asks the backend to remove it.
+        backend = self._backend(app, RedisBackend)
+        result = app.AsyncResult('tid')
+        backend.add_pending_result(result, weak=True)
+        result.cycle = result
+        del result
+        gc.collect()
+
+        assert 'tid' not in backend._pending_results.weak
+        backend.result_consumer.cancel_for.assert_called_once_with('tid')
+
+    def test_subscription_cancelled_when_last_waiter_is_removed(self, app):
+        backend = self._backend(app, RedisBackend)
+        cancel_for = backend.result_consumer.cancel_for
+        first, second = app.AsyncResult('tid'), app.AsyncResult('tid')
+        backend.add_pending_result(first)
+        backend.add_pending_result(second)
+
+        backend.remove_pending_result(first)
+        cancel_for.assert_not_called()
+        backend.remove_pending_result(second)
+        cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('first_weak,second_weak', [
+        (False, False), (True, True), (True, False), (False, True),
+    ])
+    def test_same_result_added_twice_is_tracked_once(
+            self, app, first_weak, second_weak):
+        # e.g. result.then() and then result.get() on the same object
+        backend = self._backend(app, RedisBackend)
+        result = app.AsyncResult('tid')
+
+        backend.add_pending_result(result, weak=first_weak)
+        backend.add_pending_result(result, weak=second_weak)
+
+        backend.result_consumer.consume_from.assert_called_once_with('tid')
+        assert sum(len(m.get('tid', {})) for m in backend._pending_results) == 1
+        backend.remove_pending_result(result)
+        assert not any(backend._pending_results)
+        backend.result_consumer.cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_native_join_gets_each_member_once_with_a_duplicate_waiter(
+            self, app, backend_cls):
+        # Issue #4925 at the iter_native level: a member is collected into
+        # the group's bucket exactly once, resolved, while another
+        # AsyncResult for its id is also waiting.
+        backend = self._backend(app, backend_cls)
+        member = app.AsyncResult('tid')
+        backend.add_pending_result(member, weak=True)
+        bucket = deque()
+        backend._collect_into(member, bucket)
+        duplicate = app.AsyncResult('tid')
+        backend.add_pending_result(duplicate)
+
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+
+        assert [node.id for node in bucket] == ['tid']
+        assert bucket[0]._cache['result'] == 42
+        assert member._cache['result'] == 42
+        assert duplicate._cache['result'] == 42
