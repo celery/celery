@@ -12,7 +12,6 @@ from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
 from uuid import UUID
-from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
 from kombu.compression import compress, decompress
@@ -271,7 +270,7 @@ class Backend:
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
         self.thread_safe = conf.get('result_backend_thread_safe', False)
 
-        self._pending_results = pending_results_t({}, WeakValueDictionary())
+        self._pending_results = pending_results_t({}, {})
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
