@@ -434,9 +434,10 @@ and a countdown of 10 seconds like this:
     >>> add.signature((2, 2), countdown=10)
     tasks.add(2, 2)
 
-The ``.s()`` method is a shortcut for creating a signature with task
-arguments. Execution options, such as countdown, can be applied to the
-resulting signature using ``.set()``:
+The ``.s()`` method is a shortcut that takes the task's arguments as star
+arguments, so it cannot take execution options: ``add.s(2, 2, countdown=10)``
+would pass ``countdown`` to the task. Set options on the resulting signature
+with ``.set()`` instead:
 
 .. code-block:: pycon
 
