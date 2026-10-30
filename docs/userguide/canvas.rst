@@ -642,7 +642,7 @@ Chains can also be made using the ``|`` (pipe) operator:
 
     >>> (add.s(2, 2) | mul.s(8) | mul.s(10)).apply_async()
 
-.. versionchanged:: 5.7
+.. versionchanged:: 5.8
 
     ``chain.clone(args=..., kwargs=...)`` now applies partial arguments to the
     first task in the cloned chain instead of discarding them. Positional
