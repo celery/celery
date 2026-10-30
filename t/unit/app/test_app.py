@@ -1968,6 +1968,14 @@ class test_App:
         finally:
             _appbase.register_after_fork = prev
 
+    @patch('celery.app.base.register_after_fork')
+    def test_ensure_after_fork__registers_once(self, register_after_fork):
+        self.app._after_fork_registered = False
+        self.app._ensure_after_fork()
+        self.app._ensure_after_fork()
+        register_after_fork.assert_called_once_with(
+            self.app, _appbase._after_fork_cleanup_app)
+
     def test_canvas(self):
         assert self.app._canvas.Signature
 
@@ -3112,3 +3120,27 @@ class test_shared_task:
                     return 168
 
                 assert baz.app is yproj
+
+    def test_applied_twice_raises(self):
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task
+            @shared_task
+            def foo():
+                return 42
+
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task(name='xproj.foo')
+            @shared_task()
+            def bar():
+                return 42
+
+    def test_can_wrap_app_task(self):
+        with self.Celery('xproj', set_as_current=True) as xproj:
+            xproj.conf.task_always_eager = True
+
+            @shared_task
+            @xproj.task
+            def mul(x, y):
+                return x * y
+
+            assert mul.delay(2, 3).get() == 6

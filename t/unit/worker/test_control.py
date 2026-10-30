@@ -702,6 +702,7 @@ class test_ControlPanel:
         request = Mock()
         request.id = tid = uuid()
         task_backend = Mock()
+        task_backend.get_state.return_value = states.PENDING
         request.task.backend = task_backend
         state = self.create_state()
         state.consumer = Mock()
@@ -1087,6 +1088,7 @@ class test_ControlPanel:
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_backend_status_update(self):
+        self.app.backend.get_state.return_value = states.PENDING
         state = self.create_state()
         task_ids = ['task-1', 'task-2']
 
@@ -1113,7 +1115,7 @@ class test_ControlPanel:
             self.app.backend.mark_as_revoked.assert_called_once_with(
                 'task-2', reason='revoked', store_result=True)
 
-    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES))
+    @pytest.mark.parametrize('unready_state', sorted(states.UNREADY_STATES - {states.STARTED}))
     def test_revoke_marks_unfinished_task(self, unready_state):
         with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
             self.app.backend.get_state.return_value = unready_state
@@ -1123,6 +1125,21 @@ class test_ControlPanel:
 
             self.app.backend.mark_as_revoked.assert_called_once_with(
                 'task-1', reason='revoked', store_result=True)
+
+    @pytest.mark.parametrize('terminate', [False, True])
+    @pytest.mark.parametrize('task_state', [states.STARTED, 'PROGRESS'])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, task_state, terminate):
+        # Another worker runs the task: it keeps running without terminate,
+        # and with terminate, that worker stores REVOKED when it stops it.
+        with patch('celery.Celery.backend', new=PropertyMock(name='backend')):
+            self.app.backend.get_state.return_value = task_state
+            state = self.create_state()
+
+            with patch('celery.worker.control._find_requests_by_id', return_value=[]):
+                control._revoke(state, ['task-1'], terminate=terminate)
+
+            assert 'task-1' in worker_state.revoked
+            self.app.backend.mark_as_revoked.assert_not_called()
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_state_lookup_failure_defensive(self):
@@ -1144,6 +1161,7 @@ class test_ControlPanel:
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_revoke_terminate_backend_update(self):
+        self.app.backend.get_state.return_value = states.PENDING
         state = self.create_state()
 
         with patch('celery.worker.control._find_requests_by_id', return_value=[]):
@@ -1173,3 +1191,63 @@ class test_ControlPanel:
         assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
 
         worker_state.active_requests.clear()
+
+    def test_revoke_by_stamped_headers_handles_missing_stamp_value_with_terminate(self):
+        """Test that terminate=True handles missing stamped header values gracefully.
+
+        Regression test for case where a header is listed in stamped_headers
+        and flagged in revoked_stamps, but has no corresponding value in stamps.
+        This should not raise TypeError and should not terminate the task.
+        """
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-missing-stamp'
+        # 'monitoring_id' is in stamps but its value is None
+        request.stamps = {'monitoring_id': None}
+        request.terminate = Mock()
+
+        worker_state.active_requests.add(request)
+
+        headers = {'monitoring_id': 'test-123'}
+
+        # Should not raise TypeError
+        with patch('celery.worker.control._signals.signum', return_value=15):
+            result = control.revoke_by_stamped_headers(state, headers, terminate=True)
+
+        # Task should not be terminated due to missing stamp value
+        request.terminate.assert_not_called()
+        # Should report that headers were not terminated
+        assert 'were not terminated' in result['ok']
+
+        worker_state.active_requests.clear()
+
+    def test_revoke_by_stamped_headers_terminate_checks_later_headers(self):
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-one-missing-stamp'
+        request.stamps = {
+            'a': None,
+            'b': 'y',
+        }
+
+        worker_state.active_requests.add(request)
+
+        try:
+            with patch(
+                'celery.worker.control._signals.signum',
+                return_value=15,
+            ):
+                control.revoke_by_stamped_headers(
+                    state,
+                    {'a': 'x', 'b': 'y'},
+                    terminate=True,
+                )
+
+            request.terminate.assert_called_once()
+        finally:
+            worker_state.active_requests.clear()
+            worker_state.revoked_stamps.clear()
