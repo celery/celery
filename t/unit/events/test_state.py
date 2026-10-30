@@ -633,6 +633,51 @@ class test_State:
         assert [t for _, t in s.tasks_by_worker('worker2')] == [task]
         assert list(s.tasks_by_worker('worker1')) == []
 
+    def test_tasks_by_worker_follows_last_processed_event(self):
+        # events from different workers aren't ordered relative to each other,
+        # so a late event from the previous worker (older clock) that is
+        # processed after the new worker's event moves the task back, just
+        # like it does for task.worker.
+        s = State()
+        self._task_event(s, 'task-received', 't1', 'worker1', 1, name='task1')
+        self._task_event(s, 'task-received', 't1', 'worker2', 3, name='task1')
+        task = s.tasks['t1']
+        assert set(s.tasks_by_worker['worker2']) == {task}
+
+        self._task_event(s, 'task-retried', 't1', 'worker1', 2)
+        assert task.worker.hostname == 'worker1'
+        assert set(s.tasks_by_worker['worker1']) == {task}
+        assert not s.tasks_by_worker['worker2']
+        assert [t for _, t in s.tasks_by_worker('worker1')] == [task]
+        assert list(s.tasks_by_worker('worker2')) == []
+
+    def test_tasks_by_worker_worker_replaced_in_state(self):
+        # the Worker object can be dropped (offline, LRU eviction) and
+        # recreated, the task must stay indexed under that hostname.
+        s = State()
+        self._task_event(s, 'task-received', 't1', 'worker1', 1, name='task1')
+        task = s.tasks['t1']
+        del s.workers['worker1']
+        self._task_event(s, 'task-started', 't1', 'worker1', 2)
+        assert set(s.tasks_by_worker['worker1']) == {task}
+
+    def test_task_indexes_only_updated_when_changed(self):
+        s = State()
+        self._task_event(s, 'task-received', 't1', 'worker1', 1, name='task1')
+        task = s.tasks['t1']
+        by_type, by_worker = s.tasks_by_type['task1'], s.tasks_by_worker['worker1']
+        with patch.object(by_type, 'add') as add_type, \
+                patch.object(by_worker, 'add') as add_worker, \
+                patch.object(by_worker, 'discard') as discard_worker:
+            self._task_event(s, 'task-started', 't1', 'worker1', 2)
+            self._task_event(s, 'task-succeeded', 't1', 'worker1', 3,
+                             result='1', runtime=0.1)
+            add_type.assert_not_called()
+            add_worker.assert_not_called()
+            discard_worker.assert_not_called()
+        assert set(by_type) == {task}
+        assert set(by_worker) == {task}
+
     def test_survives_unknown_worker_event(self):
         s = State()
         s.event({
