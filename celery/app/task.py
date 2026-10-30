@@ -597,6 +597,11 @@ class Task:
             retry_policy (Mapping): Override the retry policy used.
                 See the :setting:`task_publish_retry_policy` setting.
 
+            publication_timeout (float): Optional publication wait budget in
+                seconds. Defaults to :setting:`task_publish_timeout`. Includes
+                pool, connection, declaration, write, confirmation and retry
+                waits on synchronous pyamqp. Does not limit task execution.
+
             time_limit (int): If set, overrides the default time limit.
 
             soft_time_limit (int): If set, overrides the default soft

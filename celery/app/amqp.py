@@ -510,7 +510,8 @@ class AMQP:
                               serializer=None, delivery_mode=None,
                               compression=None, declare=None,
                               headers=None, exchange_type=None,
-                              timeout=None, confirm_timeout=None, **kwargs):
+                              timeout=None, confirm_timeout=None,
+                              publication_timeout=None, **kwargs):
             headers2, properties, body, sent_event = message
             if headers:
                 headers2.update(headers)
@@ -563,6 +564,9 @@ class AMQP:
                 declare=declare, headers=headers2,
                 properties=properties, retry_policy=_rp,
             )
+            publish_options = {}
+            if publication_timeout is not None:
+                publish_options['publication_timeout'] = publication_timeout
             ret = producer.publish(
                 body,
                 exchange=exchange,
@@ -573,6 +577,7 @@ class AMQP:
                 delivery_mode=delivery_mode, declare=declare,
                 headers=headers2,
                 timeout=timeout, confirm_timeout=confirm_timeout,
+                **publish_options,
                 **properties
             )
             send_after_publish(
