@@ -519,6 +519,16 @@ class test_xmap_xstarmap(CanvasCase):
         _, call_kwargs = s.type.apply_async.call_args
         assert call_kwargs['route_name'] == 'custom.route'
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_keeps_a_frozen_group_id(self, attr):
+        # call options go through _merge, which keeps a stored group_id
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+        s.freeze(group_id='g1')
+
+        s.apply_async(group_id='g2')
+        assert s.type.apply_async.call_args[1]['group_id'] == 'g1'
+
 
 class test_chunks(CanvasCase):
 
