@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from unittest.mock import Mock, PropertyMock, patch, sentinel
 
 import pytest
+from kombu.exceptions import OperationalError
 
 from celery import canvas, group, result, uuid
 from celery.canvas import Signature
@@ -117,19 +118,54 @@ class test_unlock_chord_task(ChordCase):
             unlock_chord('groupid', Mock(), result=[Mock()],
                          GroupResult=GroupResult, result_from_tuple=Mock())
 
-    def test_callback_fails(self):
+    @pytest.mark.parametrize('error', [IOError, OperationalError])
+    def test_callback_fails(self, error):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
 
         class AlwaysReady(TSR):
             is_ready = True
             value = [2, 4, 8, 6]
 
         def setup(callback):
-            callback.apply_async.side_effect = IOError()
+            callback.apply_async.side_effect = error()
 
         with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
             fail.assert_called()
             assert fail.call_args[0][0] == cb.id
             assert isinstance(fail.call_args[1]['exc'], ChordError)
+
+    def test_callback_publish_retry_keeps_the_ready_header(self):
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
+        class AlwaysReady(TSR):
+            value = [2, 4]
+
+        from celery.app.task import Task
+
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = [OperationalError('refused'), None]
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+
+        def setup(callback):
+            callback.apply_async = Task.apply_async.__get__(
+                callback, callback.__class__,
+            )
+
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        with patch.object(self.app, 'producer_or_acquire', acquire):
+            with self._chord_context(AlwaysReady, setup) as (cb, retry, fail):
+                assert producer.publish.call_count == 2
+                retry.assert_not_called()
+                fail.assert_not_called()
 
     def test_unlock_ready_failed(self):
 

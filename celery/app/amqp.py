@@ -2,20 +2,29 @@
 import numbers
 from collections import namedtuple
 from collections.abc import Mapping
+from contextvars import ContextVar
 from weakref import WeakValueDictionary
 
 from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
-from kombu.utils.functional import maybe_list
+from kombu.exceptions import OperationalError
+from kombu.utils.functional import maybe_list, retry_over_time
 from kombu.utils.objects import cached_property
 
 from celery import signals
+from celery.utils.log import get_logger
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
 from celery.utils.time import add_seconds_to_datetime, maybe_make_aware
 
 from . import routes as _routes
+
+logger = get_logger(__name__)
+
+# Default cap for worker callback publishes when the policy leaves max_retries
+# unset (None would retry forever in apply_async() on the client).
+_CALLBACK_PUBLISH_MAX_RETRIES = 3
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
@@ -30,6 +39,31 @@ key={0.routing_key}
 
 task_message = namedtuple('task_message',
                           ('headers', 'properties', 'body', 'sent_event'))
+
+# Set while AMQP._retry_publish sends a callback, so that each of its
+# messages is retried on its own, waiting as its retry policy says.
+_callback_publish_retry = ContextVar('_callback_publish_retry', default=False)
+
+
+def _publish_retry_errors(retry_policy, connection):
+    retry_errors = retry_policy.get('retry_errors') or ()
+    if retry_errors and not isinstance(retry_errors, tuple):
+        retry_errors = tuple(retry_errors)
+    return (
+        OperationalError,
+        *connection.recoverable_connection_errors,
+        *retry_errors,
+    )
+
+
+def _callback_publish_max_retries(retry_policy, default_policy):
+    max_retries = retry_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if max_retries is not None:
+        return max_retries
+    capped = default_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if capped is None:
+        capped = _CALLBACK_PUBLISH_MAX_RETRIES
+    return capped
 
 
 def utf8dict(d, encoding='utf-8'):
@@ -261,6 +295,16 @@ class AMQP:
             2: self.as_task_v2,
         }
         self.app._conf.bind_to(self._handle_conf_update)
+
+    def _retry_publish(self, publish, *args, **kwargs):
+        """Publish a callback, waiting between its publish retries."""
+        if self.app.conf.task_always_eager:
+            return publish(*args, **kwargs)
+        token = _callback_publish_retry.set(True)
+        try:
+            return publish(*args, **kwargs)
+        finally:
+            _callback_publish_retry.reset(token)
 
     @cached_property
     def create_task_message(self):
@@ -563,8 +607,7 @@ class AMQP:
                 declare=declare, headers=headers2,
                 properties=properties, retry_policy=_rp,
             )
-            ret = producer.publish(
-                body,
+            publish_kwargs = dict(
                 exchange=exchange,
                 routing_key=routing_key,
                 serializer=serializer or default_serializer,
@@ -575,6 +618,47 @@ class AMQP:
                 timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
+            if retry and _callback_publish_retry.get():
+                # The parent task already ran, so retry only this message,
+                # waiting as the policy says and reconnecting when needed.
+                max_retries = _callback_publish_max_retries(_rp, default_policy)
+                conn = producer.connection
+
+                def on_publish_retry(exc, intervals, retries):
+                    if retries == 0 and _rp.get('max_retries') is None:
+                        logger.warning(
+                            'Unbounded max_retries for worker callback %r; '
+                            'using %s retries instead.', name, max_retries,
+                        )
+                    producer.revive(conn)
+                    wait = next(intervals)
+                    logger.warning(
+                        'Retrying refused callback publish for %r '
+                        '(%s/%s, waiting %ss): %r',
+                        name, retries + 1, max_retries, wait, exc,
+                    )
+                    return wait
+
+                try:
+                    ret = retry_over_time(
+                        producer.publish,
+                        _publish_retry_errors(_rp, conn),
+                        args=(body,),
+                        kwargs=dict(publish_kwargs, retry=False),
+                        errback=on_publish_retry,
+                        max_retries=max_retries,
+                        interval_start=_rp.get('interval_start', 0),
+                        interval_step=_rp.get('interval_step', 0.2),
+                        interval_max=_rp.get('interval_max', 1),
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        'Giving up refused callback publish for %r: %r',
+                        name, exc,
+                    )
+                    raise
+            else:
+                ret = producer.publish(body, **publish_kwargs)
             send_after_publish(
                 sender=name, body=body, headers=headers2,
                 exchange=exchange, routing_key=routing_key,

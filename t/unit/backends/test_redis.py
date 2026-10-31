@@ -18,9 +18,11 @@ except ImportError:
     exceptions = None
     CredentialProvider = None
 
+from kombu.exceptions import OperationalError
 from kombu.utils.encoding import ensure_bytes
 
 from celery import signature, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
@@ -2382,6 +2384,28 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             callback.delay.assert_not_called()
             self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
+
+    @pytest.mark.parametrize('ordered', [False, True])
+    def test_on_chord_part_return_retries_only_the_body_publish(self, ordered):
+        self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        with self.chord_context(1) as (_, request, callback):
+            callback.task = 'foobarbaz'
+            message = self.app.amqp.as_task_v2(uuid(), 'foobarbaz', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'foobarbaz', message)
+
+            callback.delay = Mock(side_effect=delay)
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            assert producer.publish.call_count == 2
+            assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
 
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):

@@ -1482,7 +1482,7 @@ class BaseKeyValueStoreBackend(Backend):
                 self.chord_error_from_stack(callback=callback, exc=chord_error)
             else:
                 try:
-                    callback.delay(ret)
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     chord_error = _create_chord_error_with_cause(
