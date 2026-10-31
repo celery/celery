@@ -17,11 +17,11 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
-                    add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
-                    print_unicode, record_replaced_task_nesting, reject_then_succeed, reject_without_requeue, retry,
-                    retry_once, retry_once_headers, retry_once_priority, retry_unpickleable,
-                    retry_with_args_after_kwargs, retry_with_kwargs_after_args, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
+                    add_not_typed, add_pydantic, add_pydantic_string_annotations, add_with_result, fail,
+                    fail_unpickleable, print_unicode, record_replaced_task_nesting, reject_then_succeed,
+                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_priority,
+                    retry_unpickleable, retry_with_args_after_kwargs, retry_with_kwargs_after_args,
+                    return_properties, return_request_time_limits, second_order_replace1, sleeping,
                     soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
 
 TIMEOUT = 10
@@ -159,6 +159,32 @@ class test_tasks:
         # persisted in the result backend.
         time.sleep(1)
         assert result.result is None
+
+    def test_send_task_without_ignore_result_uses_task_ignore_result(self, app, manager):
+        result = app.send_task(add_ignore_result.name, args=(1, 2))
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        manager.wait_for(assert_completed, catch=(AssertionError,))
+        meta = app.backend.get_task_meta(result.id)
+
+        assert add_ignore_result.ignore_result is True
+        assert meta['status'] == celery.states.PENDING
+        assert meta['result'] is None
+
+    def test_send_task_without_ignore_result_stores_result(self, app, manager):
+        result = app.send_task(add_with_result.name, args=(1, 2))
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        manager.wait_for(assert_completed, catch=(AssertionError,))
+        meta = app.backend.get_task_meta(result.id)
+
+        assert add_with_result.ignore_result is False
+        assert meta['status'] == celery.states.SUCCESS
+        assert meta['result'] == 3
 
     @flaky
     def test_reject_without_requeue_stores_failure(self, manager):

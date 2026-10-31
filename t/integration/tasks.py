@@ -91,6 +91,12 @@ def add_ignore_result(x, y):
     return x + y
 
 
+@shared_task(ignore_result=False)
+def add_with_result(x, y):
+    """Add two numbers."""
+    return x + y
+
+
 @shared_task
 def raise_error(*args):
     """Deliberately raise an error."""
