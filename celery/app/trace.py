@@ -608,6 +608,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 except BaseException:
                     raise
                 else:
+                    callbacks_sent = False
                     try:
                         # callback tasks must be applied before the result is
                         # stored, so that result.children is populated.
@@ -622,10 +623,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             parent_id=uuid, root_id=root_id,
                             priority=task_priority,
                         )
+                        callbacks_sent = True
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
                     except (EncodeError, OperationalError) as exc:
+                        if callbacks_sent and isinstance(exc, OperationalError):
+                            raise
                         I, R, state, retval = on_error(task_request, exc)
                         # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                         traceback_clear(exc)

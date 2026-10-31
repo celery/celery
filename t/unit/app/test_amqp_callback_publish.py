@@ -237,6 +237,21 @@ def test_unbounded_policy_warns_only_on_first_refusal(app, caplog, signature_pol
         assert not caplog.records
 
 
+@pytest.mark.parametrize('signature_policy', [False, True])
+def test_bounded_policy_does_not_warn_about_unbounded_retries(app, caplog, signature_policy):
+    app.conf.task_publish_retry_policy = {
+        'max_retries': None if signature_policy else 2,
+        'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+    }
+    producer = _producer([OperationalError('refused'), None])
+    policy = {'max_retries': 2} if signature_policy else None
+    app.amqp._retry_publish(
+        app.amqp.send_task_message, producer, 'foo', _callback_message(app), retry_policy=policy,
+    )
+    assert producer.publish.call_count == 2
+    assert 'Unbounded max_retries' not in caplog.text
+
+
 def test_callback_publish_revives_after_transport_connection_error(app):
     app.conf.task_publish_retry_policy = {
         'max_retries': 1, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,

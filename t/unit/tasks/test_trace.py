@@ -156,6 +156,37 @@ class test_trace(TraceCase):
         if dispatch == 'chain':
             assert self.add.backend.get_state(sig.id) == states.FAILURE
 
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @pytest.mark.parametrize('error', [EncodeError, OperationalError])
+    def test_result_write_error_after_callbacks_preserves_error_handling(self, dispatch, error):
+        @self.app.task(shared=False, after_return=Mock())
+        def add(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def link(value):
+            return value
+
+        task_id, sig = uuid(), link.s()
+        with patch.object(sig, 'apply_async') as apply_async, \
+                patch.object(add.backend, 'mark_as_done', side_effect=error('store failed')), \
+                patch.object(add, 'run', wraps=add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        apply_async.assert_called_once()
+        run.assert_called_once_with(2, 2)
+        assert info.state == states.FAILURE
+        assert add.backend.get_state(task_id) == states.FAILURE
+        if error is OperationalError:
+            internal_error.assert_called_once()
+            add.after_return.assert_not_called()
+        else:
+            internal_error.assert_not_called()
+            add.after_return.assert_called_once_with(states.FAILURE, ANY, task_id, (2, 2), {}, None)
+
     def test_trace_successful(self):
         retval, info, _ = self.trace(self.add, (2, 2), {})
         assert info is None
