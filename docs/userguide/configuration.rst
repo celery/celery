@@ -3772,6 +3772,9 @@ of tasks with ETA/countdown values, as these tasks are held in memory until thei
 execution time. Without this limit, workers may fetch thousands of ETA tasks into
 memory, potentially causing out-of-memory issues.
 
+Rate-limited tasks waiting for their turn are held the same way and count
+towards this limit (see :attr:`~@Task.rate_limit`).
+
 .. note::
 
     Tasks with ETA/countdown are fetched into memory and scheduled on an internal
