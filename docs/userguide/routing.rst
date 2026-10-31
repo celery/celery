@@ -53,6 +53,9 @@ such as ``[abc]``, ``[0-9]``, and ``[!abc]``. For example,
 ``'feed.tasks.import[12]'`` matches ``feed.tasks.import1`` and
 ``feed.tasks.import2`` without requiring an asterisk in the pattern.
 
+To match a literal ``?`` or ``[``, use ``[?]`` or ``[[]``,
+respectively.
+
 If the order of matching patterns is important you should
 specify the router in *items* format instead:
 
