@@ -1150,6 +1150,17 @@ class test_tasks(TasksCase):
             ANY, 't.unit.tasks.test_tasks.task_called_by_other_task',
             ANY, priority=5, queue=ANY, serializer=ANY)
 
+    def test_typing__positional_only(self):
+        @self.app.task()
+        def add(x, /, y, **kwargs):
+            pass
+
+        with pytest.raises(TypeError):
+            add.delay(x=1, y=2)
+
+        add.delay(1, 2)
+        add.delay(1, y=2, x=3)
+
     def test_typing__disabled(self):
         @self.app.task(typing=False)
         def add(x, y, kw=1):
