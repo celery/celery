@@ -509,6 +509,8 @@ class test_xmap_xstarmap(CanvasCase):
         s.apply_async()
         _, call_kwargs = s.type.apply_async.call_args
         assert call_kwargs['route_name'] == 'custom.route'
+        # the stored option must survive, so a second call routes the same way
+        assert s.options['route_name'] == 'custom.route'
 
     @pytest.mark.parametrize('attr', ['map', 'starmap'])
     def test_apply_async_with_route_name_call_option(self, attr):
