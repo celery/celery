@@ -693,7 +693,9 @@ class test_unreachable_result_backend(SuiteOperations):
         # Point the backend to an unreachable port to force ConnectionErrors
         app.conf.result_backend = "redis://localhost:9999/0"
         app.conf.result_backend_always_retry = True
-        app.conf.result_backend_max_retries = float("inf")
+        # Using a very large int instead of float('inf') to avoid
+        # pytest-celery serialization issues in the docker container
+        app.conf.result_backend_max_retries = 9999999
         app.conf.result_backend_base_sleep_between_retries_ms = 10
         app.conf.result_backend_max_sleep_between_retries_ms = 10
         app.conf.task_acks_late = True
