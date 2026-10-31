@@ -788,7 +788,9 @@ class Task:
         kwargs = request.kwargs if kwargs is None else kwargs
         options = {
             **request.as_execution_options(),
-            # Resolve ignore_result here because Context defaults to False even when no override was provided.
+             # Keep the caller's ignore_result for the retry.  Read through
+            # get_actual_ignore_result(): Context's class-level False
+            # default would otherwise look like an explicit override.
             'ignore_result': get_actual_ignore_result(self, request),
             **extra_options
         }
