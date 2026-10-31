@@ -94,6 +94,10 @@ def _fast_saferepr(o, maxlen):
     """
     t = type(o)
     if t is dict:
+        # Each item renders as at least 6 chars ("k: v" plus ", "), so
+        # a dict with more than maxlen / 6 items cannot fit.
+        if maxlen is not None and 6 * len(o) > maxlen:
+            return None
         parts = []
         for k, v in o.items():
             kr = _fast_scalar(k)
@@ -105,6 +109,9 @@ def _fast_saferepr(o, maxlen):
             parts.append(kr + ': ' + vr)
         res = '{' + ', '.join(parts) + '}'
     elif t is list or t is tuple:
+        # Same check as above: each element is at least 3 chars.
+        if maxlen is not None and 3 * len(o) > maxlen:
+            return None
         parts = []
         for v in o:
             vr = _fast_scalar(v)
@@ -129,7 +136,7 @@ def _fast_saferepr(o, maxlen):
 
 
 def saferepr(o, maxlen=None, maxlevels=3, seen=None):
-    # type: (Any, int, int, Set) -> str
+    # type: (Any, Optional[int], Optional[int], Optional[Set]) -> str
     """Safe version of :func:`repr`.
 
     Warning:

@@ -167,6 +167,27 @@ class test_saferepr:
         assert saferepr(value, maxlen=maxlen) == expected
         assert len(streaming_calls) == 1
 
+    @pytest.mark.parametrize('value', [
+        list(range(10000)),
+        tuple(range(10000)),
+        dict.fromkeys(range(10000)),
+    ])
+    def test_large_flat_values_stop_early(self, value, monkeypatch):
+        scalar_calls = []
+        original_fast_scalar = saferepr_module._fast_scalar
+
+        def counting_fast_scalar(v):
+            scalar_calls.append(v)
+            return original_fast_scalar(v)
+
+        monkeypatch.setattr(
+            saferepr_module, '_fast_scalar', counting_fast_scalar,
+        )
+
+        expected = ''.join(saferepr_module._saferepr(value, maxlen=64))
+        assert saferepr(value, maxlen=64) == expected
+        assert len(scalar_calls) < 100
+
     @pytest.mark.parametrize('value', list(D_NUMBERS.values()))
     def test_safe_types(self, value):
         assert saferepr(value) == old_repr(value)
