@@ -112,3 +112,12 @@ def self_termination_exhaust_memory():
     mem = []
     while True:
         mem.append(" " * 10**6)
+
+
+@shared_task
+def kill_child_process_once(marker="/tmp/kill_child_process_once"):
+    """Exit the pool child on the first delivery only, as if it were OOM killed."""
+    if not os.path.exists(marker):
+        open(marker, "w").close()
+        os._exit(1)
+    return "survived"
