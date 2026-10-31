@@ -48,6 +48,11 @@ def shared_task(*args, **kwargs):
     def create_shared_task(**options):
 
         def __inner(fun):
+            if type(fun) is Proxy:
+                raise TypeError(
+                    '@shared_task was applied more than once to the same '
+                    'function. Remove the extra @shared_task decorator.'
+                )
             name = options.get('name')
             # Set as shared task so that unfinalized apps,
             # and future apps will register a copy of this task.

@@ -356,8 +356,8 @@ class MultiParser:
                            suffix, cmd, append, options):
         namespace, nodename, _ = build_nodename(name, prefix, suffix)
         namespace = nodename if nodename in p.namespaces else namespace
-        return Node(nodename, cmd, append,
-                    p.optmerge(namespace, options), p.passthrough)
+        return self.Node(nodename, cmd, append,
+                         p.optmerge(namespace, options), p.passthrough)
 
     def _get_ranges(self, names):
         noderange = int(names[0])
