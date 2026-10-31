@@ -2311,6 +2311,31 @@ class test_Request(RequestCase):
         # On main: reaches 10 (RuntimeError). On this branch: stops at 3.
         assert sleep_calls[0] <= 3
 
+    def test_success_was_stored_keeps_a_lower_max_retries(self):
+        req = self.get_request(self.add.s(2, 2))
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 1
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
+        backend._sleep = Mock()
+
+        assert req._success_was_stored() is False
+        assert backend._sleep.call_count == 1
+
+    def test_on_failure_reads_the_backend_only_when_the_worker_is_lost(self):
+        req = self.get_request(self.add.s(2, 2))
+        req._success_was_stored = Mock(return_value=False)
+        try:
+            raise KeyError('boom')
+        except KeyError:
+            einfo = ExceptionInfo()
+
+        req.on_failure(einfo)
+
+        req._success_was_stored.assert_not_called()
+
 
 class test_create_request_class(RequestCase):
 

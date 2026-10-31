@@ -115,6 +115,9 @@ def self_termination_exhaust_memory():
 
 
 @shared_task
-def kill_child_process():
-    """Simulates a child process being lost abruptly (e.g., OOM killed)."""
-    os._exit(1)
+def kill_child_process_once(marker="/tmp/kill_child_process_once"):
+    """Exit the pool child on the first delivery only, as if it were OOM killed."""
+    if not os.path.exists(marker):
+        open(marker, "w").close()
+        os._exit(1)
+    return "survived"

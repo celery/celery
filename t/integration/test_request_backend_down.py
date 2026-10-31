@@ -27,7 +27,8 @@ def failing_app():
 def test_on_failure_returns_fast_with_unreachable_backend(failing_app):
     """
     Integration test: a real backend connection failure should not block
-    on_failure() indefinitely. With the bounded retry, it should fail fast.
+    on_failure() indefinitely. With the bounded retry, it should fail fast
+    and requeue the task.
     """
     @failing_app.task(bind=True, acks_late=True, reject_on_worker_lost=True)
     def dummy_task(self):
@@ -48,13 +49,15 @@ def test_on_failure_returns_fast_with_unreachable_backend(failing_app):
     message.delivery_info = {}
     message.properties = {}
 
-    # Construct a minimal Request
+    # Construct a minimal Request. We hold a reference to on_reject
+    # to assert on it after the failure is processed.
+    on_reject_mock = Mock()
     req = Request(
         message=message,
         app=failing_app,
         task=dummy_task,
         on_ack=Mock(),
-        on_reject=Mock(),
+        on_reject=on_reject_mock,
     )
 
     start_time = time.monotonic()
@@ -66,4 +69,12 @@ def test_on_failure_returns_fast_with_unreachable_backend(failing_app):
     assert elapsed < 2.0, (
         f"on_failure took {elapsed:.2f}s. It should fail fast "
         f"instead of retrying indefinitely with max_retries=inf."
+    )
+
+    # Ensure the task was actually requeued, not silently dropped.
+    # The on_reject callback receives (logger, connection_errors, requeue).
+    on_reject_mock.assert_called_once()
+    assert on_reject_mock.call_args.args[2] is True, (
+        "The task should be requeued (requeue=True) when the worker is lost "
+        "and reject_on_worker_lost is enabled."
     )
