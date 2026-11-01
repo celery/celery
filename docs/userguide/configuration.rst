@@ -457,6 +457,67 @@ Default: See :ref:`calling-retry`.
 Defines the default policy when retrying publishing a task message in
 the case of connection loss or other connection errors.
 
+.. setting:: task_publish_timeout
+
+``task_publish_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Default: :const:`None` (disabled).
+
+An optional publication wait budget in seconds for the synchronous ``pyamqp``
+transport. It requires Kombu publication-deadline support and py-amqp
+``operation_timeout`` support. Enabling it with an unsupported dependency or
+transport raises an explicit error; the disabled setting preserves the existing
+behavior.
+
+The budget starts on entry to :meth:`~celery.app.base.Celery.send_task`, before
+producer acquisition. It includes producer and connection pool waits, connection
+establishment, TLS and AMQP handshakes, declarations and bindings, socket reads
+and writes, publisher confirmations, retry attempts and retry delays. Result
+backend AMQP declarations and task-sent events on that producer share the budget.
+New connections and retries do not restart it. An earlier socket, confirm or
+blocked-connection timeout can still fail first.
+
+Set a default or override it for one publication::
+
+    app.conf.task_publish_timeout = 5.0
+    task.apply_async(args=(1, 2), publication_timeout=2.0)
+    app.send_task('tasks.add', args=(1, 2), publication_timeout=2.0)
+
+An explicit ``publication_timeout=None`` disables the configured default for
+that call, but cannot extend an enclosing publication budget. Zero fails before
+publication starts. Negative, non-finite and non-numeric values, and values
+above ``threading.TIMEOUT_MAX``, are rejected.
+This option is not a task execution time limit and does not apply to eager task
+execution.
+
+This setting covers individual ``send_task`` and non-eager ``Task.apply_async``
+calls. A canvas such as a group can acquire its producer before those calls.
+To also bound that acquisition and the combined publication work, use an outer
+budget (which is shared by all nested publications)::
+
+    from celery import group
+    from kombu.utils.time import publication_timeout
+
+    with publication_timeout(5):
+        group(add.s(1, 2), add.s(3, 4)).apply_async()
+
+Expiry raises :class:`kombu.exceptions.PublicationTimeout`, a subclass of
+``OperationalError``. Expiry is terminal for that publication, including when
+``retry=True``. Connections with incomplete protocol I/O are discarded without
+a graceful AMQP/TLS shutdown; a waiter that times out before acquiring the writer
+lock does not dispose of the active writer's connection.
+
+Synchronous DNS, serialization and application code (including signals, routing,
+password callbacks and result-backend code outside AMQP) cannot be interrupted
+by this budget. Expiry is checked when control returns to the library. These
+operations and scheduling delays may exceed the requested duration. Deferred
+producer batches are unsupported with this option. It does not time work in a
+different thread or a later publication.
+
+A timeout does not establish whether the message was delivered. Retrying in a
+new call may duplicate a task; consumers still need appropriate idempotency.
+
 .. _conf-task-execution:
 
 Task execution settings
@@ -3605,6 +3666,32 @@ limits:
 .. code-block:: python
 
     broker_transport_options = {'confirm_publish': True}
+
+When using ``pyamqp`` with a py-amqp version supporting
+``blocked_connection_timeout``, a RabbitMQ resource-alarm block can be bounded
+after the client receives the blocked notification:
+
+.. code-block:: python
+
+    broker_transport_options = {
+        'blocked_connection_timeout': 10,
+    }
+
+The blocked timeout defaults to disabled. On expiry the connection is discarded
+and a recoverable connection error follows the normal publication retry policy.
+Each retry using a fresh connection has its own deadline. This does not set a
+total timeout for :meth:`~celery.app.task.Task.apply_async` or
+:meth:`~celery.app.base.Celery.send_task`.
+
+The synchronous client must read ``Connection.Blocked`` before the timer starts.
+Use :setting:`task_publish_timeout` or the ``publication_timeout`` call option
+to also cover library-controlled waits before that notification, including
+declaration writes and the total retry budget. The existing ``timeout`` option
+only covers the publish write, and ``confirm_timeout`` covers its confirm wait.
+A timed-out
+publication may already have been delivered, and retrying can create duplicates.
+Check the installed py-amqp documentation for option availability: older versions
+may silently ignore an unsupported transport option.
 
 .. _conf-worker:
 

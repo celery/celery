@@ -10,6 +10,7 @@ import typing
 import warnings
 from collections import UserDict, defaultdict, deque
 from collections.abc import Mapping
+from contextlib import nullcontext
 from datetime import datetime
 from datetime import timezone as datetime_timezone
 from operator import attrgetter
@@ -51,6 +52,30 @@ from .defaults import DEFAULT_SECURITY_DIGEST, find_deprecated_settings
 from .registry import TaskRegistry
 from .utils import (AppPickler, Settings, _new_key_to_old, _old_key_to_new, _unpickle_app, _unpickle_app_v2, appstr,
                     bugreport, detect_settings)
+
+try:
+    from kombu.utils.time import current_publication_deadline
+    from kombu.utils.time import publication_timeout as publication_timeout_context
+except ImportError:
+    def current_publication_deadline():
+        return None
+
+    def publication_timeout_context(timeout):
+        raise ImproperlyConfigured(
+            'publication_timeout requires Kombu publication deadline support')
+
+
+def _with_publication_timeout(fun):
+    @functools.wraps(fun)
+    def wrapped(self, *args, **kwargs):
+        timeout = (kwargs.pop('publication_timeout')
+                   if 'publication_timeout' in kwargs else self.conf.task_publish_timeout)
+        if timeout is None and current_publication_deadline() is None:
+            return fun(self, *args, **kwargs)
+        with publication_timeout_context(timeout):
+            return fun(self, *args, **kwargs)
+    return wrapped
+
 
 if typing.TYPE_CHECKING:  # pragma: no cover  # codecov does not capture this
     # flake8 marks the BaseModel import as unused, because the actual typehint is quoted.
@@ -1030,6 +1055,7 @@ class Celery:
             for pkg in fixup.autodiscover_tasks()
         ], related_name=related_name)
 
+    @_with_publication_timeout
     def send_task(self, name, args=None, kwargs=None, countdown=None,
                   eta=None, task_id=None, producer=None, connection=None,
                   router=None, result_cls=None, expires=_OMITTED,
@@ -1038,7 +1064,8 @@ class Celery:
                   retries=0, chord=None,
                   reply_to=None, time_limit=_OMITTED, soft_time_limit=_OMITTED,
                   root_id=None, parent_id=None, route_name=None,
-                  shadow=None, chain=None, task_type=None, replaced_task_nesting=0, **options):
+                  shadow=None, chain=None, task_type=None, replaced_task_nesting=0,
+                  *, publication_timeout=None, **options):
         """Send task by name.
 
         Supports the same arguments as :meth:`@-Task.apply_async`.
@@ -1046,6 +1073,10 @@ class Celery:
         Arguments:
             name (str): Name of task to call (e.g., `"tasks.add"`).
             result_cls (AsyncResult): Specify custom result class.
+            publication_timeout (float): Shared publication wait budget in
+                seconds, starting before producer acquisition. Defaults to
+                :setting:`task_publish_timeout`; explicit None disables that
+                default, but cannot extend an enclosing publication budget.
         """
         parent = have_parent = None
         amqp = self.amqp
@@ -1209,9 +1240,13 @@ class Celery:
 
         with self.producer_or_acquire(producer) as P:
             with P.connection._reraise_as_library_errors():
-                if not ignore_result:
-                    self.backend.on_task_call(P, task_id)
-                amqp.send_task_message(P, name, message, **options)
+                deadline_context = (P.connection._publication_timeout()
+                                    if current_publication_deadline() is not None
+                                    else nullcontext())
+                with deadline_context:
+                    if not ignore_result:
+                        self.backend.on_task_call(P, task_id)
+                    amqp.send_task_message(P, name, message, **options)
         result = (result_cls or self.AsyncResult)(task_id)
         # We avoid using the constructor since a custom result class
         # can be used, in which case the constructor may still use

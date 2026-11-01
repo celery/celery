@@ -297,6 +297,7 @@ NAMESPACES = Namespace(
         ignore_result=Option(False, type='bool'),
         store_eager_result=Option(False, type='bool'),
         protocol=Option(2, type='int', old={'celery_task_protocol'}),
+        publish_timeout=Option(None, type='float'),
         publish_retry=Option(
             True, type='bool', old={'celery_task_publish_retry'},
         ),
