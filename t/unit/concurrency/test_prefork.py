@@ -749,6 +749,64 @@ class test_AsynPool:
             sender=pool,
         )
 
+    @staticmethod
+    def _exiting_child_pool(reaped_on_call):
+        """A pool whose child is only reaped on the given maintain_pool call."""
+        pool = asynpool.AsynPool(processes=1, threads=False)
+        proc = Mock(name='proc', _sentinel_poll=None)
+        pool._pool = [proc]
+        calls = []
+
+        def maintain_pool():
+            calls.append(1)
+            if len(calls) == reaped_on_call:
+                pool._pool.remove(proc)
+        pool.maintain_pool = Mock(side_effect=maintain_pool)
+
+        scheduled = []
+        hub = Mock(name='hub')
+        hub.call_later.side_effect = lambda delay, fun, *args: scheduled.append(
+            (delay, fun, args))
+        return pool, proc, hub, scheduled
+
+    @staticmethod
+    def _run_timers(scheduled):
+        delays = []
+        while scheduled:
+            delay, fun, args = scheduled.pop(0)
+            delays.append(delay)
+            fun(*args)
+        return delays
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_process_exit_retries_until_child_is_reaped(self, _create_worker_process):
+        # Issue #9588: the sentinel is readable before waitpid() can reap the
+        # child, so the first maintain_pool() misses it and the slot used to
+        # stay empty until the 5s maintain_pool timer.
+        pool, proc, hub, scheduled = self._exiting_child_pool(reaped_on_call=3)
+
+        pool._event_process_exit(hub, proc)
+        delays = self._run_timers(scheduled)
+
+        assert pool.maintain_pool.call_count == 3
+        assert proc not in pool._pool
+        assert len(delays) == 2
+        assert sum(delays) < 0.1
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_process_exit_retries_give_way_to_maintain_pool_timer(
+            self, _create_worker_process):
+        # A child that never becomes reapable is left to the regular timer.
+        pool, proc, hub, scheduled = self._exiting_child_pool(reaped_on_call=None)
+
+        pool._event_process_exit(hub, proc)
+        delays = self._run_timers(scheduled)
+
+        assert delays
+        assert sum(delays) <= pool.timers[pool.maintain_pool]
+
     def test_untrack_child_process_without_sentinel_poll(self):
         """_untrack_child_process must not raise when proc lacks _sentinel_poll.
 
