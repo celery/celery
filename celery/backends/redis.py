@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
+from uuid import uuid4
 
 from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
@@ -116,6 +117,31 @@ if expires > 0 then
     end
 end
 return {readycount, redis.call('GET', tkey), redis.call('GET', skey)}
+"""
+
+# Prevents concurrent chord callback dispatch while the claim is valid.
+# The ownership token protects cleanup if the claim expires and is replaced.
+CHORD_CLAIM_LUA = """
+local ckey = KEYS[1]
+local expires = tonumber(ARGV[1])
+local token = ARGV[2]
+local result = redis.call('SET', ckey, token, 'NX', 'EX', expires)
+return {result and 1 or 0, result and token or false}
+"""
+
+# Release the claim and remove chord data atomically if the token matches.
+CHORD_CLEANUP_LUA = """
+local ckey = KEYS[1]
+local jkey = KEYS[2]
+local tkey = KEYS[3]
+local skey = KEYS[4]
+local dkey = KEYS[5]
+local token = ARGV[1]
+
+if redis.call('GET', ckey) == token then
+    return redis.call('DEL', ckey, jkey, tkey, skey, dkey)
+end
+return 0
 """
 
 logger = get_logger(__name__)
@@ -825,6 +851,14 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _chord_part_return_script(self):
         return self.client.register_script(CHORD_PART_RETURN_LUA)
 
+    @cached_property
+    def _chord_claim_script(self):
+        return self.client.register_script(CHORD_CLAIM_LUA)
+
+    @cached_property
+    def _chord_cleanup_script(self):
+        return self.client.register_script(CHORD_CLEANUP_LUA)
+
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
@@ -839,6 +873,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         skey = self.get_key_for_group(gid, '.s')
         dkey = self.get_key_for_group(gid, '.d')
+        ckey = self.get_key_for_group(gid, '.c')
         result = self.encode_result(result, state)
         encoded = self.encode([1, tid, state, result])
         readycount, totaldiff, chord_size_bytes = self._chord_part_return_script(
@@ -855,6 +890,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 callback = maybe_signature(request.chord, app=app)
                 total = int(chord_size_bytes) + totaldiff
                 if readycount == total:
+                    claim_expires = self.chord_expires
+                    if not claim_expires:
+                        join_timeout = app.conf.result_chord_join_timeout or 5.0
+                        claim_expires = max(5, int(join_timeout * 2))
+
+                    claim_token = uuid4().hex
+                    result = self._chord_claim_script(
+                        keys=[ckey],
+                        args=[claim_expires, claim_token],
+                        client=client,
+                    )
+                    claimed = result[0] if result else 0
+                    if not claimed:
+                        return
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -898,13 +947,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             ChordError(f'Callback error: {exc!r}'),
                         )
                     finally:
-                        with client.pipeline() as pipe:
-                            pipe \
-                                .delete(jkey) \
-                                .delete(tkey) \
-                                .delete(skey) \
-                                .delete(dkey) \
-                                .execute()
+                        self._chord_cleanup_script(
+                            keys=[ckey, jkey, tkey, skey, dkey],
+                            args=[claim_token],
+                            client=client,
+                        )
             except ChordError as exc:
                 logger.exception('Chord %r raised: %r', request.group, exc)
                 try:
