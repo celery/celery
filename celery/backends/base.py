@@ -1019,6 +1019,24 @@ class Backend:
     def set_chord_size(self, group_id, chord_size):
         pass
 
+    @staticmethod
+    def chord_propagates(body):
+        """Whether a header task's failure fails the chord (the default).
+
+        ``chord(..., propagate=False)`` clears it, and the body then gets
+        the header's exceptions with its results.
+        """
+        return not body or body.get('chord_propagate') is not False
+
+    def prepare_chord_results(self, results):
+        """Header results for the body, with exceptions stored as results are."""
+        return [
+            self.prepare_chord_results(r) if isinstance(r, list)
+            else self.prepare_exception(r) if isinstance(r, BaseException)
+            else r
+            for r in results
+        ]
+
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
@@ -1463,13 +1481,16 @@ class BaseKeyValueStoreBackend(Backend):
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
         elif val == size:
+            propagate = self.chord_propagates(request.chord)
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
                 with allow_join_result():
                     ret = j(
                         timeout=app.conf.result_chord_join_timeout,
-                        propagate=True)
+                        propagate=propagate)
+                if not propagate:
+                    ret = self.prepare_chord_results(ret)
             except Exception as exc:  # pylint: disable=broad-except
                 try:
                     culprit = next(deps._failed_join_report())

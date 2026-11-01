@@ -3661,6 +3661,41 @@ class test_chord(CanvasCase):
             assert body_task_id != group_id  # Should be different from group_id
             assert passed_group_id == group_id  # But should know its group
 
+    @pytest.mark.parametrize('on_apply_async', (False, True))
+    def test_chord_without_propagate_marks_the_body(self, on_apply_async):
+        header = [self.add.s(1, 1), self.add.s(2, 2)]
+        if on_apply_async:
+            c, options = chord(header, self.add.s(10)), {'propagate': False}
+        else:
+            c, options = chord(header, self.add.s(10), propagate=False), {}
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            c.apply_async(**options)
+        body = apply_chord.call_args[0][1]
+        assert body['chord_propagate'] is False
+        assert 'propagate' not in body.options
+        assert header_apply.call_count == 2
+        for header_call in header_apply.call_args_list:
+            assert 'propagate' not in header_call.kwargs
+
+    def test_chord_propagates_by_default(self):
+        c = chord([self.add.s(1, 1), self.add.s(2, 2)], self.add.s(10))
+        with patch.object(self.app.backend, 'apply_chord') as apply_chord, \
+                patch('celery.canvas.Signature.apply_async'):
+            c.apply_async()
+        assert 'chord_propagate' not in apply_chord.call_args[0][1]
+
+    def test_chord_apply_without_propagate(self):
+        c = chord([self.add.s(1, 1), self.div.s(1, 0)], self.xsum.s(), propagate=False)
+        with pytest.raises(TypeError):
+            # the body gets the ZeroDivisionError in place of a number
+            c.apply().get()
+        with pytest.raises(ZeroDivisionError):
+            chord([self.add.s(1, 1), self.div.s(1, 0)], self.xsum.s()).apply().get()
+        with pytest.raises(ZeroDivisionError):
+            # an explicit argument wins over the chord's option
+            c.apply(propagate=True).get()
+
     def test_chord_run_does_not_pass_parent_id_to_body(self):
         header = group([self.add.s(1, 1), self.add.s(2, 2)])
         body = self.add.s(10)

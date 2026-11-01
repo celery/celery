@@ -1979,6 +1979,19 @@ class test_KeyValueStoreBackend:
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
+    def test_chord_part_return_without_propagate(self):
+        b = KVBackend(serializer='json', app=self.app)
+        with self._chord_part_context(b) as (task, deps, cb):
+            cb['chord_propagate'] = False
+            deps.join_native.return_value = [10, [KeyError('x')]]
+            with patch('celery.backends.base.maybe_signature') as ms:
+                b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            deps.join_native.assert_called_with(propagate=False, timeout=3.0)
+            ms.return_value.delay.assert_called_once_with([
+                10, [{'exc_type': 'KeyError', 'exc_message': ('x',), 'exc_module': 'builtins'}],
+            ])
+            b.fail_from_current_stack.assert_not_called()
+
     def test_chord_part_return_join_raises_internal(self):
         with self._chord_part_context(self.b) as (task, deps, callback):
             deps._failed_join_report = lambda: iter([])
