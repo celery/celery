@@ -468,6 +468,69 @@ class test_xmap_xstarmap(CanvasCase):
             assert type.from_dict(dict(s)) == s
             assert repr(s)
 
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_uses_signature_options(self, attr):
+        args = [(i, i) for i in range(3)]
+        s = getattr(self.add, attr)(args)
+        s.type = Mock()
+        callback = self.add.s(1)
+        s.set(queue='q1', countdown=3)
+        s.link(callback)
+        s.freeze()
+        task_id = s.options['task_id']
+
+        s.apply_async()
+        call_args, call_kwargs = s.type.apply_async.call_args
+        assert call_args == ((), {'task': self.add.s(), 'it': args})
+        assert call_kwargs['route_name'] == self.add.name
+        assert call_kwargs['queue'] == 'q1'
+        assert call_kwargs['countdown'] == 3
+        assert call_kwargs['link'] == [callback]
+        assert call_kwargs['task_id'] == task_id
+
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_call_options_override_signature_options(self, attr):
+        args = [(i, i) for i in range(3)]
+        s = getattr(self.add, attr)(args)
+        s.type = Mock()
+        s.set(queue='q1', countdown=3)
+
+        s.apply_async(queue='q2', countdown=None)
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['queue'] == 'q2'
+        assert call_kwargs['countdown'] == 3
+
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_with_route_name_option(self, attr):
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+        s.set(route_name='custom.route')
+
+        s.apply_async()
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom.route'
+        # the stored option must survive, so a second call routes the same way
+        assert s.options['route_name'] == 'custom.route'
+
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_with_route_name_call_option(self, attr):
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+
+        s.apply_async(route_name='custom.route')
+        _, call_kwargs = s.type.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom.route'
+
+    @pytest.mark.parametrize('attr', ['map', 'starmap'])
+    def test_apply_async_keeps_a_frozen_group_id(self, attr):
+        # call options go through _merge, which keeps a stored group_id
+        s = getattr(self.add, attr)([(1, 1)])
+        s.type = Mock()
+        s.freeze(group_id='g1')
+
+        s.apply_async(group_id='g2')
+        assert s.type.apply_async.call_args[1]['group_id'] == 'g1'
+
 
 class test_chunks(CanvasCase):
 
