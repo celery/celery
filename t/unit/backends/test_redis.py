@@ -2374,7 +2374,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         skey = self.b.get_key_for_group('group_id', '.s')
         dkey = self.b.get_key_for_group('group_id', '.d')
         ckey = self.b.get_key_for_group('group_id', '.c')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey), call(dkey), call(ckey)], any_order=True)
+        self.b.client.delete.assert_has_calls(
+            [call(jkey), call(tkey), call(skey), call(dkey), call(ckey)],
+            any_order=True
+        )
         # When chord_expires is 0, chord keys (.j, .t, .s, .d) don't expire
         # but the claim key (.c) gets a default timeout for crash recovery
         # Verify chord keys were not expired, but claim key was
@@ -2411,7 +2414,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         skey = self.b.get_key_for_group('group_id', '.s')
         dkey = self.b.get_key_for_group('group_id', '.d')
         ckey = self.b.get_key_for_group('group_id', '.c')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey), call(dkey), call(ckey)], any_order=True)
+        self.b.client.delete.assert_has_calls(
+            [call(jkey), call(tkey), call(skey), call(dkey), call(ckey)],
+            any_order=True
+        )
         # When chord_expires is 0, chord keys don't expire but claim gets default timeout
         for key in [jkey, tkey, skey, dkey]:
             for call_args in self.b.client.expire.call_args_list:
@@ -2445,7 +2451,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         skey = self.b.get_key_for_group('group_id', '.s')
         dkey = self.b.get_key_for_group('group_id', '.d')
         ckey = self.b.get_key_for_group('group_id', '.c')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey), call(dkey), call(ckey)], any_order=True)
+        self.b.client.delete.assert_has_calls(
+            [call(jkey), call(tkey), call(skey), call(dkey), call(ckey)],
+            any_order=True
+        )
         # When chord_expires is 0, chord keys don't expire but claim gets default timeout
         for key in [jkey, tkey, skey, dkey]:
             for call_args in self.b.client.expire.call_args_list:
@@ -2765,6 +2774,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
             original_claim_script = self.b._chord_claim_script
             claimed_expires = None
+
             def capture_claim_expires(keys, args, client=None):
                 nonlocal claimed_expires
                 claimed_expires = args[0]
@@ -2803,6 +2813,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
             # Make GroupResult.restore fail after claim is acquired
             original_restore = GroupResult.restore
+
             def restore_with_error(*args, **kwargs):
                 # Simulate restore failing
                 raise RuntimeError("Restore failed")
@@ -2811,6 +2822,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             # Capture the claim token to verify it exists
             captured_token = None
             original_claim_script = self.b._chord_claim_script
+
             def capture_token(keys, args, client=None):
                 nonlocal captured_token
                 result = original_claim_script(keys, args, client)
@@ -2844,9 +2856,8 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_not_called()
 
-            ckey = self.b.get_key_for_group(tasks[0].request.group, '.c')
-
             original_cleanup_script = self.b._chord_cleanup_script
+
             def prevent_cleanup(keys, args, client=None):
                 return 0
             self.b._chord_cleanup_script = prevent_cleanup
@@ -2976,6 +2987,7 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
             original_cleanup_script = self.b._chord_cleanup_script
             original_claim_script = self.b._chord_claim_script
             token_a = None
+
             def simulate_worker_a_crash(keys, args, client=None):
                 nonlocal token_a
                 token_a = args[0]
@@ -2995,6 +3007,7 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
 
             # Worker B receives a duplicate completion and acquires a new claim with token B
             token_b = None
+
             def capture_token_b(keys, args, client=None):
                 nonlocal token_b
                 result = original_claim_script(keys, args, client)
