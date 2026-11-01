@@ -302,7 +302,7 @@ class GCSBackend(GCSBackendBase):
                 self.chord_error_from_stack(callback, chord_error)
             else:
                 try:
-                    callback.delay(ret)
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(
