@@ -250,6 +250,12 @@ to ``apply_async``:
 The callback will only be applied if the task exited successfully,
 and it will be applied with the return value of the parent task as argument.
 
+.. versionchanged:: 5.7
+
+    A successful task now stores its result before publishing its callbacks.
+    Code waiting for the parent result may therefore resume before a linked
+    task has been sent to the broker.
+
 As I mentioned earlier, any arguments you add to a signature,
 will be prepended to the arguments specified by the signature itself!
 
