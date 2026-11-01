@@ -1,0 +1,3 @@
+# t/due_work: Celery's worker checked with pytest-obligation, which needs Python 3.11 or later.
+pytest-obligation>=0.20.0; python_version >= "3.11"
+redis
