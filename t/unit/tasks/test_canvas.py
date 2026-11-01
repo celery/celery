@@ -715,6 +715,66 @@ class test_chain(CanvasCase):
         assert x.clone().args == x.args
         assert isinstance(x.clone(), chain_type)
 
+    @pytest.mark.parametrize('chain_type', (_chain, chain_subclass))
+    @pytest.mark.parametrize('args,kwargs,expected', (
+        ((3,), {}, 50),
+        ((), {'x': 3}, 50),
+        ((3,), {'y': 4}, 70),
+    ))
+    def test_clone_with_arguments(self, chain_type, args, kwargs, expected):
+        workflow = chain_type(self.add.s(y=2), self.mul.s(10))
+        original = json.dumps(workflow)
+
+        cloned = workflow.clone(args=args, kwargs=kwargs, countdown=10)
+
+        assert isinstance(cloned, chain_type)
+        assert cloned.apply().get() == expected
+        assert cloned.tasks[1] == workflow.tasks[1]
+        assert cloned.options['countdown'] == 10
+        assert 'countdown' not in cloned.tasks[0].options
+        assert json.dumps(workflow) == original
+
+    def test_clone_with_partial_arguments(self):
+        workflow = self.add.s() | self.add.s(1)
+
+        cloned = workflow.clone(args=(2,))
+
+        assert cloned.apply(args=(2,)).get() == 5
+        assert cloned.clone(args=(3,)).apply().get() == 6
+        assert workflow.tasks[0].args == ()
+        assert cloned.tasks[0].args == (2,)
+
+    def test_clone_prepends_arguments(self):
+        workflow = self.div.s(2) | self.mul.s(10)
+
+        cloned = workflow.clone(args=(6,))
+
+        assert cloned.apply().get() == 30
+        assert workflow.tasks[0].args == (2,)
+
+    @pytest.mark.parametrize('immutable_chain', (False, True))
+    def test_clone_with_immutable_first_task(self, immutable_chain):
+        workflow = self.add.s(2, 3) | self.mul.s(10)
+        if immutable_chain:
+            workflow.set(immutable=True)
+        else:
+            workflow.tasks[0].set(immutable=True)
+
+        cloned = workflow.clone(args=(99,), kwargs={'y': 99})
+
+        assert cloned.apply().get() == 50
+
+    def test_clone_with_tasks_keyword(self):
+        @self.app.task
+        def count_tasks(tasks):
+            return len(tasks)
+
+        workflow = count_tasks.s() | self.mul.s(10)
+
+        cloned = workflow.clone(kwargs={'tasks': [1, 2, 3]})
+
+        assert cloned.apply().get() == 30
+
     @pytest.mark.parametrize('depth', (1, 3))
     @pytest.mark.parametrize('args,kwargs,expected', (
         ((3,), {}, 50),
