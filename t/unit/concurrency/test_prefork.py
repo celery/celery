@@ -775,6 +775,33 @@ class test_AsynPool:
         assert proc._sentinel_poll is None
 
     @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    @pytest.mark.parametrize('logged', [True, False])
+    def test_process_down_logs_recycled_child(
+            self, _create_worker_process, logged, caplog):
+        # Issue #8916: a child recycled by --max-tasks-per-child or
+        # --max-memory-per-child was only logged at DEBUG level.
+        pool = asynpool.AsynPool(processes=1, threads=False,
+                                 maxtasksperchild=10)
+        pool._create_process_handlers(Mock(name='hub'))
+        pool.process_flush_queues = Mock(name='process_flush_queues')
+        exitcode = asynpool.EX_RECYCLE if logged else 0
+        proc = Mock(name='proc', dead=False, pid=4242, exitcode=exitcode,
+                    synqR_fd=None, synqW_fd=None, _sentinel_poll=None)
+
+        with caplog.at_level('INFO', logger='celery.concurrency.asynpool'):
+            pool.on_process_down(proc)
+
+        records = [r for r in caplog.records if 'recycled' in r.getMessage()]
+        if logged:
+            assert len(records) == 1
+            assert records[0].levelname == 'INFO'
+            assert 'pid:4242' in records[0].getMessage()
+            assert 'max_tasks_per_child=10' in records[0].getMessage()
+        else:
+            assert not records
+
+    @t.skip.if_pypy
     def test_flush_no_synack_discards_unaccepted_jobs(self):
         """flush() should discard unaccepted jobs when synack is disabled.
 
