@@ -12,12 +12,6 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
-- A successful task now stores ``SUCCESS`` before its link or chain is
-  published. A pool child lost between those two steps used to leave nothing
-  stored, so the parent recorded ``FAILURE`` and ran the error callback even
-  though the link had already gone out. With the result stored first, that
-  case is covered by the existing WorkerLost check for a stored success, and
-  children are written again after the trail is populated (#10954).
 - An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
   worker is now logged at ``ERROR`` level instead of being recorded as a task
   failure. The task's errbacks no longer run for a task that succeeded, and a
