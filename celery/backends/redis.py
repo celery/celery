@@ -87,10 +87,23 @@ E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 # redelivered after a lost worker when using acks_late), and must only count
 # once, even if the runs returned different results. Returns the number of
 # results recorded so far, and the chord's total diff and size.
+#
+# When the chord completes, this script atomically acquires the callback
+# dispatch claim within the same execution. This prevents a race where two
+# workers both detect completion and attempt to dispatch the callback.
 CHORD_PART_RETURN_LUA = """
-local jkey, tkey, skey, dkey, gkey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5]
+local jkey, tkey, skey, dkey, gkey, ckey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5], KEYS[6]
 local tid, value, ordered, score = ARGV[1], ARGV[2], ARGV[3], ARGV[4]
 local expires, group_expires = tonumber(ARGV[5]), tonumber(ARGV[6])
+local claim_expires = tonumber(ARGV[7])
+local claim_token = ARGV[8]
+
+-- Prevent late duplicates from recreating chord state after successful cleanup.
+local done_marker = redis.call('GET', ckey)
+if done_marker == 'done' then
+    return {-1, 0, 0, 0}
+end
+
 -- Key the check on the task id and header index, so it doesn't merge two
 -- header entries that share the task id of a reused frozen signature.
 local member = tid .. ':' .. score
@@ -116,20 +129,22 @@ if expires > 0 then
         redis.call('EXPIRE', gkey, group_expires)
     end
 end
-return {readycount, redis.call('GET', tkey), redis.call('GET', skey)}
-"""
 
-# Prevents concurrent chord callback dispatch while the claim is valid.
-# The ownership token protects cleanup if the claim expires and is replaced.
-CHORD_CLAIM_LUA = """
-local ckey = KEYS[1]
-local expires = tonumber(ARGV[1])
-local token = ARGV[2]
-local result = redis.call('SET', ckey, token, 'NX', 'EX', expires)
-return {result and 1 or 0, result and token or false}
+local totaldiff = redis.call('GET', tkey)
+local size = redis.call('GET', skey)
+local claimed = 0
+if size and readycount == tonumber(size) + tonumber(totaldiff or 0) then
+    if redis.call('SET', ckey, claim_token, 'NX', 'EX', claim_expires) then
+        claimed = 1
+    end
+end
+
+return {readycount, totaldiff, size, claimed}
 """
 
 # Release the claim and remove chord data atomically if the token matches.
+# After successful cleanup, set a done marker to prevent late duplicates from
+# recreating chord state or dispatching the callback again.
 CHORD_CLEANUP_LUA = """
 local ckey = KEYS[1]
 local jkey = KEYS[2]
@@ -137,9 +152,14 @@ local tkey = KEYS[3]
 local skey = KEYS[4]
 local dkey = KEYS[5]
 local token = ARGV[1]
+local done_expires = tonumber(ARGV[2])
 
 if redis.call('GET', ckey) == token then
-    return redis.call('DEL', ckey, jkey, tkey, skey, dkey)
+    redis.call('DEL', jkey, tkey, skey, dkey)
+    if done_expires and done_expires > 0 then
+        redis.call('SET', ckey, 'done', 'EX', done_expires)
+    end
+    return 1
 end
 return 0
 """
@@ -852,10 +872,6 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return self.client.register_script(CHORD_PART_RETURN_LUA)
 
     @cached_property
-    def _chord_claim_script(self):
-        return self.client.register_script(CHORD_CLAIM_LUA)
-
-    @cached_property
     def _chord_cleanup_script(self):
         return self.client.register_script(CHORD_CLEANUP_LUA)
 
@@ -876,34 +892,40 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         ckey = self.get_key_for_group(gid, '.c')
         result = self.encode_result(result, state)
         encoded = self.encode([1, tid, state, result])
-        readycount, totaldiff, chord_size_bytes = self._chord_part_return_script(
-            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid)],
+
+        # The claim must outlast the slowest send, which can wait for
+        # result_chord_join_timeout, but stay short, so that a task that runs
+        # again after the claiming worker died can still send the body.
+        #
+        # When result_chord_join_timeout is None, the join can wait indefinitely
+        # but the claim still has a bounded lifetime (default 10 seconds). This is
+        # a known trade-off: a worker with an unbounded join timeout could lose
+        # its claim to another worker while still waiting, potentially causing a
+        # duplicate dispatch. Users requiring unbounded joins should be aware of
+        # this limitation.
+        join_timeout = app.conf.result_chord_join_timeout or 5.0
+        claim_expires = max(5, int(join_timeout * 2))
+        claim_token = uuid4().hex
+
+        done_expires = int(max(claim_expires * 2, 300))
+
+        readycount, totaldiff, chord_size_bytes, claimed = self._chord_part_return_script(
+            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid), ckey],
             args=[tid, encoded, 1 if self._chord_zset else 0, group_index,
-                  self.chord_expires or 0, self._chord_result_expires],
+                  self.chord_expires or 0, self._chord_result_expires,
+                  claim_expires, claim_token],
             client=client,
         )
 
-        totaldiff = int(totaldiff or 0)
+        if readycount == -1:
+            return
 
         if chord_size_bytes:
             try:
                 callback = maybe_signature(request.chord, app=app)
-                total = int(chord_size_bytes) + totaldiff
-                if readycount == total:
-                    claim_expires = self.chord_expires
-                    if not claim_expires:
-                        join_timeout = app.conf.result_chord_join_timeout or 5.0
-                        claim_expires = max(5, int(join_timeout * 2))
-
-                    claim_token = uuid4().hex
-                    result = self._chord_claim_script(
-                        keys=[ckey],
-                        args=[claim_expires, claim_token],
-                        client=client,
-                    )
-                    claimed = result[0] if result else 0
-                    if not claimed:
-                        return
+                totaldiff = int(totaldiff or 0)
+                total = int(chord_size_bytes or 0) + totaldiff
+                if readycount == total and claimed:
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -949,7 +971,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     finally:
                         self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
-                            args=[claim_token],
+                            args=[claim_token, done_expires],
                             client=client,
                         )
             except ChordError as exc:
