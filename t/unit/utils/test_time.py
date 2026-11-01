@@ -359,7 +359,7 @@ class test_localize:
 
     @pytest.mark.parametrize('utc_dt', [
         datetime(2026, 11, 1, 5, 55, tzinfo=ZoneInfo("UTC")),  # 01:55 EDT (first pass)
-    datetime(2026, 11, 1, 6, 55, tzinfo=ZoneInfo("UTC")),  # 01:55 EST (second pass)
+        datetime(2026, 11, 1, 6, 55, tzinfo=ZoneInfo("UTC")),  # 01:55 EST (second pass)
     ])
     def test_localize_ambiguous_hour(self, utc_dt):
         local_tz = ZoneInfo('US/Eastern')
