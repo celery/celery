@@ -352,7 +352,20 @@ class test_localize:
         now_utc_time = datetime.now(tz=ZoneInfo("UTC"))
         local_tz = ZoneInfo('US/Eastern')
         localized_time = localize(now_utc_time, local_tz)
-        assert localized_time == now_utc_time
+        assert localized_time.tzinfo == local_tz
+        # Compare instants: inter-zone == is always False inside an ambiguous
+        # hour (PEP 495), even when both datetimes are the same moment.
+        assert localized_time.timestamp() == now_utc_time.timestamp()
+
+    @pytest.mark.parametrize('utc_dt', [
+    datetime(2026, 11, 1, 5, 55, tzinfo=ZoneInfo("UTC")),  # 01:55 EDT (first pass)
+    datetime(2026, 11, 1, 6, 55, tzinfo=ZoneInfo("UTC")),  # 01:55 EST (second pass)
+    ])
+    def test_localize_ambiguous_hour(self, utc_dt):
+        local_tz = ZoneInfo('US/Eastern')
+        localized_time = localize(utc_dt, local_tz)
+        assert localized_time.tzinfo == local_tz
+        assert localized_time.timestamp() == utc_dt.timestamp()
 
     def test_localize_aware_dt_idempotent(self):
         t = (2017, 4, 23, 21, 36, 59, 0)
