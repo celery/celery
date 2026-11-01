@@ -100,6 +100,8 @@ def safe_say(msg, f=sys.__stderr__):
 class Worker(WorkController):
     """Worker as a program."""
 
+    _autoreloader = None
+
     def on_before_init(self, quiet=False, **kwargs):
         self.quiet = quiet
         trace.setup_worker_optimizations(self.app, self.hostname)
@@ -114,7 +116,8 @@ class Worker(WorkController):
 
     def on_after_init(self, purge=False, no_color=None,
                       redirect_stdouts=None, redirect_stdouts_level=None,
-                      **kwargs):
+                      autoreload=False, **kwargs):
+        self.autoreload = autoreload
         self.redirect_stdouts = self.app.either(
             'worker_redirect_stdouts', redirect_stdouts)
         self.redirect_stdouts_level = self.app.either(
@@ -151,6 +154,8 @@ class Worker(WorkController):
 
         self.set_process_status('-active-')
         self.install_platform_tweaks(self)
+        if self.autoreload:
+            self.start_autoreloader()
         if not self._custom_logging and self.redirect_stdouts:
             app.log.redirect_stdouts(self.redirect_stdouts_level)
 
@@ -172,6 +177,35 @@ class Worker(WorkController):
                     "to avoid these warnings and to allow a smoother upgrade "
                     "to Celery 6.0."
                 )
+
+    def start_autoreloader(self):
+        from celery.worker.autoreload import Autoreloader
+
+        # Same limitations as restarting with SIGHUP: macOS can't exec from a
+        # threaded process, and Windows has no exec that keeps the process.
+        if self.app.IS_macOS or self.app.IS_WINDOWS:
+            logger.warning('--autoreload is not supported on %s.',
+                           'macOS' if self.app.IS_macOS else 'Windows')
+            return
+        self._autoreloader = Autoreloader(self._on_autoreload)
+        self._autoreloader.start()
+
+    def _on_autoreload(self, path):
+        from celery.worker import state
+
+        # a change saved during a shutdown must not turn it into a restart.
+        # on_close() is too late to prevent this: a warm shutdown only closes
+        # the blueprint once the running tasks are done.
+        if state.should_stop is not None or \
+                state.should_terminate is not None:
+            logger.info('Not restarting: the worker is shutting down.')
+            return
+        restart_worker()
+
+    def on_close(self):
+        if self._autoreloader is not None:
+            self._autoreloader.stop()
+        super().on_close()
 
     def emit_banner(self):
         # Dump configuration to screen so we have some basic information
@@ -529,17 +563,22 @@ def _reload_current_worker():
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
+def restart_worker():
+    """Gracefully shut down the worker, then re-exec the current program."""
+    safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
+             sys.__stdout__)
+    import atexit
+    atexit.register(_reload_current_worker)
+    from celery.worker import state
+    state.should_stop = EX_OK
+
+
 def install_worker_restart_handler(worker, sig='SIGHUP'):
 
     def restart_worker_sig_handler(*args):
         """Signal handler restarting the current python program."""
         set_in_sighandler(True)
-        safe_say(f"Restarting celery worker ({' '.join(sys.argv)})",
-                 sys.__stdout__)
-        import atexit
-        atexit.register(_reload_current_worker)
-        from celery.worker import state
-        state.should_stop = EX_OK
+        restart_worker()
     platforms.signals[sig] = restart_worker_sig_handler
 
 
