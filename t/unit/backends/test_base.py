@@ -1856,6 +1856,21 @@ class test_KeyValueStoreBackend:
         assert {id: state['result'] for id, state in got.items()} == ids
         assert sleep.call_args_list == [call(0.5)]
 
+    def test_get_many__no_sleep_after_the_last_iteration(self):
+        """Nothing is polled after max_iterations, so don't wait for it."""
+        # ResultSet._iter_meta() polls once with max_iterations=1 before the
+        # redis backend waits on pubsub, so the extra nap delayed every
+        # GroupResult.get() by a whole interval.
+        sleep = self.patching('time.sleep')
+        self.b.mget = Mock(wraps=self.b.mget)
+        tasks = [uuid() for _ in range(4)]
+
+        assert list(self.b.get_many(tasks, interval=0.5, max_iterations=2)) == []
+
+        assert self.b.mget.call_count == 2
+        # still naps between the polls, just not after the last one.
+        assert sleep.call_args_list == [call(0.5)]
+
     def test_get_many_passes_ready_states(self):
         tasks_length = 10
         ready_states = frozenset({states.SUCCESS})
