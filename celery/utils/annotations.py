@@ -8,16 +8,13 @@ from inspect import isclass
 
 def is_none_type(value: typing.Any) -> bool:
     """Check if the given value is a NoneType."""
-    if sys.version_info < (3, 10):
-        # raise Exception('below 3.10', value, type(None))
-        return value is type(None)
     return value == types.NoneType  # type: ignore[no-any-return]
 
 
 def get_optional_arg(annotation: typing.Any) -> typing.Any:
     """Get the argument from an Optional[...] annotation, or None if it is no such annotation."""
     origin = typing.get_origin(annotation)
-    if origin != typing.Union and (sys.version_info >= (3, 10) and origin != types.UnionType):
+    if origin != typing.Union and origin != types.UnionType:
         return None
 
     union_args = typing.get_args(annotation)
