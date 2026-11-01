@@ -1093,16 +1093,20 @@ General
 
 .. warning::
 
-    A rate-limited task still counts against the worker's prefetch count
-    while it waits to run. Once all of a worker's prefetched slots are occupied
-    by rate-limited tasks, the worker stops fetching new messages from the broker
-    entirely, including messages for tasks that have no rate limit of their own.
+    A rate-limited task that waits for its turn is held in the worker's
+    memory and stays unacknowledged, like a task with an ETA/countdown.
+    The worker raises its prefetch count by one for each waiting task, so it
+    keeps fetching other tasks, but a large backlog of rate-limited tasks
+    ends up in the worker's memory. :setting:`worker_eta_task_limit` caps
+    the prefetch count, and with Redis or SQS a task that waits longer than
+    the visibility timeout is delivered again
+    (see :ref:`redis-visibility_timeout`).
 
-    For example, consider a worker that handles two tasks, ``A`` and ``B``,
-    where ``A`` is rate limited and ``B`` is not. A burst of ``A`` messages
-    can fill the worker's prefetch slots, and ``B`` messages will sit on
-    the broker untouched until those rate-limited ``A`` tasks drain, even
-    though ``B`` has no rate limit of its own.
+    Once that cap is reached, or with a broker that doesn't apply a new
+    prefetch count to a running consumer (RabbitMQ 4 and quorum queues use
+    per-consumer prefetch), the waiting tasks can fill the worker's prefetch
+    slots. Messages for tasks that have no rate limit of their own then sit
+    on the broker until the rate-limited tasks drain.
 
     To avoid this, rate-limited tasks should be routed to their own
     dedicated workers (see :ref:`guide-routing`).
