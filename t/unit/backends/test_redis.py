@@ -239,7 +239,11 @@ class Redis(conftest.MockCallbacks):
                 claimed = 0
                 if size and readycount == int(size) + int(totaldiff or 0):
                     if ckey not in self.keyspace or self.get(ckey) is None:
-                        self.set(ckey, claim_token.encode() if isinstance(claim_token, str) else claim_token, ex=claim_expires)
+                        token_bytes = (
+                            claim_token.encode() if isinstance(claim_token, str)
+                            else claim_token
+                        )
+                        self.set(ckey, token_bytes, ex=claim_expires)
                         claimed = 1
 
                 return [readycount, totaldiff, size, claimed]
@@ -2947,7 +2951,7 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
         old_chord_expires = self.app.conf.result_chord_expires
         self.app.conf.result_chord_expires = 600
         self.b = self.Backend(app=self.app)
-        self.b.client = client = self.FakeRedis()
+        self.b.client = self.FakeRedis()
 
         with self.chord_context(3) as (tasks, _, callback):
             self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
@@ -2972,10 +2976,10 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
             self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
             callback.delay.assert_called_once_with([10, 20, 30])
 
-            assert client.get(ckey) is not None
-            token_a = client.get(ckey)
+            assert self.b.client.get(ckey) is not None
+            token_a = self.b.client.get(ckey)
 
-            client.delete(ckey)
+            self.b.client.delete(ckey)
 
             def prevent_worker_b_cleanup(keys, args, client=None):
                 return 0
@@ -2985,26 +2989,26 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
             self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
             callback.delay.assert_called_once_with([10, 20, 30])
 
-            token_b = client.get(ckey)
+            token_b = self.b.client.get(ckey)
             assert token_b is not None
             assert token_a != token_b
 
             keys = [ckey, jkey, tkey, skey, dkey]
             existing_before_stale_cleanup = {
-                key: client.exists(key) for key in keys
+                key: self.b.client.exists(key) for key in keys
             }
 
             cleanup_result = original_cleanup_script(
                 keys=[ckey, jkey, tkey, skey, dkey],
                 args=[token_a, int(600)],
-                client=client,
+                client=self.b.client,
             )
             assert cleanup_result == 0
 
             for key, existed in existing_before_stale_cleanup.items():
-                assert client.exists(key) == existed, f"Key {key} was modified by stale cleanup"
+                assert self.b.client.exists(key) == existed, f"Key {key} was modified by stale cleanup"
 
-            assert client.get(ckey) == token_b
+            assert self.b.client.get(ckey) == token_b
 
             # With the new implementation, cleanup deletes 4 keys (jkey, tkey, skey, dkey)
             # and sets ckey to 'done', returning 1 instead of the count of deleted keys
@@ -3012,15 +3016,15 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
             cleanup_result = original_cleanup_script(
                 keys=[ckey, jkey, tkey, skey, dkey],
                 args=[token_b, int(600)],
-                client=client,
+                client=self.b.client,
             )
             assert cleanup_result == 1
 
-            assert client.get(ckey) == b'done'
-            assert client.get(jkey) is None
-            assert client.get(tkey) is None
-            assert client.get(skey) is None
-            assert client.exists(dkey) == 0
+            assert self.b.client.get(ckey) == b'done'
+            assert self.b.client.get(jkey) is None
+            assert self.b.client.get(tkey) is None
+            assert self.b.client.get(skey) is None
+            assert self.b.client.exists(dkey) == 0
 
         self.app.conf.result_chord_expires = old_chord_expires
 
@@ -3037,7 +3041,7 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
         old_chord_expires = self.app.conf.result_chord_expires
         self.app.conf.result_chord_expires = 600
         self.b = self.Backend(app=self.app)
-        self.b.client = client = self.FakeRedis()
+        self.b.client = self.FakeRedis()
 
         with self.chord_context(2) as (tasks, _, callback):
             self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
@@ -3067,17 +3071,17 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
     def test_on_chord_part_return__expires(self):
         self.app.conf.result_chord_expires = 600
         self.b = self.Backend(app=self.app)
-        self.b.client = client = self.FakeRedis()
+        self.b.client = self.FakeRedis()
 
         with self.chord_context(2) as (tasks, request, _):
             gkey = self.b.get_key_for_group(request.group)
-            client.set(gkey, 'a saved GroupResult')
+            self.b.client.set(gkey, 'a saved GroupResult')
             self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             for suffix in ('.j', '.s', '.d'):
                 key = self.b.get_key_for_group(request.group, suffix)
-                assert client.ttl(key) == 600
+                assert self.b.client.ttl(key) == 600
             # The group key is kept for at least result_expires (one day)
-            assert client.ttl(gkey) == 86400
+            assert self.b.client.ttl(gkey) == 86400
 
 
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
