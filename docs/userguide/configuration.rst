@@ -662,6 +662,13 @@ has been executed, not *right before* (the default behavior).
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
 .. setting:: task_acks_on_failure_or_timeout
 
 ``task_acks_on_failure_or_timeout``
@@ -731,6 +738,13 @@ worker.
     Enabling this can cause message loops; make sure you know
     what you're doing. See :setting:`task_retry_on_worker_lost` for a way
     to limit how many times a task is sent again.
+
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
 
 .. setting:: task_retry_on_worker_lost
 
@@ -1962,6 +1976,17 @@ Default: None.
 
 The read consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
 ``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
+
+.. versionchanged:: 5.7
+
+    Workers also use this level when they store a result: each write
+    attempt first reads the newest row of the task and skips the write
+    if that row is ``SUCCESS``. This adds one read per attempted write.
+    A level stricter than :setting:`cassandra_write_consistency` can
+    make writes fail while nodes are down, and a weaker one, such as
+    ``ONE``, can miss a ``SUCCESS`` stored on another replica.
+    The read and the write are separate steps. Two runs of the same
+    task that overlap can still both write.
 
 .. setting:: cassandra_write_consistency
 

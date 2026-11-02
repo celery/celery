@@ -372,6 +372,25 @@ Celery will automatically retry sending messages in the event of connection
 failure, and retry behavior can be configured -- like how often to retry, or a maximum
 number of retries -- or disabled all together.
 
+Workers also wait between retries when a broker refuses a link, chain step,
+or chord-body publish. Each refused message is retried on its own using
+:setting:`task_publish_retry` and :setting:`task_publish_retry_policy`, or the
+``retry`` / ``retry_policy`` options on that callback signature. The worker
+repeats the publication rather than the parent task's body, and the pool slot
+(or the whole solo worker) stays busy until the policy gives up or the broker
+accepts the message. With the default policy, retries stop after about 0.6 s.
+Once the policy is exhausted, the task fails through the normal failure and
+errback handling (including for :meth:`~celery.app.task.Task.apply`).
+
+.. versionchanged:: 5.7
+
+    Refused callback publishes are retried per message with the callback's own
+    ``retry`` / ``retry_policy`` options. An unbounded ``max_retries`` policy
+    uses the application's finite retry limit, or three retries if that limit
+    is also unbounded. Exhaustion uses the normal failure path instead of
+    emitting :signal:`task_internal_error`; :meth:`~celery.app.task.Task.apply`
+    returns a :state:`FAILURE` result instead of raising the publish error.
+
 To disable retry you can set the ``retry`` execution option to :const:`False`:
 
 .. code-block:: python
@@ -849,6 +868,22 @@ setting or by using the ``ignore_result`` option:
   >>> result = add.apply_async((1, 2), ignore_result=False)
   >>> result.get()
   3
+
+.. versionchanged:: 5.7
+
+   :meth:`~@send_task` now correctly respects the task's ``ignore_result``
+   setting when the option is omitted.
+
+   Pass ``ignore_result=False`` explicitly if you need to retrieve the result
+   of a task configured with ``ignore_result=True``.
+
+   When the option is omitted and the worker ignores the result,
+   :meth:`~celery.result.AsyncResult.get` waits until its timeout, or
+   indefinitely if no timeout is set.
+
+   Chords whose header tasks are sent by name and ignore their results do not
+   complete on backends that use ``chord_unlock``, including the database
+   backend. See :ref:`chord-important-notes`.
 
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.
