@@ -53,8 +53,11 @@ def join(l: list[str], sep: str = '\n') -> str:
 
 
 def ensure_sep(sep: str, s: str, n: int = 2) -> str:
-    """Ensure text s ends in separator sep'."""
-    return s + sep * (n - s.count(sep))
+    """Ensure text s ends in separator sep, with at least n occurrences."""
+    missing = max(0, n - s.count(sep))
+    if not s.endswith(sep):
+        missing = max(1, missing)
+    return s + sep * missing
 
 
 ensure_newlines = partial(ensure_sep, '\n')
