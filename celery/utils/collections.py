@@ -544,7 +544,7 @@ class LimitedSet:
     def _refresh_heap(self):
         # type: () -> None
         """Time consuming recreating of heap.  Don't run this too often."""
-        self._heap[:] = [entry for entry in self._data.values()]
+        self._heap[:] = [*self._data.values()]
         heapify(self._heap)
 
     def _maybe_refresh_heap(self):

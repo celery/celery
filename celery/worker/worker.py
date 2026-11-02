@@ -20,9 +20,8 @@ from time import sleep
 from billiard import cpu_count
 from kombu.utils.compat import detect_environment
 
-from celery import bootsteps
+from celery import bootsteps, signals
 from celery import concurrency as _concurrency
-from celery import signals
 from celery.bootsteps import RUN, TERMINATE
 from celery.exceptions import ImproperlyConfigured, TaskRevokedError, WorkerTerminate
 from celery.platforms import EX_FAILURE, create_pidlock

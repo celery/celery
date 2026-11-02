@@ -1,7 +1,6 @@
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
 from datetime import timezone as _timezone
-from datetime import tzinfo
 from unittest.mock import Mock, patch
 
 import pytest
