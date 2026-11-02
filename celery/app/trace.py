@@ -20,6 +20,7 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
+from celery.app.task import get_actual_ignore_result
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
@@ -152,28 +153,6 @@ def get_task_name(request, default):
     # request.shadow could be None or an empty string.
     # If so, we should use default.
     return getattr(request, 'shadow', None) or default
-
-
-def get_actual_ignore_result(task, req):
-    """Return the effective ignore_result, with request overriding task.
-
-    If req provides an explicit ignore_result, that value is used;
-    otherwise task.ignore_result is returned.
-    """
-    if req is None:
-        return task.ignore_result
-
-    actual = getattr(req, 'ignore_result', None)
-
-    # Context defines `ignore_result = False` at class level (see Context
-    # in celery/app/task.py). getattr() above would return the class default
-    # (False) even when the request never set it explicitly, making it
-    # impossible to distinguish "override=False" from "not set". We check
-    # __dict__ to detect only instance-level (i.e., explicitly set) values.
-    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
-        actual = None
-
-    return actual if actual is not None else task.ignore_result
 
 
 class TraceInfo:
