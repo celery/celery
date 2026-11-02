@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
+from uuid import uuid4
 
 from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
@@ -86,10 +87,23 @@ E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 # redelivered after a lost worker when using acks_late), and must only count
 # once, even if the runs returned different results. Returns the number of
 # results recorded so far, and the chord's total diff and size.
+#
+# When the chord completes, this script atomically acquires the callback
+# dispatch claim within the same execution. This prevents a race where two
+# workers both detect completion and attempt to dispatch the callback.
 CHORD_PART_RETURN_LUA = """
-local jkey, tkey, skey, dkey, gkey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5]
+local jkey, tkey, skey, dkey, gkey, ckey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5], KEYS[6]
 local tid, value, ordered, score = ARGV[1], ARGV[2], ARGV[3], ARGV[4]
 local expires, group_expires = tonumber(ARGV[5]), tonumber(ARGV[6])
+local claim_expires = tonumber(ARGV[7])
+local claim_token = ARGV[8]
+
+-- Prevent late duplicates from recreating chord state after successful cleanup.
+local done_marker = redis.call('GET', ckey)
+if done_marker == 'done' then
+    return {-1, 0, 0, 0}
+end
+
 -- Key the check on the task id and header index, so it doesn't merge two
 -- header entries that share the task id of a reused frozen signature.
 local member = tid .. ':' .. score
@@ -115,7 +129,51 @@ if expires > 0 then
         redis.call('EXPIRE', gkey, group_expires)
     end
 end
-return {readycount, redis.call('GET', tkey), redis.call('GET', skey)}
+
+local totaldiff = redis.call('GET', tkey)
+local size = redis.call('GET', skey)
+local claimed = 0
+if size and readycount == tonumber(size) + tonumber(totaldiff or 0) then
+    if redis.call('SET', ckey, claim_token, 'NX', 'EX', claim_expires) then
+        claimed = 1
+    end
+end
+
+return {readycount, totaldiff, size, claimed}
+"""
+
+# Release the claim and remove chord data atomically if the token matches.
+# After successful cleanup, set a done marker to prevent late duplicates from
+# recreating chord state or dispatching the callback again.
+CHORD_CLEANUP_LUA = """
+local ckey = KEYS[1]
+local jkey = KEYS[2]
+local tkey = KEYS[3]
+local skey = KEYS[4]
+local dkey = KEYS[5]
+local token = ARGV[1]
+local done_expires = tonumber(ARGV[2])
+
+if redis.call('GET', ckey) == token then
+    redis.call('DEL', jkey, tkey, skey, dkey)
+    if done_expires and done_expires > 0 then
+        redis.call('SET', ckey, 'done', 'EX', done_expires)
+    end
+    return 1
+end
+return 0
+"""
+
+# Extend a dispatch lease only while this worker still owns it. EXPIRE does
+# not recreate a key that has expired, and the comparison and update are atomic.
+CHORD_CLAIM_EXTEND_LUA = """
+local ckey = KEYS[1]
+local token = ARGV[1]
+local expires = tonumber(ARGV[2])
+if redis.call('GET', ckey) == token then
+    return redis.call('EXPIRE', ckey, expires)
+end
+return 0
 """
 
 logger = get_logger(__name__)
@@ -797,6 +855,11 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return self.ensure(set_key, (key, value))
 
     def set_chord_size(self, group_id, chord_size):
+        # Reapplying a frozen chord reuses its group id, but represents a new run.
+        self.ensure(
+            self.client.delete,
+            (self.get_key_for_group(group_id, '.c'),),
+        )
         self._set_chord_key(self.get_key_for_group(group_id, '.s'), chord_size)
 
     def apply_chord(self, header_result_args, body, **kwargs):
@@ -825,6 +888,55 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _chord_part_return_script(self):
         return self.client.register_script(CHORD_PART_RETURN_LUA)
 
+    @cached_property
+    def _chord_cleanup_script(self):
+        return self.client.register_script(CHORD_CLEANUP_LUA)
+
+    @cached_property
+    def _chord_claim_extend_script(self):
+        return self.client.register_script(CHORD_CLAIM_EXTEND_LUA)
+
+    def _chord_publish_claim_expires(self, initial_expires, callback):
+        """Estimate the time needed for Kombu's nested connection retries."""
+        conf = self.app.conf
+        callback_options = callback.options
+        policy = dict(conf.task_publish_retry_policy or {})
+        policy.update(callback_options.get('retry_policy') or {})
+        retries = policy.get('max_retries', 3)
+        retry_enabled = callback_options.get('retry')
+        if retry_enabled is None:
+            retry_enabled = conf.task_publish_retry
+        if not retry_enabled:
+            retries = 0
+        timeout = conf.broker_connection_timeout
+        # This timeout covers connection establishment; it does not cap time
+        # spent publishing or waiting for broker confirmation.
+        # Neither unbounded retries nor an unbounded connect timeout has a
+        # finite lease budget. Double the initial claim for a bounded fallback
+        # while retaining a finite recovery window after a worker crash.
+        if retries is None or timeout is None:
+            return initial_expires * 2
+        retries = max(0, int(retries))
+        timeout = max(0, float(timeout))
+        start = max(0, float(policy.get('interval_start', 0)))
+        step = max(0, float(policy.get('interval_step', 0)))
+        maximum = max(0, float(policy.get('interval_max', 0)))
+        # Producer.publish() uses Connection.ensure(). Each of its retries can
+        # run _ensure_connection() with the remaining retry budget, so count
+        # those nested connection attempts and their retry delays as well.
+        connection_attempts = 1 + sum(
+            remaining + 1 for remaining in range(1, retries + 1)
+        )
+        delays = sum(
+            min(start + step * attempt, maximum)
+            for remaining in range(1, retries + 1)
+            for attempt in range(remaining)
+        )
+        return max(
+            initial_expires,
+            int(connection_attempts * timeout + delays + 1),
+        )
+
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
         app = self.app
@@ -839,22 +951,43 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         tkey = self.get_key_for_group(gid, '.t')
         skey = self.get_key_for_group(gid, '.s')
         dkey = self.get_key_for_group(gid, '.d')
+        ckey = self.get_key_for_group(gid, '.c')
         result = self.encode_result(result, state)
         encoded = self.encode([1, tid, state, result])
-        readycount, totaldiff, chord_size_bytes = self._chord_part_return_script(
-            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid)],
+
+        # Keep the initial claim tied to the join timeout for crash recovery.
+        # The publishing retry budget is added only after joining, just before
+        # callback.delay(), so slow publishing does not consume that budget.
+        #
+        # When result_chord_join_timeout is None, the join can wait indefinitely
+        # but the claim still has a bounded lifetime (default 10 seconds). This is
+        # a known trade-off: a worker with an unbounded join timeout could lose
+        # its claim to another worker while still waiting, potentially causing a
+        # duplicate dispatch. Users requiring unbounded joins should be aware of
+        # this limitation.
+        join_timeout = app.conf.result_chord_join_timeout or 5.0
+        claim_expires = max(5, int(join_timeout * 2))
+        claim_token = uuid4().hex
+
+        done_expires = int(max(claim_expires * 2, 300))
+
+        readycount, totaldiff, chord_size_bytes, claimed = self._chord_part_return_script(
+            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid), ckey],
             args=[tid, encoded, 1 if self._chord_zset else 0, group_index,
-                  self.chord_expires or 0, self._chord_result_expires],
+                  self.chord_expires or 0, self._chord_result_expires,
+                  claim_expires, claim_token],
             client=client,
         )
 
-        totaldiff = int(totaldiff or 0)
+        if readycount == -1:
+            return
 
         if chord_size_bytes:
             try:
                 callback = maybe_signature(request.chord, app=app)
-                total = int(chord_size_bytes) + totaldiff
-                if readycount == total:
+                totaldiff = int(totaldiff or 0)
+                total = int(chord_size_bytes or 0) + totaldiff
+                if readycount == total and claimed:
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -888,6 +1021,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                                 pipeline = pipe.lrange(jkey, 0, total)
                             resl, = pipeline.execute()
                         resl = [unpack(tup, decode) for tup in resl]
+                    publish_expires = self._chord_publish_claim_expires(
+                        claim_expires, callback,
+                    )
+                    extended = self._chord_claim_extend_script(
+                        keys=[ckey],
+                        args=[claim_token, publish_expires],
+                        client=client,
+                    )
+                    if not extended:
+                        logger.warning(
+                            'Chord callback for %r not published: dispatch '
+                            'claim is no longer owned by this worker', gid,
+                        )
+                        return
                     try:
                         callback.delay(resl)
                     except Exception as exc:  # pylint: disable=broad-except
@@ -898,13 +1045,16 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             ChordError(f'Callback error: {exc!r}'),
                         )
                     finally:
-                        with client.pipeline() as pipe:
-                            pipe \
-                                .delete(jkey) \
-                                .delete(tkey) \
-                                .delete(skey) \
-                                .delete(dkey) \
-                                .execute()
+                        cleaned = self._chord_cleanup_script(
+                            keys=[ckey, jkey, tkey, skey, dkey],
+                            args=[claim_token, done_expires],
+                            client=client,
+                        )
+                        if not cleaned:
+                            logger.warning(
+                                'Chord callback claim for %r was lost before '
+                                'cleanup; chord data was left for expiry', gid,
+                            )
             except ChordError as exc:
                 logger.exception('Chord %r raised: %r', request.group, exc)
                 try:
