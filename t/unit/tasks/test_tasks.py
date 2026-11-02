@@ -598,6 +598,17 @@ class test_task_retries(TasksCase):
         finally:
             task.pop_request()
 
+    @pytest.mark.parametrize('override', [True, False])
+    def test_signature_from_request__keeps_ignore_result(self, override):
+        self.retry_task.push_request(ignore_result=override)
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is override
+
+    def test_signature_from_request__ignore_result_default(self):
+        self.retry_task.push_request()
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is self.retry_task.ignore_result
+
     def test_signature_from_request__passes_headers(self):
         self.retry_task.push_request()
         self.retry_task.request.headers = {'custom': 10.1}

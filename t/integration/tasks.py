@@ -319,6 +319,20 @@ def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
                      max_retries=max_retries)
 
 
+@shared_task(bind=True, ignore_result=True)
+def retry_once_ignore_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
+
+
+@shared_task(bind=True, ignore_result=False)
+def retry_once_with_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
+
+
 @shared_task(bind=True, max_retries=1)
 def retry_once_priority(self, *args, expires=60.0, max_retries=1,
                         countdown=0.1):

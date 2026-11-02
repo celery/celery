@@ -73,6 +73,28 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
+
+
 class Context:
     """Task request variables (Task.request)."""
 
@@ -764,7 +786,14 @@ class Task:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        options = {**request.as_execution_options(), **extra_options}
+        options = {
+            **request.as_execution_options(),
+            # Keep the caller's ignore_result for the retry.  Read through
+            # get_actual_ignore_result(): Context's class-level False
+            # default would otherwise look like an explicit override.
+            'ignore_result': get_actual_ignore_result(self, request),
+            **extra_options
+        }
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:
