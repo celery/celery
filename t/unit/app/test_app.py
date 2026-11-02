@@ -3120,3 +3120,27 @@ class test_shared_task:
                     return 168
 
                 assert baz.app is yproj
+
+    def test_applied_twice_raises(self):
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task
+            @shared_task
+            def foo():
+                return 42
+
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task(name='xproj.foo')
+            @shared_task()
+            def bar():
+                return 42
+
+    def test_can_wrap_app_task(self):
+        with self.Celery('xproj', set_as_current=True) as xproj:
+            xproj.conf.task_always_eager = True
+
+            @shared_task
+            @xproj.task
+            def mul(x, y):
+                return x * y
+
+            assert mul.delay(2, 3).get() == 6
