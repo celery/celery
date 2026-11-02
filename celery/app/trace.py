@@ -400,6 +400,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     pid = os.getpid()
 
     request_stack = task.request_stack
+    if request_stack is None:
+        raise RuntimeError(
+            f"build_tracer: task {name!r} ({type(task).__module__}.{type(task).__qualname__}) "
+            "is not bound to an app, so it has no request stack. "
+            "`app.tasks.register()` adds a task without binding it; register the task "
+            "with `app.register_task()`, which binds it."
+        )
     push_request = request_stack.push
     pop_request = request_stack.pop
     push_task = _task_stack.push
