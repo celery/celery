@@ -288,10 +288,11 @@ class test_unlock_chord_task(ChordCase):
             is_ready = False
 
         with self._chord_context(NeverReady, interval=10, max_retries=30) \
-                as (cb, retry, _):
+                as (cb, retry, fail):
             cb.type.apply_async.assert_not_called()
-            # did retry
+            # did retry, and didn't fail the chord
             retry.assert_called_with(countdown=10, max_retries=30)
+            fail.assert_not_called()
 
     def test_when_not_ready_preserves_exchange_type(self):
         class NeverReady(TSR):
