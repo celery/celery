@@ -415,12 +415,22 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
     signature = canvas.maybe_signature  # maybe_ does not clone if already
 
     def on_error(request, exc, state=FAILURE, call_errbacks=True):
-        if propagate:
-            raise
         I = Info(state, exc)
         R = I.handle_error_state(
             task, request, eager=eager, call_errbacks=call_errbacks,
         )
+        if propagate:
+            # The exception is re-raised to the caller, but the task
+            # still failed: run the post-execution handler first so that
+            # after_return sees the failure, just like it does when the
+            # exception is not propagated.  The POST section below is
+            # skipped by the raise, so this cannot double-fire.
+            if state not in IGNORE_STATES and task_after_return:
+                task_after_return(
+                    state, I.retval, request.id, request.args,
+                    request.kwargs, None,
+                )
+            raise
         return I, R, I.state, I.retval
 
     def _dispatch_callbacks_and_chain(
