@@ -6,7 +6,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
-from t.integration.tasks import add, add_ignore_result, identity
+from t.integration.tasks import add, add_with_result, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
                            self_termination_sigkill_with_retries, soft_time_limit_lower_than_time_limit,
@@ -17,11 +17,13 @@ class test_apply_async:
     def test_apply_async_does_not_alter_cached_execution_options(self, celery_setup: CeleryTestSetup):
         app = celery_setup.app
         app.conf.task_default_queue = celery_setup.worker.worker_queue
-        task = app.tasks[add_ignore_result.name]
+        task = app.tasks[add_with_result.name]
+        original_options = task._get_exec_options().copy()
 
         before = app.send_task(task.name, args=(1, 2))
-        # Empty options must not cache the task's ignore_result=True default.
+        # Empty options must not cache the task's ignore_result default.
         task.apply_async(args=(3, 4))
+        assert task._get_exec_options() == original_options
         after = app.send_task(task.name, args=(5, 6))
 
         assert before.get(timeout=RESULT_TIMEOUT) == 3
