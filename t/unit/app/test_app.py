@@ -2119,6 +2119,13 @@ class test_App:
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())
 
+    def test_send_task_without_ignore_result_sends_none_header(self):
+        with self.app.producer_or_acquire() as producer:
+            with patch.object(producer, 'publish') as publish:
+                self.app.send_task('foo', producer=producer)
+
+        assert publish.call_args.kwargs['headers']['ignore_result'] is None
+
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
     def test_send_task_honours_task_serializer(self, detect_quorum_queues):
         """send_task should use the registered task's serializer when called by name."""

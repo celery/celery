@@ -1036,7 +1036,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         )
                         return
                     try:
-                        callback.delay(resl)
+                        app.amqp._retry_publish(callback.delay, resl)
                     except Exception as exc:  # pylint: disable=broad-except
                         logger.exception(
                             'Chord callback for %r raised: %r', request.group, exc)
