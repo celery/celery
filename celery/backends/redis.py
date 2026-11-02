@@ -17,8 +17,8 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 from redis import CredentialProvider
 
 from celery import states
-from celery.app.amqp import _callback_publish_max_retries
 from celery._state import task_join_will_block
+from celery.app.amqp import _callback_publish_max_retries
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
