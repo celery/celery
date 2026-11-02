@@ -213,12 +213,16 @@ class Redis(conftest.MockCallbacks):
             return chord_cleanup
         if script == CHORD_CLAIM_EXTEND_LUA:
             def chord_claim_extend(keys, args, client=None):
-                ckey, = keys
+                ckey, skey = keys
                 token, expires = args
                 current = self.get(ckey)
                 token = token.encode() if isinstance(token, str) else token
                 if current == token:
                     return int(bool(self.expire(ckey, int(expires))))
+                if current is None and self.exists(skey):
+                    return int(bool(self.set(
+                        ckey, token, ex=int(expires), nx=True,
+                    )))
                 return 0
             return chord_claim_extend
         if script == CHORD_PART_RETURN_LUA:
@@ -2014,6 +2018,9 @@ class test_RedisBackend(basetest_RedisBackend):
         b = self.Backend('redis://', app=self.app)
         gid = uuid()
         b.set_chord_size(gid, 10)
+        b.client.delete.assert_called_once_with(
+            b.get_key_for_group(gid, '.c'),
+        )
         b.client.set.assert_called_with(
             b.get_key_for_group(gid, '.s'), 10, ex=86400)
 
@@ -2925,15 +2932,22 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             'interval_max': 1,
         }
         callback = Mock(options={})
-        assert self.b._chord_publish_claim_expires(6, callback) == 41
+        assert self.b._chord_publish_claim_expires(6, callback) == 20
         callback = Mock(options={'retry_policy': {'max_retries': 0}})
         assert self.b._chord_publish_claim_expires(6, callback) == 6
         self.app.conf.task_publish_retry_policy['max_retries'] = None
         callback = Mock(options={})
-        assert self.b._chord_publish_claim_expires(6, callback) == 12
+        assert self.b._chord_publish_claim_expires(6, callback) == 20
         self.app.conf.task_publish_retry_policy['max_retries'] = 3
         self.app.conf.broker_connection_timeout = None
         assert self.b._chord_publish_claim_expires(6, callback) == 12
+
+    def test_publish_claim_budget_ignores_task_publish_retry(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = False
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3}
+        callback = Mock(options={})
+        assert self.b._chord_publish_claim_expires(6, callback) == 20
 
 
 class test_RedisBackend_chord_part_script(basetest_RedisBackend):
@@ -3117,15 +3131,65 @@ class test_RedisBackend_chord_part_script(basetest_RedisBackend):
     def test_claim_extension_requires_live_token_owner(self):
         client = self.FakeRedis()
         ckey = 'claim'
+        skey = 'size'
         client.set(ckey, 'owner', ex=3)
         script = self.b._chord_claim_extend_script
-        assert script(keys=[ckey], args=['owner', 12], client=client) == 1
+        assert script(keys=[ckey, skey], args=['owner', 12], client=client) == 1
         assert client.ttl(ckey) == 12
-        assert script(keys=[ckey], args=['stale', 30], client=client) == 0
+        assert script(keys=[ckey, skey], args=['stale', 30], client=client) == 0
         assert client.ttl(ckey) == 12
         client.delete(ckey)
-        assert script(keys=[ckey], args=['owner', 30], client=client) == 0
+        assert script(keys=[ckey, skey], args=['owner', 30], client=client) == 0
         assert client.exists(ckey) == 0
+
+    def test_claim_extension_does_not_reacquire_done_marker(self):
+        client = self.FakeRedis()
+        ckey = 'claim'
+        skey = 'size'
+        client.set(ckey, 'done', ex=30)
+        client.set(skey, 2)
+        script = self.b._chord_claim_extend_script
+        assert script(keys=[ckey, skey], args=['owner', 30], client=client) == 0
+        assert client.get(ckey) == b'done'
+
+    def test_claim_lost_before_publish_is_taken_again(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            ckey = self.b.get_key_for_group(tasks[0].request.group, '.c')
+            real_extend = self.b._chord_claim_extend_script
+
+            def expire_then_extend(keys, args, client=None):
+                self.b.client.delete(ckey)
+                return real_extend(keys=keys, args=args, client=client)
+
+            with patch.object(
+                self.b, '_chord_claim_extend_script', expire_then_extend,
+            ):
+                self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+            assert self.b.client.get(ckey) == b'done'
+
+    def test_claim_lost_to_a_copy_before_publish(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            ckey = self.b.get_key_for_group(tasks[0].request.group, '.c')
+            real_extend = self.b._chord_claim_extend_script
+            stalled = []
+
+            def copy_during_stall(keys, args, client=None):
+                if not stalled:
+                    stalled.append(True)
+                    self.b.client.delete(ckey)
+                    self.b.on_chord_part_return(
+                        tasks[1].request, states.SUCCESS, 20,
+                    )
+                return real_extend(keys=keys, args=args, client=client)
+
+            with patch.object(
+                self.b, '_chord_claim_extend_script', copy_during_stall,
+            ):
+                self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
 
     def test_callback_is_not_published_after_claim_extension_fails(self):
         with self.chord_context(2) as (tasks, _, callback):

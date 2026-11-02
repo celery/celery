@@ -1144,33 +1144,6 @@ class test_chain:
         # Cleanup
         redis_connection.delete(redis_key, 'Done')
 
-    def test_reapplying_frozen_chord_dispatches_body_again(self, manager):
-        """A frozen chord reuses its group id, but each apply is a new run."""
-        if not manager.app.conf.result_backend.startswith('redis'):
-            pytest.skip('Requires redis result backend.')
-
-        redis_connection = get_redis_connection()
-        redis_key = f'frozen-chord-{uuid.uuid4().hex}'
-        redis_connection.delete(redis_key)
-        task = chord(
-            group(add.s(1, 2), add.s(3, 4)),
-            redis_count.si(redis_key),
-        )
-        frozen = task.freeze()
-        group_id = frozen.id
-
-        try:
-            first = task.apply_async()
-            first.get(timeout=TIMEOUT)
-            await_redis_count(1, redis_key=redis_key)
-
-            second = task.apply_async()
-            second.get(timeout=TIMEOUT)
-            await_redis_count(2, redis_key=redis_key)
-            assert frozen.id == group_id
-        finally:
-            redis_connection.delete(redis_key)
-
     def test_chaining_upgraded_chords_mixed_canvas(self, manager, subtests):
         """ This test is built to reproduce the github issue https://github.com/celery/celery/issues/5958
 
@@ -2088,6 +2061,34 @@ class test_chord:
         c = chord((identity.si(i) for i in inputs), identity.s())
         result = c()
         assert result.get() == inputs
+
+    def test_reapplying_frozen_chord_dispatches_body_again(self, manager):
+        """A frozen chord reuses its group id, but each apply is a new run."""
+        if not manager.app.conf.result_backend.startswith('redis'):
+            pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = f'frozen-chord-{uuid.uuid4().hex}'
+        redis_connection.delete(redis_key)
+        task = chord(
+            group(add.s(1, 2), add.s(3, 4)),
+            redis_count.si(redis_key),
+        )
+        frozen = task.freeze()
+        group_id = frozen.id
+
+        try:
+            first = task.apply_async()
+            first.get(timeout=TIMEOUT)
+            await_redis_count(1, redis_key=redis_key)
+
+            second = task.apply_async()
+            second.get(timeout=TIMEOUT)
+            await_redis_count(2, redis_key=redis_key)
+            assert first.id == group_id
+            assert second.id == group_id
+        finally:
+            redis_connection.delete(redis_key)
 
     def test_group_or_task_countdown_delays_header(self, manager):
         """countdown on group|task must delay header tasks (#7851)."""

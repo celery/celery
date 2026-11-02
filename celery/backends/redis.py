@@ -17,6 +17,7 @@ from kombu.utils.url import _parse_url, maybe_sanitize_url
 from redis import CredentialProvider
 
 from celery import states
+from celery.app.amqp import _callback_publish_max_retries
 from celery._state import task_join_will_block
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
@@ -164,14 +165,17 @@ end
 return 0
 """
 
-# Extend a dispatch lease only while this worker still owns it. EXPIRE does
-# not recreate a key that has expired, and the comparison and update are atomic.
+# Extend a dispatch lease while this worker still owns it, or reacquire an
+# expired lease while chord data remains. The checks and updates are atomic.
 CHORD_CLAIM_EXTEND_LUA = """
-local ckey = KEYS[1]
+local ckey, skey = KEYS[1], KEYS[2]
 local token = ARGV[1]
 local expires = tonumber(ARGV[2])
 if redis.call('GET', ckey) == token then
     return redis.call('EXPIRE', ckey, expires)
+end
+if not redis.call('GET', ckey) and redis.call('EXISTS', skey) == 1 then
+    return redis.call('SET', ckey, token, 'EX', expires, 'NX') and 1 or 0
 end
 return 0
 """
@@ -897,44 +901,26 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         return self.client.register_script(CHORD_CLAIM_EXTEND_LUA)
 
     def _chord_publish_claim_expires(self, initial_expires, callback):
-        """Estimate the time needed for Kombu's nested connection retries."""
+        """Estimate the time needed for callback publish retries."""
         conf = self.app.conf
         callback_options = callback.options
         policy = dict(conf.task_publish_retry_policy or {})
         policy.update(callback_options.get('retry_policy') or {})
-        retries = policy.get('max_retries', 3)
-        retry_enabled = callback_options.get('retry')
-        if retry_enabled is None:
-            retry_enabled = conf.task_publish_retry
-        if not retry_enabled:
-            retries = 0
+        retries = _callback_publish_max_retries(
+            policy, conf.task_publish_retry_policy or {},
+        )
         timeout = conf.broker_connection_timeout
-        # This timeout covers connection establishment; it does not cap time
-        # spent publishing or waiting for broker confirmation.
-        # Neither unbounded retries nor an unbounded connect timeout has a
-        # finite lease budget. Double the initial claim for a bounded fallback
-        # while retaining a finite recovery window after a worker crash.
-        if retries is None or timeout is None:
+        if timeout is None:
             return initial_expires * 2
         retries = max(0, int(retries))
         timeout = max(0, float(timeout))
-        start = max(0, float(policy.get('interval_start', 0)))
-        step = max(0, float(policy.get('interval_step', 0)))
-        maximum = max(0, float(policy.get('interval_max', 0)))
-        # Producer.publish() uses Connection.ensure(). Each of its retries can
-        # run _ensure_connection() with the remaining retry budget, so count
-        # those nested connection attempts and their retry delays as well.
-        connection_attempts = 1 + sum(
-            remaining + 1 for remaining in range(1, retries + 1)
-        )
-        delays = sum(
-            min(start + step * attempt, maximum)
-            for remaining in range(1, retries + 1)
-            for attempt in range(remaining)
-        )
+        if not retries:
+            return initial_expires
+        # This is an estimate of connection-attempt time, with one additional
+        # connection timeout to leave room for publish and broker confirmation.
         return max(
             initial_expires,
-            int(connection_attempts * timeout + delays + 1),
+            int((retries + 1) * timeout + max(timeout, 1)),
         )
 
     def on_chord_part_return(self, request, state, result,
@@ -1025,7 +1011,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                         claim_expires, callback,
                     )
                     extended = self._chord_claim_extend_script(
-                        keys=[ckey],
+                        keys=[ckey, skey],
                         args=[claim_token, publish_expires],
                         client=client,
                     )
