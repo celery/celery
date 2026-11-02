@@ -12,7 +12,6 @@ from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
 from uuid import UUID
-from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
 from kombu.compression import compress, decompress
@@ -271,7 +270,7 @@ class Backend:
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
         self.thread_safe = conf.get('result_backend_thread_safe', False)
 
-        self._pending_results = pending_results_t({}, WeakValueDictionary())
+        self._pending_results = pending_results_t({}, {})
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
@@ -825,19 +824,20 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
-    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, max_retries=None, **kwargs):
         """Helper to execute a function with the backend's retry policy."""
         retries = 0
+        limit = self.max_retries if max_retries is None else max_retries
         while True:
             try:
                 return func(*args, **kwargs)
             except Exception as exc:
                 if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
+                    if retries < limit:
                         retries += 1
                         logger.warning(
                             'Failed operation %s. Retrying %s more times.',
-                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            getattr(func, '__name__', repr(func)), limit - retries,
                             exc_info=True)
                         try:
                             self.on_backend_retryable_error(exc)
@@ -1483,7 +1483,7 @@ class BaseKeyValueStoreBackend(Backend):
                 self.chord_error_from_stack(callback=callback, exc=chord_error)
             else:
                 try:
-                    callback.delay(ret)
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     chord_error = _create_chord_error_with_cause(

@@ -36,6 +36,12 @@ Unreleased
   task and ignores later writes for that task id. That includes calling
   ``AbortableAsyncResult.abort()`` on a finished task and reusing a task
   id, until ``forget()`` clears the stored result (#10944).
+- The Cassandra result backend now preserves a stored ``SUCCESS`` across
+  later state updates. Each attempted write first reads the newest row
+  using ``cassandra_read_consistency``, adding a read and making writes
+  depend on that read succeeding. Concurrent writers can still race.
+  ``forget()`` now deletes all rows for a task so its id can be reused
+  without waiting for entries to expire (#10945).
 
 
 .. _version-5.7.0rc1:

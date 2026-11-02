@@ -300,7 +300,7 @@ class Signal:  # pragma: no cover
                 if isinstance(r[1], weakref.ReferenceType) and r[1]() is None:
                     continue
                 new_receivers.append(r)
-            self.receivers = new_receivers
+            self.receivers[:] = new_receivers
 
     def _live_receivers(self, sender):
         """Filter sequence of receivers to get resolved, live receivers.
