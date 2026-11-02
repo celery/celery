@@ -351,6 +351,8 @@ NAMESPACES = Namespace(
             True, type='bool', old={'celery_enable_remote_control'},
         ),
         hijack_root_logger=Option(True, type='bool'),
+        liveness_file=Option(None, type='string'),
+        liveness_interval=Option(30.0, type='float'),
         log_color=Option(type='bool'),
         log_datefmt=Option(None, type='string'),
         log_format=Option(DEFAULT_PROCESS_LOG_FMT),
