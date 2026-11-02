@@ -477,9 +477,14 @@ def filter_hidden_settings(conf):
         if isinstance(key, str):
             if HIDDEN_SETTINGS.search(key):
                 return mask
-            elif key.lower() in ('broker_url', 'broker_read_url', 'broker_write_url'):
+            # Settings read with a namespace keep the prefix, as in CELERY_BROKER_URL
+            elif key.lower().endswith(('broker_url', 'broker_read_url', 'broker_write_url')):
                 from kombu import Connection
-                return Connection(value).as_uri(mask=mask)
+                try:
+                    return Connection(value).as_uri(mask=mask)
+                except Exception:
+                    # A setting of another library can also end with broker_url (#7512)
+                    return sanitize_url(value, mask=mask)
             elif 'backend' in key.lower():
                 return sanitize_url(value, mask=mask)
 
