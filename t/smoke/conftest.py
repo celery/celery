@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import base64
+import json
 import os
+import urllib.request
+from typing import Any
 
 import pytest
 from pytest_celery import (LOCALSTACK_CREDS, REDIS_CONTAINER_TIMEOUT, REDIS_ENV, REDIS_IMAGE, REDIS_PORTS,
-                           CeleryTestSetup, RedisContainer)
+                           CeleryTestSetup, RabbitMQTestBroker, RedisContainer)
 from pytest_docker_tools import container, fetch, fxtr
 
 from celery import Celery
@@ -30,6 +34,42 @@ class SmokeTestSetup(CeleryTestSetup):
 @pytest.fixture
 def celery_setup_cls() -> type[CeleryTestSetup]:  # type: ignore
     return SmokeTestSetup
+
+
+class RabbitMQManagementBroker(RabbitMQTestBroker):
+    """RabbitMQ broker with the management API exposed.
+
+    Used to inspect queue depths directly. Tests that use it must also
+    override ``default_rabbitmq_broker_image`` with ``rabbitmq:management``
+    and publish port ``15672/tcp`` in ``default_rabbitmq_broker_ports``.
+    """
+
+    def get_management_url(self) -> str:
+        ports = self.container.attrs["NetworkSettings"]["Ports"]
+        ip = ports["15672/tcp"][0]["HostIp"]
+        port = ports["15672/tcp"][0]["HostPort"]
+        return f"http://{ip}:{port}"
+
+    def _get_json(self, path: str) -> Any:
+        request = urllib.request.Request(f"{self.get_management_url()}{path}")
+        credentials = base64.b64encode(b"guest:guest").decode()
+        request.add_header("Authorization", f"Basic {credentials}")
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read())
+
+    def get_total_ready_messages(self) -> int:
+        """Total messages sitting ready on all queues of the default vhost."""
+        queues = self._get_json("/api/queues/%2F")
+        return sum(queue.get("messages_ready", 0) for queue in queues)
+
+    def get_queue_messages(self, queue: str) -> dict:
+        """``messages``, ``messages_ready`` and ``messages_unacknowledged``
+        of one queue on the default vhost."""
+        stats = self._get_json(f"/api/queues/%2F/{queue}")
+        return {
+            key: stats.get(key, 0)
+            for key in ("messages", "messages_ready", "messages_unacknowledged")
+        }
 
 
 class SuiteOperations(

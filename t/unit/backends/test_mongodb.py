@@ -5,6 +5,8 @@ from unittest.mock import ANY, MagicMock, Mock, patch, sentinel
 import dns.version
 import pymongo
 import pytest
+from bson import BSON
+from dateutil import tz as dateutil_tz
 from kombu.exceptions import EncodeError
 
 try:
@@ -21,7 +23,7 @@ else:
     from backports.zoneinfo import ZoneInfo
 
 from celery import states, uuid
-from celery.backends.mongodb import Binary, InvalidDocument, MongoBackend
+from celery.backends.mongodb import Binary, DuplicateKeyError, InvalidDocument, MongoBackend
 from celery.contrib.abortable import ABORTED
 from celery.exceptions import ImproperlyConfigured
 from t.unit import conftest
@@ -397,6 +399,50 @@ class test_MongoBackend:
                 sentinel.task_id, sentinel.result, sentinel.status)
 
     @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_after_success_is_ignored(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        # A stored SUCCESS does not match the filter, so the upsert
+        # raises DuplicateKeyError on both attempts and is ignored.
+        mock_collection.replace_one.side_effect = DuplicateKeyError('dup')
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, states.STARTED)
+
+        assert sentinel.result == ret_val
+        expected_filter = {
+            '_id': sentinel.task_id,
+            'status': {'$ne': states.SUCCESS},
+        }
+        assert mock_collection.replace_one.call_count == 2
+        for call in mock_collection.replace_one.call_args_list:
+            assert call.args[0] == expected_filter
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
+    def test_store_result_retries_duplicate_key(self, mock_get_database):
+        self.backend.taskmeta_collection = MONGODB_COLLECTION
+
+        mock_database = MagicMock(spec=['__getitem__', '__setitem__'])
+        mock_collection = Mock()
+        # Another run inserted the document first; the retry stores.
+        mock_collection.replace_one.side_effect = [
+            DuplicateKeyError('dup'), None]
+
+        mock_get_database.return_value = mock_database
+        mock_database.__getitem__.return_value = mock_collection
+
+        ret_val = self.backend._store_result(
+            sentinel.task_id, sentinel.result, states.STARTED)
+
+        assert sentinel.result == ret_val
+        assert mock_collection.replace_one.call_count == 2
+
+    @patch('celery.backends.mongodb.MongoBackend._get_database')
     def test_store_result_with_request(self, mock_get_database):
         self.backend.taskmeta_collection = MONGODB_COLLECTION
 
@@ -712,6 +758,171 @@ class test_MongoBackend:
         self.backend.cleanup()
         mock_collection.delete_many.assert_not_called()
 
+    @pytest.mark.parametrize('tz_factory', [
+        pytest.param(ZoneInfo, id='zoneinfo'),
+        pytest.param(dateutil_tz.gettz, id='dateutil'),
+    ])
+    @pytest.mark.parametrize('zone,now,expires,expected_cutoff', [
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=0), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='fall-back-first-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fall-back-repeated-hour',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1), 30.125,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fractional-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 1, 30, microsecond=125000, fold=1),
+            datetime.timedelta(seconds=30.125),
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='timedelta-expiration-during-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 1, 2, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='across-fall-back',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 8, 3, 30), 2 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 5, 30),
+            id='across-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 3, 9, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='elapsed-day-spring-forward',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 11, 2, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2026, 11, 1, 5, 30),
+            id='elapsed-day-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 4, 5, 1, 45, fold=1), 30,
+            datetime.datetime(2026, 4, 4, 15, 14, 30),
+            id='half-hour-fall-back',
+        ),
+        pytest.param(
+            'Australia/Lord_Howe', datetime.datetime(2026, 10, 4, 2, 45), 60 * 60,
+            datetime.datetime(2026, 10, 3, 14, 45),
+            id='half-hour-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 3, 8, 1, 30), 60 * 60,
+            datetime.datetime(2026, 3, 8, 4, 30),
+            id='midnight-spring-forward',
+        ),
+        pytest.param(
+            'America/Havana', datetime.datetime(2026, 11, 1, 0, 30, fold=1), 30,
+            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            id='repeated-midnight',
+        ),
+        pytest.param(
+            'Asia/Kathmandu', datetime.datetime(1986, 1, 1, 0, 30), 60 * 60,
+            datetime.datetime(1985, 12, 31, 17, 45),
+            id='quarter-hour-midnight-gap',
+        ),
+        pytest.param(
+            'Pacific/Apia', datetime.datetime(2011, 12, 31, 0, 30), 24 * 60 * 60,
+            datetime.datetime(2011, 12, 29, 10, 30),
+            id='elapsed-day-skipped-date',
+        ),
+        pytest.param(
+            'America/New_York', datetime.datetime(2026, 6, 15, 12), 30,
+            datetime.datetime(2026, 6, 15, 15, 59, 30),
+            id='away-from-transitions',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_across_timezones(self, tz_factory, zone, now, expires, expected_cutoff):
+        self.app.conf.timezone = tz_factory(zone)
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now.replace(tzinfo=self.app.timezone))
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('now,expires,expected_cutoff', [
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='naive-utc',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 12, tzinfo=datetime.timezone(datetime.timedelta(hours=5, minutes=30))),
+            30,
+            datetime.datetime(2026, 11, 1, 6, 29, 30),
+            id='fixed-offset',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=125000, tzinfo=datetime.timezone.utc),
+            0.125,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='fractional-seconds',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, microsecond=1001, tzinfo=datetime.timezone.utc),
+            0.0005,
+            datetime.datetime(2026, 11, 1, 6, 30),
+            id='bson-millisecond-precision',
+        ),
+        pytest.param(
+            datetime.datetime(2026, 11, 1, 6, 30, tzinfo=datetime.timezone.utc),
+            -30,
+            datetime.datetime(2026, 11, 1, 6, 30, 30),
+            id='negative-expiration',
+        ),
+    ])
+    def test_cleanup_expiration_cutoff_without_dst(self, now, expires, expected_cutoff):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock(return_value=now)
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        # BSON converts aware datetimes to UTC, matching MongoDB comparisons.
+        for collection in (self.backend.collection, self.backend.group_collection):
+            collection.delete_many.assert_called_once()
+            query = collection.delete_many.call_args[0][0]
+            assert BSON.encode(query).decode() == {'date_done': {'$lt': expected_cutoff}}
+
+    @pytest.mark.parametrize('expires', [None, 0])
+    def test_cleanup_without_expiration(self, expires):
+        self.app.conf.result_expires = expires
+        self.backend = MongoBackend(app=self.app, url=self.default_url)
+        self.backend.app.now = Mock()
+        self.backend.collection = Mock()
+        self.backend.group_collection = Mock()
+
+        self.backend.cleanup()
+
+        self.backend.app.now.assert_not_called()
+        self.backend.collection.delete_many.assert_not_called()
+        self.backend.group_collection.delete_many.assert_not_called()
+
     def test_prepare_client_options(self):
         with patch('pymongo.version_tuple', new=(3, 0, 3)):
             options = self.backend._prepare_client_options()
@@ -850,11 +1061,20 @@ class test_MongoBackend_store_get_result:
             def __init__(self):
                 self.data = {}
 
-            def replace_one(self, task_id, meta, upsert=True):
-                self.data[task_id['_id']] = bson.encode(meta)
+            def replace_one(self, filter, meta, upsert=True):
+                existing = self.data.get(filter['_id'])
+                if existing is not None:
+                    status_ne = filter.get('status', {}).get('$ne')
+                    if status_ne is not None and \
+                            bson.decode(existing).get('status') == status_ne:
+                        # The filter does not match, so an upsert tries
+                        # to insert a document with the same _id.
+                        raise DuplicateKeyError('dup')
+                self.data[filter['_id']] = bson.encode(meta)
 
             def find_one(self, task_id):
-                return bson.decode(self.data[task_id['_id']])
+                doc = self.data.get(task_id['_id'])
+                return bson.decode(doc) if doc is not None else None
 
         monkeypatch.setattr(MongoBackend, "collection", FakeMongoCollection())
 
@@ -869,6 +1089,13 @@ class test_MongoBackend_store_get_result:
         recovered = backend.get_result(TASK_ID)
         assert isinstance(recovered, result_type)
         assert recovered == result
+
+    def test_store_result_keeps_first_success(self, mongo_backend_factory):
+        backend = mongo_backend_factory(serializer='pickle')
+        backend.store_result(TASK_ID, 'first', 'SUCCESS')
+        backend.store_result(TASK_ID, 'second', 'STARTED')
+        assert backend.get_status(TASK_ID) == 'SUCCESS'
+        assert backend.get_result(TASK_ID) == 'first'
 
     @pytest.mark.parametrize("serializer",
                              ["bson", "pickle", "yaml", "json", "msgpack"])

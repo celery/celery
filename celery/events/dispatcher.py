@@ -69,6 +69,7 @@ class EventDispatcher:
         self.on_send_buffered = on_send_buffered
         self._group_buffer = defaultdict(list)
         self.mutex = threading.Lock()
+        self._closed = False
         self.producer = None
         self._outbound_buffer = deque()
         self.serializer = serializer or self.app.conf.event_serializer
@@ -98,11 +99,13 @@ class EventDispatcher:
         self.close()
 
     def enable(self):
-        self.producer = Producer(self.channel or self.connection,
-                                 exchange=self.exchange,
-                                 serializer=self.serializer,
-                                 auto_declare=False)
-        self.enabled = True
+        with self.mutex:
+            self.producer = Producer(self.channel or self.connection,
+                                     exchange=self.exchange,
+                                     serializer=self.serializer,
+                                     auto_declare=False)
+            self._closed = False
+            self.enabled = True
         for callback in self.on_enabled:
             callback()
 
@@ -116,6 +119,8 @@ class EventDispatcher:
     def publish(self, type, fields, producer,
                 blind=False, Event=Event, **kwargs):
         """Publish event using custom :class:`~kombu.Producer`.
+
+        The supplied producer remains usable after this dispatcher is closed.
 
         Arguments:
             type (str): Event type name, with group separated by dash (`-`).
@@ -132,12 +137,15 @@ class EventDispatcher:
             utcoffset (Callable): Function returning the current
                 utc offset in hours.
         """
-        clock = None if blind else self.clock.forward()
-        event = Event(type, hostname=self.hostname, utcoffset=utcoffset(),
-                      pid=self.pid, clock=clock, **fields)
+        event = self._prepare_event(type, fields, blind=blind, Event=Event)
         with self.mutex:
             return self._publish(event, producer,
                                  routing_key=type.replace('-', '.'), **kwargs)
+
+    def _prepare_event(self, type, fields, blind=False, Event=Event):
+        clock = None if blind else self.clock.forward()
+        return Event(type, hostname=self.hostname, utcoffset=utcoffset(),
+                     pid=self.pid, clock=clock, **fields)
 
     def _publish(self, event, producer, routing_key, retry=False,
                  retry_policy=None, utcoffset=utcoffset):
@@ -194,20 +202,34 @@ class EventDispatcher:
                 elif self.on_send_buffered:
                     self.on_send_buffered()
             else:
-                return self.publish(type, fields, self.producer, blind=blind,
-                                    Event=Event, retry=retry,
-                                    retry_policy=retry_policy)
+                event = self._prepare_event(type, fields, blind=blind,
+                                            Event=Event)
+                with self.mutex:
+                    if self._closed:
+                        return
+                    return self._publish(
+                        event, self.producer,
+                        routing_key=type.replace('-', '.'), retry=retry,
+                        retry_policy=retry_policy,
+                    )
 
     def flush(self, errors=True, groups=True):
-        """Flush the outbound buffer."""
+        """Flush buffered events.
+
+        Buffers are retained while closed so they can be flushed after enable().
+        """
         if errors:
-            buf = list(self._outbound_buffer)
-            self._outbound_buffer.clear()
             with self.mutex:
+                if self._closed:
+                    return
+                buf = list(self._outbound_buffer)
+                self._outbound_buffer.clear()
                 for event, routing_key in buf:
                     self._publish(event, self.producer, routing_key)
         if groups:
             with self.mutex:
+                if self._closed:
+                    return
                 for group, events in self._group_buffer.items():
                     if not events:
                         continue
@@ -223,9 +245,14 @@ class EventDispatcher:
         self._outbound_buffer.extend(other._outbound_buffer)
 
     def close(self):
-        """Close the event dispatcher."""
-        self.mutex.locked() and self.mutex.release()
-        self.producer = None
+        """Close the dispatcher's own publishing path.
+
+        This can block for as long as an in-flight publish or flush takes.
+        Caller-supplied producers remain usable through :meth:`publish`.
+        """
+        with self.mutex:
+            self._closed = True
+            self.producer = None
 
     def _get_publisher(self):
         return self.producer

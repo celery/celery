@@ -67,7 +67,7 @@ class GCSBackendBase(KeyValueStoreBackend):
         self.project = conf.get('gcs_project')
         if not self.project:
             raise ImproperlyConfigured(
-                'Missing project:specify gcs_project to use gcs backend'
+                'Missing project: specify gcs_project to use gcs backend'
             )
         self.base_path = conf.get('gcs_base_path', '').strip('/')
         self._threadpool_maxsize = int(conf.get('gcs_threadpool_maxsize', 10))
@@ -302,7 +302,7 @@ class GCSBackend(GCSBackendBase):
                 self.chord_error_from_stack(callback, chord_error)
             else:
                 try:
-                    callback.delay(ret)
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     self.chord_error_from_stack(

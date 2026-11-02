@@ -10,40 +10,13 @@ polling leaves no messages behind on the broker.
 
 from __future__ import annotations
 
-import base64
-import json
-import urllib.request
-
 import pytest
 from pytest_celery import (RABBITMQ_PORTS, RESULT_TIMEOUT, CeleryBrokerCluster, CeleryTestSetup, RabbitMQContainer,
                            RabbitMQTestBroker)
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, states
-
-
-class RabbitMQManagementBroker(RabbitMQTestBroker):
-    """RabbitMQ broker with the management API exposed.
-
-    Used to inspect queue depths directly, which is how recirculating
-    result messages are detected.
-    """
-
-    def get_management_url(self) -> str:
-        ports = self.container.attrs["NetworkSettings"]["Ports"]
-        ip = ports["15672/tcp"][0]["HostIp"]
-        port = ports["15672/tcp"][0]["HostPort"]
-        return f"http://{ip}:{port}"
-
-    def get_total_ready_messages(self) -> int:
-        """Total messages sitting ready on all queues of the default vhost."""
-        url = f"{self.get_management_url()}/api/queues/%2F"
-        request = urllib.request.Request(url)
-        credentials = base64.b64encode(b"guest:guest").decode()
-        request.add_header("Authorization", f"Basic {credentials}")
-        with urllib.request.urlopen(request, timeout=10) as response:
-            queues = json.loads(response.read())
-        return sum(queue.get("messages_ready", 0) for queue in queues)
+from t.smoke.conftest import RabbitMQManagementBroker
 
 
 @pytest.fixture

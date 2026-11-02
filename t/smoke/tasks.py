@@ -66,6 +66,12 @@ def self_termination_sigkill():
     os.kill(os.getpid(), SIGKILL)
 
 
+@shared_task(default_retry_delay=0, max_retries=2)
+def self_termination_sigkill_with_retries():
+    """Forceful termination, with a limited number of retries."""
+    os.kill(os.getpid(), SIGKILL)
+
+
 @shared_task
 def self_termination_system_exit():
     """Triggers a system exit to simulate a critical stop of the Celery worker."""
@@ -106,3 +112,12 @@ def self_termination_exhaust_memory():
     mem = []
     while True:
         mem.append(" " * 10**6)
+
+
+@shared_task
+def kill_child_process_once(marker="/tmp/kill_child_process_once"):
+    """Exit the pool child on the first delivery only, as if it were OOM killed."""
+    if not os.path.exists(marker):
+        open(marker, "w").close()
+        os._exit(1)
+    return "survived"

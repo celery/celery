@@ -267,6 +267,13 @@ a shortcut to set ETA by seconds into the future.
     >>> result.get()    # this takes at least 3 seconds to return
     4
 
+.. note::
+
+    ``countdown`` and numeric ``expires`` values use elapsed seconds across
+    daylight saving time (DST) changes. A value of ``86400`` means 24 hours.
+    When the clock changes by one hour, an interval starting at noon ends
+    at 13:00 the next day across spring-forward, or 11:00 across fall-back.
+
 The task is guaranteed to be executed at some time *after* the
 specified date and time, but not necessarily at that exact time.
 Possible reasons for broken deadlines may include many items waiting
@@ -365,6 +372,25 @@ Celery will automatically retry sending messages in the event of connection
 failure, and retry behavior can be configured -- like how often to retry, or a maximum
 number of retries -- or disabled all together.
 
+Workers also wait between retries when a broker refuses a link, chain step,
+or chord-body publish. Each refused message is retried on its own using
+:setting:`task_publish_retry` and :setting:`task_publish_retry_policy`, or the
+``retry`` / ``retry_policy`` options on that callback signature. The worker
+repeats the publication rather than the parent task's body, and the pool slot
+(or the whole solo worker) stays busy until the policy gives up or the broker
+accepts the message. With the default policy, retries stop after about 0.6 s.
+Once the policy is exhausted, the task fails through the normal failure and
+errback handling (including for :meth:`~celery.app.task.Task.apply`).
+
+.. versionchanged:: 5.7
+
+    Refused callback publishes are retried per message with the callback's own
+    ``retry`` / ``retry_policy`` options. An unbounded ``max_retries`` policy
+    uses the application's finite retry limit, or three retries if that limit
+    is also unbounded. Exhaustion uses the normal failure path instead of
+    emitting :signal:`task_internal_error`; :meth:`~celery.app.task.Task.apply`
+    returns a :state:`FAILURE` result instead of raising the publish error.
+
 To disable retry you can set the ``retry`` execution option to :const:`False`:
 
 .. code-block:: python
@@ -407,12 +433,13 @@ and can contain the following keys:
 - `interval_max`
 
     Maximum number of seconds (float or integer) to wait between
-    retries. Default is 0.2.
+    retries. Default is 1.
 
 - `retry_errors`
 
     `retry_errors` is a tuple of exception classes that should be retried.
-    It will be ignored if not specified. Default is None (ignored).
+    It will be ignored if not specified. Default is None (ignored). These configuration
+    keys are passed through to `kombu.Connection.ensure`, where retry_errors is defined and handled.
 
     For example, if you want to retry only tasks that were timed out, you can use
     :exc:`~kombu.exceptions.TimeoutError`:
@@ -436,11 +463,11 @@ For example, the default policy correlates to:
         'max_retries': 3,
         'interval_start': 0,
         'interval_step': 0.2,
-        'interval_max': 0.2,
+        'interval_max': 1,
         'retry_errors': None,
     })
 
-the maximum time spent retrying will be 0.4 seconds. It's set relatively
+the maximum time spent retrying will be 0.6 seconds. It's set relatively
 short by default because a connection failure could lead to a retry pile effect
 if the broker connection is down -- For example, many web server processes waiting
 to retry, blocking other incoming requests.
@@ -841,6 +868,22 @@ setting or by using the ``ignore_result`` option:
   >>> result = add.apply_async((1, 2), ignore_result=False)
   >>> result.get()
   3
+
+.. versionchanged:: 5.7
+
+   :meth:`~@send_task` now correctly respects the task's ``ignore_result``
+   setting when the option is omitted.
+
+   Pass ``ignore_result=False`` explicitly if you need to retrieve the result
+   of a task configured with ``ignore_result=True``.
+
+   When the option is omitted and the worker ignores the result,
+   :meth:`~celery.result.AsyncResult.get` waits until its timeout, or
+   indefinitely if no timeout is set.
+
+   Chords whose header tasks are sent by name and ignore their results do not
+   complete on backends that use ``chord_unlock``, including the database
+   backend. See :ref:`chord-important-notes`.
 
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.

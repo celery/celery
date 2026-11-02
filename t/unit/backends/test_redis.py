@@ -1,6 +1,7 @@
 import itertools
 import json
 import random
+import socket
 import ssl
 import threading
 import time
@@ -17,26 +18,18 @@ except ImportError:
     exceptions = None
     CredentialProvider = None
 
+from kombu.exceptions import OperationalError
 from kombu.utils.encoding import ensure_bytes
 
 from celery import signature, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.base import COMPRESSED_PAYLOAD_MAGIC
 from celery.canvas import Signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
+from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured, WorkerLostError
 from celery.result import AsyncResult, GroupResult
 from celery.utils.collections import AttributeDict
 from t.unit import conftest
-
-
-def raise_on_second_call(mock, exc, *retval):
-    def on_first_call(*args, **kwargs):
-        mock.side_effect = exc
-        return mock.return_value
-
-    mock.side_effect = on_first_call
-    if retval:
-        mock.return_value, = retval
 
 
 class ConnectionError(Exception):
@@ -113,8 +106,10 @@ class Redis(conftest.MockCallbacks):
         self.set(key, value)
         self.expire(key, expires)
 
-    def set(self, key, value):
+    def set(self, key, value, ex=None):
         self.keyspace[key] = value
+        if ex:
+            self.expire(key, ex)
 
     def expire(self, key, expires):
         self.expiry[key] = expires
@@ -167,6 +162,38 @@ class Redis(conftest.MockCallbacks):
 
     def zcount(self, key, min_, max_):
         return len(self.zrangebyscore(key, min_, max_))
+
+    def sadd(self, key, value):
+        members = self.keyspace.setdefault(key, set())
+        if value in members:
+            return 0
+        members.add(value)
+        return 1
+
+    def register_script(self, script):
+        # Only the chord part script of the backend is used; emulate it
+        # with the fake commands above.
+        def chord_part_return(keys, args, client=None):
+            jkey, tkey, skey, dkey, gkey = keys
+            tid, value, ordered, score, expires, group_expires = args
+            member = f'{tid}:{score}'
+            if member not in self.keyspace.get(dkey, set()):
+                if ordered:
+                    self.zadd(jkey, {value: score})
+                else:
+                    self.rpush(jkey, value)
+                self.sadd(dkey, member)
+            if ordered:
+                readycount = self.zcount(jkey, '-inf', '+inf')
+            else:
+                readycount = self.llen(jkey)
+            if expires:
+                for key in (jkey, tkey, skey, dkey):
+                    self.expire(key, expires)
+                if group_expires:
+                    self.expire(gkey, group_expires)
+            return [readycount, self.get(tkey), self.get(skey)]
+        return chord_part_return
 
 
 class Sentinel(conftest.MockCallbacks):
@@ -275,6 +302,249 @@ class test_RedisResultConsumer:
         consumer.consume_from('some-task')
         consumer.cancel_for('some-task')
         assert consumer._pubsub._subscribed_to == {b'celery-task-meta-initial'}
+
+    def _reenter_on(self, pubsub, method, consumer, *task_ids, error=None):
+        # Make the next call to pubsub.<method> behave like the garbage
+        # collector running AsyncResult.__del__ -> cancel_for(task_id)
+        # while that command is still in flight.  Records, per call, how
+        # many UNSUBSCRIBEs had been sent before it returned.
+        real = getattr(pubsub, method)
+        calls = []
+
+        def reentrant(*args):
+            calls.append(args)
+            if len(calls) == 1:
+                for task_id in task_ids:
+                    consumer.cancel_for(task_id)
+                if error is not None:
+                    raise error
+            return real(*args)
+
+        setattr(pubsub, method, reentrant)
+        return calls
+
+    def test_cancel_for_reentry_during_subscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        unsubscribes_in_flight = []
+
+        def subscribe(*args):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(pubsub.unsubscribe.call_count)
+            pubsub._subscribed_to.update(args)
+
+        pubsub.subscribe = subscribe
+        consumer.consume_from('outer')
+
+        # one pubsub operation at a time (redis-py < 6.4 deadlocks
+        # otherwise): no UNSUBSCRIBE while the SUBSCRIBE is in flight.
+        assert unsubscribes_in_flight == [0]
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-outer'}
+        assert not consumer._pending_unsubscribe
+        assert consumer._lock_depth.value == 0
+
+    def test_cancel_for_reentry_during_unsubscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('outer')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        calls = self._reenter_on(pubsub, 'unsubscribe', consumer, 'inner')
+        in_flight = []
+        real = pubsub.unsubscribe
+
+        def unsubscribe(*args):
+            assert not in_flight, 'nested UNSUBSCRIBE'
+            in_flight.append(args)
+            try:
+                return real(*args)
+            finally:
+                in_flight.pop()
+
+        pubsub.unsubscribe = unsubscribe
+        consumer.cancel_for('outer')
+
+        assert calls == [
+            (b'celery-task-meta-outer',), (b'celery-task-meta-inner',)]
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_reentry_during_reconnect_subscribe_is_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        fresh = consumer.backend.client.pubsub()
+        unsubscribes_in_flight = []
+
+        def subscribe(*args):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(fresh.unsubscribe.call_count)
+            fresh._subscribed_to.update(args)
+
+        fresh.subscribe = subscribe
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        consumer._reconnect_pubsub()
+
+        assert unsubscribes_in_flight == [0]
+        fresh.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_reentry_during_drain_is_deferred(self):
+        # redis-py can reconnect and re-subscribe from inside can_read() or
+        # get_message(), so a finalizer running there must not unsubscribe.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        unsubscribes_in_flight = []
+
+        def get_message(timeout=None):
+            consumer.cancel_for('inner')
+            unsubscribes_in_flight.append(pubsub.unsubscribe.call_count)
+
+        pubsub.get_message = get_message
+        consumer.drain_events(timeout=0)
+
+        assert unsubscribes_in_flight == [0]
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_in_nested_locked_is_sent_by_outermost(self):
+        # an inner _locked() exiting inside an outer one (e.g.
+        # _reconnect_pubsub() during _drain_one()) must not unsubscribe
+        # while the outer operation is still using the connection.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        pubsub = consumer._pubsub
+        pubsub.unsubscribe.reset_mock()
+        with consumer._locked():
+            with consumer._locked():
+                consumer.cancel_for('inner')
+            pubsub.unsubscribe.assert_not_called()
+            assert consumer._pending_unsubscribe == {
+                b'celery-task-meta-inner'}
+        pubsub.unsubscribe.assert_called_once_with(b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_reconnect_does_not_resubscribe_ready_tasks(self):
+        meta = {'task_id': 'done', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('done')
+        consumer.backend._set_with_state(
+            b'celery-task-meta-done', json.dumps(meta), states.SUCCESS)
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        consumer._reconnect_pubsub()
+        fresh.subscribe.assert_called_once_with(b'celery-task-meta-initial')
+        # never subscribed on the new connection, so nothing to unsubscribe
+        fresh.unsubscribe.assert_not_called()
+        assert consumer.subscribed_to == {b'celery-task-meta-initial'}
+        assert not consumer._pending_unsubscribe
+
+    def test_resubscribe_after_reconnect_before_flush(self):
+        # A task that finished while disconnected is subscribed again before
+        # the queued cancels are flushed: it must really be subscribed on
+        # the new connection, or its result never arrives.
+        meta = {'task_id': 'again', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('again')
+        consumer.backend._set_with_state(
+            b'celery-task-meta-again', json.dumps(meta), states.SUCCESS)
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+        with consumer._locked():
+            consumer._reconnect_pubsub()
+            consumer.backend._set_with_state(
+                b'celery-task-meta-again', json.dumps(
+                    {'task_id': 'again', 'status': states.PENDING}),
+                states.PENDING)
+            consumer.consume_from('again')
+        assert fresh.subscribe.call_args_list == [
+            call(b'celery-task-meta-initial'),
+            call(b'celery-task-meta-again'),
+        ]
+        fresh.unsubscribe.assert_not_called()
+        assert b'celery-task-meta-again' in fresh._subscribed_to
+        assert consumer.subscribed_to == {
+            b'celery-task-meta-initial', b'celery-task-meta-again'}
+
+    @patch('celery.backends.redis.logger')
+    def test_locked_error_is_not_replaced_by_failing_unsubscribe(self, logger):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(ValueError, match='outer'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+                raise ValueError('outer')
+        logger.exception.assert_called_once_with(
+            'Failed to unsubscribe pending results')
+        assert consumer._lock_depth.value == 0
+
+    def test_locked_failing_unsubscribe_propagates_on_success(self):
+        # e.g. the retry limit was exceeded and Celery must be restarted.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        consumer._pubsub.unsubscribe.side_effect = RuntimeError('dead')
+
+        with pytest.raises(RuntimeError, match='dead'):
+            with consumer._locked():
+                consumer.cancel_for('inner')
+        assert consumer._lock_depth.value == 0
+
+    def test_lock_depth_is_reset_when_subscribe_fails(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('inner')
+        self._reenter_on(consumer._pubsub, 'subscribe', consumer, 'inner',
+                         error=ValueError('boom'))
+
+        with pytest.raises(ValueError, match='boom'):
+            consumer.consume_from('outer')
+        assert consumer._lock_depth.value == 0
+        # the cancel deferred during the failed SUBSCRIBE is not lost.
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-inner')
+        assert not consumer._pending_unsubscribe
+
+    def test_cancel_for_from_other_thread_is_not_deferred(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer.consume_from('other')
+        # this thread holding the lock must not make other threads defer:
+        # they only defer when the lock is busy.
+        consumer._lock_depth.value = 1
+        try:
+            thread = threading.Thread(
+                target=consumer.cancel_for, args=('other',))
+            thread.start()
+            thread.join()
+        finally:
+            consumer._lock_depth.value = 0
+        consumer._pubsub.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-other')
+        assert not consumer._pending_unsubscribe
+
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork_resets_lock_depth(self, parent_method):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        consumer._lock_depth.value = 1
+        consumer.on_after_fork()
+        assert consumer._lock_depth.value == 0
 
     def test_cancel_for_never_subscribed_is_noop(self):
         consumer = self.get_consumer()
@@ -701,6 +971,304 @@ class test_RedisResultConsumer:
                 consumer, 'on_state_change') as on_state_change:
             consumer.drain_events(timeout=0)
         on_state_change.assert_not_called()
+
+    def test_drain_events_waits_for_socket_outside_lock(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.return_value = False
+        waiting = threading.Event()
+        release = threading.Event()
+
+        def wait_for_data(*args, **kwargs):
+            waiting.set()
+            release.wait(10)
+            return False
+
+        pubsub.get_message.side_effect = wait_for_data
+        drainer = threading.Thread(
+            target=consumer.drain_events, kwargs={'timeout': 30})
+        subscriber = threading.Thread(
+            target=consumer.consume_from, args=('other',))
+        with patch('celery.backends.redis._socket_readable',
+                   side_effect=wait_for_data):
+            drainer.start()
+            try:
+                assert waiting.wait(5)
+                # the drainer stays blocked until the subscribe is done
+                subscriber.start()
+                subscriber.join(5)
+                subscribed = not subscriber.is_alive()
+            finally:
+                release.set()
+                subscriber.join(5)
+                drainer.join(5)
+        assert not drainer.is_alive()
+        assert subscribed
+        assert b'celery-task-meta-other' in pubsub._subscribed_to
+
+    def test_drain_events_caps_socket_wait(self):
+        # poll() is not woken when a reconnect closes the socket, so the
+        # wait is bounded whatever timeout the caller passes.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.return_value = False
+        with patch('celery.backends.redis._socket_readable',
+                   return_value=False) as readable:
+            consumer.drain_events(timeout=30)
+            consumer.drain_events(timeout=0.2)
+            consumer.drain_events(timeout=None)
+        sock = pubsub.connection._sock
+        assert readable.call_args_list == [
+            call(sock, 1.0), call(sock, 0.2), call(sock, 1.0)]
+        pubsub.subscribed = False
+        pubsub.subscribed_event.wait.return_value = False
+        consumer.drain_events(timeout=30)
+        pubsub.subscribed_event.wait.assert_called_once_with(1.0)
+
+    def test_drain_events_wakes_threads_waiting_behind_socket_waiter(self):
+        # the message the socket waiter reads may be the one another
+        # waiting thread is after, and the socket then stays quiet for it.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        data = threading.Event()
+        pubsub.connection.can_read.side_effect = \
+            lambda timeout=0: data.is_set()
+        socket_waiting = threading.Event()
+        following = threading.Event()
+        read = consumer._pubsub_read
+        real_wait = read.wait
+
+        def follower_wait(timeout=None):
+            following.set()
+            return real_wait(timeout)
+
+        read.wait = follower_wait
+
+        def socket_readable(sock, timeout):
+            socket_waiting.set()
+            return data.wait(5)
+
+        done = []
+
+        def drain(name):
+            consumer.drain_events(timeout=30)
+            done.append(name)
+
+        with patch('celery.backends.redis._socket_readable',
+                   side_effect=socket_readable):
+            reader = threading.Thread(target=drain, args=('reader',))
+            other = threading.Thread(target=drain, args=('other',))
+            reader.start()
+            try:
+                assert socket_waiting.wait(5)
+                other.start()
+                assert following.wait(5)
+                data.set()
+                other.join(5)
+                other_woke = not other.is_alive()
+            finally:
+                data.set()
+                reader.join(5)
+                other.join(35)
+        assert other_woke
+        assert sorted(done) == ['other', 'reader']
+        assert not consumer._socket_waiter
+
+    def test_consume_from_is_not_starved_by_gevent_drainers(self):
+        gevent = pytest.importorskip('gevent')
+        from gevent.event import Event
+        from gevent.lock import RLock
+        from gevent.thread import allocate_lock
+
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.return_value = False
+        pubsub.get_message.side_effect = \
+            lambda timeout=None: gevent.sleep(timeout)
+        stop = Event()
+        followers = []
+
+        def drain():
+            while not stop.is_set():
+                consumer.drain_events(timeout=0.05)
+
+        # gevent's RLock starves waiters the same way a monkey-patched
+        # threading.RLock does, and the condition's waiter lock has to be
+        # green too.
+        with patch('threading._allocate_lock', allocate_lock):
+            with patch('threading.RLock', RLock):
+                consumer._reset_sync()
+            real_wait = consumer._pubsub_read.wait
+
+            def follower_wait(timeout=None):
+                followers.append(gevent.getcurrent())
+                return real_wait(timeout)
+
+            consumer._pubsub_read.wait = follower_wait
+            with patch('celery.backends.redis._socket_readable',
+                       side_effect=lambda sock, timeout: gevent.sleep(timeout)):
+                drainers = [gevent.spawn(drain), gevent.spawn(drain)]
+                gevent.sleep(0)
+                consume = gevent.spawn(consumer.consume_from, 'other')
+                try:
+                    consume.join(5)
+                    subscribed = consume.successful()
+                    gevent.sleep(0.2)
+                finally:
+                    stop.set()
+                    consume.kill()
+                    gevent.joinall(drainers, timeout=5)
+                    gevent.killall(drainers)
+        assert isinstance(consumer._pubsub_lock, RLock)
+        assert all(g.successful() for g in drainers), \
+            [g.exception for g in drainers]
+        assert followers
+        assert subscribed
+        assert b'celery-task-meta-other' in pubsub._subscribed_to
+
+    def test_cancel_for_does_not_block_on_busy_lock(self):
+        # AsyncResult.__del__ ends up in cancel_for, and a gevent greenlet
+        # being finalized cannot block on a lock.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        consumer.consume_from('some-task')
+        in_subscribe = threading.Event()
+        release = threading.Event()
+
+        def slow_subscribe(*keys):
+            in_subscribe.set()
+            release.wait(5)
+            pubsub._subscribed_to.update(keys)
+
+        pubsub.subscribe.side_effect = slow_subscribe
+        holder = threading.Thread(
+            target=consumer.consume_from, args=('other',))
+        holder.start()
+        canceller = None
+        try:
+            assert in_subscribe.wait(5)
+            canceller = threading.Thread(
+                target=consumer.cancel_for, args=('some-task',))
+            canceller.start()
+            canceller.join(1)
+            cancel_blocked = canceller.is_alive()
+        finally:
+            release.set()
+            holder.join(5)
+            if canceller is not None:
+                canceller.join(5)
+        assert not cancel_blocked
+        # the lock holder unsubscribed on its way out
+        assert b'celery-task-meta-some-task' not in consumer.subscribed_to
+        assert b'celery-task-meta-some-task' not in pubsub._subscribed_to
+        assert not consumer._pending_unsubscribe
+
+    def test_consume_from_keeps_key_with_deferred_cancel(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        key = b'celery-task-meta-some-task'
+        consumer.consume_from('some-task')
+        with consumer._pubsub_lock:
+            other = threading.Thread(
+                target=consumer.cancel_for, args=('some-task',))
+            other.start()
+            other.join(5)
+            assert key in consumer._pending_unsubscribe
+            consumer.consume_from('some-task')
+        assert key in consumer.subscribed_to
+        assert key in consumer._pubsub._subscribed_to
+        assert not consumer._pending_unsubscribe
+
+    def test_drain_events_skips_pubsub_replaced_while_waiting(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        old = consumer._pubsub
+        old.connection.can_read.return_value = False
+
+        def reconnect(sock, timeout):
+            consumer._pubsub = Mock()
+            return True
+
+        with patch('celery.backends.redis._socket_readable',
+                   side_effect=reconnect):
+            consumer.drain_events(timeout=1)
+        old.get_message.assert_not_called()
+        consumer._pubsub.get_message.assert_not_called()
+
+    def test_drain_events_not_subscribed_waits_for_subscription(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.subscribed = False
+        pubsub.subscribed_event.wait.return_value = False
+        with patch('celery.backends.redis._socket_readable') as readable:
+            consumer.drain_events(timeout=1)
+        pubsub.subscribed_event.wait.assert_called_once_with(1)
+        readable.assert_not_called()
+        pubsub.get_message.assert_not_called()
+
+    def test_drain_events_without_socket_returns(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection.can_read.side_effect = [False, True]
+        pubsub.connection._sock = None
+        with patch('celery.backends.redis._socket_readable') as readable:
+            consumer.drain_events(timeout=None)
+        readable.assert_not_called()
+        pubsub.get_message.assert_called_once_with(timeout=None)
+
+    def test_drain_events_without_sock_attribute_polls(self):
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        pubsub.connection = Mock(spec=['can_read'])
+        pubsub.connection.can_read.return_value = False
+        with patch('celery.backends.redis._socket_readable') as readable, \
+                patch('celery.backends.redis.time.sleep') as sleep:
+            consumer.drain_events(timeout=30)
+        sleep.assert_called_once_with(1.0)
+        readable.assert_not_called()
+        pubsub.get_message.assert_not_called()
+
+
+class test_socket_readable:
+
+    def test_readable_and_timeout(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        try:
+            assert not _socket_readable(rsock, 0)
+            wsock.send(b'x')
+            assert _socket_readable(rsock, 1)
+            assert _socket_readable(rsock, None)
+        finally:
+            rsock.close()
+            wsock.close()
+
+    def test_without_poll_uses_selectors(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        try:
+            with patch('celery.backends.redis.select', spec=[]):
+                assert not _socket_readable(rsock, 0)
+                wsock.send(b'x')
+                assert _socket_readable(rsock, 1)
+        finally:
+            rsock.close()
+            wsock.close()
+
+    def test_closed_socket_counts_as_readable(self):
+        from celery.backends.redis import _socket_readable
+        rsock, wsock = socket.socketpair()
+        rsock.close()
+        wsock.close()
+        assert _socket_readable(rsock, 1)
 
 
 class basetest_RedisBackend:
@@ -1378,7 +1946,21 @@ class test_RedisBackend(basetest_RedisBackend):
         b = self.Backend('redis://', app=self.app)
         gid = uuid()
         b.set_chord_size(gid, 10)
-        b.client.set.assert_called_with(b.get_key_for_group(gid, '.s'), 10)
+        b.client.set.assert_called_with(
+            b.get_key_for_group(gid, '.s'), 10, ex=86400)
+
+    @pytest.mark.parametrize('chord_expires,ex', [
+        (600, 600),
+        (timedelta(hours=1), 3600),
+        (0, None),
+    ])
+    def test_set_chord_size_uses_chord_expires(self, chord_expires, ex):
+        self.app.conf.result_chord_expires = chord_expires
+        b = self.Backend('redis://', app=self.app)
+        gid = uuid()
+        b.set_chord_size(gid, 10)
+        b.client.set.assert_called_with(
+            b.get_key_for_group(gid, '.s'), 10, ex=ex)
 
     def test_expires_is_None(self):
         b = self.Backend(expires=None, app=self.app)
@@ -1415,6 +1997,33 @@ class test_RedisBackend(basetest_RedisBackend):
         self.b.client.expire.assert_called_with(
             key, 512,
         )
+
+    @pytest.mark.parametrize('state,expires', [
+        (states.FAILURE, 1024),
+        (states.SUCCESS, 512),
+    ])
+    def test_failure_expires(self, state, expires):
+        self.app.conf.result_failure_expires = 1024
+        self.b = self.Backend(expires=512, app=self.app)
+        tid = uuid()
+        self.b.store_result(tid, 42, state)
+        self.b.client.expire.assert_called_with(
+            self.b.get_key_for_task(tid), expires)
+
+    def test_failure_expires_defaults_to_result_expires(self):
+        self.b = self.Backend(expires=512, app=self.app)
+        assert self.b.failure_expires == 512
+
+    def test_failure_expires_zero_never_expires(self):
+        self.app.conf.result_failure_expires = 0
+        self.b = self.Backend(expires=512, app=self.app)
+        self.b.store_result(uuid(), 42, states.FAILURE)
+        self.b.client.expire.assert_not_called()
+
+    def test_failure_expires_does_not_warn(self, recwarn):
+        self.app.conf.result_failure_expires = 1024
+        self.Backend(app=self.app)
+        assert not [w for w in recwarn if 'result_failure_expires' in str(w.message)]
 
     def test_set_raises_error_on_large_value(self):
         with pytest.raises(BackendStoreError):
@@ -1596,10 +2205,39 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         jkey = self.b.get_key_for_group('group_id', '.j')
         tkey = self.b.get_key_for_group('group_id', '.t')
         skey = self.b.get_key_for_group('group_id', '.s')
-        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey)])
+        dkey = self.b.get_key_for_group('group_id', '.d')
+        self.b.client.delete.assert_has_calls([call(jkey), call(tkey), call(skey), call(dkey)])
         self.b.client.expire.assert_has_calls([
-            call(jkey, 86400), call(tkey, 86400), call(skey, 86400),
+            call(jkey, 86400), call(tkey, 86400), call(skey, 86400), call(dkey, 86400),
         ])
+
+    @pytest.mark.parametrize('result_expires,group_expires', [
+        (100, 600),
+        (86400, 86400),
+        (None, None),
+    ])
+    def test_on_chord_part_return_uses_chord_expires(
+            self, result_expires, group_expires):
+        self.app.conf.result_expires = result_expires
+        self.app.conf.result_chord_expires = 600
+        self.b = self.Backend(app=self.app)
+        task = self.create_task(0)
+        self.b.client.expire.reset_mock()
+        self.b.on_chord_part_return(task.request, states.SUCCESS, 0)
+        jkey = self.b.get_key_for_group('group_id', '.j')
+        tkey = self.b.get_key_for_group('group_id', '.t')
+        skey = self.b.get_key_for_group('group_id', '.s')
+        dkey = self.b.get_key_for_group('group_id', '.d')
+        gkey = self.b.get_key_for_group('group_id')
+        expected = [call(jkey, 600), call(tkey, 600), call(skey, 600), call(dkey, 600)]
+        if group_expires:
+            expected.append(call(gkey, group_expires))
+        assert self.b.client.expire.call_args_list == expected
+
+    def test_set_chord_key_raises_error_on_large_value(self):
+        with pytest.raises(BackendStoreError):
+            self.b._set_chord_key(
+                'key', 'x' * (self.b._MAX_STR_VALUE_SIZE + 1))
 
     def test_on_chord_part_return__unordered(self):
         self.app.conf.result_backend_transport_options = dict(
@@ -1719,10 +2357,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         self.b.expires = old_expires
 
     def test_on_chord_part_return__success(self):
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
     def test_on_chord_part_return__success__unordered(self):
@@ -1730,10 +2368,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             result_chord_ordered=False,
         )
 
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
 
     def test_on_chord_part_return__success__ordered(self):
@@ -1741,11 +2379,33 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             result_chord_ordered=True,
         )
 
-        with self.chord_context(2) as (_, request, callback):
-            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
             callback.delay.assert_not_called()
-            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
             callback.delay.assert_called_with([10, 20])
+
+    @pytest.mark.parametrize('ordered', [False, True])
+    def test_on_chord_part_return_retries_only_the_body_publish(self, ordered):
+        self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        with self.chord_context(1) as (_, request, callback):
+            callback.task = 'foobarbaz'
+            message = self.app.amqp.as_task_v2(uuid(), 'foobarbaz', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'foobarbaz', message)
+
+            callback.delay = Mock(side_effect=delay)
+            self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            assert producer.publish.call_count == 2
+            assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
 
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
@@ -1785,9 +2445,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     def test_on_chord_part_return__ChordError(self):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -1801,9 +2459,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -1817,9 +2473,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, ChordError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = ChordError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -1829,9 +2483,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
     def test_on_chord_part_return__other_error(self):
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -1845,9 +2497,7 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.rpush().llen().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
@@ -1861,14 +2511,178 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
 
         with self.chord_context(1) as (_, request, callback):
             self.b.client.pipeline = ContextMock()
-            raise_on_second_call(self.b.client.pipeline, RuntimeError())
-            self.b.client.pipeline.return_value.zadd().zcount().get().get().expire(
-            ).expire().expire().execute.return_value = (1, 1, 0, b'1', 4, 5, 6)
+            self.b.client.pipeline.side_effect = RuntimeError()
             task = self.app._tasks['add'] = Mock(name='add_task')
             self.b.on_chord_part_return(request, states.SUCCESS, 10)
             task.backend.fail_from_current_stack.assert_called_with(
                 callback.id, exc=ANY,
             )
+
+    @pytest.mark.parametrize('ordered', (True, False))
+    @pytest.mark.parametrize(['dup_state', 'dup_result'], [
+        # The header task was executed again and returned another value
+        (states.SUCCESS, 99),
+        # An "already done" idempotency guard returned early
+        (states.SUCCESS, None),
+        # The worker was lost after the part was recorded (#10724)
+        (states.FAILURE, WorkerLostError()),
+    ])
+    def test_on_chord_part_return__duplicate_part(
+        self, ordered, dup_state, dup_result,
+    ):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            jkey = self.b.get_key_for_group(tasks[0].request.group, '.j')
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[0].request, dup_state, dup_result)
+            assert len(self.b.client.keyspace[jkey]) == 1
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with([10, 20, 30])
+            # A duplicate arriving after the chord completed is ignored
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 99)
+            callback.delay.assert_called_once_with([10, 20, 30])
+
+    @pytest.mark.parametrize('join_error', (False, True))
+    def test_on_chord_part_return__duplicate_after_chord_failed(self, join_error):
+        if join_error:
+            # Reading the results fails with an error other than ChordError
+            self.b._unpack_chord_result = Mock(side_effect=RuntimeError())
+        with self.chord_context(2) as (tasks, _, callback):
+            jkey = self.b.get_key_for_group(tasks[0].request.group, '.j')
+            with patch.object(self.b, 'chord_error_from_stack') as chord_error:
+                self.b.on_chord_part_return(tasks[0].request, states.FAILURE, KeyError('x'))
+                self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+                assert chord_error.call_count == 1
+                # The results are kept, so the user can look at them
+                assert len(self.b.client.keyspace[jkey]) == 2
+                # A copy of a header part arrives after the chord failed
+                self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+                assert chord_error.call_count == 1
+                callback.delay.assert_not_called()
+
+    def test_on_chord_part_return__last_part_runs_again(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            # The last part is saved, but its worker is lost before the body
+            # is sent, so the redelivered part must still send it.
+            request = tasks[1].request
+            keys = [self.b.get_key_for_group(request.group, suffix)
+                    for suffix in ('.j', '.t', '.s', '.d', '')]
+            encoded = self.b.encode([1, request.id, states.SUCCESS,
+                                     self.b.encode_result(20, states.SUCCESS)])
+            self.b._chord_part_return_script(
+                keys=keys, args=[request.id, encoded, 1, request.group_index, 0, 0])
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    @pytest.mark.parametrize('ordered', (True, False))
+    def test_on_chord_part_return__same_task_id_at_two_indexes(self, ordered):
+        # A header that reuses one frozen signature has its task id twice
+        # (with different results; equal ones merge in the ordered zset)
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(2) as (tasks, _, callback):
+            tasks[1].request.id = tasks[0].request.id
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    @pytest.mark.parametrize(['ordered', 'expected'], [
+        (True, [10, 20, 30]),
+        (False, [20, 10, 30]),
+    ])
+    def test_on_chord_part_return__part_recorded_by_older_worker(
+        self, ordered, expected,
+    ):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            # Workers running an older version record their part without
+            # marking the task id as done, which must not stall the chord.
+            request = tasks[1].request
+            jkey = self.b.get_key_for_group(request.group, '.j')
+            encoded = self.b.encode([1, request.id, states.SUCCESS, 20])
+            if ordered:
+                self.b.client.zadd(jkey, {encoded: request.group_index})
+            else:
+                self.b.client.rpush(jkey, encoded)
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with(expected)
+
+
+class test_RedisBackend_chord_part_script(basetest_RedisBackend):
+    # The other chord tests run a Python copy of the chord part script.
+    # These run the Lua script itself, with fakeredis.
+
+    @pytest.fixture(autouse=True)
+    def fake_redis(self):
+        self.FakeRedis = pytest.importorskip('fakeredis').FakeRedis
+        pytest.importorskip('lupa')
+        self.b.client = self.FakeRedis()
+        with patch('celery.result.GroupResult.restore', return_value=None):
+            yield
+
+    @pytest.mark.parametrize(['ordered', 'indexed', 'expected'], [
+        (True, True, [10, 20, 30]),
+        (False, True, [10, 20, 30]),
+        # Without an index, the parts have the same score and sort by task id
+        (True, False, [30, 20, 10]),
+        (False, False, [10, 20, 30]),
+    ])
+    def test_on_chord_part_return__duplicate_part(self, ordered, indexed, expected):
+        self.app.conf.result_backend_transport_options = dict(
+            result_chord_ordered=ordered,
+        )
+
+        with self.chord_context(3) as (tasks, _, callback):
+            for i, task in enumerate(tasks):
+                # Task ids that sort in the reverse order of the header
+                task.request.id = f'task-{2 - i}'
+                if not indexed:
+                    task.request.group_index = None
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 99)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once_with(expected)
+            # A copy of the last part, after the chord completed
+            self.b.on_chord_part_return(tasks[2].request, states.SUCCESS, 30)
+            callback.delay.assert_called_once()
+
+    def test_on_chord_part_return__same_task_id_at_two_indexes(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            tasks[1].request.id = tasks[0].request.id
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+
+    def test_on_chord_part_return__expires(self):
+        self.app.conf.result_chord_expires = 600
+        self.b = self.Backend(app=self.app)
+        self.b.client = client = self.FakeRedis()
+
+        with self.chord_context(2) as (tasks, request, _):
+            gkey = self.b.get_key_for_group(request.group)
+            client.set(gkey, 'a saved GroupResult')
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            for suffix in ('.j', '.s', '.d'):
+                key = self.b.get_key_for_group(request.group, suffix)
+                assert client.ttl(key) == 600
+            # The group key is kept for at least result_expires (one day)
+            assert client.ttl(gkey) == 86400
 
 
 class test_RedisBackend_chords_complex(basetest_RedisBackend):
@@ -1897,14 +2711,27 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
     ])
     def test_apply_chord_complex_header(self, results, assert_save_called):
         mock_group_result = Mock()
+        mock_group_result.return_value.id = "gid11"
         mock_group_result.return_value.results = results
+        mock_group_result.return_value.as_tuple.return_value = (("gid11", None), [])
         self.app.GroupResult = mock_group_result
         header_result_args = ("gid11", results)
         self.b.apply_chord(header_result_args, None)
         if assert_save_called:
-            mock_group_result.return_value.save.assert_called_once_with(backend=self.b)
+            self.b.client.set.assert_called_once_with(
+                self.b.get_key_for_group("gid11"),
+                self.b.encode({"result": (("gid11", None), [])}),
+                ex=86400,
+            )
         else:
-            mock_group_result.return_value.save.assert_not_called()
+            self.b.client.set.assert_not_called()
+
+    def test_apply_chord_complex_header_uses_chord_expires(self):
+        self.app.conf.result_chord_expires = 600
+        self.b = self.Backend(app=self.app)
+        self.b.apply_chord(("gid11", (GroupResult("foo", []),)), None)
+        _, kwargs = self.b.client.set.call_args
+        assert kwargs == {"ex": 600}
 
     def test_on_chord_part_return_timeout(self, complex_header_result):
         tasks = [self.create_task(i) for i in range(10)]

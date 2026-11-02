@@ -324,6 +324,81 @@ class test_default_strategy_proto2:
         finally:
             state.revoked.discard(task.id)
 
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_rejects_without_executing(self, exception_type):
+        # Regression test: when ETA timestamp conversion raises OverflowError
+        # or ValueError, the worker must reject the message and NOT execute
+        # the task.
+        with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+            mock_to_timestamp.side_effect = exception_type(
+                "timestamp conversion failed"
+            )
+
+            with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                C()
+
+            mock_to_timestamp.assert_called_once()
+
+            C.message.reject.assert_called_once()
+            assert C.message.reject.call_args[0][2] is False
+
+            assert not C.was_reserved()
+            C.consumer.on_task_request.assert_not_called()
+
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_records_failure_in_backend(self, exception_type):
+        # Regression test: when ETA timestamp conversion raises OverflowError
+        # or ValueError, the worker must record a terminal FAILURE result in
+        # the backend so the task doesn't remain PENDING forever.
+        with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+            mock_to_timestamp.side_effect = exception_type(
+                "timestamp conversion failed"
+            )
+
+            # Get task_id before context manager (signature is frozen in _context)
+            task = self.add.s(2, 2).set(countdown=10)
+            task.freeze()
+            task_id = task.id
+
+            with self._context(task) as C:
+                C()
+
+            # Verify the observable result state is FAILURE
+            from celery import states
+            assert self.add.backend.get_state(task_id) == states.FAILURE
+            # Verify the exception is stored as the result
+            result = self.add.backend.get_result(task_id)
+            assert isinstance(result, exception_type)
+
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_with_disabled_backend(self, exception_type):
+        # Regression test: when ETA timestamp conversion fails with a
+        # DisabledBackend, the worker must still reject and return without
+        # crashing (DisabledBackend.store_result is a no-op).
+        from celery.backends.base import DisabledBackend
+
+        # Temporarily replace the task's backend with DisabledBackend
+        original_backend = self.add.backend
+        self.add.backend = DisabledBackend(app=self.app)
+
+        try:
+            with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+                mock_to_timestamp.side_effect = exception_type(
+                    "timestamp conversion failed"
+                )
+
+                with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                    # Should not raise even with DisabledBackend
+                    C()
+
+                # Verify the message was still rejected
+                C.message.reject.assert_called_once()
+                assert C.message.reject.call_args[0][2] is False
+                assert not C.was_reserved()
+        finally:
+            # Restore original backend
+            self.add.backend = original_backend
+
 
 class test_default_strategy_proto1(test_default_strategy_proto2):
 

@@ -3,8 +3,10 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from celery import Celery, signals
 from celery.concurrency.thread import TaskPool as ThreadTaskPool
 from celery.fixups.django import DjangoFixup, DjangoWorkerFixup, FixupWarning, _maybe_close_fd, fixup
+from celery.local import Proxy
 from t.unit import conftest
 
 
@@ -104,7 +106,12 @@ class test_DjangoFixup(FixupCase):
         with self.fixup_context(self.app) as (f, _, _):
             self.cw.return_value = '/opt/vandelay'
             f.install()
-            self.sigs.worker_init.connect.assert_called_with(f.on_worker_init)
+            self.sigs.import_modules.connect.assert_called_with(
+                f.on_import_modules, sender=self.app,
+            )
+            self.sigs.worker_init.connect.assert_called_with(
+                f.on_worker_init, dispatch_uid=f._worker_init_uid,
+            )
             assert self.app.loader.now == f.now
 
             # Specialized DjangoTask class is used
@@ -198,13 +205,138 @@ class test_DjangoFixup(FixupCase):
     def test_on_worker_init(self):
         with self.fixup_context(self.app) as (f, _, _):
             with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
-                mock_worker = Mock(name="worker")
+                mock_worker = Mock(name="worker", app=f.app)
                 f.on_worker_init(sender=mock_worker)
                 assert DWF.return_value.worker == mock_worker
 
                 DWF.assert_called_with(f.app)
                 DWF.return_value.install.assert_called_with()
                 assert f._worker_fixup is DWF.return_value
+
+    def test_on_worker_init_ignores_worker_of_other_app(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                other_worker = Mock(name="worker", app=Mock(name="other_app"))
+                with patch('celery.fixups.django.logger') as logger:
+                    f.on_worker_init(sender=other_worker)
+                DWF.assert_not_called()
+                assert f._worker_fixup is None
+                logger.debug.assert_called_once()
+                assert logger.debug.call_args[0][1:] == (
+                    f.app, other_worker, other_worker.app,
+                )
+
+    def test_on_worker_init_resolves_proxy_app(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                worker = Mock(name="worker", app=Proxy(lambda: f.app))
+                assert worker.app is not f.app
+                f.on_worker_init(sender=worker)
+                assert DWF.return_value.worker is worker
+                DWF.return_value.install.assert_called_once_with()
+
+    def test_on_worker_init_ignores_proxy_of_other_app(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                other_app = Mock(name="other_app")
+                worker = Mock(name="worker", app=Proxy(lambda: other_app))
+                f.on_worker_init(sender=worker)
+                DWF.assert_not_called()
+
+    def test_on_worker_init_sender_without_app(self):
+        with self.fixup_context(self.app) as (f, _, _):
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                sender = Mock(name="sender", spec=[])
+                assert not hasattr(sender, 'app')
+                f.on_worker_init(sender=sender)
+                assert DWF.return_value.worker is sender
+                DWF.return_value.install.assert_called_once_with()
+
+    def test_on_worker_init_fixup_with_proxy_app(self):
+        # the fixup's own app can be a proxy too, e.g. current_app.
+        with self.fixup_context(Proxy(lambda: self.app)) as (f, _, _):
+            assert f.app is not self.app
+            with patch('celery.fixups.django.DjangoWorkerFixup') as DWF:
+                for worker_app in (self.app, Proxy(lambda: self.app)):
+                    DWF.reset_mock()
+                    worker = Mock(name="worker", app=worker_app)
+                    f.on_worker_init(sender=worker)
+                    assert DWF.return_value.worker is worker
+                    DWF.return_value.install.assert_called_once_with()
+
+                DWF.reset_mock()
+                f.on_worker_init(
+                    sender=Mock(name="worker", app=Mock(name="other_app")),
+                )
+                DWF.return_value.install.assert_not_called()
+
+    def test_worker_init_uid_is_unique_per_instance(self):
+        f1, f2 = DjangoFixup(self.app), DjangoFixup(self.app)
+        assert f1._worker_init_uid != f2._worker_init_uid
+
+    def test_worker_init_uid_is_a_random_token(self):
+        # ids can be recycled after garbage collection, so the uid has to
+        # come from uuid4() and not from id(self).
+        with patch('celery.fixups.django.uuid4') as uuid4:
+            uuid4.return_value.hex = 'token'
+            f = DjangoFixup(self.app)
+        assert f._worker_init_uid[-1] == 'token'
+
+    def _install_real_fixups(self, *apps):
+        with patch('celery.fixups.django.symbol_by_name'), \
+                patch('sys.path'):
+            fixups = [DjangoFixup(app).install() for app in apps]
+        for f in fixups:
+            f.worker_fixup = Mock(name='worker_fixup')
+        return fixups
+
+    def _uninstall_real_fixups(self, *fixups):
+        for f in fixups:
+            signals.import_modules.disconnect(
+                f.on_import_modules, sender=f.app,
+            )
+            signals.worker_init.disconnect(dispatch_uid=f._worker_init_uid)
+
+    def test_on_import_modules_only_for_own_app(self):
+        other_app = Celery(set_as_current=False)
+        f1, f2 = self._install_real_fixups(self.app, other_app)
+        try:
+            signals.import_modules.send(sender=other_app)
+            f1.worker_fixup.validate_models.assert_not_called()
+            f2.worker_fixup.validate_models.assert_called_once_with()
+
+            signals.import_modules.send(sender=self.app)
+            f1.worker_fixup.validate_models.assert_called_once_with()
+            f2.worker_fixup.validate_models.assert_called_once_with()
+        finally:
+            self._uninstall_real_fixups(f1, f2)
+
+    def test_on_import_modules_fixup_with_proxy_app(self):
+        # connected with sender=<proxy>, sent with the real app: the signal
+        # resolves the proxy, so it still reaches the fixup.
+        other_app = Celery(set_as_current=False)
+        f, = self._install_real_fixups(Proxy(lambda: self.app))
+        try:
+            assert f.app is not self.app
+            signals.import_modules.send(sender=other_app)
+            f.worker_fixup.validate_models.assert_not_called()
+
+            signals.import_modules.send(sender=self.app)
+            f.worker_fixup.validate_models.assert_called_once_with()
+        finally:
+            self._uninstall_real_fixups(f)
+
+    def test_worker_init_only_for_own_app(self):
+        other_app = Celery(set_as_current=False)
+        f1, f2 = self._install_real_fixups(self.app, other_app)
+        try:
+            worker = Mock(name='worker', app=other_app)
+            signals.worker_init.send(sender=worker)
+            f1.worker_fixup.install.assert_not_called()
+            f2.worker_fixup.install.assert_called_once_with()
+            assert f2.worker_fixup.worker is worker
+        finally:
+            self._uninstall_real_fixups(f1, f2)
 
     def test_on_worker_init_warns_without_sender(self):
         with self.fixup_context(self.app) as (f, _, _):
