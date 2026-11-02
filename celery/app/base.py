@@ -1114,7 +1114,7 @@ class Celery:
         else:
             options.pop('expires', None)
 
-        ignore_result = options.pop('ignore_result', False)
+        ignore_result = options.pop('ignore_result', None)
         options = router.route(
             options, route_name or name, args, kwargs, task_type)
 

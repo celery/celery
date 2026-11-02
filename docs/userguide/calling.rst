@@ -850,6 +850,22 @@ setting or by using the ``ignore_result`` option:
   >>> result.get()
   3
 
+.. versionchanged:: 5.7
+
+   :meth:`~@send_task` now correctly respects the task's ``ignore_result``
+   setting when the option is omitted.
+
+   Pass ``ignore_result=False`` explicitly if you need to retrieve the result
+   of a task configured with ``ignore_result=True``.
+
+   When the option is omitted and the worker ignores the result,
+   :meth:`~celery.result.AsyncResult.get` waits until its timeout, or
+   indefinitely if no timeout is set.
+
+   Chords whose header tasks are sent by name and ignore their results do not
+   complete on backends that use ``chord_unlock``, including the database
+   backend. See :ref:`chord-important-notes`.
+
 If you'd like to store additional metadata about the task in the result backend
 set the :setting:`result_extended` setting to ``True``.
 
