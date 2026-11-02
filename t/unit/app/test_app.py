@@ -2119,6 +2119,13 @@ class test_App:
             self.app.amqp.Producer(), 'foo',
             self.app.amqp.create_task_message())
 
+    def test_send_task_without_ignore_result_sends_none_header(self):
+        with self.app.producer_or_acquire() as producer:
+            with patch.object(producer, 'publish') as publish:
+                self.app.send_task('foo', producer=producer)
+
+        assert publish.call_args.kwargs['headers']['ignore_result'] is None
+
     @patch('celery.app.base.detect_quorum_queues', return_value=[False, ""])
     def test_send_task_honours_task_serializer(self, detect_quorum_queues):
         """send_task should use the registered task's serializer when called by name."""
@@ -3120,3 +3127,27 @@ class test_shared_task:
                     return 168
 
                 assert baz.app is yproj
+
+    def test_applied_twice_raises(self):
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task
+            @shared_task
+            def foo():
+                return 42
+
+        with pytest.raises(TypeError, match='more than once'):
+            @shared_task(name='xproj.foo')
+            @shared_task()
+            def bar():
+                return 42
+
+    def test_can_wrap_app_task(self):
+        with self.Celery('xproj', set_as_current=True) as xproj:
+            xproj.conf.task_always_eager = True
+
+            @shared_task
+            @xproj.task
+            def mul(x, y):
+                return x * y
+
+            assert mul.delay(2, 3).get() == 6

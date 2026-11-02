@@ -1191,3 +1191,63 @@ class test_ControlPanel:
         assert 'test-123' in worker_state.revoked_stamps.get('monitoring_id', [])
 
         worker_state.active_requests.clear()
+
+    def test_revoke_by_stamped_headers_handles_missing_stamp_value_with_terminate(self):
+        """Test that terminate=True handles missing stamped header values gracefully.
+
+        Regression test for case where a header is listed in stamped_headers
+        and flagged in revoked_stamps, but has no corresponding value in stamps.
+        This should not raise TypeError and should not terminate the task.
+        """
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-missing-stamp'
+        # 'monitoring_id' is in stamps but its value is None
+        request.stamps = {'monitoring_id': None}
+        request.terminate = Mock()
+
+        worker_state.active_requests.add(request)
+
+        headers = {'monitoring_id': 'test-123'}
+
+        # Should not raise TypeError
+        with patch('celery.worker.control._signals.signum', return_value=15):
+            result = control.revoke_by_stamped_headers(state, headers, terminate=True)
+
+        # Task should not be terminated due to missing stamp value
+        request.terminate.assert_not_called()
+        # Should report that headers were not terminated
+        assert 'were not terminated' in result['ok']
+
+        worker_state.active_requests.clear()
+
+    def test_revoke_by_stamped_headers_terminate_checks_later_headers(self):
+        state = self.create_state()
+        state.consumer = Mock()
+
+        request = Mock()
+        request.id = 'task-with-one-missing-stamp'
+        request.stamps = {
+            'a': None,
+            'b': 'y',
+        }
+
+        worker_state.active_requests.add(request)
+
+        try:
+            with patch(
+                'celery.worker.control._signals.signum',
+                return_value=15,
+            ):
+                control.revoke_by_stamped_headers(
+                    state,
+                    {'a': 'x', 'b': 'y'},
+                    terminate=True,
+                )
+
+            request.terminate.assert_called_once()
+        finally:
+            worker_state.active_requests.clear()
+            worker_state.revoked_stamps.clear()
