@@ -42,7 +42,7 @@ def add_unlock_chord_task(app):
     """
     from celery.backends.base import _create_chord_error_with_cause
     from celery.canvas import maybe_signature
-    from celery.exceptions import Reject
+    from celery.exceptions import Retry
     from celery.result import allow_join_result, result_from_tuple
 
     @app.task(name='celery.chord_unlock', max_retries=None, shared=False,
@@ -68,10 +68,12 @@ def add_unlock_chord_task(app):
         if exchange_type is not None:
             retry_options['exchange_type'] = exchange_type
         callback = maybe_signature(callback, app=app)
+        ready_error = None
         try:
             try:
                 ready = deps.ready()
             except Exception as exc:
+                ready_error = exc
                 raise self.retry(
                     exc=exc, countdown=interval, max_retries=max_retries,
                     **retry_options,
@@ -82,13 +84,23 @@ def add_unlock_chord_task(app):
                         countdown=interval, max_retries=max_retries,
                         **retry_options,
                     )
-        except Reject as exc:
-            # The broker refused the retry, so nothing will poll this chord
-            # again: fail it instead of leaving the body PENDING forever.
-            logger.exception('Chord %r raised: %r', group_id, exc)
+        except Retry:
+            raise
+        except Exception as exc:
+            # Reject (broker refused the retry), MaxRetriesExceededError, or
+            # the deps.ready() error re-raised once retries ran out: nothing
+            # will poll this chord again, so fail it instead of leaving the
+            # body PENDING forever.
+            logger.exception(
+                'Chord %r: chord_unlock could not be retried: %r',
+                group_id, exc,
+            )
+            cause = getattr(exc, 'reason', None) or exc
+            reason = f'chord_unlock could not be retried: {cause!r}'
+            if ready_error is not None and ready_error is not cause:
+                reason += f' (after deps.ready() raised {ready_error!r})'
             chord_error = _create_chord_error_with_cause(
-                message=f'Unable to retry chord_unlock: {exc.reason!r}',
-                original_exc=exc.reason,
+                message=reason, original_exc=cause,
             )
             app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
             raise
