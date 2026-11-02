@@ -219,6 +219,49 @@ The ``.si()`` shortcut can also be used to create immutable signatures:
 Only the execution options can be set when a signature is immutable,
 so it's not possible to call the signature with partial args/kwargs.
 
+.. _canvas-replacing-tasks:
+
+Replacing a task with a workflow
+--------------------------------
+
+A bound task can use :meth:`~@Task.replace` to replace itself with another
+signature at runtime.  This is useful when the input determines the shape of
+the workflow, such as splitting a variable-length collection into parallel
+tasks and reducing their results afterwards.
+
+For example, this task replaces itself with a group followed by a callback:
+
+.. code-block:: python
+
+    from celery import group
+
+
+    @app.task
+    def add_one(value):
+        return value + 1
+
+
+    @app.task
+    def total(values):
+        return sum(values)
+
+
+    @app.task(bind=True)
+    def add_and_total(self, values):
+        workflow = group(add_one.s(value) for value in values) | total.s()
+        return self.replace(workflow)
+
+The replacement inherits the task ID and Celery links the callbacks,
+errbacks, and any remaining tasks in the original chain to the replacement.
+As a result, callers can continue to track the original result while workers
+execute the dynamically created workflow.
+
+Pass an unevaluated signature to ``replace``; do not call ``delay`` or
+``apply_async`` on it first.  Also return ``self.replace(...)`` immediately,
+because the original task does not continue after the replacement is
+scheduled.  As with other canvas workflows, avoid waiting for the replacement
+result inside the task.
+
 .. note::
 
     In this tutorial I sometimes use the prefix operator `~` to signatures.
