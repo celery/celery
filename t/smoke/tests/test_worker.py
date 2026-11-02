@@ -684,3 +684,35 @@ class test_explicit_routing_without_default_queue:
         app.conf.task_queues = {"non_default_queue": {}}
         result = add.apply_async((1, 2), queue="non_default_queue")
         assert result.get(timeout=RESULT_TIMEOUT) == 3
+
+
+class test_unreachable_result_backend(SuiteOperations):
+    @pytest.fixture
+    def default_worker_env(self, default_worker_env: dict) -> dict:
+        # The worker takes its result backend from this variable, not from
+        # app.conf, so point it at a port with nothing listening.
+        return {**default_worker_env, "CELERY_RESULT_BACKEND": "redis://localhost:9999/0"}
+
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.result_backend_always_retry = True
+        app.conf.result_backend_max_retries = 9999999
+        app.conf.result_backend_base_sleep_between_retries_ms = 10
+        app.conf.result_backend_max_sleep_between_retries_ms = 10
+        app.conf.task_acks_late = True
+        app.conf.task_reject_on_worker_lost = True
+        return app
+
+    def test_worker_survives_child_death_with_unreachable_backend(self, celery_setup: CeleryTestSetup):
+        from t.smoke.tasks import kill_child_process_once
+        queue = celery_setup.worker.worker_queue
+
+        kill_child_process_once.si().set(queue=queue).delay()
+        celery_setup.worker.assert_log_exists("Worker exited prematurely", timeout=RESULT_TIMEOUT)
+
+        # On main, the main process now retries the read without end, so it
+        # never receives another task. The worker can't store results, so
+        # check its log instead of a result.
+        alive = identity.si("alive").set(queue=queue).delay()
+        celery_setup.worker.assert_log_exists(f"{alive.id}] received", timeout=RESULT_TIMEOUT)

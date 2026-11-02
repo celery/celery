@@ -22,8 +22,8 @@ from celery.utils.quorum_queues import detect_quorum_queues
 from celery.utils.time import utcoffset
 from celery.worker import state as worker_state
 from celery.worker.consumer.agent import Agent
-from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT, TERMINATE,
-                                             Consumer)
+from celery.worker.consumer.consumer import (CANCEL_TASKS_BY_DEFAULT, CLOSE, COLLECT_SOCKET_TIMEOUT,
+                                             CONNECTION_RETRY, TERMINATE, Consumer)
 from celery.worker.consumer.events import Events
 from celery.worker.consumer.gossip import Gossip
 from celery.worker.consumer.heart import Heart
@@ -685,6 +685,24 @@ class test_Consumer(ConsumerTestCase):
         # blueprint.restart() starts fresh.
         old_conn.close.assert_called_once()
         assert c.connection is None
+
+    def test_connection_error_traceback_is_logged_at_debug_level(self, caplog):
+        c = self.get_consumer()
+        exc = ConnectionError('broker went away')
+
+        with caplog.at_level(logging.DEBUG, logger='celery.worker.consumer.consumer'):
+            c.on_connection_error_after_connected(exc)
+
+        warning = next(record for record in caplog.records
+                       if record.levelno == logging.WARNING
+                       and record.getMessage().startswith(CONNECTION_RETRY))
+
+        assert warning.exc_info is None
+        assert warning.getMessage() == f'{CONNECTION_RETRY} ({exc!r})'
+        debug_record = next(record for record in caplog.records
+                            if record.levelno == logging.DEBUG
+                            and record.getMessage() == f'Connection error: {exc!r}')
+        assert debug_record.exc_info[1] is exc
 
     def test_bounds_already_open_sockets_before_collect(self):
         # ``collect(socket_timeout=...)`` only sets the *default* timeout,
