@@ -91,6 +91,12 @@ def add_ignore_result(x, y):
     return x + y
 
 
+@shared_task(ignore_result=False)
+def add_with_result(x, y):
+    """Add two numbers."""
+    return x + y
+
+
 @shared_task
 def raise_error(*args):
     """Deliberately raise an error."""
@@ -317,6 +323,20 @@ def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     raise self.retry(countdown=countdown,
                      expires=expires,
                      max_retries=max_retries)
+
+
+@shared_task(bind=True, ignore_result=True)
+def retry_once_ignore_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
+
+
+@shared_task(bind=True, ignore_result=False)
+def retry_once_with_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
 
 
 @shared_task(bind=True, max_retries=1)
