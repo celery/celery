@@ -139,8 +139,7 @@ You can install it by doing the following,:
 
     $ tar xvfz celery-0.0.0.tar.gz
     $ cd celery-0.0.0
-    $ python setup.py build
-    # python setup.py install
+    # python -m pip install .
 
 The last command must be executed as a privileged user if
 you aren't currently using a virtualenv.
