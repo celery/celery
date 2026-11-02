@@ -599,6 +599,13 @@ When you call ``retry`` it'll send a new message, using the same
 task-id, and it'll take care to make sure the message is delivered
 to the same queue as the originating task.
 
+.. versionchanged:: 5.7
+
+    Retries now preserve the ``ignore_result`` value passed to
+    :meth:`~@Task.apply_async` or :meth:`~@send_task`.
+    Previously, retries discarded this override and used the task's
+    :attr:`~@Task.ignore_result` setting.
+
 When a task is retried this is also recorded as a task state,
 so that you can track the progress of the task using the result
 instance (see :ref:`task-states`).
