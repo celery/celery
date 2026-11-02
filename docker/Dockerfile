@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
-
-ARG PYTHON_IMAGE=python:3.14-slim-bookworm
+ARG PYTHON_IMAGE=python:3.14-slim-trixie
 
 FROM ${PYTHON_IMAGE}
 
