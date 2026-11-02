@@ -4045,6 +4045,29 @@ class test_chord:
         await_redis_echo(['group', 'chord'], redis_key=redis_key)
 
 
+class test_xmap_xstarmap:
+
+    def test_starmap_keeps_frozen_id_and_link(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        get_redis_connection().delete('redis-echo')
+        sig = add.starmap([(1, 1), (2, 2)])
+        sig.link(redis_echo.si('starmap done'))
+        frozen = sig.freeze()
+
+        result = sig.apply_async()
+
+        assert result.id == frozen.id
+        assert result.get(timeout=TIMEOUT) == [2, 4]
+        await_redis_echo({'starmap done'}, timeout=10)
+
+    def test_starmap_in_a_group_and_a_chain(self, manager):
+        in_group = group(add.starmap([(1, 1), (2, 2)]), add.s(3, 3))
+        assert in_group.delay().get(timeout=TIMEOUT) == [[2, 4], 6]
+        in_chain = chain(add.si(1, 1), add.starmap([(1, 1), (2, 2)]))
+        assert in_chain.delay().get(timeout=TIMEOUT) == [2, 4]
+
+
 class test_signature_serialization:
     """
     Confirm nested signatures can be rebuilt after passing through a backend.
