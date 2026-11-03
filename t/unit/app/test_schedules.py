@@ -437,7 +437,7 @@ class test_schedule:
         ),
         pytest.param(
             'America/Havana', timedelta(days=1),
-            datetime(2026, 10, 31, 23, 30), datetime(2026, 11, 1),
+            datetime(2025, 11, 1, 23, 30), datetime(2025, 11, 2),
             90000,
             id='daily-midnight-fall-back',
         ),
