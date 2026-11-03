@@ -7,6 +7,7 @@ chord must fail instead of leaving its body PENDING.
 """
 from __future__ import annotations
 
+import json
 from contextlib import contextmanager
 from time import monotonic, sleep
 
@@ -117,6 +118,22 @@ def _assert_chord_failed(result, tmp_path):
     assert not (tmp_path / 'body').exists()
 
 
+@contextmanager
+def _refuse_publishes(broker, queue):
+    # Refuse every new message for the queue, as a full queue would.
+    policy = f'refuse-{queue}'
+    definition = json.dumps({'max-length': 0, 'overflow': 'reject-publish'})
+    exit_code, output = broker.container.exec_run(
+        ['rabbitmqctl', 'set_policy', '--apply-to', 'queues',
+         policy, f'^{queue}$', definition],
+    )
+    assert exit_code == 0, output
+    try:
+        yield
+    finally:
+        broker.container.exec_run(['rabbitmqctl', 'clear_policy', policy])
+
+
 def test_chord_waits_for_its_header(chord_app, tmp_path):
     # chord_unlock retries while the header runs, and that must not fail it.
     app = chord_app
@@ -134,3 +151,19 @@ def test_chord_fails_when_chord_unlock_runs_out_of_retries(chord_app, tmp_path):
         # The header takes longer than the two retries 0.5 s apart.
         result = _apply_chord(app, max_retries=2)
         _assert_chord_failed(result, tmp_path)
+
+
+def test_chord_fails_when_chord_unlock_retry_is_refused(
+        chord_app, celery_rabbitmq_broker, tmp_path):
+    app = chord_app
+    body_queue = app.conf.task_routes['chord_unlock_retry.body']['queue']
+    with _worker(app):
+        result = _apply_chord(app)
+        # The first chord_unlock must be delivered before the queue refuses
+        # messages, so that only its retry is refused.
+        with app.connection_for_write() as connection:
+            queue = app.amqp.queues[body_queue](connection)
+            _wait_for(lambda: queue.queue_declare(passive=True).message_count == 0,
+                      'the worker did not receive chord_unlock')
+        with _refuse_publishes(celery_rabbitmq_broker, body_queue):
+            _assert_chord_failed(result, tmp_path)
