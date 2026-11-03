@@ -1017,7 +1017,7 @@ class Task:
                 None if self.time_limit is None and self.soft_time_limit is None
                 else [self.time_limit, self.soft_time_limit]
             ),
-            'ignore_result': options.get('ignore_result', False),
+            'ignore_result': options.get('ignore_result', self.ignore_result),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),

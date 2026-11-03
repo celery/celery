@@ -1909,6 +1909,22 @@ class test_apply_task(TasksCase):
         with pytest.raises(KeyError):
             f.get()
 
+    @pytest.mark.parametrize('ignore_result, options, expected_state', [
+        (True, {}, 'PENDING'),
+        (False, {}, 'SUCCESS'),
+        (True, {'ignore_result': False}, 'SUCCESS'),
+        (False, {'ignore_result': True}, 'PENDING'),
+    ])
+    def test_apply_respects_ignore_result(self, ignore_result, options, expected_state):
+        self.app.conf.task_store_eager_result = True
+
+        @self.app.task(shared=False, ignore_result=ignore_result)
+        def task():
+            pass
+
+        result = task.apply(**options)
+        assert self.app.AsyncResult(result.id).state == expected_state
+
     def test_apply_eager_populates_request_task(self):
         task_to_apply = self.task_check_request_context
         with patch.object(
