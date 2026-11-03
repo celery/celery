@@ -819,9 +819,12 @@ class Request:
                   self.task_name, self.id, send_exc, exc_info=True)
             return False
 
-        task.backend.mark_as_retry(
-            self.id, exc, exc_info.traceback, request=request,
-        )
+        # As Task.retry() does: an ignored result isn't stored, so the
+        # retried run wouldn't replace this RETRY with its outcome.
+        if self.store_errors:
+            task.backend.mark_as_retry(
+                self.id, exc, exc_info.traceback, request=request,
+            )
         if task.acks_late:
             self.acknowledge()
         self.send_event('task-retried',
