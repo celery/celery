@@ -8,14 +8,15 @@ chord must fail instead of leaving its body PENDING.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from time import sleep
+from time import monotonic, sleep
 
 import pytest
 from kombu import Queue
 from pytest_celery import RabbitMQTestBroker
 
-from celery import Celery, chord, uuid
+from celery import Celery, chord, states, uuid
 from celery.contrib.testing.worker import start_worker
+from celery.exceptions import ChordError
 from celery.result import allow_join_result
 
 pytestmark = pytest.mark.timeout(180)
@@ -94,6 +95,28 @@ def _apply_chord(app, **options):
     ).apply_async(**options)
 
 
+def _wait_for(predicate, message, timeout=RESULT_TIMEOUT):
+    deadline = monotonic() + timeout
+    while monotonic() < deadline:
+        if predicate():
+            return
+        sleep(0.05)
+    pytest.fail(message)
+
+
+def _assert_chord_failed(result, tmp_path):
+    with allow_join_result():
+        with pytest.raises(ChordError):
+            result.get(timeout=RESULT_TIMEOUT)
+    assert result.state == states.FAILURE
+    errback = tmp_path / 'errback'
+    _wait_for(errback.exists, 'the errback did not run')
+    # Let a late duplicate show up before counting.
+    sleep(1)
+    assert errback.read_text().splitlines() == [result.id]
+    assert not (tmp_path / 'body').exists()
+
+
 def test_chord_waits_for_its_header(chord_app, tmp_path):
     # chord_unlock retries while the header runs, and that must not fail it.
     app = chord_app
@@ -103,3 +126,11 @@ def test_chord_waits_for_its_header(chord_app, tmp_path):
             assert result.get(timeout=RESULT_TIMEOUT) == 3
     assert (tmp_path / 'body').read_text().splitlines() == ['[1, 2]']
     assert not (tmp_path / 'errback').exists()
+
+
+def test_chord_fails_when_chord_unlock_runs_out_of_retries(chord_app, tmp_path):
+    app = chord_app
+    with _worker(app):
+        # The header takes longer than the two retries 0.5 s apart.
+        result = _apply_chord(app, max_retries=2)
+        _assert_chord_failed(result, tmp_path)
