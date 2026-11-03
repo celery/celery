@@ -3015,6 +3015,30 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
         callback = Mock(options={})
         assert self.b._chord_publish_claim_expires(6, callback) == 12
 
+    def test_publish_claim_budget_explicit_none_uses_global_retry_enabled(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 3,
+            'interval_start': 0,
+            'interval_step': 0.2,
+            'interval_max': 1,
+        }
+        callback = Mock(options={'retry': None})
+        assert self.b._chord_publish_claim_expires(6, callback) == 21
+
+    def test_publish_claim_budget_explicit_none_uses_global_retry_disabled(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = False
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 3,
+            'interval_start': 0,
+            'interval_step': 0.2,
+            'interval_max': 1,
+        }
+        callback = Mock(options={'retry': None})
+        assert self.b._chord_publish_claim_expires(6, callback) == 8
+
 
 class test_RedisBackend_chord_part_script(basetest_RedisBackend):
     # The other chord tests run a Python copy of the chord part script.

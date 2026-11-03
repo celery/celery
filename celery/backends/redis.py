@@ -908,7 +908,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         default_policy = conf.task_publish_retry_policy or {}
         policy = dict(default_policy)
         policy.update(callback_options.get('retry_policy') or {})
-        retry = callback_options.get('retry', conf.task_publish_retry)
+        retry = callback_options.get('retry')
+        if retry is None:
+            retry = conf.task_publish_retry
         retries = (
             _callback_publish_max_retries(policy, default_policy)
             if retry else 0
