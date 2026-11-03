@@ -1,4 +1,5 @@
 """Redis result store backend."""
+import math
 import select
 import selectors
 import threading
@@ -904,23 +905,28 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         """Estimate the time needed for callback publish retries."""
         conf = self.app.conf
         callback_options = callback.options
-        policy = dict(conf.task_publish_retry_policy or {})
+        default_policy = conf.task_publish_retry_policy or {}
+        policy = dict(default_policy)
         policy.update(callback_options.get('retry_policy') or {})
-        retries = _callback_publish_max_retries(
-            policy, conf.task_publish_retry_policy or {},
+        retry = callback_options.get('retry', conf.task_publish_retry)
+        retries = (
+            _callback_publish_max_retries(policy, default_policy)
+            if retry else 0
         )
         timeout = conf.broker_connection_timeout
         if timeout is None:
             return initial_expires * 2
         retries = max(0, int(retries))
         timeout = max(0, float(timeout))
-        if not retries:
-            return initial_expires
+        start = float(policy.get('interval_start', 0))
+        step = float(policy.get('interval_step', 0.2))
+        maximum = float(policy.get('interval_max', 1))
+        waits = sum(min(start + step * n, maximum) for n in range(retries))
         # This is an estimate of connection-attempt time, with one additional
         # connection timeout to leave room for publish and broker confirmation.
         return max(
             initial_expires,
-            int((retries + 1) * timeout + max(timeout, 1)),
+            math.ceil((retries + 1) * timeout + waits + max(timeout, 1)),
         )
 
     def on_chord_part_return(self, request, state, result,

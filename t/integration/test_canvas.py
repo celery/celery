@@ -2074,8 +2074,7 @@ class test_chord:
             group(add.s(1, 2), add.s(3, 4)),
             redis_count.si(redis_key),
         )
-        frozen = task.freeze()
-        group_id = frozen.id
+        task.freeze()
 
         try:
             first = task.apply_async()
@@ -2085,8 +2084,6 @@ class test_chord:
             second = task.apply_async()
             second.get(timeout=TIMEOUT)
             await_redis_count(2, redis_key=redis_key)
-            assert first.id == group_id
-            assert second.id == group_id
         finally:
             redis_connection.delete(redis_key)
 

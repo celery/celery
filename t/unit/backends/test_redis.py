@@ -2932,22 +2932,88 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             'interval_max': 1,
         }
         callback = Mock(options={})
-        assert self.b._chord_publish_claim_expires(6, callback) == 20
+        assert self.b._chord_publish_claim_expires(6, callback) == 21
         callback = Mock(options={'retry_policy': {'max_retries': 0}})
-        assert self.b._chord_publish_claim_expires(6, callback) == 6
+        assert self.b._chord_publish_claim_expires(6, callback) == 8
         self.app.conf.task_publish_retry_policy['max_retries'] = None
         callback = Mock(options={})
-        assert self.b._chord_publish_claim_expires(6, callback) == 20
+        assert self.b._chord_publish_claim_expires(6, callback) == 21
         self.app.conf.task_publish_retry_policy['max_retries'] = 3
         self.app.conf.broker_connection_timeout = None
         assert self.b._chord_publish_claim_expires(6, callback) == 12
 
-    def test_publish_claim_budget_ignores_task_publish_retry(self):
+    def test_publish_claim_budget_follows_effective_retry_settings(self):
         self.app.conf.broker_connection_timeout = 4
-        self.app.conf.task_publish_retry = False
-        self.app.conf.task_publish_retry_policy = {'max_retries': 3}
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 3,
+            'interval_start': 0,
+            'interval_step': 0.2,
+            'interval_max': 1,
+        }
         callback = Mock(options={})
-        assert self.b._chord_publish_claim_expires(6, callback) == 20
+        assert self.b._chord_publish_claim_expires(6, callback) == 21
+
+        self.app.conf.task_publish_retry = False
+        assert self.b._chord_publish_claim_expires(6, callback) == 8
+        callback.options = {'retry': False}
+        self.app.conf.task_publish_retry = True
+        assert self.b._chord_publish_claim_expires(6, callback) == 8
+        callback.options = {'retry': True}
+        self.app.conf.task_publish_retry = False
+        assert self.b._chord_publish_claim_expires(6, callback) == 21
+
+    def test_publish_claim_budget_includes_long_retry_intervals(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 3,
+            'interval_start': 5,
+            'interval_step': 5,
+            'interval_max': 10,
+        }
+        callback = Mock(options={})
+        assert self.b._chord_publish_claim_expires(6, callback) == 45
+
+    def test_publish_claim_budget_uses_callback_retry_policy_overrides(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 3,
+            'interval_start': 0,
+            'interval_step': 0,
+            'interval_max': 1,
+        }
+        callback = Mock(options={'retry_policy': {
+            'interval_start': 5,
+            'interval_step': 5,
+            'interval_max': 10,
+        }})
+        assert self.b._chord_publish_claim_expires(6, callback) == 45
+
+    def test_publish_claim_budget_rounds_fractional_duration_up(self):
+        self.app.conf.broker_connection_timeout = 1.1
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 1,
+            'interval_start': 0.25,
+            'interval_step': 0,
+            'interval_max': 1,
+        }
+        callback = Mock(options={})
+        assert self.b._chord_publish_claim_expires(1, callback) == 4
+
+    def test_publish_claim_budget_with_zero_retries_includes_one_attempt(self):
+        self.app.conf.broker_connection_timeout = 4
+        self.app.conf.task_publish_retry = True
+        self.app.conf.task_publish_retry_policy = {'max_retries': 0}
+        callback = Mock(options={})
+        assert self.b._chord_publish_claim_expires(6, callback) == 8
+
+    def test_publish_claim_budget_with_none_connection_timeout_uses_fallback(self):
+        self.app.conf.broker_connection_timeout = None
+        callback = Mock(options={})
+        assert self.b._chord_publish_claim_expires(6, callback) == 12
 
 
 class test_RedisBackend_chord_part_script(basetest_RedisBackend):
