@@ -195,6 +195,12 @@ def _is_request_ignore_result(request):
     return request.ignore_result
 
 
+#: Side result id written after links/chain are published and cleared once
+#: SUCCESS is stored. Request.on_failure uses it when a pool child is lost
+#: between those two steps (#10954).
+CALLBACKS_DISPATCHED_SUFFIX = '-celery-cb-sent'
+
+
 class Backend:
     READY_STATES = states.READY_STATES
     UNREADY_STATES = states.UNREADY_STATES
@@ -294,6 +300,55 @@ class Backend:
             self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
+
+    def callbacks_dispatched_key(self, task_id):
+        """Return the side result id for #10954's callbacks-sent marker."""
+        return f'{task_id}{CALLBACKS_DISPATCHED_SUFFIX}'
+
+    def mark_callbacks_dispatched(self, task_id, result, request=None):
+        """Record that links/chain were published before SUCCESS is stored.
+
+        Used when a pool child dies after publishing callbacks but before
+        ``mark_as_done`` (#10954). ``rpc://`` is skipped: a lookup there
+        would declare a reply queue as a side effect, same as #10752.
+        """
+        as_uri = getattr(self, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return
+        try:
+            self.store_result(
+                self.callbacks_dispatched_key(task_id),
+                result, states.SUCCESS, request=request,
+            )
+        except Exception:  # pylint: disable=broad-except
+            # Marker is best-effort; failure here must not fail the task.
+            logger.debug(
+                'Failed to store callbacks-dispatched marker for %s',
+                task_id, exc_info=True,
+            )
+
+    def get_callbacks_dispatched(self, task_id):
+        """Return marker meta if callbacks were published, else ``None``."""
+        as_uri = getattr(self, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return None
+        try:
+            meta = self.get_task_meta(self.callbacks_dispatched_key(task_id))
+        except Exception:  # pylint: disable=broad-except
+            return None
+        if meta.get('status') == states.SUCCESS:
+            return meta
+        return None
+
+    def clear_callbacks_dispatched(self, task_id):
+        """Drop the #10954 marker once SUCCESS is stored."""
+        try:
+            self.forget(self.callbacks_dispatched_key(task_id))
+        except Exception:  # pylint: disable=broad-except
+            logger.debug(
+                'Failed to clear callbacks-dispatched marker for %s',
+                task_id, exc_info=True,
+            )
 
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None,

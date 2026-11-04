@@ -12,6 +12,11 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- When a pool child is lost after publishing a task's link or next chain step
+  but before storing ``SUCCESS``, the parent now promotes a short-lived
+  callbacks-sent marker to ``SUCCESS`` instead of recording ``FAILURE`` and
+  running the errback beside the link (#10954). Publish-then-store order is
+  unchanged so ``result.children`` stays populated (#1936).
 - An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
   worker is now logged at ``ERROR`` level instead of being recorded as a task
   failure. The task's errbacks no longer run for a task that succeeded, and a

@@ -75,9 +75,10 @@ class test_trace(TraceCase):
         self.trace(add_with_success, (2, 2), {})
         add_with_success.on_success.assert_called()
 
-    def test_trace_stores_success_before_publishing_link(self):
-        # #10954: SUCCESS must be stored before the link is published so a
-        # WorkerLost between the two cannot record FAILURE after the link.
+    def test_trace_publishes_link_before_storing_success(self):
+        # #10954 / #1936: keep publish-then-store so children are populated
+        # and a lost child never drops the link. Mark callbacks dispatched
+        # between the two so on_failure can promote SUCCESS if needed.
         order = []
 
         @self.app.task(shared=False)
@@ -92,8 +93,11 @@ class test_trace(TraceCase):
         add_parent.backend.mark_as_done.side_effect = (
             lambda *a, **k: order.append('mark_as_done')
         )
-        add_parent.backend.store_result.side_effect = (
-            lambda *a, **k: order.append('store_result')
+        add_parent.backend.mark_callbacks_dispatched.side_effect = (
+            lambda *a, **k: order.append('mark_callbacks_dispatched')
+        )
+        add_parent.backend.clear_callbacks_dispatched.side_effect = (
+            lambda *a, **k: order.append('clear_callbacks_dispatched')
         )
         add_parent.backend.process_cleanup = Mock()
 
@@ -113,9 +117,29 @@ class test_trace(TraceCase):
         finally:
             announce.apply_async = real_apply
 
-        assert order[0] == 'mark_as_done'
         assert 'link' in order
-        assert order.index('mark_as_done') < order.index('link')
+        assert 'mark_callbacks_dispatched' in order
+        assert 'mark_as_done' in order
+        assert order.index('link') < order.index('mark_callbacks_dispatched')
+        assert order.index('mark_callbacks_dispatched') < order.index(
+            'mark_as_done'
+        )
+        assert order.index('mark_as_done') < order.index(
+            'clear_callbacks_dispatched'
+        )
+
+    def test_trace_stores_children_of_link(self):
+        # #1936: the stored result lists the link it published.
+        @self.app.task(shared=False)
+        def announce(result):
+            return result
+
+        self.trace(
+            self.add, (2, 2), {},
+            request={'callbacks': [announce.s()]},
+            eager=False,
+        )
+        assert len(self.app.AsyncResult('id-1').children) == 1
 
     def test_trace_on_success_raises_after_success_was_stored(self):
         @self.app.task(shared=False,
