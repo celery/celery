@@ -551,10 +551,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                                 args=args, kwargs=kwargs)
                 loader_task_init(uuid, task)
                 if track_started:
-                    task.backend.store_result(
-                        uuid, {'pid': pid, 'hostname': hostname}, STARTED,
-                        request=task_request,
-                    )
+                    try:
+                        task.backend.store_result(
+                            uuid, {'pid': pid, 'hostname': hostname}, STARTED,
+                            request=task_request,
+                        )
+                    except Exception as exc:
+                        # The task hasn't run yet. With acks_late its message
+                        # is still unacked: requeue it rather than ack a task
+                        # that never ran.
+                        if (task.acks_late
+                                and task.backend.exception_safe_to_retry(exc)):
+                            raise Reject(exc, requeue=True) from exc
+                        raise
 
                 # -*- TRACE -*-
                 try:
