@@ -1,5 +1,7 @@
 *Note*: Before submitting this pull request, please review our [contributing
-guidelines](https://docs.celeryq.dev/en/main/contributing.html).
+guidelines](https://docs.celeryq.dev/en/main/contributing.html) & [Anti AI spamming Guidelines] (https://github.com/celery/celery/discussions/10932). Before opening an AI based PR make sure you asked
+in the discussion forum or in the related open issues first.
+
 
 ## Description
 

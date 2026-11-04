@@ -18,8 +18,8 @@ from celery import current_app, signals, states
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
-                               TimeLimitExceeded, WorkerLostError)
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
@@ -488,7 +488,9 @@ class Request:
             for stamp in self.stamped_headers:
                 if stamp in revoked_stamps:
                     revoked_header = revoked_stamps[stamp]
-                    stamped_header = self._message.headers['stamps'][stamp]
+                    stamped_header = self.stamps.get(stamp)
+                    if stamped_header is None:
+                        continue
 
                     if isinstance(stamped_header, (list, tuple)):
                         for stamped_value in stamped_header:
@@ -502,7 +504,8 @@ class Request:
                             stamped_header == revoked_header,  # When the header is a single set value
                         ])
                         revoking_header = {stamp: stamped_header}
-                    break
+                    if revoked_by_header:
+                        break
 
         if any((expired, revoked_by_id, revoked_by_header)):
             log_msg = 'Discarding revoked task: %s[%s]'
@@ -704,7 +707,13 @@ class Request:
             return self.on_retry(exc_info)
 
         is_worker_lost = isinstance(exc, WorkerLostError)
-        if is_worker_lost and self._success_was_stored():
+
+        # _success_was_stored() returns the meta dictionary if the task
+        # already stored SUCCESS, or False otherwise. This allows us to reuse
+        # the fetched metadata below without a second backend round-trip.
+        success_meta = self._success_was_stored() if is_worker_lost else False
+
+        if success_meta:
             # The pool child stored SUCCESS and was lost afterwards, e.g. in
             # on_success, a task_postrun receiver or process_cleanup.
             # Recording a failure here would fire the errbacks and count a
@@ -713,11 +722,12 @@ class Request:
                  self.name, self.id, exc)
             if self.task.acks_late:
                 self.acknowledge()
+
             # Emit the success event so Flower/events.State do not stay STARTED.
-            try:
-                result = self.task.backend.get_result(self.id)
-            except Exception:  # pylint: disable=broad-except
-                result = None
+            # Reuse the metadata we just fetched instead of hitting the backend
+            # again from the worker's main process (which can be slow during
+            # an outage).
+            result = success_meta.get('result')
             self.send_event(
                 'task-succeeded',
                 result=saferepr(result, self.task.resultrepr_maxsize),
@@ -809,9 +819,12 @@ class Request:
                   self.task_name, self.id, send_exc, exc_info=True)
             return False
 
-        task.backend.mark_as_retry(
-            self.id, exc, exc_info.traceback, request=request,
-        )
+        # As Task.retry() does: an ignored result isn't stored, so the
+        # retried run wouldn't replace this RETRY with its outcome.
+        if self.store_errors:
+            task.backend.mark_as_retry(
+                self.id, exc, exc_info.traceback, request=request,
+            )
         if task.acks_late:
             self.acknowledge()
         self.send_event('task-retried',
@@ -840,8 +853,32 @@ class Request:
         as_uri = getattr(backend, 'as_uri', None)
         if callable(as_uri) and as_uri() == 'rpc://':
             return False
+
+        # Bounded retry: keep the retry for transient blips, but cap it at
+        # 3 attempts so a down backend can't block the worker's main process
+        # indefinitely. Respect a lower user-configured
+        # result_backend_max_retries via min(). Pass max_retries explicitly
+        # instead of mutating backend.max_retries, which is shared across
+        # threads when result_backend_thread_safe=True. The isinstance guard
+        # is only around the min() computation to tolerate Mock backends in
+        # tests (a non-numeric max_retries falls back to the 3-attempt cap).
+        configured_max_retries = backend.max_retries
+        if isinstance(configured_max_retries, (int, float)):
+            bounded_max_retries = min(configured_max_retries, 3)
+        else:
+            bounded_max_retries = 3
+
         try:
-            return backend.get_state(self.id) == states.SUCCESS
+            meta = backend._ensure_retryable(
+                backend._get_task_meta_for,
+                fallback_exc=BackendGetMetaError,
+                fallback_msg="failed to get meta",
+                task_id=self.id,
+                max_retries=bounded_max_retries,
+            )
+            if meta['status'] == states.SUCCESS:
+                return meta
+            return False
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False

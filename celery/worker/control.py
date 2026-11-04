@@ -202,8 +202,11 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
             # if so, check if any stamps match a revoked stamp
             for expected_header_key, expected_header_value in headers.items():
                 if expected_header_key in req.stamps:
+                    actual_header = req.stamps.get(expected_header_key)
+                    if actual_header is None:
+                        continue
                     expected_header_value = maybe_list(expected_header_value)
-                    actual_header = maybe_list(req.stamps[expected_header_key])
+                    actual_header = maybe_list(actual_header)
                     matching_stamps_for_request = set(actual_header) & set(expected_header_value)
                     # Check any possible match regardless if the stamps are a sequence or not
                     if matching_stamps_for_request:

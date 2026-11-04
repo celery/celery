@@ -12,7 +12,6 @@ from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
 from uuid import UUID
-from weakref import WeakValueDictionary
 
 from billiard.einfo import ExceptionInfo
 from kombu.compression import compress, decompress
@@ -24,14 +23,14 @@ from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.url import maybe_sanitize_url
 
 import celery.exceptions
-from celery import current_app, group, maybe_signature, states
+from celery import chord, current_app, group, maybe_signature, states
 from celery._state import get_current_task
 from celery.app.task import Context
 from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
                                NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
 from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
-from celery.utils.functional import LRUCache, arity_greater
+from celery.utils.functional import LRUCache, arity_greater, maybe_list
 from celery.utils.log import get_logger
 from celery.utils.serialization import (create_exception_cls, ensure_serializable, get_pickleable_exception,
                                         get_pickled_exception, raise_with_context)
@@ -163,6 +162,26 @@ def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **ext
     })
 
 
+def _result_errbacks(sig, app):
+    """Return the id of the result of ``sig`` and the errbacks linked to it.
+
+    A chord's result is that of its body, which the chord's own errbacks
+    are linked to when it runs. For a group, the errbacks of its tasks are
+    collected along with its own; for a chain, only its own. The ids are
+    those given by freezing.
+    """
+    sig = maybe_signature(sig, app=app)
+    errbacks = []
+    while isinstance(sig, chord) and sig.body is not None:
+        errbacks.extend(maybe_list(sig.options.get("link_error")) or [])
+        sig = maybe_signature(sig.body, app=app)
+    errbacks.extend(maybe_list(sig.options.get("link_error")) or [])
+    if isinstance(sig, group):
+        for task in sig.tasks:
+            errbacks.extend(_result_errbacks(task, app)[1])
+    return sig.options.get("task_id"), errbacks
+
+
 class _nulldict(dict):
     def ignore(self, *a, **kw):
         pass
@@ -251,7 +270,7 @@ class Backend:
         self.max_retries = conf.get('result_backend_max_retries', float("inf"))
         self.thread_safe = conf.get('result_backend_thread_safe', False)
 
-        self._pending_results = pending_results_t({}, WeakValueDictionary())
+        self._pending_results = pending_results_t({}, {})
         self._pending_messages = BufferMap(MESSAGE_BUFFER_MAX)
         self.url = url
 
@@ -509,13 +528,25 @@ class Backend:
                 # Store the failures before broadcasting the revoke, so the
                 # revoke handler finds them and keeps them (see _revoke()).
 
+                # Each task calls its own errbacks, which chord.link_error()
+                # links there, and those of the group, each one once.
+                group_errbacks = maybe_list(group_callback.options.get("link_error")) or []
+                task_errbacks = dict(
+                    _result_errbacks(task, self.app)
+                    for task in group_callback.tasks
+                )
+
                 # Handle each task in the group individually
                 for result in frozen_group.results:
                     try:
+                        errbacks = []
+                        for errback in (*task_errbacks.get(result.id, ()), *group_errbacks):
+                            if errback not in errbacks:
+                                errbacks.append(errback)
                         # Create fake request for error callbacks
                         fake_request = _create_fake_task_request(
                             task_id=result.id,
-                            errbacks=group_callback.options.get("link_error", []),
+                            errbacks=errbacks,
                             task_name=getattr(result, 'task', 'unknown')
                         )
 
@@ -793,19 +824,20 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
-    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, **kwargs):
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, max_retries=None, **kwargs):
         """Helper to execute a function with the backend's retry policy."""
         retries = 0
+        limit = self.max_retries if max_retries is None else max_retries
         while True:
             try:
                 return func(*args, **kwargs)
             except Exception as exc:
                 if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < self.max_retries:
+                    if retries < limit:
                         retries += 1
                         logger.warning(
                             'Failed operation %s. Retrying %s more times.',
-                            getattr(func, '__name__', repr(func)), self.max_retries - retries,
+                            getattr(func, '__name__', repr(func)), limit - retries,
                             exc_info=True)
                         try:
                             self.on_backend_retryable_error(exc)
@@ -1451,7 +1483,7 @@ class BaseKeyValueStoreBackend(Backend):
                 self.chord_error_from_stack(callback=callback, exc=chord_error)
             else:
                 try:
-                    callback.delay(ret)
+                    app.amqp._retry_publish(callback.delay, ret)
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Chord %r raised: %r', gid, exc)
                     chord_error = _create_chord_error_with_cause(
