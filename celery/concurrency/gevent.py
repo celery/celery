@@ -2,6 +2,7 @@
 import functools
 import types
 from time import monotonic
+from weakref import ref
 
 from kombu.asynchronous import timer as _timer
 
@@ -43,17 +44,29 @@ class Timer(_timer.Timer):
 
     def __init__(self, *args, **kwargs):
         from gevent import Greenlet, GreenletExit, getcurrent
+        from greenlet import greenlet
 
-        timer = self
+        timer_ref = ref(self)
 
         class _Greenlet(Greenlet):
             def cancel(self, *args, **kwargs):
-                return timer._cancel(self, *args, **kwargs)
+                timer = timer_ref()
+                if timer is not None:
+                    return timer._cancel(self, *args, **kwargs)
+                # A completed one-shot handle must not keep its timer alive.
+                self.canceled = True
+                entry = getattr(self, 'entry', None)
+                if entry is not None:
+                    entry.cancel()
+                return Greenlet.kill(self, *args, **kwargs)
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
         self._getcurrent = getcurrent
         self._kill = Greenlet.kill
+        # Unlike Greenlet.started/bool(Greenlet), the base implementation is
+        # false for a spawn_later callback which has not actually run yet.
+        self._is_active = greenlet.__bool__
         super().__init__(*args, **kwargs)
         self._queue = set()
 
@@ -67,11 +80,16 @@ class Timer(_timer.Timer):
                 if (
                     queued is not g and
                     queued is not current and
-                    getattr(queued, 'entry', None) is entry
+                    getattr(queued, 'entry', None) is entry and
+                    not self._is_active(queued)
                 ):
-                    queued.kill(*args, **kwargs)
+                    # Cancel future iterations without interrupting a later
+                    # iteration already running, or yielding to pending ones.
+                    queued.kill(block=False)
                     self._queue.discard(queued)
         if g is not current:
+            # Preserve kill's arguments/semantics for the explicitly supplied
+            # handle, including when that handle is currently suspended.
             return self._kill(g, *args, **kwargs)
 
     def _enter(self, eta, priority, entry, **kwargs):
@@ -93,13 +111,20 @@ class Timer(_timer.Timer):
 
     def clear(self):
         queue = self._queue
+        # Mark every Entry before any callback can exit and reschedule itself.
+        for g in tuple(queue):
+            g.canceled = True
+            entry = getattr(g, 'entry', None)
+            if entry is not None:
+                entry.cancel()
+        current = self._getcurrent()
         while queue:
             try:
                 g = queue.pop()
-                entry = getattr(g, 'entry', None)
-                if entry is not None:
-                    entry.cancel()
-                g.kill()
+                # clear() keeps its existing force-stop behavior, but must not
+                # kill its own caller or wait for callbacks to accept the kill.
+                if g is not current:
+                    g.kill(block=False)
             except KeyError:
                 pass
 
