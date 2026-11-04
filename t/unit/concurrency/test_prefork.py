@@ -771,12 +771,15 @@ class test_AsynPool:
 
     @staticmethod
     def _run_timers(scheduled):
+        # Capped, so retries that never stop fail the test instead of hanging.
         delays = []
-        while scheduled:
+        for _ in range(100):
+            if not scheduled:
+                return delays
             delay, fun, args = scheduled.pop(0)
             delays.append(delay)
             fun(*args)
-        return delays
+        raise AssertionError('maintain_pool retries never stopped')
 
     @t.skip.if_pypy
     @patch('billiard.pool.Pool._create_worker_process')
