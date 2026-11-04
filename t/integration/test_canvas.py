@@ -2062,6 +2062,31 @@ class test_chord:
         result = c()
         assert result.get() == inputs
 
+    def test_reapplying_frozen_chord_dispatches_body_again(self, manager):
+        """A frozen chord reuses its group id, but each apply is a new run."""
+        if not manager.app.conf.result_backend.startswith('redis'):
+            pytest.skip('Requires redis result backend.')
+
+        redis_connection = get_redis_connection()
+        redis_key = f'frozen-chord-{uuid.uuid4().hex}'
+        redis_connection.delete(redis_key)
+        task = chord(
+            group(add.s(1, 2), add.s(3, 4)),
+            redis_count.si(redis_key),
+        )
+        task.freeze()
+
+        try:
+            first = task.apply_async()
+            first.get(timeout=TIMEOUT)
+            await_redis_count(1, redis_key=redis_key)
+
+            second = task.apply_async()
+            second.get(timeout=TIMEOUT)
+            await_redis_count(2, redis_key=redis_key)
+        finally:
+            redis_connection.delete(redis_key)
+
     def test_group_or_task_countdown_delays_header(self, manager):
         """countdown on group|task must delay header tasks (#7851)."""
         try:
@@ -4043,6 +4068,29 @@ class test_chord:
             result.get(timeout=TIMEOUT)
         # The chord in the group passes the group's errbacks on to its body
         await_redis_echo(['group', 'chord'], redis_key=redis_key)
+
+
+class test_xmap_xstarmap:
+
+    def test_starmap_keeps_frozen_id_and_link(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        get_redis_connection().delete('redis-echo')
+        sig = add.starmap([(1, 1), (2, 2)])
+        sig.link(redis_echo.si('starmap done'))
+        frozen = sig.freeze()
+
+        result = sig.apply_async()
+
+        assert result.id == frozen.id
+        assert result.get(timeout=TIMEOUT) == [2, 4]
+        await_redis_echo({'starmap done'}, timeout=10)
+
+    def test_starmap_in_a_group_and_a_chain(self, manager):
+        in_group = group(add.starmap([(1, 1), (2, 2)]), add.s(3, 3))
+        assert in_group.delay().get(timeout=TIMEOUT) == [[2, 4], 6]
+        in_chain = chain(add.si(1, 1), add.starmap([(1, 1), (2, 2)]))
+        assert in_chain.delay().get(timeout=TIMEOUT) == [2, 4]
 
 
 class test_signature_serialization:
