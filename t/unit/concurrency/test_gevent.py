@@ -152,7 +152,7 @@ class test_Timer_real:
         assert called.wait(timeout=2)
         first.join(timeout=2)
         assert first.dead
-        pending, = [g for g in timer.queue if g.entry is first.entry and g is not first]
+        pending, = (g for g in timer.queue if g.entry is first.entry and g is not first)
         # Greenlet.started is true even for spawn_later's waiting greenlets.
         assert not greenlet.__bool__(pending)
         first.cancel()
