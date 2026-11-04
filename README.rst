@@ -375,7 +375,7 @@ Transports and Backends
     alias of ``celery[memcache]``, kept for backward compatibility.
 
 :``celery[cassandra]``:
-    for using Apache Cassandra/Astra DB as a result backend with the DataStax driver.
+    for using Apache Cassandra/ScyllaDB/Astra DB as a result backend with the DataStax driver.
 
 :``celery[azureblockblob]``:
     for using Azure Storage as a result backend (using ``azure-storage``)
