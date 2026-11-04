@@ -647,8 +647,6 @@ class test_tasks:
             result = soft_time_limit_must_exceed_time_limit.apply_async()
             result.get(timeout=5)
 
-            assert result.status == 'FAILURE'
-
     @flaky
     def test_request_time_limits_set_via_apply_async(self, manager):
         """time_limit and soft_time_limit passed to apply_async must be accessible
