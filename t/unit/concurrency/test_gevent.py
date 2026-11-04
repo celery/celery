@@ -53,6 +53,43 @@ class test_Timer:
         g = x._Greenlet()
         g.cancel()
 
+    def test_cancel_cancels_entry_and_pending_greenlets(self):
+        import gevent
+        gevent.Greenlet = type('Greenlet', (), {'kill': Mock()})
+        x = Timer()
+        entry = Mock()
+
+        g1 = x._Greenlet()
+        g1.entry = entry
+        g1.kill = Mock()
+
+        g2 = x._Greenlet()
+        g2.entry = entry
+        g2.kill = Mock()
+
+        other_g = x._Greenlet()
+        other_g.entry = Mock()
+        other_g.kill = Mock()
+
+        # Simulate call_repeatedly after the first greenlet (g1) has exited
+        # and a subsequent iteration (g2) is waiting in the queue.
+        x._queue.add(g2)
+        x._queue.add(other_g)
+
+        g1.cancel()
+
+        assert g1.canceled is True
+        entry.cancel.assert_called_once_with()
+        g2.kill.assert_called_once_with()
+        assert g2 not in x._queue
+        assert other_g in x._queue
+        other_g.kill.assert_not_called()
+
+        x.clear()
+        other_g.entry.cancel.assert_called_once_with()
+        other_g.kill.assert_called_once_with()
+        assert not x._queue
+
 
 class test_TaskPool:
 

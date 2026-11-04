@@ -42,15 +42,37 @@ def apply_timeout(target, args=(), kwargs=None, callback=None,
 class Timer(_timer.Timer):
 
     def __init__(self, *args, **kwargs):
-        from gevent import Greenlet, GreenletExit
+        from gevent import Greenlet, GreenletExit, getcurrent
+
+        timer = self
 
         class _Greenlet(Greenlet):
-            cancel = Greenlet.kill
+            def cancel(self, *args, **kwargs):
+                return timer._cancel(self, *args, **kwargs)
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
+        self._getcurrent = getcurrent
+        self._kill = Greenlet.kill
         super().__init__(*args, **kwargs)
         self._queue = set()
+
+    def _cancel(self, g, *args, **kwargs):
+        g.canceled = True
+        entry = getattr(g, 'entry', None)
+        current = self._getcurrent()
+        if entry is not None:
+            entry.cancel()
+            for queued in tuple(self._queue):
+                if (
+                    queued is not g and
+                    queued is not current and
+                    getattr(queued, 'entry', None) is entry
+                ):
+                    queued.kill(*args, **kwargs)
+                    self._queue.discard(queued)
+        if g is not current:
+            return self._kill(g, *args, **kwargs)
 
     def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
@@ -73,7 +95,11 @@ class Timer(_timer.Timer):
         queue = self._queue
         while queue:
             try:
-                queue.pop().kill()
+                g = queue.pop()
+                entry = getattr(g, 'entry', None)
+                if entry is not None:
+                    entry.cancel()
+                g.kill()
             except KeyError:
                 pass
 
