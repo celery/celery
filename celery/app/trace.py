@@ -562,6 +562,10 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # that never ran.
                         if (task.acks_late
                                 and task.backend.exception_safe_to_retry(exc)):
+                            logger.warning(
+                                'Task %s[%s] requeued: storing STARTED '
+                                'failed: %r',
+                                get_task_name(task_request, name), uuid, exc)
                             raise Reject(exc, requeue=True) from exc
                         raise
 

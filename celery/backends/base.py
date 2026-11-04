@@ -1364,7 +1364,7 @@ class BaseKeyValueStoreBackend(Backend):
         # partitioning or lost workers. This issue involved a race condition
         # making a lost task overwrite the last successful result in the
         # result backend.
-        current_meta = self._get_task_meta_for(task_id)
+        current_meta = self._get_task_meta_for_store(task_id)
 
         if current_meta['status'] == states.SUCCESS:
             return result
@@ -1383,6 +1383,10 @@ class BaseKeyValueStoreBackend(Backend):
 
     def _delete_group(self, group_id):
         self.delete(self.get_key_for_group(group_id))
+
+    def _get_task_meta_for_store(self, task_id):
+        """Read the current task meta-data before storing a new state."""
+        return self._get_task_meta_for(task_id)
 
     def _get_task_meta_for(self, task_id):
         """Get task meta-data for a task by id."""
