@@ -798,8 +798,30 @@ class test_AsynPool:
             assert records[0].levelname == 'INFO'
             assert 'pid:4242' in records[0].getMessage()
             assert 'max_tasks_per_child=10' in records[0].getMessage()
+            assert 'starting a replacement' in records[0].getMessage()
         else:
             assert not records
+
+    @t.skip.if_pypy
+    @patch('billiard.pool.Pool._create_worker_process')
+    def test_process_down_recycled_child_during_shutdown(
+            self, _create_worker_process, caplog):
+        # No replacement is started once the pool has left RUN.
+        pool = asynpool.AsynPool(processes=1, threads=False,
+                                 maxtasksperchild=10)
+        pool._create_process_handlers(Mock(name='hub'))
+        pool.process_flush_queues = Mock(name='process_flush_queues')
+        pool._state = asynpool.TERMINATE
+        proc = Mock(name='proc', dead=False, pid=4242,
+                    exitcode=asynpool.EX_RECYCLE,
+                    synqR_fd=None, synqW_fd=None, _sentinel_poll=None)
+
+        with caplog.at_level('INFO', logger='celery.concurrency.asynpool'):
+            pool.on_process_down(proc)
+
+        records = [r for r in caplog.records if 'recycled' in r.getMessage()]
+        assert len(records) == 1
+        assert 'starting a replacement' not in records[0].getMessage()
 
     @t.skip.if_pypy
     def test_flush_no_synack_discards_unaccepted_jobs(self):

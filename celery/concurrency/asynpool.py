@@ -768,13 +768,15 @@ class AsynPool(_pool.Pool):
             if getattr(proc, 'dead', None):
                 return
             if proc.exitcode == EX_RECYCLE:
-                # Issue #8916: the child reached --max-tasks-per-child or
-                # --max-memory-per-child, which billiard only logs at DEBUG.
+                # Issue #8916: billiard logs a recycle after
+                # max_tasks_per_child only at DEBUG, and nothing in the
+                # parent says the child was replaced.
                 logger.info(
                     'Child process pid:%r recycled (max_tasks_per_child=%r, '
-                    'max_memory_per_child=%r), starting a replacement',
+                    'max_memory_per_child=%r)%s',
                     proc.pid, self._maxtasksperchild,
                     getattr(self, '_max_memory_per_child', None),
+                    ', starting a replacement' if self._state == RUN else '',
                 )
             process_flush_queues(proc)
             _remove_from_index(

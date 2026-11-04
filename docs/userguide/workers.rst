@@ -899,6 +899,14 @@ logs a message at ``INFO`` level, for example:
 
     [INFO/MainProcess] Child process pid:4242 recycled (max_tasks_per_child=100, max_memory_per_child=None), starting a replacement
 
+The ``starting a replacement`` suffix is left out when the worker is shutting
+down. If max memory per child was the reason, the child also logs a warning
+with its memory usage just before this line.
+
+With a low limit such as ``--max-tasks-per-child=1`` this line is logged once
+per task. To hide it, set the ``celery.concurrency.asynpool`` logger to
+``WARNING``.
+
 .. _worker-max-memory-per-child:
 
 Max memory per child setting
