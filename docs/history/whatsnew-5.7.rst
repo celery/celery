@@ -37,7 +37,7 @@ While this version is **mostly** backward compatible with previous versions
 it's important that you read the following section as this release
 is a new major version.
 
-This version is officially supported on CPython 3.9, 3.10, 3.11, 3.12 and 3.13,
+This version is officially supported on CPython 3.10, 3.11, 3.12, 3.13 and 3.14,
 and is also supported on PyPy3.11+.
 
 .. _`website`: https://celery.readthedocs.io
@@ -61,7 +61,7 @@ Preface
 The 5.7.0 release is a new feature release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
-This release has been codenamed `Recovery <https://www.youtube.com/watch?v=MaqlsAmlbzo>`_.
+This release has been codenamed `Collider <https://www.youtube.com/watch?v=MaqlsAmlbzo>`_.
 
 This is the last version to support Python 3.11.
 
@@ -137,7 +137,7 @@ Step 5: Upgrade to Celery 5.7
 
 At this point you can upgrade your workers and clients with the new version.
 
-.. _v560-important:
+.. _v570-important:
 
 Important Notes
 ===============
@@ -171,6 +171,7 @@ Redis
 ~~~~~
 
 redis-py 6.4.0 is the new minimum required version.
+redis server 6.2.0 is the new minimum required version.
 
 
 SQLAlchemy
@@ -181,13 +182,13 @@ SQLAlchemy 1.4.x to 2.1.x is now supported in Celery v5.7.
 Billiard
 ~~~~~~~~
 
-Minimum required version is now 4.3.0.
+Minimum required version is now 4.3.0+.
 
 Django
 ~~~~~~
 
-Minimum django version is bumped to v2.2.28.
-Also added --skip-checks flag to bypass django core checks.
+Minimum django version is bumped to Django>=3.2.1.
+
 
 .. _v570-news:
 
