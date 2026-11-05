@@ -8,6 +8,7 @@ chord must fail instead of leaving its body PENDING.
 from __future__ import annotations
 
 import json
+import sys
 from contextlib import contextmanager
 from time import monotonic, sleep
 
@@ -24,6 +25,16 @@ pytestmark = pytest.mark.timeout(180)
 
 RESULT_TIMEOUT = 30
 RETRY_INTERVAL = 0.5
+
+
+@pytest.fixture(params=[
+    'threads',
+    # The children must be forked to see the tasks defined in chord_app.
+    pytest.param('prefork', marks=pytest.mark.skipif(
+        sys.platform == 'darwin', reason='macOS spawns pool children')),
+])
+def pool(request):
+    return request.param
 
 
 @pytest.fixture
@@ -92,10 +103,10 @@ def chord_app(celery_rabbitmq_broker: RabbitMQTestBroker, tmp_path):
 
 
 @contextmanager
-def _worker(app):
+def _worker(app, pool):
     hostname = f'chord-unlock-{uuid()}@test'
-    # Threads, so that both header tasks and chord_unlock run at once.
-    with start_worker(app, pool='threads', concurrency=3,
+    # Three, so that both header tasks and chord_unlock run at once.
+    with start_worker(app, pool=pool, concurrency=3,
                       queues=[queue.name for queue in app.conf.task_queues],
                       hostname=hostname,
                       perform_ping_check=False, shutdown_timeout=30):
@@ -160,10 +171,10 @@ def _refuse_publishes(broker, queue):
         broker.container.exec_run(['rabbitmqctl', 'clear_policy', policy])
 
 
-def test_chord_waits_for_its_header(chord_app, tmp_path):
+def test_chord_waits_for_its_header(chord_app, pool, tmp_path):
     # chord_unlock retries while the header runs, and that must not fail it.
     app = chord_app
-    with _worker(app):
+    with _worker(app, pool):
         result = _apply_chord(app)
         _wait_for(lambda: len(_lines(tmp_path / 'retries')) >= 2,
                   'chord_unlock did not retry')
@@ -174,19 +185,19 @@ def test_chord_waits_for_its_header(chord_app, tmp_path):
     assert not (tmp_path / 'errback').exists()
 
 
-def test_chord_fails_when_chord_unlock_runs_out_of_retries(chord_app, tmp_path):
+def test_chord_fails_when_chord_unlock_runs_out_of_retries(chord_app, pool, tmp_path):
     app = chord_app
-    with _worker(app):
+    with _worker(app, pool):
         # The header waits for the gate, so both retries find it unfinished.
         result = _apply_chord(app, max_retries=2)
         _assert_chord_failed(result, tmp_path)
 
 
 def test_chord_fails_when_chord_unlock_retry_is_refused(
-        chord_app, celery_rabbitmq_broker, tmp_path):
+        chord_app, celery_rabbitmq_broker, pool, tmp_path):
     app = chord_app
     body_queue = app.conf.task_routes['chord_unlock_retry.body']['queue']
-    with _worker(app):
+    with _worker(app, pool):
         result = _apply_chord(app)
         # The first chord_unlock must be delivered before the queue refuses
         # messages, so that only its retry is refused.
