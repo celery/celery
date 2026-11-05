@@ -15,15 +15,15 @@ import pytest
 from kombu import Queue
 from pytest_celery import RabbitMQTestBroker
 
-from celery import Celery, chord, states, uuid
+from celery import Celery, chord, signals, states, uuid
 from celery.contrib.testing.worker import start_worker
 from celery.exceptions import ChordError
 from celery.result import allow_join_result
 
 pytestmark = pytest.mark.timeout(180)
 
-HEADER_SECONDS = 4
 RESULT_TIMEOUT = 30
+RETRY_INTERVAL = 0.5
 
 
 @pytest.fixture
@@ -47,12 +47,17 @@ def chord_app(celery_rabbitmq_broker: RabbitMQTestBroker, tmp_path):
             'chord_unlock_retry.body': {'queue': body_queue.name},
             'chord_unlock_retry.errback': {'queue': errback_queue.name},
         },
-        result_chord_retry_interval=0.5,
+        result_chord_retry_interval=RETRY_INTERVAL,
     )
+    gate = tmp_path / 'gate'
 
     @app.task(name='chord_unlock_retry.header', shared=False)
     def header(value):
-        sleep(HEADER_SECONDS)
+        # Wait until the test opens the gate, so the test decides when the
+        # header finishes.  A file works whatever the pool.
+        deadline = monotonic() + RESULT_TIMEOUT
+        while not gate.exists() and monotonic() < deadline:
+            sleep(0.05)
         return value
 
     @app.task(name='chord_unlock_retry.body', shared=False)
@@ -66,12 +71,20 @@ def chord_app(celery_rabbitmq_broker: RabbitMQTestBroker, tmp_path):
         with (tmp_path / 'errback').open('a') as stream:
             stream.write(f'{task_id}\n')
 
+    def count_retry(sender=None, **_):
+        if sender is not None and sender.name == 'celery.chord_unlock':
+            with (tmp_path / 'retries').open('a') as stream:
+                stream.write('retry\n')
+
+    signals.task_retry.connect(count_retry, weak=False)
     try:
         with app.connection_for_write() as connection:
             for queue in queues:
                 queue(connection).declare()
         yield app
     finally:
+        signals.task_retry.disconnect(count_retry)
+        gate.touch()
         with app.connection_for_write() as connection:
             for queue in queues:
                 queue(connection).delete()
@@ -96,6 +109,10 @@ def _apply_chord(app, **options):
     ).apply_async(**options)
 
 
+def _lines(path):
+    return path.read_text().splitlines() if path.exists() else []
+
+
 def _wait_for(predicate, message, timeout=RESULT_TIMEOUT):
     deadline = monotonic() + timeout
     while monotonic() < deadline:
@@ -107,15 +124,18 @@ def _wait_for(predicate, message, timeout=RESULT_TIMEOUT):
 
 def _assert_chord_failed(result, tmp_path):
     with allow_join_result():
-        with pytest.raises(ChordError):
+        with pytest.raises(ChordError, match='could not be retried'):
             result.get(timeout=RESULT_TIMEOUT)
     assert result.state == states.FAILURE
-    errback = tmp_path / 'errback'
-    _wait_for(errback.exists, 'the errback did not run')
-    # Let a late duplicate show up before counting.
-    sleep(1)
-    assert errback.read_text().splitlines() == [result.id]
-    assert not (tmp_path / 'body').exists()
+    _wait_for(lambda: _lines(tmp_path / 'errback'), 'the errback did not run')
+    # Finish the header, and give a stray chord_unlock time to poll again:
+    # a failed chord must not run its body afterwards.
+    (tmp_path / 'gate').touch()
+    with allow_join_result():
+        result.parent.join(timeout=RESULT_TIMEOUT)
+    sleep(3 * RETRY_INTERVAL)
+    assert _lines(tmp_path / 'errback') == [result.id]
+    assert _lines(tmp_path / 'body') == []
 
 
 @contextmanager
@@ -139,6 +159,9 @@ def test_chord_waits_for_its_header(chord_app, tmp_path):
     app = chord_app
     with _worker(app):
         result = _apply_chord(app)
+        _wait_for(lambda: len(_lines(tmp_path / 'retries')) >= 2,
+                  'chord_unlock did not retry')
+        (tmp_path / 'gate').touch()
         with allow_join_result():
             assert result.get(timeout=RESULT_TIMEOUT) == 3
     assert (tmp_path / 'body').read_text().splitlines() == ['[1, 2]']
@@ -148,7 +171,7 @@ def test_chord_waits_for_its_header(chord_app, tmp_path):
 def test_chord_fails_when_chord_unlock_runs_out_of_retries(chord_app, tmp_path):
     app = chord_app
     with _worker(app):
-        # The header takes longer than the two retries 0.5 s apart.
+        # The header waits for the gate, so both retries find it unfinished.
         result = _apply_chord(app, max_retries=2)
         _assert_chord_failed(result, tmp_path)
 
@@ -165,5 +188,7 @@ def test_chord_fails_when_chord_unlock_retry_is_refused(
             queue = app.amqp.queues[body_queue](connection)
             _wait_for(lambda: queue.queue_declare(passive=True).message_count == 0,
                       'the worker did not receive chord_unlock')
+        # The header waits for the gate, so the policy can take as long as
+        # it needs: no retry finds the header done first.
         with _refuse_publishes(celery_rabbitmq_broker, body_queue):
             _assert_chord_failed(result, tmp_path)
