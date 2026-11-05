@@ -2,7 +2,7 @@
 
 |build-status| |coverage| |license| |wheel| |semgrep| |pyversion| |pyimp| |ocbackerbadge| |ocsponsorbadge|
 
-:Version: 5.7.0rc1 (Collider)
+:Version: 5.7.0 (Collider)
 :Web: https://docs.celeryq.dev/en/stable/index.html
 :Download: https://pypi.org/project/celery/
 :Source: https://github.com/celery/celery/
@@ -120,18 +120,20 @@ in such a way that the client enqueues an URL to be requested by a worker.
 What do I need?
 ===============
 
-Celery version 5.6.x runs on:
+Celery version 5.7.x runs on:
 
-- Python (3.9, 3.10, 3.11, 3.12, 3.13)
-- PyPy3.9+ (v7.3.12+)
+- Python (3.11+)
+- PyPy3.11+ (v8+)
 
-This is the last version of Celery which will support Python 3.9.
-Celery v5.7.x will work on Python 3.10 or newer versions.
+This is the last version of Celery which will support Python 3.11.
+Celery v5.8.x or 6.x will work on Python 3.12 or newer versions.
 
 If you're running an older version of Python, you need to be running
 an older version of Celery:
 
 
+- Python 3.10: Celery 5.6 or earlier.
+- Python 3.9: Celery 5.6 or earlier.
 - Python 3.8: Celery 5.5 or earlier.
 - Python 3.7: Celery 5.2 or earlier.
 - Python 3.6: Celery 5.1 or earlier.
@@ -470,7 +472,7 @@ pip commands:
     $ pip install https://github.com/celery/billiard/zipball/main#egg=billiard
     $ pip install https://github.com/celery/py-amqp/zipball/main#egg=amqp
     $ pip install https://github.com/celery/kombu/zipball/main#egg=kombu
-    $ pip install https://github.com/celery/vine/zipball/main#egg=vine
+    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
 
 With git
 ~~~~~~~~
