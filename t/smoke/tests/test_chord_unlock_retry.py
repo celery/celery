@@ -93,12 +93,18 @@ def chord_app(celery_rabbitmq_broker: RabbitMQTestBroker, tmp_path):
 
 @contextmanager
 def _worker(app):
+    hostname = f'chord-unlock-{uuid()}@test'
     # Threads, so that both header tasks and chord_unlock run at once.
     with start_worker(app, pool='threads', concurrency=3,
                       queues=[queue.name for queue in app.conf.task_queues],
-                      hostname=f'chord-unlock-{uuid()}@test',
+                      hostname=hostname,
                       perform_ping_check=False, shutdown_timeout=30):
-        yield
+        try:
+            yield
+        finally:
+            # Otherwise the worker's event loop sees the stop only when its
+            # poll times out, up to 10 s later.
+            app.control.shutdown(destination=[hostname])
 
 
 def _apply_chord(app, **options):
