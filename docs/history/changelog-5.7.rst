@@ -14,7 +14,7 @@ an overview of what's new in Celery v5.7.0.
 :release-date: 2026-11-05
 :release-by: Asif Saif Uddin
 
-Celery v5.7.0 Stable Release is now available for testing and deploy to production.
+Celery v5.7.0 Stable Release is now available for testing and deploy in production.
 Please help us test this version and report any issues.
 
 
@@ -71,7 +71,7 @@ Celery Beat and Scheduling
 * Use Cuba's 2025 fall-back in the midnight DST tests (`:ghpull:`11011`).
 
 Utilities and Data Structures
----------------------------
+-----------------------------
 
 * Don't expire or evict re-added ``LimitedSet`` items using their old timestamp (`:ghpull:`10758`).
 * Give entries copied by ``LimitedSet.update()`` this set's sequence numbers (`:ghpull:`10943`).
@@ -79,12 +79,12 @@ Utilities and Data Structures
 * Fix ``MultiParser`` to honor its configured ``Node`` class (`:ghpull:`10938`).
 
 Application and Configuration
---------------------------
+-----------------------------
 
 * Raise a clear error when ``@shared_task`` is applied twice (`:ghpull:`10889`).
 
 Documentation and Developer Experience
----------------------------------
+--------------------------------------
 
 * Fix an incorrect sentence in the user guide (`:ghpull:`10902`).
 * Document the quorum queue delivery limit (`:ghpull:`10926`).
@@ -93,7 +93,7 @@ Documentation and Developer Experience
 * Add guidance for AI agents in the Celery project (`:ghpull:`10999`).
 
 Dependencies and Packaging
------------------------
+--------------------------
 
 * Update ``click-plugins`` requirement to ``>=1.1.1.2`` (`:ghpull:`10899`).
 * Update Django requirement to ``>=3.2.1`` (`:ghpull:`10816`).
@@ -104,7 +104,7 @@ Dependencies and Packaging
 * Update Kombu to ``5.7.0`` (`:ghpull:`11007`).
 
 Development Dependencies
-----------------------
+------------------------
 
 * Update GitHub CodeQL action to ``4.39.0`` and ``4.39.1`` (`:ghpull:`10900`, :ghpull:`10974`).
 * Update Pydantic to ``2.14.1`` (`:ghpull:`10903`).
@@ -217,6 +217,7 @@ Other
 
 - Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
 - Fix invalid Bandit baseline JSON and validate it before commit (#10766)
+
 
 .. _version-5.7.0b1:
 
