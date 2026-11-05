@@ -166,7 +166,7 @@ pip commands:
     $ pip install https://github.com/celery/billiard/zipball/main#egg=billiard
     $ pip install https://github.com/celery/py-amqp/zipball/main#egg=amqp
     $ pip install https://github.com/celery/kombu/zipball/main#egg=kombu
-    $ pip install https://github.com/celery/vine/zipball/main#egg=vine
+    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
 
 With git
 ~~~~~~~~
