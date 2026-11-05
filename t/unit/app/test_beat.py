@@ -1951,8 +1951,10 @@ class test_BeatPidbox:
         # join timeout and then warned that the thread would not die.
         pb, _ = self.get_pidbox()
         pb.join_timeout = 0.3
+        backing_off_started = Event()
 
         def backing_off(errback, max_retries, callback=None, **kwargs):
+            backing_off_started.set()
             # Tolerate a missing callback instead of raising TypeError,
             # so dropping it from _connect() shows up here as a thread
             # that will not stop rather than an unrelated crash.
@@ -1966,7 +1968,8 @@ class test_BeatPidbox:
             cfr.return_value.ensure_connection.side_effect = backing_off
             with self._fanout(pb):
                 pb.start()
-                sleep(0.1)
+                # Stop during the backoff, not before the thread gets there.
+                assert backing_off_started.wait(timeout=10), 'never connected'
                 with patch('celery.beat.warning') as warning:
                     pb.stop()
         assert pb.thread is None        # it really did stop
