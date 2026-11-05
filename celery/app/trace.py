@@ -21,6 +21,7 @@ from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.app.task import get_actual_ignore_result
+from celery.backends.base import store_retry_timeout
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
@@ -451,7 +452,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 priority=priority,
             )
 
-    def trace_task(uuid, args, kwargs, request=None):
+    def _trace_task(uuid, args, kwargs, request=None):
         # R      - is the possibly prepared return value.
         # I      - is the Info object.
         # T      - runtime
@@ -561,7 +562,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # is still unacked: requeue it rather than ack a task
                         # that never ran.
                         if (task.acks_late
-                                and task.backend.exception_safe_to_retry(exc)):
+                                and task.backend.store_error_safe_to_retry(exc)):
                             logger.warning(
                                 'Task %s[%s] requeued: storing STARTED '
                                 'failed: %r',
@@ -708,6 +709,19 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
             if task_request is not None:
                 I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
+
+    store_retry = None if eager else app.conf.result_backend_store_retry_timeout
+    if not store_retry:
+        return _trace_task
+
+    def trace_task(uuid, args, kwargs, request=None):
+        # Stores made while the task runs wait out a short backend outage.
+        # Stores from the worker's main process, outside this, fail fast.
+        token = store_retry_timeout.set(store_retry)
+        try:
+            return _trace_task(uuid, args, kwargs, request)
+        finally:
+            store_retry_timeout.reset(token)
 
     return trace_task
 

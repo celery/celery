@@ -784,12 +784,6 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def get(self, key):
         return self.client.get(key)
 
-    def _get_task_meta_for_store(self, task_id):
-        # set() retries the write with retry_policy. Retry this read the
-        # same way, or a short outage fails the store before the write is
-        # tried. Reads by clients (AsyncResult.state) still fail fast.
-        return self.ensure(self._get_task_meta_for, (task_id,))
-
     def mget(self, keys):
         return self.client.mget(keys)
 
