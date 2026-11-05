@@ -9,6 +9,7 @@ import sys
 import time
 import warnings
 from collections import deque, namedtuple
+from contextvars import ContextVar
 from datetime import timedelta
 from functools import partial
 from uuid import UUID
@@ -56,6 +57,12 @@ EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 COMPRESSED_PAYLOAD_MAGIC = b'\x00celery-compressed\x00'
 
 logger = get_logger(__name__)
+
+#: Seconds that :meth:`Backend.store_result` keeps retrying an error that is
+#: safe to retry, or :const:`None` to raise it at once. The worker sets it
+#: while it runs a task (see :func:`celery.app.trace.build_tracer`), so
+#: stores made from the worker's main process still fail fast.
+store_retry_timeout = ContextVar('store_retry_timeout', default=None)
 
 MESSAGE_BUFFER_MAX = 8192
 
@@ -868,17 +875,35 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
-        # Pass the values by position, as 5.6 did: backends outside Celery,
-        # such as django-celery-results, name these parameters differently.
-        self._ensure_retryable(
-            self._store_result,
-            task_id, result, state, traceback,
-            fallback_exc=partial(BackendStoreError, task_id=task_id, state=state),
-            fallback_msg="failed to store result on the backend",
-            request=request,
-            **kwargs
-        )
-        return result
+        timeout = store_retry_timeout.get()
+        deadline = None if not timeout else time.monotonic() + timeout
+        retries = 0
+        while True:
+            try:
+                # Pass the values by position, as 5.6 did: backends outside
+                # Celery, such as django-celery-results, name these
+                # parameters differently.
+                self._ensure_retryable(
+                    self._store_result,
+                    task_id, result, state, traceback,
+                    fallback_exc=partial(BackendStoreError, task_id=task_id, state=state),
+                    fallback_msg="failed to store result on the backend",
+                    request=request,
+                    **kwargs
+                )
+                return result
+            except Exception as exc:
+                remaining = 0 if deadline is None else deadline - time.monotonic()
+                if remaining <= 0 or not self.store_error_safe_to_retry(exc):
+                    raise
+                retries += 1
+                sleep_amount = min(get_exponential_backoff_interval(
+                    self.base_sleep_between_retries_ms, retries,
+                    self.max_sleep_between_retries_ms, True) / 1000, remaining)
+                logger.warning(
+                    'Storing %s for task %s failed: %r. Retrying in %.2fs.',
+                    state, task_id, exc, sleep_amount)
+                self._sleep(sleep_amount)
 
     def forget(self, task_id):
         self._cache.pop(task_id, None)
@@ -926,6 +951,16 @@ class Backend:
         to define which exceptions are safe.
         """
         return False
+
+    def store_error_safe_to_retry(self, exc):
+        """Check if a failed :meth:`store_result` is safe to retry.
+
+        True if the error, or the error that a :exc:`BackendStoreError`
+        was raised from, is safe to retry.
+        """
+        if isinstance(exc, BackendStoreError) and exc.__cause__ is not None:
+            exc = exc.__cause__
+        return self.exception_safe_to_retry(exc)
 
     def on_backend_retryable_error(self, exc):
         """Hook called before retrying a recoverable backend exception."""

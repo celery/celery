@@ -1366,6 +1366,48 @@ class test_trace(TraceCase):
         successful_requests.discard(task_id)
         self.app.conf.worker_deduplicate_successful_tasks = False
 
+    def _track_started_task(self, acks_late, safe_to_retry):
+        ran = Mock(name='body')
+
+        @self.app.task(shared=False, track_started=True, acks_late=acks_late)
+        def add(x, y):
+            ran()
+            return x + y
+
+        add.backend = Mock(name='backend')
+        add.backend.store_result.side_effect = ConnectionError('backend gone')
+        add.backend.store_error_safe_to_retry.return_value = safe_to_retry
+        return add, ran
+
+    def test_track_started_backend_unavailable__acks_late_requeues(self):
+        add, ran = self._track_started_task(acks_late=True, safe_to_retry=True)
+
+        with pytest.raises(Reject) as excinfo:
+            self.trace(add, (2, 2), {}, eager=False)
+
+        assert excinfo.value.requeue is True
+        assert isinstance(excinfo.value.reason, ConnectionError)
+        ran.assert_not_called()
+        add.backend.mark_as_failure.assert_not_called()
+
+    def test_track_started_backend_unavailable__without_acks_late(self):
+        add, ran = self._track_started_task(acks_late=False, safe_to_retry=True)
+
+        with patch('celery.app.trace.report_internal_error'):
+            self.trace(add, (2, 2), {}, eager=False)
+
+        ran.assert_not_called()
+        add.backend.mark_as_failure.assert_called()
+
+    def test_track_started_store_error_not_safe_to_retry(self):
+        add, ran = self._track_started_task(acks_late=True, safe_to_retry=False)
+
+        with patch('celery.app.trace.report_internal_error'):
+            self.trace(add, (2, 2), {}, eager=False)
+
+        ran.assert_not_called()
+        add.backend.mark_as_failure.assert_called()
+
     def test_ignore_result_priority__request_overrides_task_true(self):
         @self.app.task(shared=False)
         def add(x, y):

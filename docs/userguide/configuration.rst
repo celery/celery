@@ -933,6 +933,31 @@ Default: 10000
 This specifies the maximum sleep time between two backend operation retry.
 
 
+.. setting:: result_backend_store_retry_timeout
+
+``result_backend_store_retry_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.7
+
+Default: 20.0 seconds.
+
+How long the worker keeps retrying to store a task's state (``STARTED``,
+the result, or the failure) while it runs the task, when the error is one
+the result backend reports as safe to retry, such as a lost connection.
+Between attempts it sleeps with the same exponential backoff as
+:setting:`result_backend_always_retry`, capped by
+:setting:`result_backend_max_sleep_between_retries_ms`.
+
+This covers short result backend outages without losing the task or its
+result. If storing ``STARTED`` still fails when the time is up, a task with
+:setting:`task_acks_late` is requeued, so it runs once the backend is back.
+
+Stores made from the worker's main process, for example after a pool process
+is lost, and reads by clients don't wait. Set to ``0`` or :const:`None` to
+disable waiting.
+
+
 .. setting:: result_backend_base_sleep_between_retries_ms
 
 ``result_backend_base_sleep_between_retries_ms``
