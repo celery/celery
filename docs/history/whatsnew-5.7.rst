@@ -20,8 +20,8 @@ It's a task queue with focus on real-time processing, while also
 supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
-you should come join us :ref:`on Discord Chanel <irc-channel>`
-or :ref:`our Discussion forum <mailing-list>`.
+you should come join us :ref:`on Discord Chanel <https://discord.com/invite/9nhyjpSF>`
+or :ref:`our Discussion forum <https://github.com/celery/celery/discussions>`.
 
 .. note::
 
