@@ -3,9 +3,10 @@ from uuid import uuid4
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
+from kombu.exceptions import EncodeError, OperationalError
 
 from celery import chord, group, signals, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
@@ -17,6 +18,7 @@ from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
 from celery.result import AsyncResult
 from celery.states import PENDING
 from celery.worker.state import successful_requests
+from t.unit.utils.test_dispatcher import garbage_collect
 
 
 def trace(
@@ -53,6 +55,138 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
+    @pytest.mark.parametrize('group_as_link', [False, True])
+    def test_grouped_callbacks_publish_in_retry_context(self, group_as_link):
+        @self.app.task(shared=False)
+        def link(value, extra):
+            return value + extra
+
+        callbacks = [link.s(1), link.s(2)]
+        if group_as_link:
+            callbacks = [group(callbacks, app=self.app), link.s(3)]
+        contexts = []
+
+        def publish(*args, **kwargs):
+            contexts.append(_callback_publish_retry.get())
+
+        producer, acquire = self._producer_for_publish(publish)
+        with acquire:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'callbacks': callbacks}, eager=False,
+            )
+        assert result == 4
+        assert info is None
+        assert producer.publish.call_count == len(contexts)
+        assert contexts == [True] * (3 if group_as_link else 2)
+        assert _callback_publish_retry.get() is False
+
+    def _producer_for_publish(self, side_effect):
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = side_effect
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        return producer, patch.object(self.app, 'producer_or_acquire', acquire)
+
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @patch('celery.canvas.maybe_signature')
+    def test_refused_publish_retries_without_rerunning_body(
+        self, maybe_signature, dispatch, acks_late,
+    ):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2)
+        maybe_signature.return_value = sig
+        request = {dispatch: [sig], 'root_id': 'root'}
+        producer, acquire = self._producer_for_publish(
+            [OperationalError('refused'), None],
+        )
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request=request, eager=False,
+            )
+        assert result == 4
+        assert info is None
+        assert producer.publish.call_count == 2
+        run.assert_called_once_with(2, 2)
+        assert self.add.backend.get_state('id-1') == states.SUCCESS
+
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    def test_refused_publish_exhaustion_is_a_task_failure(self, dispatch, acks_late):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+        task_id = uuid()
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2).set(task_id=uuid())
+        producer, acquire = self._producer_for_publish(OperationalError('refused'))
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        assert info.state == states.FAILURE
+        assert producer.publish.call_count == 3
+        run.assert_called_once_with(2, 2)
+        internal_error.assert_not_called()
+        assert self.add.backend.get_state(task_id) == states.FAILURE
+        if dispatch == 'chain':
+            assert self.add.backend.get_state(sig.id) == states.FAILURE
+
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @pytest.mark.parametrize('error', [EncodeError, OperationalError])
+    def test_result_write_error_after_callbacks_preserves_error_handling(self, dispatch, error):
+        @self.app.task(shared=False, after_return=Mock())
+        def add(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def link(value):
+            return value
+
+        task_id, sig = uuid(), link.s()
+        with patch.object(sig, 'apply_async') as apply_async, \
+                patch.object(add.backend, 'mark_as_done', side_effect=error('store failed')), \
+                patch.object(add, 'run', wraps=add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        apply_async.assert_called_once()
+        run.assert_called_once_with(2, 2)
+        assert info.state == states.FAILURE
+        assert add.backend.get_state(task_id) == states.FAILURE
+        if error is OperationalError:
+            internal_error.assert_called_once()
+            add.after_return.assert_not_called()
+        else:
+            internal_error.assert_not_called()
+            add.after_return.assert_called_once_with(states.FAILURE, ANY, task_id, (2, 2), {}, None)
+
     def test_trace_successful(self):
         retval, info, _ = self.trace(self.add, (2, 2), {})
         assert info is None
@@ -73,6 +207,111 @@ class test_trace(TraceCase):
 
         self.trace(add_with_success, (2, 2), {})
         add_with_success.on_success.assert_called()
+
+    def test_trace_on_success_raises_after_success_was_stored(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=RuntimeError('hook failed')),
+                       after_return=Mock())
+        def add_with_failing_success(x, y):
+            return x + y
+
+        on_task_success = Mock()
+        on_task_failure = Mock()
+        on_task_internal_error = Mock()
+        signals.task_success.connect(on_task_success)
+        signals.task_failure.connect(on_task_failure)
+        signals.task_internal_error.connect(on_task_internal_error)
+        try:
+            with patch('celery.app.trace.TraceInfo.handle_failure') as handle_failure, \
+                    patch('celery.app.trace.logger') as mock_logger:
+                retval, info, _ = self.trace(
+                    add_with_failing_success, (2, 2), {}, eager=False,
+                )
+        finally:
+            signals.task_success.receivers[:] = []
+            signals.task_failure.receivers[:] = []
+            signals.task_internal_error.receivers[:] = []
+
+        assert info is None
+        assert retval == 4
+        # The cache backend keeps a stored SUCCESS even on main, so the state
+        # check alone doesn't pin the fix: handle_failure, the task_success
+        # receiver and after_return do.
+        assert add_with_failing_success.backend.get_state('id-1') == states.SUCCESS
+        handle_failure.assert_not_called()
+        on_task_success.assert_called()
+        on_task_failure.assert_not_called()
+        on_task_internal_error.assert_not_called()
+        add_with_failing_success.after_return.assert_called_with(
+            states.SUCCESS, 4, 'id-1', (2, 2), {}, None,
+        )
+        mock_logger.exception.assert_called_once()
+        assert 'on_success handler raised' in mock_logger.exception.call_args[0][0]
+
+    def test_trace_on_success_raises_eager_propagates(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=RuntimeError('hook failed')))
+        def add_with_failing_success(x, y):
+            return x + y
+
+        with pytest.raises(RuntimeError, match='hook failed'):
+            self.trace(add_with_failing_success, (2, 2), {}, eager=True)
+
+    def test_trace_on_success_raises_reject_is_not_swallowed(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=Reject('no', requeue=False)))
+        def add_with_rejecting_success(x, y):
+            return x + y
+
+        with pytest.raises(Reject):
+            self.trace(add_with_rejecting_success, (2, 2), {}, eager=False)
+
+    def test_trace_after_return_raises_reject_is_not_swallowed(self):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=Reject('no', requeue=False)))
+        def add_with_rejecting_after_return(x, y):
+            return x + y
+
+        with pytest.raises(Reject):
+            self.trace(add_with_rejecting_after_return, (2, 2), {}, eager=False)
+
+    def test_trace_on_success_raises_memory_error_propagates(self):
+        @self.app.task(shared=False,
+                       on_success=Mock(side_effect=MemoryError('oom')))
+        def add_with_oom_success(x, y):
+            return x + y
+
+        with pytest.raises(MemoryError):
+            self.trace(add_with_oom_success, (2, 2), {}, eager=False)
+
+    @pytest.mark.parametrize('fails', [False, True])
+    def test_trace_after_return_raises(self, fails):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=RuntimeError('hook failed')))
+        def task_with_failing_after_return(x, y):
+            if fails:
+                raise KeyError('task failed')
+            return x + y
+
+        with patch('celery.app.trace.TraceInfo.handle_failure',
+                   return_value=ExceptionInfo) as handle_failure, \
+                patch('celery.app.trace.logger') as mock_logger:
+            self.trace(task_with_failing_after_return, (2, 2), {}, eager=False)
+
+        # A failed task is recorded once, by its own exception; a successful
+        # one is not recorded as failed at all.
+        assert handle_failure.call_count == (1 if fails else 0)
+        mock_logger.exception.assert_called_once()
+        assert 'after_return handler raised' in mock_logger.exception.call_args[0][0]
+
+    def test_trace_after_return_raises_eager_propagates(self):
+        @self.app.task(shared=False,
+                       after_return=Mock(side_effect=RuntimeError('hook failed')))
+        def add_with_failing_after_return(x, y):
+            return x + y
+
+        with pytest.raises(RuntimeError, match='hook failed'):
+            self.trace(add_with_failing_after_return, (2, 2), {}, eager=True)
 
     def test_get_log_policy(self):
         einfo = Mock(name='einfo')
@@ -131,6 +370,36 @@ class test_trace(TraceCase):
             assert runtime == expected_runtime
         finally:
             signals.task_success.receivers[:] = []
+
+    @pytest.mark.parametrize('signal', [
+        signals.task_prerun,
+        signals.task_postrun,
+        signals.task_success,
+    ], ids=lambda signal: signal.name)
+    def test_trace_works_after_receivers_disconnect_and_connect(self, signal):
+        received_senders = []
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(sender, **kwargs):
+            received_senders.append(sender)
+
+        signal.connect(temporary_receiver)
+        try:
+            tracer = build_tracer(self.add.name, self.add, app=self.app)
+            signal.disconnect(temporary_receiver)
+            del temporary_receiver
+            garbage_collect()
+
+            signal.connect(receiver)
+            result = tracer('id-1', (2, 2), {})
+        finally:
+            signal.disconnect(receiver)
+
+        assert result.info is None
+        assert result.retval == 4
+        assert received_senders == [self.add]
 
     def test_when_chord_part(self):
         @self.app.task(shared=False)

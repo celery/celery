@@ -89,7 +89,12 @@ def safe_say(msg, f=sys.__stderr__):
     hub's event loop (e.g., during signal handling).
     """
     if hasattr(f, 'fileno') and f.fileno() is not None:
-        _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
+        try:
+            _original_os_write(f.fileno(), f'\n{msg}\n'.encode())
+        except OSError:
+            # Best-effort human-readable banner: losing it must never be
+            # allowed to abort the caller (see _shutdown_handler below).
+            pass
 
 
 class Worker(WorkController):
@@ -332,17 +337,28 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
     def _handle_request(*args):
         with in_sighandler():
             from celery.worker import state
-            if current_process()._name == 'MainProcess':
-                if callback:
-                    callback(worker)
-                if verbose:
-                    safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
-                signals.worker_shutting_down.send(
-                    sender=worker.hostname, sig=sig, how=how,
-                    exitcode=exitcode,
-                )
-            setattr(state, {'Warm': 'should_stop',
-                            'Cold': 'should_terminate'}[how], exitcode)
+            try:
+                if current_process()._name == 'MainProcess':
+                    if callback:
+                        callback(worker)
+                    if verbose:
+                        safe_say(f'worker: {how} shutdown (MainProcess)', sys.__stdout__)
+                    signals.worker_shutting_down.send(
+                        sender=worker.hostname, sig=sig, how=how,
+                        exitcode=exitcode,
+                    )
+            finally:
+                # Guarantee the shutdown flag is set even if the callback,
+                # safe_say(), or the signal dispatch above raises — this is
+                # the actual mechanism that stops the worker from accepting
+                # new work. Kept in the *finally*, not moved ahead of this
+                # block, because on_cold_shutdown() relies on should_terminate
+                # staying unset while it runs: it waits out
+                # worker_soft_shutdown_timeout before cancelling tasks, and
+                # state.maybe_shutdown()/Request.on_timeout()/on_failure()
+                # all branch on should_terminate during that window.
+                setattr(state, {'Warm': 'should_stop',
+                                'Cold': 'should_terminate'}[how], exitcode)
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 

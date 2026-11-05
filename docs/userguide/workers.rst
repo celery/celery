@@ -590,6 +590,12 @@ When a worker receives a revoke request it will skip executing
 the task, but it won't terminate an already executing task unless
 the `terminate` option is set.
 
+A worker that isn't running the task marks it ``REVOKED``, unless it has
+finished or another worker has started it. A started task shows
+``STARTED`` (with :setting:`task_track_started`) or a custom state it set.
+Without :setting:`task_track_started`, a running task shows ``PENDING``, so
+it's marked ``REVOKED`` and then stores its result when it's done.
+
 .. note::
 
     The terminate option is a last resort for administrators when

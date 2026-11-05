@@ -25,7 +25,7 @@ _original_os_write = os.write
 
 SERIES = 'collider'
 
-__version__ = '5.7.0b1'
+__version__ = '5.7.0rc1'
 __author__ = 'Ask Solem'
 __contact__ = 'auvipy@gmail.com'
 __homepage__ = 'https://docs.celeryq.dev/'

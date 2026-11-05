@@ -11,7 +11,7 @@ from collections import namedtuple
 from warnings import warn
 
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
-from kombu.exceptions import EncodeError
+from kombu.exceptions import EncodeError, OperationalError
 from kombu.serialization import loads as loads_message
 from kombu.serialization import prepare_accept_content
 from kombu.utils.encoding import safe_repr, safe_str
@@ -20,6 +20,7 @@ from celery import current_app, group, signals, states
 from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
+from celery.app.task import get_actual_ignore_result
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
@@ -152,28 +153,6 @@ def get_task_name(request, default):
     # request.shadow could be None or an empty string.
     # If so, we should use default.
     return getattr(request, 'shadow', None) or default
-
-
-def get_actual_ignore_result(task, req):
-    """Return the effective ignore_result, with request overriding task.
-
-    If req provides an explicit ignore_result, that value is used;
-    otherwise task.ignore_result is returned.
-    """
-    if req is None:
-        return task.ignore_result
-
-    actual = getattr(req, 'ignore_result', None)
-
-    # Context defines `ignore_result = False` at class level (see Context
-    # in celery/app/task.py). getattr() above would return the class default
-    # (False) even when the request never set it explicitly, making it
-    # impossible to distinguish "override=False" from "not set". We check
-    # __dict__ to detect only instance-level (i.e., explicitly set) values.
-    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
-        actual = None
-
-    return actual if actual is not None else task.ignore_result
 
 
 class TraceInfo:
@@ -447,27 +426,27 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                     else:
                         sigs.append(sig)
                 for group_ in groups:
-                    group_.apply_async(
-                        (retval,),
+                    app.amqp._retry_publish(
+                        group_.apply_async, (retval,),
                         parent_id=parent_id, root_id=root_id,
                         priority=priority,
                     )
                 if sigs:
-                    group(sigs, app=app).apply_async(
-                        (retval,),
+                    app.amqp._retry_publish(
+                        group(sigs, app=app).apply_async, (retval,),
                         parent_id=parent_id, root_id=root_id,
                         priority=priority,
                     )
             else:
-                signature(callbacks[0], app=app).apply_async(
-                    (retval,),
+                app.amqp._retry_publish(
+                    signature(callbacks[0], app=app).apply_async, (retval,),
                     parent_id=parent_id, root_id=root_id,
                     priority=priority,
                 )
         if chain:
             _chsig = signature(chain[-1], app=app)
-            _chsig.apply_async(
-                (retval,), chain=chain[:-1],
+            app.amqp._retry_publish(
+                _chsig.apply_async, (retval,), chain=chain[:-1],
                 parent_id=parent_id, root_id=root_id,
                 priority=priority,
             )
@@ -608,6 +587,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 except BaseException:
                     raise
                 else:
+                    callbacks_sent = False
                     try:
                         # callback tasks must be applied before the result is
                         # stored, so that result.children is populated.
@@ -622,10 +602,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             parent_id=uuid, root_id=root_id,
                             priority=task_priority,
                         )
+                        callbacks_sent = True
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
-                    except EncodeError as exc:
+                    except (EncodeError, OperationalError) as exc:
+                        if callbacks_sent and isinstance(exc, OperationalError):
+                            raise
                         I, R, state, retval = on_error(task_request, exc)
                         # MEMORY LEAK FIX: Clear traceback frames to prevent memory retention (Issue #8882)
                         traceback_clear(exc)
@@ -633,7 +616,23 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         Rstr = saferepr(R, resultrepr_maxsize)
                         T = monotonic() - time_start
                         if task_on_success:
-                            task_on_success(retval, uuid, args, kwargs)
+                            try:
+                                task_on_success(retval, uuid, args, kwargs)
+                            except (Reject, MemoryError):
+                                raise
+                            except Exception as exc:
+                                # The outcome is already stored: recording a
+                                # failure now would fire the errbacks for a
+                                # task that succeeded. Eager callers (tests,
+                                # task_always_eager) still see the error.
+                                if eager:
+                                    raise
+                                logger.exception(
+                                    'Task %s[%s] on_success handler raised: %r',
+                                    get_task_name(task_request, name),
+                                    uuid, exc,
+                                )
+                                traceback_clear(exc)
                         if success_receivers:
                             send_success(sender=task, result=retval, runtime=T)
                         if _does_info:
@@ -649,9 +648,23 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 # -* POST *-
                 if state not in IGNORE_STATES:
                     if task_after_return:
-                        task_after_return(
-                            state, retval, uuid, args, kwargs, None,
-                        )
+                        try:
+                            task_after_return(
+                                state, retval, uuid, args, kwargs, None,
+                            )
+                        except (Reject, MemoryError):
+                            raise
+                        except Exception as exc:
+                            # Same as on_success: the outcome is already
+                            # recorded, so don't record a second one.
+                            if eager:
+                                raise
+                            logger.exception(
+                                'Task %s[%s] after_return handler raised: %r',
+                                get_task_name(task_request, name),
+                                uuid, exc,
+                            )
+                            traceback_clear(exc)
             finally:
                 try:
                     if postrun_receivers:

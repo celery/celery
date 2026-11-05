@@ -202,8 +202,11 @@ def revoke_by_stamped_headers(state, headers, terminate=False, signal=None, **kw
             # if so, check if any stamps match a revoked stamp
             for expected_header_key, expected_header_value in headers.items():
                 if expected_header_key in req.stamps:
+                    actual_header = req.stamps.get(expected_header_key)
+                    if actual_header is None:
+                        continue
                     expected_header_value = maybe_list(expected_header_value)
-                    actual_header = maybe_list(req.stamps[expected_header_key])
+                    actual_header = maybe_list(actual_header)
                     matching_stamps_for_request = set(actual_header) & set(expected_header_value)
                     # Check any possible match regardless if the stamps are a sequence or not
                     if matching_stamps_for_request:
@@ -229,9 +232,14 @@ def _revoke(state, task_ids, terminate=False, signal=None, **kwargs):
         # Tasks may override their backend.
         backend = request.task.backend if request else state.app.backend
         try:
-            if backend.get_state(task_id) in states.READY_STATES:
+            task_state = backend.get_state(task_id)
+            if task_state in states.READY_STATES:
                 # The task already has a result (or the chord error handler
                 # failed it on its behalf); a revoke must not overwrite it.
+                continue
+            if task_state not in (states.PENDING, states.RECEIVED, states.RETRY, states.REJECTED):
+                # Another worker started the task (STARTED, or a custom state
+                # it set), so leave its state to that worker.
                 continue
             backend.mark_as_revoked(task_id, reason='revoked', store_result=True)
         except Exception as exc:
