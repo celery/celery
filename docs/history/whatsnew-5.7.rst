@@ -20,8 +20,8 @@ It's a task queue with focus on real-time processing, while also
 supporting task scheduling.
 
 Celery has a large and diverse community of users and contributors,
-you should come join us :ref:`on IRC <irc-channel>`
-or :ref:`our mailing-list <mailing-list>`.
+you should come join us :ref:`on Discord Chanel <irc-channel>`
+or :ref:`our Discussion forum <mailing-list>`.
 
 .. note::
 
@@ -61,7 +61,7 @@ Preface
 The 5.7.0 release is a new feature release for Celery.
 
 Releases in the 5.x series are codenamed after songs of `Jon Hopkins <https://en.wikipedia.org/wiki/Jon_Hopkins>`_.
-This release has been codenamed `Collider <https://www.youtube.com/watch?v=MaqlsAmlbzo>`_.
+This release has been codenamed `Collider <https://www.youtube.com/watch?v=8XtqUOegCv8>`_.
 
 This is the last version to support Python 3.11.
 
@@ -112,7 +112,7 @@ Step 3: Read the important notes in this document
 -------------------------------------------------
 
 Make sure you are not affected by any of the important upgrade notes
-mentioned in the :ref:`following section <v560-important>`.
+mentioned in the :ref:`following section <v570-important>`.
 
 You should verify that none of the breaking changes in the CLI
 do not affect you. Please refer to :ref:`New Command Line Interface <new_command_line_interface>` for details.
@@ -192,97 +192,164 @@ Minimum django version is bumped to Django>=3.2.1.
 
 .. _v570-news:
 
-News
-====
+Canvas, Chains, Groups, and Chords
+==================================
 
-SQS: Reverted to ``pycurl`` from ``urllib3``
---------------------------------------------
+Celery 5.7 includes substantial improvements to Canvas execution, particularly around chains, groups, chords, and nested workflows.
 
-The switch from ``pycurl`` to ``urllib3`` for the SQS transport (introduced in
-Celery 5.5.0 via Kombu) has been reverted due to critical issues affecting SQS
-users.
+* **Improved chained failure propagation:** Failures in chained tasks are now propagated correctly to chord bodies, improving error handling in workflows that combine chains and chords.
+* **More reliable chord execution:** Chords now handle failed headers and revoked tasks more consistently, reducing the risk of workflows becoming stuck.
+* **Improved empty group and chain handling:** Empty groups are handled more consistently in chains and chord headers, including eager execution.
+* **More efficient chain construction:** Chains are constructed in a single pass rather than repeatedly folding signatures with the ``|`` operator.
+* **Reduced message growth:** Improvements to standalone chord bodies, implicit chords, and chains of groups prevent unnecessary growth in serialized Canvas messages.
+* **Improved nested group behavior:** Nested groups retain their own identifiers, and group ordering and result representations are handled more consistently.
+* **Improved eager execution:** Eager groups avoid unnecessary result-backend access, and chain links are fired only once at the appropriate point in eager execution.
+* **Improved signature handling:** Cloning, deep-copying, errback classification, and nested signature execution now handle arguments and options more reliably.
 
-Security Fix: Broker Credential Leak Prevention
-------------------------------------------------
+These changes make complex Canvas workflows more predictable and reduce overhead in applications that construct large task graphs.
 
-Fixed a security issue where broker URLs containing passwords were being logged
-in plaintext by the delayed delivery mechanism. Broker credentials are now
-properly sanitized in all log output.
+Worker Concurrency and Process Management
+=========================================
 
-Memory Leak Fixes
------------------
+Celery 5.7 improves worker process management, pool behavior, and concurrency handling.
 
-Two significant memory leaks have been fixed in this release:
+* **Spawn-based asynchronous prefork support:** The asynchronous prefork pool can now be used with ``worker_pool_start_method='spawn'``, improving compatibility with environments where process spawning is preferred or required.
+* **Improved automatic concurrency detection:** ``--concurrency=auto`` now takes cgroup CPU limits into account, allowing workers running in containers to select a more appropriate concurrency level.
+* **Configurable worker-loss retries:** The new ``task_retry_on_worker_lost`` setting allows applications to limit task requeues after worker loss.
+* **Improved pool lifecycle handling:** Fixes address spawned child detection, worker shutdown, exited child processes, and cancellation behavior.
+* **More reliable autoscaling:** Autoscale keepalive handling has been improved, including for immediate tasks.
+* **Improved worker initialization:** Worker initialization avoids redundant default configuration setup, and worker process initialization signals now receive the worker hostname as their sender.
 
-**Exception Handling Memory Leak**: Fixed a critical memory leak in task exception
-handling that was particularly severe on Python 3.11+ due to enhanced traceback
-data. The fix properly breaks reference cycles in tracebacks to allow garbage
-collection. This resolves a long-standing issue that caused worker memory to grow
-unbounded over time.
+Together, these changes improve worker reliability in containerized and multiprocess deployments.
 
-**Pending Result Memory Leak**: Fixed a memory leak where ``AsyncResult``
-subscriptions were not being cleaned up when results were forgotten. This affected
-users who frequently use ``AsyncResult.forget()`` in their workflows.
+Worker Operations and Remote Control
+====================================
 
-ETA Task Memory Limit
----------------------
+Worker management and event handling receive several improvements.
 
-New configuration option to prevent out-of-memory crashes when workers fetch
-large numbers of ETA or countdown tasks. Previously, workers could exhaust
-available memory when the broker contained many scheduled tasks.
+* **Beat remote-control inspection:** ``celery beat`` supports opt-in remote-control inspection through the ``ping`` command.
+* **Improved event dispatching:** Event dispatcher heartbeat handling and shutdown synchronization have been improved.
+* **More reliable event buffering:** Buffered events are flushed more consistently, including during broker reconnection and dispatcher shutdown.
+* **Improved consumer operation ordering:** Pending consumer operations retain their expected order.
+* **Improved reconnect behavior:** Consumer reconnection and prefetch reduction are more reliable, including when using green pools.
+* **Improved connection cleanup:** Worker and Beat connection resources are cleaned up more consistently during shutdown and connection loss.
 
-Configuration option:
+Task Publishing, Execution, and Request Context
+===============================================
 
-- :setting:`worker_eta_task_limit`: Sets the maximum number of ETA tasks to hold
-  in worker memory at once (default: ``None``, unlimited)
+Task publishing and execution receive several correctness and observability improvements.
 
-Example usage:
+* **Merged retry policy for task publishing:** The retry policy is consistently applied to ``before_task_publish`` and task-sent event publishing.
+* **Improved protocol compatibility:** Protocol v1 ETA and expiration values are handled without attempting to convert existing string values through ``isoformat()``.
+* **Improved task execution context:** The request context is now supplied to ``task_failure`` when a worker is lost.
+* **Task runtime in success signals:** The task-success signal now includes runtime information.
+* **Safer execution options:** ``apply_async()`` no longer mutates cached execution options, and task execution copies only declared stamps.
+* **Improved timezone handling:** ETA and expiration calculations are more reliable across daylight-saving transitions.
 
-.. code-block:: python
+Pydantic Integration
+====================
 
-    app.conf.worker_eta_task_limit = 1000
+Celery 5.7 extends the existing Pydantic task integration.
 
-Queue Type Selection for Auto-created Queues
---------------------------------------------
+Tasks configured with ``pydantic=True`` can now accept Pydantic model instances when called, in addition to the existing supported validation and serialization behavior.
 
-New configuration options allow specifying the queue type and exchange type when
-Celery auto-creates missing queues. This is particularly useful for RabbitMQ users
-who want to use quorum queues with auto-created queues.
+Compatibility with future annotations has also been improved.
 
-Configuration options:
+Result Backend Improvements
+===========================
 
-- :setting:`task_create_missing_queue_type`: Sets the queue type for auto-created
-  queues (e.g., ``quorum``, ``classic``)
-- :setting:`task_create_missing_queue_exchange_type`: Sets the exchange type for
-  auto-created queues
+Celery 5.7 includes improvements across several result backends, including new backend support, more reliable result handling, and better cleanup behavior.
 
-Example usage:
+* **New pymemcache backend:** A result backend using ``pymemcache`` is now available.
+* **Redis chord expiration:** The Redis result backend adds ``result_chord_expires`` to control the expiration of chord-related keys independently.
+* **Redis failure expiration:** The new ``result_failure_expires`` setting allows separate expiration configuration for Redis chord failure keys.
+* **Improved result cleanup:** Several backends now handle missing documents, repeated ``forget()`` calls, and result updates more consistently.
+* **Improved CosmosDB handling:** Result updates use upserts to ensure later task states are stored correctly.
+* **Improved Redis pub/sub handling:** Locking and cancellation behavior have been improved to avoid deadlocks and contention.
+* **Improved database backend serialization:** The database backend now honors ``result_serializer``.
+* **Extended result metadata:** Database-backed results can store task children and stamping metadata when extended results are enabled.
+* **Improved result expiration:** Cache backend chords can remain available beyond the regular ``result_expires`` period.
+* **More reliable result retrieval:** Nested native results preserve propagation settings, and eager results retain their names when copied or pickled.
+* **Improved result cleanup across timezones:** MongoDB and database backend cleanup now handle daylight-saving transitions and timezone configuration more consistently.
 
-.. code-block:: python
+Scheduling, ETA, Expiration, and Celery Beat
+============================================
 
-    app.conf.task_create_missing_queue_type = 'quorum'
+Scheduling and timezone handling have received a broad set of fixes and improvements.
 
-Django Connection Pool Support
-------------------------------
+* **Improved daylight-saving handling:** Aware datetimes are normalized into the schedule timezone, and DST gaps and transitions are handled more consistently.
+* **Improved crontab calculations:** Crontab scheduling now handles non-uniform schedules, minute-slot calculations, and persisted state more reliably.
+* **Improved Beat scheduling:** Beat heap management and re-scheduling behavior have been corrected to avoid unnecessary delays and incorrect retry timing.
+* **Improved relative schedules:** Relative schedule rounding is more reliable across DST transitions.
+* **Improved ETA and expiration handling:** Task ETA, countdown, and expiration calculations are more consistent across timezone transitions.
+* **Improved Beat task metadata:** Task options can include the ``celery_beat_task`` header to identify tasks dispatched by Beat.
+* **Crontab starting deadline:** The ``beat_cron_starting_deadline`` setting is handled correctly for non-uniform crontab schedules.
 
-Fixed an issue where Django applications using psycopg3 connection pooling would
-experience ``psycopg_pool.PoolTimeout`` errors after worker forks. Celery now
-properly closes Django's connection pools before forking, similar to how Django
-itself handles this in its autoreload mechanism.
+Queue Management and Routing
+============================
 
-Redis Backend Improvements
---------------------------
+Queue selection, aliases, and routing behavior have been improved.
 
-**Credential Provider Support**: Added the :setting:`redis_backend_credential_provider`
-setting to the Redis backend. This enables integration with AWS ElastiCache using
-IAM authentication and other credential provider mechanisms.
+* **Queue aliases:** Queue aliases are supported by ``Queues.deselect()``, and alias-based selection consistently resolves to the actual queue name.
+* **Default routing key:** Queues receive the configured default routing key when one is not explicitly provided.
+* **Default maximum priority:** Queue declarations now apply the default maximum priority when the queue does not specify one.
+* **Improved consumer queue selection:** Routing-only queues are no longer unintentionally consumed, and adding known consumers restores the expected queue selection.
+* **Improved default queue resolution:** Explicitly routed tasks defer default queue lookup, avoiding unnecessary default queue resolution.
+* **Updated AMQP routing:** Task routes are refreshed consistently across configuration update mechanisms.
 
-**Client Name Support**: Added the :setting:`redis_client_name` setting to the Redis
-backend, making it easier to identify Celery connections when monitoring Redis servers.
+Configuration and Application Behavior
+======================================
 
-Cold Shutdown Improvements
---------------------------
+The configuration system and application initialization have received several correctness improvements.
 
-Fixed an issue where tasks would incorrectly fail with a timeout error during
-cold shutdown. The worker now properly skips timeout failure handling during
-the cold shutdown phase, allowing tasks to complete or be properly requeued.
+* **Improved ``ConfigurationView``:** Membership checks, mapping order, key lookup, and ``swap_with()`` now behave more consistently.
+* **Improved lazy configuration loading:** ``config_from_object(silent=True)`` is respected during lazy configuration loading.
+* **Safer configuration defaults:** Preconfigured values are kept separate from configuration defaults, and configuration copying preserves existing settings.
+* **Backend resolution:** ``backends.by_url()`` now accepts backend classes, making custom backend resolution more flexible.
+* **Django integration:** Django task-class selection has been improved for Celery subclasses without a custom task class.
+* **Improved application behavior:** Several initialization and configuration edge cases have been addressed to make application setup more predictable.
+
+Logging, Diagnostics, and Security
+==================================
+
+Celery 5.7 improves diagnostic output, logging configuration, and credential protection.
+
+* **Task representation depth:** The new ``task_repr_maxlevels`` setting controls the depth used when representing task arguments and keyword arguments.
+* **Logging date formats:** ``ColorFormatter`` and ``TaskFormatter`` now support ``datefmt``.
+* **Credential masking:** Broker read and write URLs, including credentials in alternate broker URLs, are masked in diagnostic and inspection output.
+* **Azure credential redaction:** SAS tokens and account keys are redacted from Azure Block Blob backend diagnostic output.
+* **Improved URL sanitization:** Multi-server URLs are handled more consistently by URL sanitization and bug-report utilities.
+
+Command-Line and Developer Experience
+=====================================
+
+Several command-line and developer-facing improvements make Celery easier to operate and maintain.
+
+* **Improved ``celery multi`` index handling:** Index lists such as ``-c:1,2`` are applied correctly to named nodes.
+* **Improved spawned worker working directories:** ``~`` is expanded in ``--workdir`` when starting spawned workers.
+* **Improved node formatting:** Escaped percent signs are handled correctly in node formatting.
+* **CLI error handling:** Command-line status and configuration errors are handled more consistently.
+* **Improved preload option handling:** Preload options are passed only to commands that support them.
+* **Modernized upgrade utility:** The deprecated ``codecs.open`` usage has been replaced in the settings upgrade command.
+
+Utilities and Performance
+=========================
+
+Celery 5.7 includes targeted performance and memory-management improvements.
+
+* **Reduced task publishing overhead:** Extension entry-point discovery is cached, reducing repeated discovery overhead in ``apply_async()``.
+* **Bounded worker-state memory:** ``State._tasks_to_resolve`` is now bounded to prevent unbounded memory growth.
+* **Improved buffer accounting:** ``BufferMap`` correctly handles its maximum buffer size and total size accounting.
+* **Improved regeneration utilities:** Regeneration iteration and source replacement now behave more reliably when iterators are consumed elsewhere.
+* **Improved file descriptor iteration:** Safe file descriptor iteration handles attribute errors after connection loss.
+* **Improved method lookup:** ``firstmethod()`` no longer silently swallows ``AttributeError``.
+
+Dependencies and Packaging
+==========================
+
+Celery 5.7 updates several runtime and development dependencies.
+
+* The minimum Billiard dependency is updated to ``4.3.1``.
+* Kombu is updated to the 5.7 release series.
+* Redis dependency version constraints have been removed.
+* Several optional backend dependencies and development tools have been updated.
