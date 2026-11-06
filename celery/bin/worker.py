@@ -315,6 +315,13 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               type=int,
               cls=CeleryOption,
               help_group="Features", )
+@click.option('--autoreload',
+              is_flag=True,
+              cls=CeleryOption,
+              help_group="Features",
+              help="Restart the worker when the source of an imported "
+                   "module (not in the standard library or site-packages) "
+                   "changes. Intended for development.")
 @click.option('--autoscale',
               type=AUTOSCALE,
               cls=CeleryOption,
