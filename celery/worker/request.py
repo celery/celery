@@ -895,20 +895,29 @@ class Request:
 
         Returns True when the marker was found and failure handling should
         stop (errbacks skipped, message acked when acks_late).
+
+        Lookup is a single attempt (no ``_ensure_retryable`` loop).
+        ``_success_was_stored`` already bounded-retried the backend, and a
+        second unbounded retry would hang the worker on a down backend
+        (#10957).
         """
         if self.ignore_result:
             return False
         backend = self.task.backend
-        get_marker = getattr(backend, 'get_callbacks_dispatched', None)
-        if not callable(get_marker):
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
+        key_fn = getattr(backend, 'callbacks_dispatched_key', None)
+        get_meta = getattr(backend, '_get_task_meta_for', None)
+        if not callable(key_fn) or not callable(get_meta):
             return False
         try:
-            meta = get_marker(self.id)
+            meta = get_meta(key_fn(self.id))
         except Exception:  # pylint: disable=broad-except
             return False
-        # Real backends return a meta dict or None. Ignore other values so
-        # Mock backends in unit tests do not look like a found marker.
-        if not isinstance(meta, dict):
+        # Real backends return a meta dict. Ignore other values so Mock
+        # backends in unit tests do not look like a found marker.
+        if not isinstance(meta, dict) or meta.get('status') != states.SUCCESS:
             return False
 
         result = meta.get('result')

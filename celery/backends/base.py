@@ -328,15 +328,19 @@ class Backend:
             )
 
     def get_callbacks_dispatched(self, task_id):
-        """Return marker meta if callbacks were published, else ``None``."""
+        """Return marker meta if callbacks were published, else ``None``.
+
+        Uses a direct meta read (no retry loop) so a down backend cannot
+        block the worker after ``_success_was_stored`` already retried.
+        """
         as_uri = getattr(self, 'as_uri', None)
         if callable(as_uri) and as_uri() == 'rpc://':
             return None
         try:
-            meta = self.get_task_meta(self.callbacks_dispatched_key(task_id))
+            meta = self._get_task_meta_for(self.callbacks_dispatched_key(task_id))
         except Exception:  # pylint: disable=broad-except
             return None
-        if meta.get('status') == states.SUCCESS:
+        if isinstance(meta, dict) and meta.get('status') == states.SUCCESS:
             return meta
         return None
 
