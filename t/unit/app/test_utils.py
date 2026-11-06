@@ -125,6 +125,29 @@ class test_filter_hidden_settings:
         assert 'pass' not in censored['broker_read_url']
         assert 'pass' not in censored['broker_write_url']
 
+    @pytest.mark.parametrize('key', [
+        'CELERY_BROKER_URL',
+        'CELERY_BROKER_READ_URL',
+        'CELERY_BROKER_WRITE_URL',
+    ])
+    def test_censors_broker_url_with_namespace_prefix(self, key):
+        conf = {key: 'amqp://user:pass@broker.example.com:56721'}
+        censored = filter_hidden_settings(conf)
+        assert 'pass' not in censored[key]
+
+    def test_censors_settings_read_with_namespace(self):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object({
+                'CELERY_BROKER_URL': 'amqp://user:pass@broker.example.com//',
+            }, namespace='CELERY')
+            assert 'pass' not in app.conf.table()['CELERY_BROKER_URL']
+            assert 'pass' not in app.conf.humanize()
+
+    def test_censors_broker_url_that_kombu_cannot_parse(self):
+        conf = {'EXPORTER_BROKER_URL': 'https://user:pass@example.com/api'}
+        censored = filter_hidden_settings(conf)
+        assert censored['EXPORTER_BROKER_URL'] == 'https://user:********@example.com/api'
+
     def test_censors_multiserver_backend_url(self):
         conf = {
             'result_backend': (
