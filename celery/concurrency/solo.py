@@ -2,6 +2,8 @@
 import os
 from functools import partial
 
+from billiard.einfo import ExceptionInfo
+
 from celery import signals
 from celery.utils.log import get_logger
 
@@ -41,12 +43,25 @@ class TaskPool(BasePool):
         signals.worker_process_init.send(sender=initargs[1])
 
     def on_apply(self, target, args=(), kwargs=None, callback=None,
-                 accept_callback=None, callbacks_propagate=(), **options):
+                 accept_callback=None, error_callback=None,
+                 callbacks_propagate=(), propagate=(), **options):
+        callbacks_propagate = tuple(callbacks_propagate)
         if callback is not None:
-            callback = partial(_safe_callback, callback,
-                               tuple(callbacks_propagate))
-        return apply_target(target, args, kwargs, callback,
-                            accept_callback, **options)
+            callback = partial(_safe_callback, callback, callbacks_propagate)
+        try:
+            return apply_target(target, args, kwargs, callback,
+                                accept_callback, propagate=propagate,
+                                **options)
+        except propagate:
+            raise
+        except Exception:
+            # The trace can raise too, when it can't store the task's
+            # failure.  billiard reports that to the error callback for
+            # the prefork pool, so do the same here.
+            if error_callback is None:
+                raise
+            _safe_callback(error_callback, callbacks_propagate,
+                           ExceptionInfo())
 
     def _get_info(self):
         info = super()._get_info()

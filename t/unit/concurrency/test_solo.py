@@ -72,3 +72,37 @@ class test_solo_TaskPool:
         callback = Mock(side_effect=KeyError('propagated'))
         with pytest.raises(KeyError):
             x.apply_async(operator.add, (2, 2), callback=callback)
+
+    def test_on_apply_reports_an_error_from_the_target(self):
+        # The trace raises when it can't store the task's failure.  As with
+        # the prefork pool, that goes to the error callback (#11018).
+        x = solo.TaskPool()
+        target = Mock(side_effect=ConnectionError('backend down'))
+        error_callback = Mock()
+        x.apply_async(target, error_callback=error_callback)
+        error_callback.assert_called_once()
+        assert error_callback.call_args[0][0].type is ConnectionError
+
+    def test_on_apply_logs_an_error_from_the_error_callback(self):
+        x = solo.TaskPool()
+        target = Mock(side_effect=ConnectionError('backend down'))
+        error_callback = Mock(side_effect=ConnectionError('still down'))
+        with patch('celery.concurrency.solo.logger') as logger:
+            x.apply_async(target, error_callback=error_callback)
+        error_callback.assert_called_once()
+        logger.error.assert_called_once()
+
+    def test_on_apply_raises_an_error_from_the_target_without_error_callback(self):
+        x = solo.TaskPool()
+        target = Mock(side_effect=ConnectionError('backend down'))
+        with pytest.raises(ConnectionError):
+            x.apply_async(target)
+
+    def test_on_apply_raises_propagate_from_the_target(self):
+        x = solo.TaskPool()
+        target = Mock(side_effect=KeyError('propagated'))
+        error_callback = Mock()
+        with pytest.raises(KeyError):
+            x.apply_async(target, error_callback=error_callback,
+                          propagate=(KeyError,))
+        error_callback.assert_not_called()
