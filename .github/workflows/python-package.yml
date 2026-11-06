@@ -139,3 +139,42 @@ jobs:
     uses: ./.github/workflows/smoke-tests.yml
     with:
       test_path: ${{ matrix.test_path }}
+
+  Due-work:
+    # Celery's worker failing at each stage, checked by the contract in t/due_work (pytest-obligation).
+    # It starts its own workers, so it runs apart from the integration suite. Linux only: the faults
+    # reach the pool child through fork.
+    needs: Unit
+    if: needs.Unit.result == 'success'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write # the report's one PR comment; a fork PR's token stays read-only
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+          cache-dependency-path: '**/setup.py'
+      - name: Install tox
+        run: python -m pip install --upgrade pip 'tox' tox-gh-actions
+      - name: Run tox for "3.13-due_work"
+        id: tests
+        run: tox --verbose --verbose -e 3.13-due_work -- --due-work-profile-report=obligation-profiles.json
+      - name: Report what the contract proved
+        if: ${{ !cancelled() }}
+        uses: gigaverse-app/pytest-obligation/report@v1 # the same major as publish in contract-report.yml
+        with:
+          application-paths: t/due_work
+          report-path: obligation-profiles.json
+          expected-reports: '1'
+          test-outcome: ${{ steps.tests.outcome }}
+          sticky-key: celery-worker-contract
