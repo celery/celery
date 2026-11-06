@@ -483,7 +483,7 @@ Why is RabbitMQ crashing?
 
 **Answer:** RabbitMQ will crash if it runs out of memory. This will be fixed in a
 future release of RabbitMQ. please refer to the RabbitMQ FAQ:
-https://www.rabbitmq.com/faq.html#node-runs-out-of-memory
+https://www.rabbitmq.com/docs/memory
 
 .. note::
 

@@ -385,7 +385,7 @@ as manage users, virtual hosts and their permissions.
     the ``-p`` argument to the command, for example:
     ``rabbitmqctl list_queues -p my_vhost …``
 
-.. _`rabbitmqctl(1)`: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
+.. _`rabbitmqctl(1)`: https://www.rabbitmq.com/docs/man/rabbitmqctl.8
 
 .. _monitoring-rmq-queues:
 
