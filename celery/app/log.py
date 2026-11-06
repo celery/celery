@@ -59,6 +59,7 @@ class Logging:
         self.task_format = self.app.conf.worker_task_log_format
         self.task_datefmt = self.app.conf.worker_task_log_datefmt
         self.colorize = self.app.conf.worker_log_color
+        self.colorize_override = None
 
     def setup(self, loglevel=None, logfile=None, redirect_stdouts=False,
               redirect_level='WARNING', colorize=None, hostname=None):
@@ -208,6 +209,8 @@ class Logging:
         return proxy
 
     def supports_color(self, colorize=None, logfile=None):
+        if self.colorize_override is not None:
+            return self.colorize_override
         colorize = self.colorize if colorize is None else colorize
         if self.app.IS_WINDOWS:
             # Windows does not support ANSI color codes.
