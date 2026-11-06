@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timezone
+from decimal import Decimal
 from unittest.mock import Mock, call, patch, sentinel
 
 import pytest
@@ -923,6 +925,171 @@ class test_ElasticsearchBackend:
             kv_decode_mock.assert_called_once()
         finally:
             self.app.conf.elasticsearch_save_meta_as_text = prev
+
+    @pytest.mark.parametrize('save_as_text', (True, False))
+    def test_pickle_result_roundtrips_through_json_storage(self, save_as_text):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = save_as_text
+        backend = ElasticsearchBackend(app=self.app)
+        backend._server = Mock()
+        backend._server.get.return_value = {'found': False}
+        task_id = uuid()
+        result = {'binary': b'\x00\xff', 'tuple': (1, 2)}
+
+        backend.store_result(task_id, result, states.SUCCESS)
+        body = backend._server.index.call_args.kwargs['body']
+        json.dumps(body)  # Elasticsearch must be able to serialize the request.
+        stored = body['result'] if save_as_text else body['result']['result']
+        assert isinstance(stored, str)
+        assert stored.startswith('celery-binary-base64:')
+
+        backend._server.get.return_value = {'found': True, '_source': body}
+        assert backend._get_task_meta_for(task_id)['result'] == result
+
+    def test_pickle_empty_binary_fields_are_json_serializable(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        backend = ElasticsearchBackend(app=self.app)
+        meta = {'status': states.SUCCESS, 'result': b'', 'traceback': b''}
+
+        encoded = backend.encode(meta.copy())
+        json.dumps(encoded)
+        assert encoded['result'].startswith('celery-binary-base64:')
+        assert encoded['traceback'].startswith('celery-binary-base64:')
+        assert backend.decode(encoded) == meta
+
+    @pytest.mark.parametrize('result', (
+        set(), frozenset(), Decimal('0'), (), 0, False, [], None,
+    ))
+    def test_pickle_falsy_result_roundtrips_through_json_storage(self, result):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        backend = ElasticsearchBackend(app=self.app)
+        backend._server = Mock()
+        backend._server.get.return_value = {'found': False}
+        task_id = uuid()
+
+        backend.store_result(task_id, result, states.SUCCESS)
+        body = json.loads(json.dumps(backend._server.index.call_args.kwargs['body']))
+        if result is not None:
+            assert body['result']['result'].startswith('celery-binary-base64:')
+
+        backend._server.get.return_value = {'found': True, '_source': body}
+        decoded = backend._get_task_meta_for(task_id)['result']
+        assert decoded == result
+        assert type(decoded) is type(result)
+
+    def test_pickle_falsy_traceback_roundtrips_through_json_storage(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        backend = ElasticsearchBackend(app=self.app)
+        meta = {'status': states.FAILURE, 'result': 1, 'traceback': ''}
+
+        stored = json.loads(json.dumps(backend.encode(meta.copy())))
+        assert stored['traceback'].startswith('celery-binary-base64:')
+        assert backend.decode(stored) == meta
+
+    @pytest.mark.parametrize('result', (0, False, [], None, ''))
+    def test_pickle_decoder_keeps_legacy_falsy_result(self, result):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        backend = ElasticsearchBackend(app=self.app)
+        legacy = {'status': states.SUCCESS, 'result': result}
+
+        assert backend.decode(legacy.copy()) == legacy
+
+    def test_pickle_extended_binary_args_roundtrip(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        self.app.conf.result_extended = True
+        backend = ElasticsearchBackend(app=self.app)
+        backend._server = Mock()
+        backend._server.get.return_value = {'found': False}
+        task_id = uuid()
+        request = Mock(
+            children=[], group=None, parent_id=None, task='test.task',
+            args=(b'\xff',), kwargs={'data': b'\x00\xff'},
+            hostname='worker', retries=0, delivery_info={}, stamps=None,
+        )
+
+        backend.store_result(task_id, 42, states.SUCCESS, request=request)
+        body = json.loads(json.dumps(backend._server.index.call_args.kwargs['body']))
+        assert body['result']['args'].startswith('celery-binary-base64:')
+        assert body['result']['kwargs'].startswith('celery-binary-base64:')
+
+        backend._server.get.return_value = {'found': True, '_source': body}
+        meta = backend._get_task_meta_for(task_id)
+        assert meta['args'] == request.args
+        assert meta['kwargs'] == request.kwargs
+
+    @pytest.mark.parametrize('save_as_text', (True, False))
+    def test_yaml_result_resembling_binary_prefix(self, save_as_text):
+        self.app.conf.result_serializer = 'yaml'
+        self.app.conf.result_accept_content = ['yaml']
+        self.app.conf.elasticsearch_save_meta_as_text = save_as_text
+        backend = ElasticsearchBackend(app=self.app)
+        backend._server = Mock()
+        backend._server.get.return_value = {'found': False}
+        task_id = uuid()
+        result = 'celery-binary-base64:aGVsbG8='
+
+        backend.store_result(task_id, result, states.SUCCESS)
+        body = json.loads(json.dumps(backend._server.index.call_args.kwargs['body']))
+        backend._server.get.return_value = {'found': True, '_source': body}
+
+        assert backend._get_task_meta_for(task_id)['result'] == result
+
+    def test_pickle_decoder_preserves_legacy_extended_fields(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        self.app.conf.elasticsearch_save_meta_as_text = False
+        backend = ElasticsearchBackend(app=self.app)
+        legacy = {
+            'status': states.SUCCESS,
+            'result': None,
+            'args': [1, 2],
+            'kwargs': {'key': 'value'},
+        }
+        assert backend.decode(legacy.copy()) == legacy
+
+    def test_pickle_decoder_accepts_unwrapped_bytes(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        backend = ElasticsearchBackend(app=self.app)
+        meta = {'status': states.SUCCESS, 'result': (1, 2)}
+
+        assert backend.decode(backend._encode(meta)[2]) == meta
+
+    def test_json_results_keep_the_original_encoding(self):
+        self.app.conf.result_serializer = 'json'
+        backend = ElasticsearchBackend(app=self.app)
+        meta = {'status': states.SUCCESS, 'result': {'value': 42}}
+
+        payload = backend.encode(meta)
+        assert json.loads(payload) == meta
+        assert backend.decode(payload) == meta
+
+    def test_pickle_stored_success_is_not_overwritten(self):
+        self.app.conf.result_serializer = 'pickle'
+        self.app.conf.result_accept_content = ['pickle']
+        backend = ElasticsearchBackend(app=self.app)
+        backend._server = Mock()
+        meta = {'status': states.SUCCESS, 'result': 42}
+        backend._server.get.return_value = {
+            'found': True,
+            '_source': {'result': backend.encode(meta)},
+        }
+
+        assert backend._update('task-id', {'result': 'new'}, states.RETRY) == {
+            'result': 'noop',
+        }
+        backend._server.update.assert_not_called()
 
     def test_config_params(self):
         self.app.conf.elasticsearch_max_retries = 10
