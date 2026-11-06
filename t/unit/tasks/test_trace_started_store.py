@@ -2,9 +2,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from celery import states
-from celery.app.trace import build_tracer
-from celery.backends.base import BaseBackend, store_retry_timeout
+from celery import states, uuid
+from celery.app.trace import STORE_RETRY_LIMIT_MARGIN, build_tracer
+from celery.backends.base import STORE_RETRY_MAX_SLEEP, BaseBackend, store_retry
 from celery.exceptions import BackendStoreError, Reject
 
 redis = pytest.importorskip('redis')
@@ -20,19 +20,25 @@ class FakeClock:
 
     def __init__(self):
         self.now = 0.0
+        self.sleeps = []
 
     def __call__(self):
         return self.now
 
     def sleep(self, seconds):
+        self.sleeps.append(seconds)
         self.now += seconds
 
 
 @pytest.fixture
 def clock():
     clock = FakeClock()
-    with patch('celery.backends.base.time.monotonic', clock):
+    with patch('time.monotonic', clock):
         yield clock
+
+
+def test_default_timeout(app):
+    assert app.conf.result_backend_store_retry_timeout == 20.0
 
 
 class test_started_store_with_redis_backend:
@@ -46,18 +52,25 @@ class test_started_store_with_redis_backend:
         self.backend.client.get.return_value = None
         self.backend._sleep = clock.sleep
         self.ran = Mock(name='body')
+        self.add = self.make_task()
+
+    def make_task(self, body=None, **options):
         ran = self.ran
 
-        @self.app.task(shared=False, track_started=True, acks_late=True)
-        def add(x, y):
+        @self.app.task(name=f'add-{uuid()}', shared=False, bind=True,
+                       track_started=True, acks_late=True, **options)
+        def add(self_, x, y):
             ran()
+            if body:
+                body(self_)
             return x + y
 
         add.backend = self.backend
-        self.add = add
+        return add
 
-    def trace(self):
-        tracer = build_tracer(self.add.name, self.add, eager=False, app=self.app)
+    def trace(self, task=None, eager=False):
+        task = task or self.add
+        tracer = build_tracer(task.name, task, eager=eager, app=self.app)
         return tracer('id-1', (2, 2), {}, None)
 
     def stored_states(self):
@@ -70,11 +83,13 @@ class test_started_store_with_redis_backend:
             [ConnectionError('backend gone')] * 5 + [None] * 10
         )
 
-        self.trace()
+        with patch('celery.backends.base.logger') as logger:
+            self.trace()
 
         self.ran.assert_called_once()
         assert self.stored_states() == [states.STARTED, states.SUCCESS]
         assert self.clock.now < TIMEOUT
+        assert logger.warning.call_count == 5
 
     def test_outage_while_storing_success_keeps_the_result(self):
         # The STARTED store works, then the backend goes away for a while.
@@ -97,9 +112,21 @@ class test_started_store_with_redis_backend:
 
         assert excinfo.value.requeue is True
         assert isinstance(excinfo.value.reason, error)
-        assert self.clock.now >= TIMEOUT
+        assert self.clock.now == pytest.approx(TIMEOUT)
         mark_as_failure.assert_not_called()
         self.ran.assert_not_called()
+
+    def test_long_outage_backs_off(self):
+        self.backend.client.get.side_effect = ConnectionError('backend gone')
+
+        with pytest.raises(Reject):
+            self.trace()
+
+        sleeps = self.clock.sleeps
+        assert max(sleeps) <= STORE_RETRY_MAX_SLEEP
+        # The sleeps grow up to the cap, so a long outage costs few reads.
+        assert max(sleeps[-10:]) > 0.1
+        assert self.backend.client.get.call_count < 200
 
     def test_does_not_retry_other_errors(self):
         self.backend.client.get.side_effect = ResponseError('bad reply')
@@ -132,9 +159,44 @@ class test_started_store_with_redis_backend:
         assert self.backend.client.get.call_count == 1
         assert self.clock.now == 0
 
+    def test_eager_tasks_do_not_wait(self):
+        task = self.make_task(store_eager_result=True)
+        self.backend.client.get.side_effect = ConnectionError('backend gone')
+
+        with patch('celery.app.trace.report_internal_error'), \
+                pytest.raises(ConnectionError):
+            self.trace(task, eager=True)
+
+        assert self.clock.now == 0
+
+    def test_stops_short_of_the_soft_time_limit(self):
+        task = self.make_task(soft_time_limit=5)
+        self.backend.client.get.side_effect = ConnectionError('backend gone')
+
+        with pytest.raises(Reject):
+            self.trace(task)
+
+        assert self.clock.now == pytest.approx(5 - STORE_RETRY_LIMIT_MARGIN)
+
+    def test_stores_from_the_task_body_fail_fast(self):
+        errors = []
+
+        def body(task):
+            self.backend.client.get.side_effect = ConnectionError('backend gone')
+            try:
+                task.update_state(task_id='id-1', state='PROGRESS')
+            except ConnectionError as exc:
+                errors.append(exc)
+            self.backend.client.get.side_effect = None
+
+        self.trace(self.make_task(body))
+
+        assert len(errors) == 1
+        assert self.clock.now == 0
+
     def test_timeout_only_applies_while_the_task_runs(self):
         self.trace()
-        assert store_retry_timeout.get() is None
+        assert store_retry.get() is None
 
         self.backend.client.get.side_effect = ConnectionError('backend gone')
         with pytest.raises(ConnectionError):
@@ -144,13 +206,15 @@ class test_started_store_with_redis_backend:
         assert self.clock.now == 0
 
 
-class test_store_result_retry_timeout:
+class test_store_result_retry:
+    """A backend that retries its own errors, like the database backend."""
 
     class FlakyBackend(BaseBackend):
-        """Fails to store, like the database backend after its own retries."""
 
         def __init__(self, failures, *args, **kwargs):
             super().__init__(*args, **kwargs)
+            self.always_retry = True
+            self.max_retries = 3
             self.failures = failures
             self.calls = 0
 
@@ -160,38 +224,60 @@ class test_store_result_retry_timeout:
         def _store_result(self, *args, **kwargs):
             self.calls += 1
             if self.calls <= self.failures:
-                try:
-                    raise OSError('database gone')
-                except OSError as exc:
-                    raise BackendStoreError('failed to store result') from exc
+                raise OSError('database gone')
 
     def store(self, backend, clock):
         backend._sleep = clock.sleep
-        token = store_retry_timeout.set(TIMEOUT)
+        token = store_retry.set((TIMEOUT, None))
         try:
             return backend.store_result('id-1', 42, states.SUCCESS)
         finally:
-            store_retry_timeout.reset(token)
+            store_retry.reset(token)
 
-    def test_retries_a_wrapped_transient_error(self, clock):
-        backend = self.FlakyBackend(3, app=self.app)
+    def test_retries_past_max_retries_until_the_timeout(self, clock):
+        backend = self.FlakyBackend(10, app=self.app)
 
         assert self.store(backend, clock) == 42
-        assert backend.calls == 4
+        assert backend.calls == 11
 
     def test_gives_up_after_the_timeout(self, clock):
         backend = self.FlakyBackend(10 ** 6, app=self.app)
 
-        with pytest.raises(BackendStoreError):
+        with pytest.raises(BackendStoreError) as excinfo:
             self.store(backend, clock)
 
+        assert isinstance(excinfo.value.__cause__, OSError)
+        assert backend.store_error_safe_to_retry(excinfo.value)
         assert clock.now == pytest.approx(TIMEOUT)
+
+    def test_one_retry_loop_logs_the_backend_error(self, clock):
+        backend = self.FlakyBackend(10, app=self.app)
+        backend.on_backend_retryable_error = Mock(name='on_backend_retryable_error')
+
+        with patch('celery.backends.base.logger') as logger:
+            self.store(backend, clock)
+
+        assert logger.warning.call_count == 10
+        for c in logger.warning.call_args_list:
+            assert 'exc_info' not in c.kwargs
+            assert any(isinstance(arg, OSError) for arg in c.args)
+        assert backend.on_backend_retryable_error.call_count == 10
+
+    def test_without_the_timeout_keeps_max_retries(self, clock):
+        backend = self.FlakyBackend(10, app=self.app)
+        backend._sleep = clock.sleep
+
+        with pytest.raises(BackendStoreError):
+            backend.store_result('id-1', 42, states.SUCCESS)
+
+        assert backend.calls == 4
 
     def test_does_not_retry_a_store_error_without_a_transient_cause(self, clock):
         backend = self.FlakyBackend(0, app=self.app)
         backend._store_result = Mock(side_effect=BackendStoreError('value too large'))
 
-        with pytest.raises(BackendStoreError):
+        with pytest.raises(BackendStoreError) as excinfo:
             self.store(backend, clock)
 
         backend._store_result.assert_called_once()
+        assert not backend.store_error_safe_to_retry(excinfo.value)

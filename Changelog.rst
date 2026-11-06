@@ -12,6 +12,14 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- A worker no longer loses ``acks_late`` tasks during a short result backend
+  outage. While a task runs, a pool process now retries storing its state
+  (``STARTED``, the result or the failure) for up to
+  :setting:`result_backend_store_retry_timeout`, 20 seconds by default, when
+  the error is one the backend reports as safe to retry. A task with
+  :setting:`task_track_started` that still can't store ``STARTED`` is requeued,
+  with a warning, instead of being acknowledged without running. Before, such
+  tasks were lost, and a result that failed to store was lost too (#8588).
 - An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
   worker is now logged at ``ERROR`` level instead of being recorded as a task
   failure. The task's errbacks no longer run for a task that succeeded, and a
