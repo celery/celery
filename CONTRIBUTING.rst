@@ -1175,13 +1175,15 @@ that require third-party libraries must be added.
 
 2) Modify ``setup.py``
 
-    After the requirements file is added, you need to add it as an option
-    to :file:`setup.py` in the ``extras_require`` section::
+    After the requirements file is added, you need to add its name to the
+    ``EXTENSIONS`` tuple in :file:`setup.py`, which is used to build
+    ``extras_require``::
 
-        extra['extras_require'] = {
+        EXTENSIONS = (
             # ...
-            'cassandra': extras('cassandra.txt'),
-        }
+            'cassandra',
+            # ...
+        )
 
 3) Document the new feature in :file:`docs/includes/installation.txt`
 
