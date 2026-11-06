@@ -181,6 +181,12 @@ def detach(path, argv, logfile=None, pidfile=None, uid=None,
               help_group="Worker Options",
               help="Path to the state database. The extension '.db' may be "
                    "appended to the filename.")
+@click.option('--liveness-file',
+              cls=CeleryOption,
+              type=click.Path(),
+              help_group="Worker Options",
+              help="Path of a file the worker touches while it's healthy, "
+                   "for a container health check to read.")
 @click.option('-l',
               '--loglevel',
               default='WARNING',
