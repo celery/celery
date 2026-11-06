@@ -334,7 +334,7 @@ class test_DelayedDelivery:
         }
 
         # Make the second queue fail to bind
-        def bind_side_effect(connection, queue):
+        def bind_side_effect(connection, queue, prefix=None):
             if queue.name == 'queue2':
                 raise NotFound(
                     reply_text="NOT_FOUND - no queue 'queue2' in vhost '/'",
@@ -376,7 +376,7 @@ class test_DelayedDelivery:
         }
 
         # Make queue1 and queue3 fail with different errors
-        def bind_side_effect(connection, queue):
+        def bind_side_effect(connection, queue, prefix=None):
             if queue.name == 'queue1':
                 raise ValueError("Queue1 binding failed")
             elif queue.name == 'queue3':
@@ -433,7 +433,7 @@ class test_DelayedDelivery:
 
         # Make bind raise a ConnectionRefusedError twice, then succeed
         # This simulates a transient connection issue that resolves on retry
-        def bind_side_effect(connection, queue):
+        def bind_side_effect(connection, queue, prefix=None):
             bind_attempts[0] += 1
             if bind_attempts[0] <= 2:
                 # ConnectionRefusedError is one of the RETRIED_EXCEPTIONS
@@ -491,3 +491,45 @@ class test_DelayedDelivery:
         assert mock_bind.call_count == 1
         bound_queue = mock_bind.call_args[0][1]
         assert bound_queue.name == 'celery'
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    @patch('celery.worker.consumer.delayed_delivery.declare_native_delayed_delivery_exchanges_and_queues')
+    def test_queue_prefix_forwarded_to_kombu(self, mock_declare, mock_bind):
+        """The configured queue prefix is forwarded to both kombu setup functions."""
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'quorum'
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_prefix = 'tenant_a'
+        consumer_mock.app.conf.broker_url = 'amqp://'
+        consumer_mock.app.amqp.queues = {
+            'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
+        }
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+        delayed_delivery.start(consumer_mock)
+
+        # declare_native_delayed_delivery_exchanges_and_queues(connection, queue_type, prefix)
+        assert mock_declare.call_count == 1
+        assert mock_declare.call_args[0][1] == 'quorum'
+        assert mock_declare.call_args[0][2] == 'tenant_a'
+
+        # bind_queue_to_native_delayed_delivery_exchange(connection, queue, prefix)
+        assert mock_bind.call_count == 1
+        assert mock_bind.call_args[0][2] == 'tenant_a'
+
+    @patch('celery.worker.consumer.delayed_delivery.bind_queue_to_native_delayed_delivery_exchange')
+    @patch('celery.worker.consumer.delayed_delivery.declare_native_delayed_delivery_exchanges_and_queues')
+    def test_queue_prefix_defaults_to_none(self, mock_declare, mock_bind):
+        """When the prefix setting is unset, ``None`` is forwarded to both kombu setup functions."""
+        consumer_mock = MagicMock()
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_type = 'quorum'
+        consumer_mock.app.conf.broker_native_delayed_delivery_queue_prefix = None
+        consumer_mock.app.conf.broker_url = 'amqp://'
+        consumer_mock.app.amqp.queues = {
+            'celery': Queue('celery', exchange=Exchange('celery', type='topic'))
+        }
+
+        delayed_delivery = DelayedDelivery(consumer_mock)
+        delayed_delivery.start(consumer_mock)
+
+        assert mock_declare.call_args[0][2] is None
+        assert mock_bind.call_args[0][2] is None
