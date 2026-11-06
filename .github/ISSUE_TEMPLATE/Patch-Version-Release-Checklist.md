@@ -109,7 +109,7 @@ git push origin main --tags
 ### 4.3 Publish release to PyPI
 The release manager should publish the release to PyPI using the following commands running under the root directory of the repository:
 ```bash
-python setup.py clean build sdist bdist_wheel
+python -m build
 ```
 If the build is successful, the release manager should publish the release to PyPI using the following command:
 ```bash
