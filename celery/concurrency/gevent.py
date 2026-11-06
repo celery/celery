@@ -2,7 +2,6 @@
 import functools
 import types
 from time import monotonic
-from weakref import ref
 
 from kombu.asynchronous import timer as _timer
 
@@ -43,58 +42,26 @@ def apply_timeout(target, args=(), kwargs=None, callback=None,
 class Timer(_timer.Timer):
 
     def __init__(self, *args, **kwargs):
-        from gevent import Greenlet, GreenletExit, getcurrent
-        from greenlet import greenlet
-
-        timer_ref = ref(self)
+        from gevent import Greenlet, GreenletExit
 
         class _Greenlet(Greenlet):
             def cancel(self, *args, **kwargs):
-                timer = timer_ref()
-                if timer is not None:
-                    return timer._cancel(self, *args, **kwargs)
-                # A completed one-shot handle must not keep its timer alive.
-                self.canceled = True
-                entry = getattr(self, 'entry', None)
-                if entry is not None:
-                    entry.cancel()
-                return Greenlet.kill(self, *args, **kwargs)
+                self.entry.cancel()
+                return self.kill(*args, **kwargs)
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
-        self._getcurrent = getcurrent
-        self._kill = Greenlet.kill
-        # Unlike Greenlet.started/bool(Greenlet), the base implementation is
-        # false for a spawn_later callback which has not actually run yet.
-        self._is_active = greenlet.__bool__
         super().__init__(*args, **kwargs)
         self._queue = set()
 
-    def _cancel(self, g, *args, **kwargs):
-        g.canceled = True
-        entry = getattr(g, 'entry', None)
-        current = self._getcurrent()
-        if entry is not None:
-            entry.cancel()
-            for queued in tuple(self._queue):
-                if (
-                    queued is not g and
-                    queued is not current and
-                    getattr(queued, 'entry', None) is entry and
-                    not self._is_active(queued)
-                ):
-                    # Cancel future iterations without interrupting a later
-                    # iteration already running, or yielding to pending ones.
-                    queued.kill(block=False)
-                    self._queue.discard(queued)
-        if g is not current:
-            # Preserve kill's arguments/semantics for the explicitly supplied
-            # handle, including when that handle is currently suspended.
-            return self._kill(g, *args, **kwargs)
+    @staticmethod
+    def _apply_entry(entry):
+        if not entry.canceled:
+            entry()
 
     def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
-        g = self._Greenlet.spawn_later(secs, entry)
+        g = self._Greenlet.spawn_later(secs, self._apply_entry, entry)
         self._queue.add(g)
         g.link(self._entry_exit)
         g.entry = entry
@@ -111,20 +78,11 @@ class Timer(_timer.Timer):
 
     def clear(self):
         queue = self._queue
-        # Mark every Entry before any callback can exit and reschedule itself.
-        for g in tuple(queue):
-            g.canceled = True
-            entry = getattr(g, 'entry', None)
-            if entry is not None:
-                entry.cancel()
-        current = self._getcurrent()
+        for g in list(queue):
+            g.entry.cancel()
         while queue:
             try:
-                g = queue.pop()
-                # clear() keeps its existing force-stop behavior, but must not
-                # kill its own caller or wait for callbacks to accept the kill.
-                if g is not current:
-                    g.kill(block=False)
+                queue.pop().kill()
             except KeyError:
                 pass
 
