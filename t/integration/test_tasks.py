@@ -17,11 +17,13 @@ from celery.worker import state as worker_state
 
 from .conftest import TEST_BACKEND, get_active_redis_channels, get_redis_connection
 from .tasks import (AddParameterModel, ClassBasedAutoRetryTask, ExpectedException, add, add_ignore_result,
-                    add_not_typed, add_pydantic, add_pydantic_string_annotations, fail, fail_unpickleable,
-                    print_unicode, reject_then_succeed, reject_without_requeue, retry, retry_once,
-                    retry_once_headers, retry_once_priority, retry_unpickleable, return_properties,
-                    return_request_time_limits, second_order_replace1, sleeping,
-                    soft_time_limit_must_exceed_time_limit, task_with_declared_time_limits)
+                    add_not_typed, add_pydantic, add_pydantic_string_annotations, add_with_result, fail,
+                    fail_unpickleable, print_unicode, record_replaced_task_nesting, reject_then_succeed,
+                    reject_without_requeue, retry, retry_once, retry_once_headers, retry_once_ignore_result,
+                    retry_once_priority, retry_once_with_result, retry_unpickleable, retry_with_args_after_kwargs,
+                    retry_with_kwargs_after_args, return_properties, return_request_time_limits,
+                    second_order_replace1, sleeping, soft_time_limit_must_exceed_time_limit,
+                    task_with_declared_time_limits)
 
 TIMEOUT = 10
 
@@ -158,6 +160,32 @@ class test_tasks:
         # persisted in the result backend.
         time.sleep(1)
         assert result.result is None
+
+    def test_send_task_without_ignore_result_uses_task_ignore_result(self, app, manager):
+        result = app.send_task(add_ignore_result.name, args=(1, 2))
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        manager.wait_for(assert_completed, catch=(AssertionError,))
+        meta = app.backend.get_task_meta(result.id)
+
+        assert add_ignore_result.ignore_result is True
+        assert meta['status'] == celery.states.PENDING
+        assert meta['result'] is None
+
+    def test_send_task_without_ignore_result_stores_result(self, app, manager):
+        result = app.send_task(add_with_result.name, args=(1, 2))
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        manager.wait_for(assert_completed, catch=(AssertionError,))
+        meta = app.backend.get_task_meta(result.id)
+
+        assert add_with_result.ignore_result is False
+        assert meta['status'] == celery.states.SUCCESS
+        assert meta['result'] == 3
 
     @flaky
     def test_reject_without_requeue_stores_failure(self, manager):
@@ -312,6 +340,22 @@ class test_tasks:
         assert result.ready() is True
         assert result.failed() is False
         assert result.successful() is False
+
+    @pytest.mark.parametrize('task_state', [celery.states.STARTED, 'PROGRESS'])
+    def test_revoke_keeps_state_of_task_started_elsewhere(self, manager, task_state):
+        if TEST_BACKEND.startswith('rpc'):
+            raise pytest.skip('Requires a backend that stores task states.')
+        backend = manager.app.backend
+        started, not_started = str(uuid4()), str(uuid4())
+        # Play another worker that has started a task. The session worker
+        # gets the revoke but doesn't run the task, so without terminate it
+        # must leave the state to the other worker.
+        backend.store_result(started, {'hostname': 'other@host'}, task_state)
+
+        # The worker replies once it has handled the revoke
+        assert manager.app.control.revoke([started, not_started], reply=True, timeout=10)
+        assert backend.get_state(started) == task_state
+        assert backend.get_state(not_started) == celery.states.REVOKED
 
     def test_revoked_by_headers_simple_canvas(self, manager):
         """Testing revoking of task using a stamped header"""
@@ -474,6 +518,21 @@ class test_tasks:
         assert status == 'RETRY'
         assert result.get() == 'bar'
         assert result.status == 'SUCCESS'
+
+    def test_retry_switches_from_kwargs_to_args(self, manager):
+        result = retry_with_args_after_kwargs.apply_async(
+            kwargs={'foo': 1, 'bar': 2, 'label': 'kept'},
+        )
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 3, 'label': 'kept',
+            'retries': 1, 'is_eager': False,
+        }
+
+    def test_retry_switches_from_args_to_kwargs(self, manager):
+        result = retry_with_kwargs_after_args.apply_async(args=(1, 2))
+        assert result.get(timeout=TIMEOUT) == {
+            'foo': 2, 'bar': 2, 'retries': 1, 'is_eager': False,
+        }
 
     def test_retry_with_unpickleable_exception(self, manager):
         """Test a task that retries with an unpickleable exception.
@@ -775,6 +834,38 @@ class test_task_redis_result_backend:
         new_channels = [channel for channel in get_active_redis_channels() if channel not in channels_before_test]
         assert new_channels == []
 
+    def test_retry_preserves_ignore_result_false(self, manager):
+        # Explicitly request that the task result is not ignored.
+        result = retry_once_ignore_result.apply_async(ignore_result=False)
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        try:
+            manager.wait_for(assert_completed, catch=(AssertionError,))
+            meta = result.backend.get_task_meta(result.id)
+
+            assert meta['status'] == celery.states.SUCCESS
+            assert meta['result'] == 1
+        finally:
+            result.forget()
+
+    def test_retry_preserves_ignore_result_true(self, manager):
+        # Explicitly request that the task result is ignored.
+        result = retry_once_with_result.apply_async(ignore_result=True)
+
+        def assert_completed():
+            assert result.id in worker_state.successful_requests
+
+        try:
+            manager.wait_for(assert_completed, catch=(AssertionError,))
+            meta = result.backend.get_task_meta(result.id)
+
+            assert meta['status'] == celery.states.PENDING
+            assert meta['result'] is None
+        finally:
+            result.forget()
+
     @flaky
     def test_asyncresult_forget_cancels_subscription(self, manager):
         channels_before_test = get_active_redis_channels()
@@ -803,6 +894,11 @@ class test_task_redis_result_backend:
 
 
 class test_task_replacement:
+    @pytest.mark.parametrize('replacements', (0, 1, 3))
+    def test_replaced_task_nesting_increments(self, manager, replacements):
+        result = record_replaced_task_nesting.delay(replacements)
+        assert result.get(timeout=TIMEOUT) == list(range(replacements + 1))
+
     def test_replaced_task_nesting_level_0(self, manager):
         @task_received.connect
         def task_received_handler(request, **kwargs):

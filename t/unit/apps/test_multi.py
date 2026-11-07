@@ -57,6 +57,24 @@ def multi_args(p, *args, **kwargs):
 
 class test_multi_args:
 
+    def test_parse_uses_custom_node_class(self, tmp_path):
+        class CustomNode(Node):
+            pass
+
+        class CustomMultiParser(MultiParser):
+            Node = CustomNode
+
+        p = NamespacedOptionParser([
+            'foo', 'bar',
+            f'--pidfile={tmp_path}/%n.pid',
+            f'--logfile={tmp_path}/%n.log',
+        ])
+        p.parse()
+        nodes = list(CustomMultiParser(suffix='example.com').parse(p))
+
+        assert [node.name for node in nodes] == ['foo@example.com', 'bar@example.com']
+        assert all(isinstance(node, CustomNode) for node in nodes)
+
     @pytest.mark.parametrize('option', ['--pidfile', '-p'])
     @pytest.mark.parametrize('template,expected', [
         ('%n.pid', 'worker.pid'),
