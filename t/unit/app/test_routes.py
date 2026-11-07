@@ -1,4 +1,4 @@
-from unittest.mock import ANY, Mock
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from kombu import Exchange, Queue
@@ -187,6 +187,24 @@ class test_lookup_route(RouteCase):
         )
         options = step.call_args[0][3]
         assert options['priority'] == 3
+
+    def test_router_fun__returned_dict_is_not_modified(self):
+        # A router may return the same dict for every call, e.g. a value
+        # looked up in a settings mapping.
+        self.simple_queue_setup()
+        route = {'queue': 'foo'}
+        step = Mock(spec=['__call__'], return_value=route)
+        router = Router(self.app, routes.prepare([step]),
+                        self.app.amqp.queues)
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            self.mytask.apply_async((1,), router=router,
+                                    priority=9, expires=30)
+            self.mytask.apply_async((2,), router=router)
+        assert route == {'queue': 'foo'}
+        options = send.call_args_list[1][1]
+        assert options['queue'].name == 'foo'
+        assert options.get('priority') is None
+        assert 'expiration' not in options
 
     def test_compat_router_classes__called_with(self):
         self.simple_queue_setup()

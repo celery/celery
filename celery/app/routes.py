@@ -82,6 +82,9 @@ class Router:
         else:
             # can use defaults from configured queue, but override specific
             # things (like the routing_key): great for topic exchanges.
+            # Work on a copy: a router may return the same dict every time,
+            # and the message options merged in later must not stick to it.
+            route = dict(route)
             queue = route.pop('queue', None)
 
         if queue:
