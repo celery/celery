@@ -54,6 +54,8 @@ class TaskPool(BasePool):
                                 **options)
         except propagate:
             raise
+        except MemoryError:
+            raise
         except Exception:
             # The trace can raise too, when it can't store the task's
             # failure.  billiard reports that to the error callback for
