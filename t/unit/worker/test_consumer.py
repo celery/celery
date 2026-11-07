@@ -1643,6 +1643,75 @@ class test_Events:
         conn.transport.register_with_event_loop.assert_not_called()
 
 
+class test_EventsReconnect:
+
+    def _start(self, step, c):
+        step.start(c)
+        return c.event_dispatcher
+
+    def test_reconnect_keeps_all_groups_disabled(self):
+        # worker started with -E: disable_events, reconnect, enable_events
+        c = Mock()
+        c.hub = None
+        c.event_dispatcher = None
+        step = Events(c, task_events=True)
+        c.app.events.Dispatcher.side_effect = (
+            lambda *a, groups=None, **kw: Mock(groups=set(groups or []),
+                                               _all_groups_disabled=False))
+        dis = self._start(step, c)
+        assert dis.groups == set()
+
+        # what the disable_events command does
+        dis.groups.add('worker')
+        dis._all_groups_disabled = True
+
+        step.start(c)
+        new = c.event_dispatcher
+        assert new is not dis
+        assert new.groups == {'worker'}
+        assert new._all_groups_disabled is True
+
+        # enable_events and a second reconnect
+        new.groups.clear()
+        new._all_groups_disabled = False
+        step.start(c)
+        assert c.event_dispatcher.groups == set()
+        assert c.event_dispatcher._all_groups_disabled is False
+
+    def test_reconnect_without_disable_events(self):
+        c = Mock()
+        c.hub = None
+        c.event_dispatcher = None
+        step = Events(c, task_events=True)
+        c.app.events.Dispatcher.side_effect = (
+            lambda *a, groups=None, **kw: Mock(groups=set(groups or []),
+                                               _all_groups_disabled=False))
+        step.start(c)
+        step.start(c)
+        assert c.event_dispatcher._all_groups_disabled is False
+        assert c.event_dispatcher.groups == set()
+
+    def test_reconnect_real_dispatcher(self):
+        app = self.app
+        c = Mock()
+        c.app = app
+        c.hub = None
+        c.event_dispatcher = None
+        c.hostname = 'w@h'
+        c.amqheartbeat = 0
+        c.connection_for_write.return_value.transport.driver_type = 'amqp'
+        step = Events(c, task_events=True)
+        step.start(c)
+        dis = c.event_dispatcher
+        assert dis._all_groups_disabled is False
+        dis.groups.add('worker')
+        dis._all_groups_disabled = True
+        step.start(c)
+        assert c.event_dispatcher is not dis
+        assert c.event_dispatcher.groups == {'worker'}
+        assert c.event_dispatcher._all_groups_disabled is True
+
+
 class test_Tasks:
 
     def setup_method(self):

@@ -1270,6 +1270,14 @@ a worker using :program:`celery events`/:program:`celerymon`.
     >>> app.control.enable_events()
     >>> app.control.disable_events()
 
+A worker started with the :option:`-E <celery worker -E>` option (or with
+:setting:`worker_send_task_events` enabled) sends the events of every group.
+On such a worker `disable_events` stops the task events, and only the events
+of the ``worker`` group, like :event:`worker-heartbeat`, are sent until
+`enable_events` restores sending the events of every group. This way the
+worker is still seen as online by monitors such as :program:`celery events`
+and Flower.
+
 .. _worker-custom-control-commands:
 
 Writing your own remote control commands
