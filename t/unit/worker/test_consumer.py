@@ -12,6 +12,7 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
 from kombu.asynchronous import Hub
 from kombu.asynchronous.timer import Timer
+from kombu.common import QoS
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -120,11 +121,14 @@ class test_Consumer(ConsumerTestCase):
     def test_limit_moved_to_pool(self):
         with patch('celery.worker.consumer.consumer.task_reserved') as task_reserved:
             c = self.get_consumer()
+            c.qos = QoS(Mock(name='set_prefetch_count'), 3)
             c.on_task_request = Mock(name='on_task_request')
             request = Mock(name='request')
+            request._holds_prefetch_slot = True
             c._limit_move_to_pool(request)
             task_reserved.assert_called_with(request)
             c.on_task_request.assert_called_with(request)
+            assert c.qos.value == 2
 
     def test_update_prefetch_count(self):
         c = self.get_consumer()
@@ -449,6 +453,7 @@ class test_Consumer(ConsumerTestCase):
 
     def test_limit_task(self):
         c = self.get_consumer()
+        c.qos = QoS(Mock(name='set_prefetch_count'), 2)
         bucket = Mock()
         request = Mock()
 
@@ -459,19 +464,75 @@ class test_Consumer(ConsumerTestCase):
             bucket.add.assert_called_with((request, 1))
             task_reserved.assert_called_with(bucket)
 
-    def test_post_eta(self):
-        c = self.get_consumer()
-        c.qos = Mock()
-        bucket = Mock()
-        request = Mock()
+    def _empty_bucket(self):
+        # Holds every request until can_consume() is told to return True.
+        bucket = Mock(name='bucket')
+        bucket.contents = deque()
+        bucket.add.side_effect = bucket.contents.append
+        bucket.pop.side_effect = bucket.contents.popleft
+        bucket.can_consume.return_value = False
+        bucket.expected_time.return_value = 1.0
+        return bucket
 
-        with patch(
-            'celery.worker.consumer.consumer.Consumer._schedule_bucket_request'
-        ) as task_reserved:
-            c._limit_post_eta(request, bucket, 1)
-            c.qos.decrement_eventually.assert_called_with()
-            bucket.add.assert_called_with((request, 1))
-            task_reserved.assert_called_with(bucket)
+    @pytest.mark.parametrize('prefetch,eta_task_limit,held', [
+        (2, None, 5),
+        # worker_eta_task_limit caps the slots, and releasing them must
+        # not push the prefetch count below 2.
+        (2, 3, 3),
+        (2, 0, 2),
+        # prefetch disabled
+        (0, None, 0),
+    ])
+    @patch('celery.worker.consumer.consumer.task_reserved')
+    def test_limit_task_holds_prefetch_slot_until_moved_to_pool(
+            self, _task_reserved, prefetch, eta_task_limit, held):
+        # Issue #8119: rate limited requests waiting for a token must not
+        # use up the prefetch window needed to fetch other tasks.
+        c = self.get_consumer()
+        c.qos = QoS(Mock(name='set_prefetch_count'), prefetch,
+                    max_prefetch=eta_task_limit)
+        bucket = self._empty_bucket()
+        requests = [Mock(name=f'request{i}') for i in range(3)]
+
+        for request in requests:
+            c._limit_task(request, bucket, 1)
+        assert c.qos.value == held
+        c.on_task_request.assert_not_called()
+
+        bucket.can_consume.return_value = True
+        c._schedule_bucket_request(bucket)
+        assert c.on_task_request.call_args_list == [call(r) for r in requests]
+        assert c.qos.value == prefetch
+
+    @patch('celery.worker.consumer.consumer.task_reserved')
+    def test_limit_task_with_token_keeps_prefetch_count(self, _task_reserved):
+        c = self.get_consumer()
+        c.qos = QoS(Mock(name='set_prefetch_count'), 2)
+        bucket = self._empty_bucket()
+        bucket.can_consume.return_value = True
+        request = Mock(name='request')
+
+        c._limit_task(request, bucket, 1)
+
+        c.on_task_request.assert_called_once_with(request)
+        assert c.qos.value == 2
+
+    @patch('celery.worker.consumer.consumer.task_reserved')
+    def test_post_eta(self, _task_reserved):
+        c = self.get_consumer()
+        c.qos = QoS(Mock(name='set_prefetch_count'), 2)
+        c.qos.increment_eventually()  # taken by the strategy for the ETA
+        bucket = self._empty_bucket()
+        request = Mock(name='request')
+
+        c._limit_post_eta(request, bucket, 1)
+        assert c.qos.value == 3
+        assert list(bucket.contents) == [(request, 1)]
+
+        bucket.can_consume.return_value = True
+        c._schedule_bucket_request(bucket)
+        c.on_task_request.assert_called_once_with(request)
+        assert c.qos.value == 2
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
