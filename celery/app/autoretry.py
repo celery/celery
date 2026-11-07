@@ -54,13 +54,22 @@ def add_autoretry_behaviour(task, **options):
                             maximum=retry_backoff_max,
                             full_jitter=retry_jitter)
                 # Override max_retries
-                if hasattr(task, 'override_max_retries'):
-                    retry_kwargs_for_attempt['max_retries'] = getattr(
-                        task, 'override_max_retries', task.max_retries)
-                ret = task.retry(exc=exc, **retry_kwargs_for_attempt)
-                # Stop propagation
-                if hasattr(task, 'override_max_retries'):
-                    delattr(task, 'override_max_retries')
+                override_max_retries = getattr(
+                    task, 'override_max_retries', None)
+                if override_max_retries is not None:
+                    retry_kwargs_for_attempt['max_retries'] = \
+                        override_max_retries
+                try:
+                    ret = task.retry(exc=exc, **retry_kwargs_for_attempt)
+                finally:
+                    # Stop propagation: the override applies to the retry
+                    # scheduled by this attempt only, and must not pin
+                    # max_retries for later executions of the task.
+                    # task.retry() always raises here (throw=True), so the
+                    # cleanup has to run in a finally block.
+                    if override_max_retries is not None and \
+                            hasattr(task, 'override_max_retries'):
+                        delattr(task, 'override_max_retries')
                 raise ret
 
         task._orig_run, task.run = task.run, run
