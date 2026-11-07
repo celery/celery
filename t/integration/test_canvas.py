@@ -195,6 +195,19 @@ class test_chain:
         c = add.s(4, 4) | add.s(8) | add.s(16)
         assert c().get(timeout=TIMEOUT) == 32
 
+    @pytest.mark.parametrize('args,kwargs,call_args,call_kwargs', (
+        ((2,), {}, (2,), {}),
+        ((), {'y': 2}, (2,), {}),
+        ((2,), {'y': 1}, (), {'y': 2}),
+    ))
+    @flaky
+    def test_clone_with_arguments(self, manager, args, kwargs, call_args, call_kwargs):
+        workflow = add.s() | add.s(1)
+        cloned = workflow.clone(args, kwargs)
+
+        assert cloned.apply_async(call_args, call_kwargs).get(timeout=TIMEOUT) == 5
+        assert workflow.delay(2, 2).get(timeout=TIMEOUT) == 5
+
     @flaky
     def test_single_chain(self, manager):
         c = chain(add.s(3, 4))()
