@@ -101,6 +101,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_ENABLE_UTC``                      :setting:`enable_utc`
 ``CELERY_IMPORTS``                         :setting:`imports`
 ``CELERY_INCLUDE``                         :setting:`include`
+``CELERY_STRICT_TYPING``                   :setting:`strict_typing`
 ``CELERY_TIMEZONE``                        :setting:`timezone`
 ``CELERYBEAT_MAX_LOOP_INTERVAL``           :setting:`beat_max_loop_interval`
 ``CELERYBEAT_SCHEDULE``                    :setting:`beat_schedule`
@@ -327,6 +328,42 @@ to false the system local timezone is used instead.
 
 Task settings
 -------------
+
+.. setting:: strict_typing
+
+``strict_typing``
+~~~~~~~~~~~~~~~~~
+
+Default: :const:`True`.
+
+.. versionchanged:: 5.7
+
+    The ``strict_typing`` argument to :class:`~celery.Celery` now defaults
+    to :const:`None` instead of :const:`True`. Omitting the argument or
+    passing :const:`None` now uses the application configuration. The
+    application default remains :const:`True` when no override is configured.
+    Reading ``app.strict_typing`` may load pending application configuration.
+
+    Defining ``strict_typing`` as a class attribute on a :class:`~celery.Celery`
+    subclass now shadows the configuration-backed property. The class attribute
+    takes precedence over both configuration and an explicit constructor
+    argument. Remove the class attribute to use either of those values.
+
+Whether to check task arguments before publishing a task, as described in
+:ref:`task-argument-checking`. Set this to :const:`False` to disable argument
+checking by default for tasks in the application::
+
+    strict_typing = False
+
+Passing ``strict_typing=True`` or ``strict_typing=False`` to
+:class:`~celery.Celery` overrides the value loaded from a configuration
+object. Individual tasks can override the application default with
+``@app.task(typing=True)`` or ``@app.task(typing=False)``.
+
+Configure this setting before tasks are bound to the application. Changing
+it later does not update the ``typing`` attribute of already bound tasks.
+Disabling the check does not make invalid arguments valid: the worker can
+still raise :exc:`TypeError` when it executes the task.
 
 .. setting:: task_annotations
 
