@@ -574,6 +574,65 @@ class test_State:
         assert len(r.state.tasks_by_worker['utest1']) == 10
         assert len(r.state.tasks_by_worker['utest2']) == 10
 
+    def _task_event(self, state, type_, uuid, hostname, clock, **fields):
+        return state.event({
+            'type': type_,
+            'uuid': uuid,
+            'hostname': hostname,
+            'clock': clock,
+            'timestamp': time(),
+            'local_received': time(),
+            **fields,
+        })
+
+    def test_tasks_by_worker_with_task_sent_event(self):
+        # task-sent comes from the client and creates the task, the worker
+        # is only known from the events that follow.
+        s = State()
+        self._task_event(s, 'task-sent', 't1', 'client@vandelay.com', 1,
+                         name='task1')
+        assert 'client@vandelay.com' not in s.tasks_by_worker
+        assert list(s.tasks_by_worker('worker1')) == []
+
+        self._task_event(s, 'task-received', 't1', 'worker1', 2, name='task1')
+        self._task_event(s, 'task-started', 't1', 'worker1', 3)
+        task = s.tasks['t1']
+        assert 'client@vandelay.com' not in s.tasks_by_worker
+        assert set(s.tasks_by_worker['worker1']) == {task}
+        assert set(s.tasks_by_type['task1']) == {task}
+        assert [t for _, t in s.tasks_by_worker('worker1')] == [task]
+
+    def test_tasks_by_worker_task_sent_only(self):
+        s = State()
+        self._task_event(s, 'task-sent', 't1', 'client@vandelay.com', 1,
+                         name='task1')
+        assert not s.tasks_by_worker
+        assert list(s.tasks_by_worker('client@vandelay.com')) == []
+        assert list(s.tasks_by_worker('worker1')) == []
+
+    def test_tasks_by_worker_first_event_has_no_name(self):
+        s = State()
+        self._task_event(s, 'task-started', 't1', 'worker1', 1)
+        task = s.tasks['t1']
+        assert set(s.tasks_by_worker['worker1']) == {task}
+        assert not s.tasks_by_type
+
+        self._task_event(s, 'task-received', 't1', 'worker1', 2, name='task1')
+        assert set(s.tasks_by_worker['worker1']) == {task}
+        assert set(s.tasks_by_type['task1']) == {task}
+        assert [t for _, t in s.tasks_by_type('task1')] == [task]
+
+    def test_tasks_by_worker_task_moves_to_new_worker(self):
+        s = State()
+        self._task_event(s, 'task-received', 't1', 'worker1', 1, name='task1')
+        self._task_event(s, 'task-retried', 't1', 'worker1', 2)
+        self._task_event(s, 'task-received', 't1', 'worker2', 3, name='task1')
+        task = s.tasks['t1']
+        assert not s.tasks_by_worker['worker1']
+        assert set(s.tasks_by_worker['worker2']) == {task}
+        assert [t for _, t in s.tasks_by_worker('worker2')] == [task]
+        assert list(s.tasks_by_worker('worker1')) == []
+
     def test_survives_unknown_worker_event(self):
         s = State()
         s.event({
