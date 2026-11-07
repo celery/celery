@@ -1407,6 +1407,12 @@ class Celery:
         return bugreport(self)
 
     def _get_backend(self):
+        # The loader only sees a plain ``override_backends`` key on the raw
+        # config object. ``conf`` also covers namespaced config objects and
+        # values set on ``app.conf`` or passed to the app.
+        override_backends = self.conf.get('override_backends')
+        if override_backends is not None:
+            self.loader.override_backends = override_backends
         backend, url = backends.by_url(
             self.backend_cls or self.conf.result_backend,
             self.loader)
