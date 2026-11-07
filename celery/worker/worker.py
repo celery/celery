@@ -60,6 +60,12 @@ Trying to deselect queue subset of {0!r}, but queue {1} isn't
 defined in the `task_queues` setting.
 """
 
+ETA_TASK_LIMIT_UNSET = """\
+worker_eta_task_limit is not set, so this worker will hold any number of \
+ETA/countdown tasks in memory until they are due. Setting it caps them; a \
+worker that reaches the cap stops receiving new tasks until some of them run.\
+"""
+
 
 class WorkController:
     """Unmanaged worker instance."""
@@ -216,6 +222,8 @@ class WorkController:
             level, fmt, args = self._pending_concurrency_log
             getattr(logger, level)(fmt, *args)
             self._pending_concurrency_log = None
+        if self.app.conf.worker_eta_task_limit is None:
+            logger.warning(ETA_TASK_LIMIT_UNSET)
         if self.pidfile:
             self.pidlock = create_pidlock(self.pidfile)
 
