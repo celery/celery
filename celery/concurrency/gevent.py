@@ -45,16 +45,23 @@ class Timer(_timer.Timer):
         from gevent import Greenlet, GreenletExit
 
         class _Greenlet(Greenlet):
-            cancel = Greenlet.kill
+            def cancel(self, *args, **kwargs):
+                self.entry.cancel()
+                return self.kill(*args, **kwargs)
 
         self._Greenlet = _Greenlet
         self._GreenletExit = GreenletExit
         super().__init__(*args, **kwargs)
         self._queue = set()
 
+    @staticmethod
+    def _apply_entry(entry):
+        if not entry.canceled:
+            entry()
+
     def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
-        g = self._Greenlet.spawn_later(secs, entry)
+        g = self._Greenlet.spawn_later(secs, self._apply_entry, entry)
         self._queue.add(g)
         g.link(self._entry_exit)
         g.entry = entry
@@ -71,6 +78,8 @@ class Timer(_timer.Timer):
 
     def clear(self):
         queue = self._queue
+        for g in list(queue):
+            g.entry.cancel()
         while queue:
             try:
                 queue.pop().kill()
