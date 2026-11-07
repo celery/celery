@@ -282,9 +282,9 @@ class crontab_parser:
         self.max_ = max_
         self.min_ = min_
         self.pats: tuple[tuple[re.Pattern, Callable], ...] = (
-            (re.compile(self._range + self._steps), self._range_steps),
-            (re.compile(self._range), self._expand_range),
-            (re.compile(self._star + self._steps), self._star_steps),
+            (re.compile(self._range + self._steps + '$'), self._range_steps),
+            (re.compile(self._range + '$'), self._expand_range),
+            (re.compile(self._star + self._steps + '$'), self._star_steps),
             (re.compile('^' + self._star + '$'), self._expand_star),
         )
 

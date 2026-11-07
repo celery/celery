@@ -661,6 +661,17 @@ class test_crontab_parser:
         with pytest.raises(ParseException):
             crontab_parser(60).parse('*/')
 
+    @pytest.mark.parametrize('spec', [
+        '*/2-3',
+        '*/15/2',
+        '1-10/2/3',
+        '0-30/10-20',
+        '1-5 x',
+    ])
+    def test_parse_errors_on_trailing_text(self, spec):
+        with pytest.raises(ValueError):
+            crontab_parser(60).parse(spec)
+
     def test_parse_errors_on_negative_number(self):
         with pytest.raises(ParseException):
             crontab_parser(60).parse('-20')
