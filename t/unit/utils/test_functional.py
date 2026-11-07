@@ -472,6 +472,56 @@ class test_head_from_fun:
 
         g(b=3)
 
+    def test_positional_only(self):
+        def f(x, /, y):
+            pass
+
+        g = head_from_fun(f)
+        g(1, 2)
+        g(1, y=2)
+        with pytest.raises(TypeError):
+            g(x=1, y=2)
+
+    def test_positional_only_name_reused_as_keyword(self):
+        def f(x, y=1, /, **kwargs):
+            pass
+
+        g = head_from_fun(f)
+        g(1)
+        g(1, 2)
+        g(1, x=2, y=3)
+        with pytest.raises(TypeError):
+            g(x=1)
+
+    def test_positional_only__all_arguments(self):
+        def f(x, y=1, /):
+            pass
+
+        g = head_from_fun(f)
+        g(1)
+        g(1, 2)
+        with pytest.raises(TypeError):
+            g(1, y=2)
+
+    def test_positional_only__keyword_only(self):
+        def f(x, /, *, y, z=1):
+            pass
+
+        g = head_from_fun(f)
+        g(1, y=2)
+        g(1, y=2, z=3)
+        with pytest.raises(TypeError):
+            g(x=1, y=2)
+
+    def test_positional_only__bound(self):
+        def f(self, x, /):
+            pass
+
+        g = head_from_fun(f, bound=True)
+        g(1)
+        with pytest.raises(TypeError):
+            g(x=1)
+
     @pytest.mark.skipif(sys.version_info < (3, 14), reason="PEP 649 deferred annotations require Python 3.14+")
     def test_type_checking_annotation(self):
         # Regression test for https://github.com/celery/celery/discussions/10099
