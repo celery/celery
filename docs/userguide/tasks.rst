@@ -2465,7 +2465,7 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 
         return is_spam
 
-.. _`Akismet`: http://akismet.com/faq/
+.. _`Akismet`: https://akismet.com/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 .. _`Michael Foord`: http://www.voidspace.org.uk/
 .. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
