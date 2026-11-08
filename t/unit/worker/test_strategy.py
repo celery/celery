@@ -64,6 +64,12 @@ class test_default_strategy_proto2:
 
         self.add = add
 
+    def teardown_method(self):
+        # ETA/countdown strategies register requests in the real global
+        # `state.requests`/`state.scheduled_requests`, so clear them here to
+        # avoid leaking strongly-referenced requests into later tests.
+        state.reset_state()
+
     def get_message_class(self):
         return self.TaskMessage
 
@@ -250,6 +256,36 @@ class test_default_strategy_proto2:
             assert C.was_scheduled()
             C.consumer.qos.increment_eventually.assert_called_with()
 
+    def test_eta_task_registers_request_in_state(self):
+        # Regression test for #5321: a task with an ETA/countdown must be
+        # discoverable via `state.requests` (e.g. by the `query_task` remote
+        # control command) before its ETA elapses, not only afterwards.
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            assert state.requests[req.id] is req
+            assert req not in state.reserved_requests
+
+    def test_eta_task_timer_entry_attached_before_scheduled_visible(self):
+        # Regression test: task_scheduled() must run *after* the timer
+        # entry is attached to the request, not before. Otherwise a
+        # concurrent on_close() (the timer runs on its own thread for
+        # non-eventloop pools) could observe the request in
+        # scheduled_requests with no entry to cancel yet.
+        seen_entry_when_scheduled = []
+
+        def fake_task_scheduled(request):
+            seen_entry_when_scheduled.append(
+                getattr(request, '_eta_timer_entry', None))
+
+        with patch('celery.worker.strategy.task_scheduled',
+                   side_effect=fake_task_scheduled):
+            with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                C()
+
+        assert seen_entry_when_scheduled
+        assert seen_entry_when_scheduled[0] is not None
+
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:
             C()
@@ -287,6 +323,81 @@ class test_default_strategy_proto2:
                     C.get_request()
         finally:
             state.revoked.discard(task.id)
+
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_rejects_without_executing(self, exception_type):
+        # Regression test: when ETA timestamp conversion raises OverflowError
+        # or ValueError, the worker must reject the message and NOT execute
+        # the task.
+        with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+            mock_to_timestamp.side_effect = exception_type(
+                "timestamp conversion failed"
+            )
+
+            with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                C()
+
+            mock_to_timestamp.assert_called_once()
+
+            C.message.reject.assert_called_once()
+            assert C.message.reject.call_args[0][2] is False
+
+            assert not C.was_reserved()
+            C.consumer.on_task_request.assert_not_called()
+
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_records_failure_in_backend(self, exception_type):
+        # Regression test: when ETA timestamp conversion raises OverflowError
+        # or ValueError, the worker must record a terminal FAILURE result in
+        # the backend so the task doesn't remain PENDING forever.
+        with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+            mock_to_timestamp.side_effect = exception_type(
+                "timestamp conversion failed"
+            )
+
+            # Get task_id before context manager (signature is frozen in _context)
+            task = self.add.s(2, 2).set(countdown=10)
+            task.freeze()
+            task_id = task.id
+
+            with self._context(task) as C:
+                C()
+
+            # Verify the observable result state is FAILURE
+            from celery import states
+            assert self.add.backend.get_state(task_id) == states.FAILURE
+            # Verify the exception is stored as the result
+            result = self.add.backend.get_result(task_id)
+            assert isinstance(result, exception_type)
+
+    @pytest.mark.parametrize("exception_type", [OverflowError, ValueError])
+    def test_eta_conversion_error_with_disabled_backend(self, exception_type):
+        # Regression test: when ETA timestamp conversion fails with a
+        # DisabledBackend, the worker must still reject and return without
+        # crashing (DisabledBackend.store_result is a no-op).
+        from celery.backends.base import DisabledBackend
+
+        # Temporarily replace the task's backend with DisabledBackend
+        original_backend = self.add.backend
+        self.add.backend = DisabledBackend(app=self.app)
+
+        try:
+            with patch('celery.worker.strategy.to_timestamp') as mock_to_timestamp:
+                mock_to_timestamp.side_effect = exception_type(
+                    "timestamp conversion failed"
+                )
+
+                with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+                    # Should not raise even with DisabledBackend
+                    C()
+
+                # Verify the message was still rejected
+                C.message.reject.assert_called_once()
+                assert C.message.reject.call_args[0][2] is False
+                assert not C.was_reserved()
+        finally:
+            # Restore original backend
+            self.add.backend = original_backend
 
 
 class test_default_strategy_proto1(test_default_strategy_proto2):

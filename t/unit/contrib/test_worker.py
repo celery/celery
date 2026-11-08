@@ -1,4 +1,3 @@
-import weakref
 from unittest.mock import Mock, patch
 
 import pytest
@@ -65,27 +64,13 @@ class test_worker:
 
 class test_setup_default_app:
 
-    def test_teardown_collects_when_backend_was_created(self):
-        app = TestApp()
-        with patch('celery.contrib.testing.app.gc.collect') as collect:
-            with setup_default_app(app):
-                app.backend
-        collect.assert_called()
-        assert app._backend_cache is None
-        assert app._local.backend is None
-
-    def test_teardown_skips_collect_when_no_backend_was_created(self):
-        app = TestApp()
-        with patch('celery.contrib.testing.app.gc.collect') as collect:
-            with setup_default_app(app):
-                pass
-        collect.assert_not_called()
-
-    def test_teardown_releases_the_backend(self):
-        app = TestApp()
+    @pytest.mark.parametrize('thread_safe', [False, True])
+    def test_teardown_clears_cached_backend(self, thread_safe):
+        app = TestApp(config={'result_backend_thread_safe': thread_safe})
         with setup_default_app(app):
-            backend_ref = weakref.ref(app.backend)
-        assert backend_ref() is None
+            backend = app.backend
+            assert app._backend is backend
+        assert app._backend is None
 
 
 class test_TestWorkController:

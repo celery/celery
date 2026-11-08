@@ -1,16 +1,21 @@
+import gc
 import logging
 import os
 import socket
 import sys
 import threading
 import time
+from collections import deque
 from unittest.mock import Mock, patch
 
 import pytest
 from vine import promise
 
+from celery import chain, group, states
 from celery.backends.asynchronous import E_CELERY_RESTART_REQUIRED, BaseResultConsumer, greenletDrainer
 from celery.backends.base import Backend
+from celery.backends.redis import RedisBackend
+from celery.backends.rpc import RPCBackend
 from celery.utils import cached_property
 
 # ---- helpers ---------------------------------------------------------------
@@ -54,6 +59,24 @@ class test_Drainer_without_greenlets:
 
         assert p.ready
         assert calls[0] >= 3
+
+    def test_drain_times_out_immediately_when_timeout_is_zero(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        wait = Mock()
+
+        with pytest.raises(socket.timeout):
+            list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
+
+    def test_drain_returns_immediately_when_result_is_ready(self, app):
+        drainer = _make_consumer(app).drainer
+        p = promise()
+        p('done')
+        wait = Mock()
+
+        list(drainer.drain_events_until(p, timeout=0, wait=wait))
+        wait.assert_not_called()
 
     def test_drain_calls_on_interval(self, app):
         """on_interval callback is invoked every iteration."""
@@ -450,40 +473,6 @@ class DrainerTests:
         assert not p.ready, 'Promise should remain un-fulfilled'
         assert on_interval.call_count < 20, 'Should have limited number of calls to on_interval'
 
-    def test_drain_catches_and_logs_oserror(self):
-        p = promise()
-
-        def fulfill():
-            self.sleep(self.interval * 2)
-            p('done')
-
-        t = self.schedule_thread(fulfill)
-
-        state = {'n': 0}
-
-        def flaky(*args, **kwargs):
-            state['n'] += 1
-            if state['n'] == 1:
-                raise OSError('simulated broker restart')
-            # Yield to hub so the promise thread can run.
-            self.result_consumer_drain_events(
-                timeout=kwargs.get('timeout', None),
-            )
-
-        with patch.object(
-            self.drainer.result_consumer, 'drain_events',
-            side_effect=flaky,
-        ):
-            with patch('logging.warning') as mock_warn:
-                for _ in self.drainer.drain_events_until(
-                        p, interval=self.interval,
-                        timeout=self.MAX_TIMEOUT):
-                    pass
-
-        self.teardown_thread(t)
-        assert p.ready
-        assert mock_warn.called
-
 
 class GreenletDrainerTests(DrainerTests):
     def test_drain_raises_when_greenlet_already_exited(self):
@@ -604,6 +593,34 @@ class test_Drainer(DrainerTests):
     def teardown_thread(self, thread):
         thread.join()
 
+    def test_drain_catches_and_logs_oserror(self):
+        result = promise()
+        calls = 0
+
+        def wait(timeout=None):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise OSError('simulated broker restart')
+            result('done')
+
+        with patch(
+            'celery.backends.asynchronous.logging.warning',
+        ) as mock_warn, patch(
+            'celery.backends.asynchronous.time.sleep',
+        ) as mock_sleep:
+            list(self.drainer.drain_events_until(
+                result,
+                wait=wait,
+                interval=0.01,
+                timeout=1,
+            ))
+
+        assert result.ready
+        mock_warn.assert_called_once()
+        assert 'connection error during drain_events' in mock_warn.call_args.args[0]
+        mock_sleep.assert_called_once_with(0.01)
+
 
 class test_GeventDrainer(GreenletDrainerTests):
     @pytest.fixture(autouse=True)
@@ -711,3 +728,134 @@ class test_BaseResultConsumer_reconnect:
         consumer = self._make_consumer(app)
 
         assert consumer._reconnect() is None
+
+
+class test_AsyncBackendMixin:
+
+    @pytest.mark.parametrize('timeout', [0, 10])
+    def test_join_native_with_ready_nested_group(self, app, timeout):
+        # An already-ready group skips event draining; native joining must
+        # still return its nested results.
+        app._backend = RPCBackend(app)
+
+        header = group(
+            self.add.si(1, 100),
+            chain(
+                group(self.add.si(1, 1000), self.add.si(1, 2000)),
+                app=app,
+            ),
+        )
+        result = header.apply()
+
+        result.on_ready()
+        assert result.join_native(timeout=timeout) == [101, [1001, 2001]]
+
+    @staticmethod
+    def _backend(app, backend_cls):
+        backend = backend_cls(app=app)
+        backend.result_consumer.consume_from = Mock(name='consume_from')
+        backend.result_consumer.cancel_for = Mock(name='cancel_for')
+        app._backend = backend
+        return backend
+
+    @staticmethod
+    def _success(task_id):
+        return {'task_id': task_id, 'status': states.SUCCESS, 'result': 42,
+                'traceback': None, 'children': None}
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_dropping_a_duplicate_keeps_the_pending_result(
+            self, app, backend_cls):
+        # Issue #4925: a throwaway AsyncResult for an id that is already
+        # pending, e.g. a progress poll of a group member, must not take the
+        # pending one with it when it is garbage collected.
+        backend = self._backend(app, backend_cls)
+        pending = app.AsyncResult('tid')
+        backend.add_pending_result(pending, weak=True)
+
+        duplicate = app.AsyncResult('tid')
+        del duplicate
+
+        backend.result_consumer.cancel_for.assert_not_called()
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+        assert pending._cache['result'] == 42
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_every_waiter_for_an_id_is_resolved(self, app, backend_cls):
+        # Issue #4925: AsyncResult(id).get() while another AsyncResult for
+        # the same id is pending hung forever, the second one was never
+        # registered so nothing ever filled its cache.
+        backend = self._backend(app, backend_cls)
+        first, second = app.AsyncResult('tid'), app.AsyncResult('tid')
+        backend.add_pending_result(first)
+        backend.add_pending_result(second)
+
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+
+        assert first._cache['result'] == 42
+        assert second._cache['result'] == 42
+
+    def test_weak_result_freed_by_the_cycle_collector_is_untracked(self, app):
+        # The cycle collector clears weak references before it calls
+        # __del__, so the result is already gone from its waiters when
+        # __del__ asks the backend to remove it.
+        backend = self._backend(app, RedisBackend)
+        result = app.AsyncResult('tid')
+        backend.add_pending_result(result, weak=True)
+        result.cycle = result
+        del result
+        gc.collect()
+
+        assert 'tid' not in backend._pending_results.weak
+        backend.result_consumer.cancel_for.assert_called_once_with('tid')
+
+    def test_subscription_cancelled_when_last_waiter_is_removed(self, app):
+        backend = self._backend(app, RedisBackend)
+        cancel_for = backend.result_consumer.cancel_for
+        first, second = app.AsyncResult('tid'), app.AsyncResult('tid')
+        backend.add_pending_result(first)
+        backend.add_pending_result(second)
+
+        backend.remove_pending_result(first)
+        cancel_for.assert_not_called()
+        backend.remove_pending_result(second)
+        cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('first_weak,second_weak', [
+        (False, False), (True, True), (True, False), (False, True),
+    ])
+    def test_same_result_added_twice_is_tracked_once(
+            self, app, first_weak, second_weak):
+        # e.g. result.then() and then result.get() on the same object
+        backend = self._backend(app, RedisBackend)
+        result = app.AsyncResult('tid')
+
+        backend.add_pending_result(result, weak=first_weak)
+        backend.add_pending_result(result, weak=second_weak)
+
+        backend.result_consumer.consume_from.assert_called_once_with('tid')
+        assert sum(len(m.get('tid', {})) for m in backend._pending_results) == 1
+        backend.remove_pending_result(result)
+        assert not any(backend._pending_results)
+        backend.result_consumer.cancel_for.assert_called_once_with('tid')
+
+    @pytest.mark.parametrize('backend_cls', [RedisBackend, RPCBackend])
+    def test_native_join_gets_each_member_once_with_a_duplicate_waiter(
+            self, app, backend_cls):
+        # Issue #4925 at the iter_native level: a member is collected into
+        # the group's bucket exactly once, resolved, while another
+        # AsyncResult for its id is also waiting.
+        backend = self._backend(app, backend_cls)
+        member = app.AsyncResult('tid')
+        backend.add_pending_result(member, weak=True)
+        bucket = deque()
+        backend._collect_into(member, bucket)
+        duplicate = app.AsyncResult('tid')
+        backend.add_pending_result(duplicate)
+
+        backend.result_consumer.on_state_change(self._success('tid'), None)
+
+        assert [node.id for node in bucket] == ['tid']
+        assert bucket[0]._cache['result'] == 42
+        assert member._cache['result'] == 42
+        assert duplicate._cache['result'] == 42

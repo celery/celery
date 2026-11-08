@@ -163,7 +163,7 @@ class Pool(bootsteps.StartStopStep):
             threads=threaded,
             max_restarts=max_restarts,
             allow_restart=allow_restart,
-            forking_enable=True,
+            forking_enable=w.pool_start_method == 'fork',
             semaphore=semaphore,
             sched_strategy=self.optimization,
             app=w.app,

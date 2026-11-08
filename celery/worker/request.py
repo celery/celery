@@ -9,7 +9,7 @@ from datetime import datetime
 from time import monotonic, time
 from weakref import ref
 
-from billiard.common import TERM_SIGNAME
+from billiard.common import TERM_SIGNAME, human_status
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu.utils.encoding import safe_repr, safe_str
 from kombu.utils.objects import cached_property
@@ -18,12 +18,13 @@ from celery import current_app, signals, states
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
-                               TimeLimitExceeded, WorkerLostError)
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError,
+                               Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
+from celery.utils.saferepr import saferepr
 from celery.utils.serialization import get_pickled_exception
 from celery.utils.time import maybe_iso8601, maybe_make_aware, timezone
 
@@ -73,10 +74,15 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
-    _revoked_in_backend = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
+
+    #: Timer entry for this request's pending ETA/countdown callback, set by
+    #: :mod:`celery.worker.strategy` when the request is scheduled so that
+    #: :meth:`celery.worker.consumer.Consumer.on_close` can cancel it on
+    #: connection loss.  ``None`` for requests without an ETA.
+    _eta_timer_entry = None
 
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
@@ -409,7 +415,7 @@ class Request:
     def maybe_expire(self):
         """If expired, mark the task as revoked."""
         if self.expires:
-            now = datetime.now(self.expires.tzinfo)
+            now = datetime.now(timezone.utc if self.expires.tzinfo else None)
             if now > self.expires:
                 revoked_tasks.add(self.id)
                 return True
@@ -459,11 +465,10 @@ class Request:
         task_ready(self)
         self.send_event('task-revoked',
                         terminated=terminated, signum=signum, expired=expired)
-        if not self._revoked_in_backend:
-            self.task.backend.mark_as_revoked(
-                self.id, reason, request=self._context,
-                store_result=self.store_errors,
-            )
+        self.task.backend.mark_as_revoked(
+            self.id, reason, request=self._context,
+            store_result=self.store_errors,
+        )
         self.acknowledge()
         self._already_revoked = True
         send_revoked(self.task, request=self._context,
@@ -483,7 +488,9 @@ class Request:
             for stamp in self.stamped_headers:
                 if stamp in revoked_stamps:
                     revoked_header = revoked_stamps[stamp]
-                    stamped_header = self._message.headers['stamps'][stamp]
+                    stamped_header = self.stamps.get(stamp)
+                    if stamped_header is None:
+                        continue
 
                     if isinstance(stamped_header, (list, tuple)):
                         for stamped_value in stamped_header:
@@ -497,7 +504,8 @@ class Request:
                             stamped_header == revoked_header,  # When the header is a single set value
                         ])
                         revoking_header = {stamp: stamped_header}
-                    break
+                    if revoked_by_header:
+                        break
 
         if any((expired, revoked_by_id, revoked_by_header)):
             log_msg = 'Discarding revoked task: %s[%s]'
@@ -656,6 +664,18 @@ class Request:
                 self._announce_revoked(
                     'terminated', True, str(exc), False)
             return
+        if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+            if self._already_cancelled or self._already_revoked:
+                # The child was killed by the signal we sent, so this is not
+                # a task failure; leave the message unacked so it gets
+                # redelivered.
+                return
+            # Billiard >= 4.3.0 reports the exit before the child terminates;
+            # the process is still gone, so keep treating it as a lost worker.
+            exc_info = self._worker_lost_info(exc)
+            exc = exc_info.exception
+            if isinstance(exc, ExceptionWithTraceback):
+                exc = exc.exc
         elif isinstance(exc, MemoryError):
             raise MemoryError(f'Process got: {exc}')
         elif isinstance(exc, Reject):
@@ -686,14 +706,54 @@ class Request:
         elif isinstance(exc, Retry):
             return self.on_retry(exc_info)
 
+        is_worker_lost = isinstance(exc, WorkerLostError)
+
+        # _success_was_stored() returns the meta dictionary if the task
+        # already stored SUCCESS, or False otherwise. This allows us to reuse
+        # the fetched metadata below without a second backend round-trip.
+        success_meta = self._success_was_stored() if is_worker_lost else False
+
+        if success_meta:
+            # The pool child stored SUCCESS and was lost afterwards, e.g. in
+            # on_success, a task_postrun receiver or process_cleanup.
+            # Recording a failure here would fire the errbacks and count a
+            # chord header twice, and requeueing would run the task again.
+            warn('Task %s[%s] succeeded before the worker was lost: %r',
+                 self.name, self.id, exc)
+            if self.task.acks_late:
+                self.acknowledge()
+
+            # Emit the success event so Flower/events.State do not stay STARTED.
+            # Reuse the metadata we just fetched instead of hitting the backend
+            # again from the worker's main process (which can be slow during
+            # an outage).
+            result = success_meta.get('result')
+            self.send_event(
+                'task-succeeded',
+                result=saferepr(result, self.task.resultrepr_maxsize),
+                runtime=None,
+            )
+            return
+
+        max_retries_exceeded = False
+        if is_worker_lost and self.task.retry_on_worker_lost:
+            max_retries = self.task.max_retries
+            max_retries_exceeded = (
+                max_retries is not None and self._context.retries >= max_retries
+            )
+            # If sending the retry fails, fall through so the message is
+            # still rejected/requeued as it would be without this setting.
+            if not max_retries_exceeded and self._retry_worker_lost(exc, exc_info):
+                return
+
         # (acks_late) acknowledge after result stored.
         requeue = False
-        is_worker_lost = isinstance(exc, WorkerLostError)
         if self.task.acks_late:
             is_timeout = isinstance(exc, TimeLimitExceeded)
             ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
             reject = (
-                (self.task.reject_on_worker_lost and is_worker_lost)
+                (self.task.reject_on_worker_lost and is_worker_lost
+                 and not max_retries_exceeded)
                 or (is_timeout and not ack_flag)
             )
             if reject:
@@ -722,11 +782,17 @@ class Request:
                 store_result=self.store_errors,
             )
 
-            signals.task_failure.send(sender=self.task, task_id=self.id,
-                                      exception=exc, args=self.args,
-                                      kwargs=self.kwargs,
-                                      traceback=exc_info.traceback,
-                                      einfo=exc_info)
+            # Temporarily add the context to the request stack so that
+            # the task_failure handlers can access it.
+            self.task.request_stack.push(self._context)
+            try:
+                signals.task_failure.send(sender=self.task, task_id=self.id,
+                                          exception=exc, args=self.args,
+                                          kwargs=self.kwargs,
+                                          traceback=exc_info.traceback,
+                                          einfo=exc_info)
+            finally:
+                self.task.request_stack.pop()
 
         if send_failed_event:
             self.send_event(
@@ -738,6 +804,99 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _retry_worker_lost(self, exc, exc_info):
+        """Retry the task after its worker was lost, return False if not retried."""
+        task = self.task
+        request = self._context
+        countdown = task.default_retry_delay
+        try:
+            task.signature_from_request(
+                request, countdown=countdown, retries=request.retries + 1,
+            ).apply_async()
+        except Exception as send_exc:
+            error('Failed to retry task %s[%s] after worker was lost: %r',
+                  self.task_name, self.id, send_exc, exc_info=True)
+            return False
+
+        # As Task.retry() does: an ignored result isn't stored, so the
+        # retried run wouldn't replace this RETRY with its outcome.
+        if self.store_errors:
+            task.backend.mark_as_retry(
+                self.id, exc, exc_info.traceback, request=request,
+            )
+        if task.acks_late:
+            self.acknowledge()
+        self.send_event('task-retried',
+                        exception=safe_repr(exc),
+                        traceback=safe_str(exc_info.traceback))
+
+        reason = Retry(exc=exc, when=countdown)
+        task.request_stack.push(request)
+        try:
+            task.on_retry(exc, self.id, self.args, self.kwargs, exc_info)
+            send_retry(task, request=request, reason=reason, einfo=exc_info)
+        finally:
+            task.request_stack.pop()
+        info('Task %s[%s] retry: %s', self.task_name, self.id, reason)
+        return True
+
+    def _success_was_stored(self):
+        # ignore_result never writes SUCCESS, and rpc:// results live on the
+        # caller's queue: a lookup here would always see PENDING and would
+        # declare a durable per-worker reply queue as a side effect.
+        # Use the request's ignore_result so apply_async(ignore_result=...)
+        # is honored, not only the task-level default.
+        if self.ignore_result:
+            return False
+        backend = self.task.backend
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
+
+        # Bounded retry: keep the retry for transient blips, but cap it at
+        # 3 attempts so a down backend can't block the worker's main process
+        # indefinitely. Respect a lower user-configured
+        # result_backend_max_retries via min(). Pass max_retries explicitly
+        # instead of mutating backend.max_retries, which is shared across
+        # threads when result_backend_thread_safe=True. The isinstance guard
+        # is only around the min() computation to tolerate Mock backends in
+        # tests (a non-numeric max_retries falls back to the 3-attempt cap).
+        configured_max_retries = backend.max_retries
+        if isinstance(configured_max_retries, (int, float)):
+            bounded_max_retries = min(configured_max_retries, 3)
+        else:
+            bounded_max_retries = 3
+
+        try:
+            meta = backend._ensure_retryable(
+                backend._get_task_meta_for,
+                fallback_exc=BackendGetMetaError,
+                fallback_msg="failed to get meta",
+                task_id=self.id,
+                max_retries=bounded_max_retries,
+            )
+            if meta['status'] == states.SUCCESS:
+                return meta
+            return False
+        except Exception:  # pylint: disable=broad-except
+            # No backend, or it can't be reached: keep the failure handling.
+            return False
+
+    def _worker_lost_info(self, exc):
+        if isinstance(exc, SystemExit):
+            code = exc.code
+            if code is None:
+                code = 0
+            elif not isinstance(code, int):
+                code = 1
+            status = human_status(code)
+        else:
+            status = type(exc).__name__
+        try:
+            raise WorkerLostError(f'Worker exited prematurely: {status}.')
+        except WorkerLostError:
+            return ExceptionInfo()
 
     def acknowledge(self):
         """Acknowledge task."""

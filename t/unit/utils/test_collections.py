@@ -1,5 +1,6 @@
 import pickle
 from collections.abc import Mapping
+from copy import copy
 from itertools import count
 from time import monotonic
 from unittest.mock import Mock
@@ -8,6 +9,7 @@ import pytest
 from billiard.einfo import ExceptionInfo
 
 import t.skip
+from celery.app.utils import _new_key_to_old, _old_key_to_new
 from celery.utils.collections import (AttributeDict, BufferMap, ChainMap, ConfigurationView, DictAttribute,
                                       LimitedSet, Messagebuffer)
 from celery.utils.objects import Bunch
@@ -53,6 +55,73 @@ class test_DictAttribute:
 
 class test_ConfigurationView:
 
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    @pytest.mark.parametrize('default_count', [0, 1, 2, 4])
+    def test_copy(self, copy_fun, default_count):
+        nested = []
+        defaults = [{'default': index} for index in range(default_count)]
+        view = ConfigurationView({'changed': 1, 'nested': nested}, defaults)
+
+        copied = copy_fun(view)
+
+        assert dict(copied) == dict(view)
+        assert copied is not view
+        assert copied.changes is not view.changes
+        assert copied.nested is nested
+        assert copied.defaults is not view.defaults
+        for original, duplicate in zip(view.defaults, copied.defaults):
+            assert duplicate is original
+        copied.changed = 2
+        assert view.changed == 1
+        copied.add_defaults({'additional': 3})
+        assert 'additional' not in view
+        if defaults:
+            defaults[0]['default'] = 10
+            assert copied.default == view.default == 10
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_conversions(self, copy_fun):
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': True},
+            [{'CELERY_TASK_DEFAULT_QUEUE': 'custom'}],
+            keys=(_old_key_to_new, _new_key_to_old), prefix='CELERY',
+        )
+
+        copied = copy_fun(view)
+
+        assert copied.task_always_eager is True
+        assert copied.task_default_queue == 'custom'
+        copied.task_always_eager = False
+        assert copied.task_always_eager is False
+        assert view.task_always_eager is True
+        assert 'task_default_queue' in copied
+        assert copied.prefix == view.prefix
+        assert copied._keys == view._keys
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_preserves_key_t(self, copy_fun):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        copied = copy_fun(view)
+
+        assert copied['foo'] == 1
+        copied['bar'] = 2
+        assert copied.changes['BAR'] == 2
+
+    @pytest.mark.parametrize('copy_fun', [lambda view: view.copy(), copy])
+    def test_copy_does_not_share_observers(self, copy_fun):
+        view = ConfigurationView({'foo': 1})
+        callback = Mock()
+        view.bind_to(callback)
+
+        copied = copy_fun(view)
+        copied.update(foo=2)
+
+        callback.assert_not_called()
+        view.update(foo=3)
+        callback.assert_called_once_with(foo=3)
+
     def setup_method(self):
         self.view = ConfigurationView(
             {'changed_key': 1, 'both': 2},
@@ -72,6 +141,39 @@ class test_ConfigurationView:
         sp = object()
         assert self.view.get('nonexisting', sp) is sp
 
+    def test_getitem_respects_map_order(self):
+        # Changes are searched before defaults.
+        view = ConfigurationView(
+            {'foo': 1},
+            [{'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # Default mappings are also searched in order.
+        view = ConfigurationView(
+            {},
+            [{'foo': 1}, {'CELERY_FOO': 2}],
+            prefix='CELERY',
+        )
+        assert view['foo'] == 1
+
+        # An old key in an earlier map wins over a new key in a later map.
+        view = ConfigurationView(
+            {'CELERY_ALWAYS_EAGER': 1},
+            [{'task_always_eager': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['task_always_eager'] == 1
+
+        # The same applies when the earlier map uses the new key.
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            [{'CELERY_ALWAYS_EAGER': 2}],
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
     def test_missing_key_with_prefix(self):
         view = ConfigurationView({}, prefix='celery')
         with pytest.raises(KeyError) as exc_info:
@@ -85,10 +187,37 @@ class test_ConfigurationView:
         self.view.update(a=1, b=2, c=3)
         assert self.view.changes == dict(changes, a=1, b=2, c=3)
 
+    def test_swap_with_keys(self):
+        view = ConfigurationView({})
+        other = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+        assert other['CELERY_ALWAYS_EAGER'] == 1
+
+        view.swap_with(other)
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+
     def test_contains(self):
         assert 'changed_key' in self.view
         assert 'default_key' in self.view
         assert 'new' not in self.view
+
+    def test_contains_with_keys(self):
+        view = ConfigurationView(
+            {'task_always_eager': 1},
+            keys=(_old_key_to_new, _new_key_to_old),
+        )
+
+        assert view['CELERY_ALWAYS_EAGER'] == 1
+        assert 'CELERY_ALWAYS_EAGER' in view
+
+    def test_contains_applies_key_t(self):
+        view = ConfigurationView({'FOO': 1})
+        view.__dict__['key_t'] = str.upper
+
+        assert view['foo'] == 1
+        assert 'foo' in view
 
     def test_repr(self):
         assert 'changed_key' in repr(self.view)
@@ -212,6 +341,42 @@ class test_LimitedSet:
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
 
+    def test_add_orders_items_within_the_clock_resolution(self):
+        s = LimitedSet(maxlen=10)
+        s.add('b', now=1.0)
+        s.add(1, now=1.0)  # no comparison between the items themselves
+        s.add('a', now=1.0)
+        assert list(s) == ['b', 1, 'a']
+        assert s.pop() == 'b'
+
+    def test_add_at_time_zero(self):
+        s = LimitedSet(maxlen=10, expires=1)
+        s.add('foo', now=0)
+        assert s.as_dict()['foo'] == 0
+        assert pickle.loads(pickle.dumps(s)) == s
+        s.purge(now=2)
+        assert 'foo' not in s
+
+    def test_update_from_another_clock(self):
+        # The stamps of a set built on another host are not comparable
+        # with ours; merging its items stamps them with the local clock,
+        # merging the set or its dict keeps the stamps.
+        other = LimitedSet(maxlen=10)
+        other.add('foo', now=monotonic() + 10 ** 6)
+        s = LimitedSet(maxlen=10)
+        s.update(list(other))
+        assert s.as_dict()['foo'] <= monotonic()
+        s = LimitedSet(maxlen=10)
+        s.update(other)
+        assert s.as_dict()['foo'] == other.as_dict()['foo']
+
+    def test_eq(self):
+        s = LimitedSet(maxlen=2)
+        s.add('foo')
+        assert s == pickle.loads(pickle.dumps(s))
+        assert s != LimitedSet(maxlen=2)
+        assert s != {'foo'}
+
     def test_pickleable(self):
         s = LimitedSet(maxlen=2)
         s.add('foo')
@@ -332,6 +497,86 @@ class test_LimitedSet:
         [s.add('foo') for i in range(1000)]
         assert len(s._heap) < 1150
 
+    # Outdated heap entries, see issue #10757.
+
+    def test_readd_resets_expiry(self):
+        s = LimitedSet(expires=10)
+        for i in range(100):
+            s.add(i, now=i * 0.01)
+        # The outdated heap entry for 0 must not expire the re-added item.
+        s.add(0, now=100)
+        s.purge(now=50)
+        assert list(s) == [0]
+
+    def test_readd_is_not_evicted_as_oldest(self):
+        s = LimitedSet(maxlen=100)
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)
+        s.add(100, now=1001)
+        assert 0 in s
+        assert 1 not in s
+
+    def test_pop_skips_outdated_entry_of_readded_item(self):
+        s = LimitedSet()
+        for i in range(100):
+            s.add(i, now=i)
+        s.add(0, now=1000)
+        assert s.pop() == 1
+        assert list(s)[-1] == 0
+
+    def test_discard_does_not_expire_next_item(self):
+        s = LimitedSet(expires=10)
+        s.add('discarded', now=0)
+        for i in range(100):
+            s.add(i, now=100 + i)
+        # Too few leftover entries for the heap to be rebuilt.
+        s.discard('discarded')
+        assert len(s._heap) == len(s) + 1
+        # The entry left behind by discard() is old enough to expire, but
+        # no item of the set is.
+        s.purge(now=50)
+        assert len(s) == 100
+        assert 0 in s
+
+    # Sequence numbers copied by update() from another LimitedSet.
+    def test_add_after_update_from_limited_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet()
+        s.update(other)
+        # Same insertion time as the copied entry.
+        s.add(1, now=5.0)
+        assert list(s) == ['x', 1]
+        assert s.pop() == 'x'
+        assert s.pop() == 1
+
+    def test_update_from_limited_set_into_non_empty_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet()
+        s.add(1, now=5.0)
+        s.update(other)
+        assert list(s) == [1, 'x']
+
+    def test_init_from_limited_set(self):
+        other = LimitedSet()
+        other.add('x', now=5.0)
+        s = LimitedSet(data=other)
+        s.add(1, now=5.0)
+        assert list(s) == ['x', 1]
+
+    def test_update_from_limited_set_keeps_its_order(self):
+        other = LimitedSet()
+        for i in range(3):
+            other.add(f'item{i}', now=1.0)
+        s = LimitedSet(maxlen=2)
+        s.update(other)
+        # Same insertion time: the item added first there is the oldest.
+        assert list(s) == ['item1', 'item2']
+        assert len(s._heap) == len(s)
+        assert other.as_dict() == {f'item{i}': 1.0 for i in range(3)}
+
 
 class test_AttributeDict:
 
@@ -441,6 +686,49 @@ class test_BufferMap:
         b.extend(1, list(range(20)))
         self.assert_size_and_first(b, 20, 0)
 
+    def test_bufmaxsize_parameter_is_honored(self):
+        b = BufferMap(None, bufmaxsize=3)
+        b.extend(1, list(range(10)))
+        self.assert_size_and_first(b, 3, 7)
+
+    def test_total_tracks_bufmaxsize_eviction(self):
+        b = BufferMap(None, bufmaxsize=3)
+        for i in range(5):
+            b.put(1, i)
+        self.assert_size_and_first(b, 3, 2)
+
+    def test_init_from_iterable(self):
+        b = BufferMap(None, {'a': [1, 2, 3], 'b': [4, 5]})
+        self.assert_size_and_first(b, 5, 1)
+
+    def test_init_from_iterable_wraps_values_in_buffers(self):
+        b = BufferMap(None, {'a': [1, 2, 3]})
+        assert isinstance(b['a'], Messagebuffer)
+        assert b.take('a') == 1
+
+    def test_init_from_iterable_enforces_maxsize(self):
+        b = BufferMap(4, {'a': list(range(50))})
+        self.assert_size_and_first(b, 4, 46)
+
+    def test_init_from_iterable_enforces_maxsize_beyond_evict_limit(self):
+        # _evict() removes at most 100 items per call, so seeding more than
+        # 100 items over maxsize must rely on the unlimited evict() to keep
+        # the constructor's guarantee.
+        b = BufferMap(4, {'a': list(range(1000))})
+        self.assert_size_and_first(b, 4, 996)
+
+    def test_high_volume_single_key_keeps_total_and_other_keys(self):
+        # Regression for the total accounting fixed in #10705: on main, 1500
+        # puts to one key pushed `total` to 1500 while the buffer held 1000,
+        # evicting other keys' pending messages early.
+        b = BufferMap(8192, bufmaxsize=1000)
+        for i in range(1500):
+            b.put('test-busy-key', i)
+        b.put('test-other-key', 'keep')
+        assert b.total == 1001
+        assert len(b['test-busy-key']) == 1000
+        assert b.take('test-other-key') == 'keep'
+
     def test_pop_empty_with_default(self):
         b = BufferMap(10)
         sentinel = object()
@@ -467,6 +755,23 @@ class test_ChainMap:
         a.update(x=1)
         callback.assert_called_once_with(x=1)
 
+    @pytest.mark.parametrize('updates', [
+        pytest.param({'foo': 1, 'bar': 2}, id='mapping'),
+        pytest.param([('foo', 1), ('bar', 2)], id='list-of-pairs'),
+        pytest.param((('foo', 1), ('bar', 2)), id='tuple-of-pairs'),
+        pytest.param(
+            (item for item in [('foo', 1), ('bar', 2)]),
+            id='generator-of-pairs',
+        ),
+    ])
+    def test_update_with_positional_argument_notifies_observer(self, updates):
+        a = ChainMap()
+        observed = {}
+        a.bind_to(observed.update)
+
+        a.update(updates)
+        assert a.changes == observed == {'foo': 1, 'bar': 2}
+
     def test_pop_applies_key_t(self):
         cm = ChainMap(key_t=lambda key: key + '!')
         cm['foo'] = 1
@@ -477,6 +782,7 @@ class test_ChainMap:
         cm = ChainMap(key_t=lambda key: key + '!')
         cm['foo'] = 1
         assert cm.get('foo') == 1
+        assert cm.get('missing', 'fallback') == 'fallback'
 
     def test_setdefault_applies_key_t_once(self):
         cm = ChainMap(key_t=lambda key: key + '!')
@@ -484,3 +790,8 @@ class test_ChainMap:
         assert cm.changes == {'foo!': 1}
         cm.setdefault('foo', 2)
         assert cm.changes == {'foo!': 1}
+
+    def test_getitem_respects_map_order(self):
+        cm = ChainMap({'foo': 1}, {'foo': 2, 'bar': 3})
+        assert cm['foo'] == 1
+        assert cm['bar'] == 3

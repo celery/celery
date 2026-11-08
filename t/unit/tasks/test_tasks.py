@@ -7,7 +7,7 @@ import pytest
 from kombu import Queue
 from kombu.exceptions import EncodeError
 
-from celery import Task, chain, group, uuid
+from celery import Task, chain, chord, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
@@ -417,6 +417,197 @@ class test_task_retries(TasksCase):
         self.retry_task_noargs.iterations = 0
         self.retry_task_noargs.apply(propagate=True).get()
         assert self.retry_task_noargs.iterations == 4
+
+    def test_retry_with_args_after_initial_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, label=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1, bar + 1), countdown=0)
+            return foo, bar, label
+
+        result = task.apply(kwargs={'foo': 1, 'bar': 2, 'label': 'kept'},
+                            propagate=True)
+        assert result.get() == (2, 3, 'kept')
+
+    def test_retry_with_kwargs_after_initial_args(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_with_kwargs_overriding_last_positional(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'bar': bar + 1}, countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (1, 3)
+
+    def test_retry_preserves_non_conflicting_request_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_keeps_explicit_args_and_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), kwargs={'bar': 3}, countdown=0)
+            return foo, bar
+
+        result = task.apply(kwargs={'foo': 1, 'bar': 2}, propagate=True)
+        assert result.get() == (2, 3)
+
+    def test_retry_with_kwargs_overriding_varargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return foo, rest
+
+        result = task.apply(args=(1, 2, 3), propagate=True)
+        assert result.get() == (2, (2, 3))
+
+    def test_retry_with_kwargs_overriding_multiple_varargs_parameters(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1, 'bar': bar + 1},
+                                  countdown=0)
+            return foo, bar, rest
+
+        result = task.apply(args=(1, 2, 4, 5), propagate=True)
+        assert result.get() == (2, 3, (4, 5))
+
+    def test_retry_does_not_mutate_explicit_kwargs_with_varargs(self):
+        retry_kwargs = {'foo': 2}
+
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs=retry_kwargs, countdown=0)
+            return foo, rest
+
+        result = task.apply(args=(1, 2, 3), propagate=True)
+        assert result.get() == (2, (2, 3))
+        assert retry_kwargs == {'foo': 2}
+
+    @pytest.mark.parametrize('retry_kwargs, expected', (
+        ({'foo': 10}, (10, 2, (3, 4))),
+        ({'bar': 20}, (1, 20, (3, 4))),
+    ))
+    def test_retry_with_kwargs_overriding_one_parameter_before_varargs(
+            self, retry_kwargs, expected):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar, *rest):
+            if not self_.request.retries:
+                raise self_.retry(kwargs=retry_kwargs, countdown=0)
+            return foo, bar, rest
+
+        original_kwargs = retry_kwargs.copy()
+        result = task.apply(args=(1, 2, 3, 4), propagate=True)
+        assert result.get() == expected
+        assert retry_kwargs == original_kwargs
+
+    def test_retry_keeps_positional_only_name_in_extra_kwargs(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, /, bar, **extra):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': 10, 'bar': 20}, countdown=0)
+            return foo, bar, extra
+
+        result = task.apply(args=(1, 2), propagate=True)
+        assert result.get() == (1, 20, {'foo': 10})
+
+    def test_retry_with_unbindable_request_args(self):
+        task = self.retry_task_mockapply
+        task.push_request(args=(1, 2, 3, 4), kwargs={},
+                          called_directly=False, is_eager=True)
+        try:
+            with pytest.raises(Retry) as exc_info:
+                task.retry(kwargs={'unknown': 5}, countdown=0)
+            assert exc_info.value.sig.args == (1, 2, 3, 4)
+            assert exc_info.value.sig.kwargs == {'unknown': 5}
+        finally:
+            task.pop_request()
+
+    def test_retry_with_kwargs_after_positional_only_arg(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, prefix, /, foo, bar):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'foo': foo + 1}, countdown=0)
+            return prefix, foo, bar
+
+        result = task.apply(args=(10, 1, 2), propagate=True)
+        assert result.get() == (10, 2, 2)
+
+    def test_retry_with_args_preserves_positional_only_arg(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, /, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(args=(foo + 1,), countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (2, 2)
+
+    def test_retry_with_keyword_only_argument(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, *, label=None):
+            if not self_.request.retries:
+                raise self_.retry(kwargs={'label': 'new'}, countdown=0)
+            return foo, label
+
+        result = task.apply(args=(1,), kwargs={'label': 'old'},
+                            propagate=True)
+        assert result.get() == (1, 'new')
+
+    def test_retry_preserves_arguments_when_not_overridden(self):
+        @self.app.task(bind=True, shared=False)
+        def task(self_, foo, bar=None):
+            if not self_.request.retries:
+                raise self_.retry(countdown=0)
+            return foo, bar
+
+        result = task.apply(args=(1,), kwargs={'bar': 2}, propagate=True)
+        assert result.get() == (1, 2)
+
+    @pytest.mark.parametrize('error_type', (TypeError, ValueError))
+    def test_retry_with_uninspectable_signature(self, error_type):
+        task = self.retry_task_mockapply
+        task.push_request(args=(1, 2), kwargs={},
+                          called_directly=False, is_eager=True)
+        try:
+            with patch('celery.app.task.inspect.signature',
+                       side_effect=error_type):
+                with pytest.raises(Retry) as exc_info:
+                    task.retry(kwargs={'arg1': 3}, countdown=0)
+            assert exc_info.value.sig.args == (1, 2)
+            assert exc_info.value.sig.kwargs == {'arg1': 3}
+        finally:
+            task.pop_request()
+
+    @pytest.mark.parametrize('override', [True, False])
+    def test_signature_from_request__keeps_ignore_result(self, override):
+        self.retry_task.push_request(ignore_result=override)
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is override
+
+    def test_signature_from_request__ignore_result_default(self):
+        self.retry_task.push_request()
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is self.retry_task.ignore_result
 
     def test_signature_from_request__passes_headers(self):
         self.retry_task.push_request()
@@ -1284,6 +1475,86 @@ class test_tasks(TasksCase):
         with pytest.raises(Ignore):
             self.mytask.replace(c)
 
+    def test_replace_chain_links_callback_once(self):
+        c = chain([self.mytask.si(), self.mytask.si()], app=self.app)
+        callback = self.mytask.si()
+        self.mytask.request.id = 'id'
+        self.mytask.request.callbacks = [callback]
+        with patch.object(self.app, 'send_task') as send_task:
+            with pytest.raises(Ignore):
+                self.mytask.replace(c)
+        # The first task is sent with the rest of the chain, and the
+        # callback must be linked to the last task only once.
+        (last_task,) = send_task.call_args.kwargs['chain']
+        assert last_task.options['link'] == [callback]
+
+    def test_replace_chain_ending_in_group(self):
+        c = chain(
+            [
+                self.mytask.si(),
+                group(
+                    [self.mytask.si(), self.mytask.si()],
+                    app=self.app,
+                ),
+            ],
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
+    def test_replace_chain_ending_in_group_with_tuple(self):
+        c = chain(
+            (
+                self.mytask.si(),
+                group(
+                    [self.mytask.si(), self.mytask.si()],
+                    app=self.app,
+                ),
+            ),
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
+    def test_replace_chain_ending_in_group_with_positional_tasks(self):
+        c = chain(
+            self.mytask.si(),
+            group(
+                [self.mytask.si(), self.mytask.si()],
+                app=self.app,
+            ),
+            app=self.app,
+        )
+        c.freeze = Mock(name='freeze')
+        c.delay = Mock(name='delay')
+        self.mytask.request.id = 'id'
+        self.mytask.request.chain = c
+
+        with pytest.raises(Ignore):
+            self.mytask.replace(c)
+
+        assert isinstance(c.tasks[-1], chord)
+        assert c.tasks[-1].body.name == 'celery.accumulate'
+        assert c.tasks[-1].body.kwargs['index'] == 0
+
     def test_replace_run(self):
         with pytest.raises(Ignore):
             self.task_replaced_by_other_task.run()
@@ -1638,6 +1909,22 @@ class test_apply_task(TasksCase):
         with pytest.raises(KeyError):
             f.get()
 
+    @pytest.mark.parametrize('ignore_result, options, expected_state', [
+        (True, {}, 'PENDING'),
+        (False, {}, 'SUCCESS'),
+        (True, {'ignore_result': False}, 'SUCCESS'),
+        (False, {'ignore_result': True}, 'PENDING'),
+    ])
+    def test_apply_respects_ignore_result(self, ignore_result, options, expected_state):
+        self.app.conf.task_store_eager_result = True
+
+        @self.app.task(shared=False, ignore_result=ignore_result)
+        def task():
+            pass
+
+        result = task.apply(**options)
+        assert self.app.AsyncResult(result.id).state == expected_state
+
     def test_apply_eager_populates_request_task(self):
         task_to_apply = self.task_check_request_context
         with patch.object(
@@ -1893,6 +2180,24 @@ class test_apply_async(TasksCase):
                 *expected_args,
                 **expected_kwargs
             )
+
+    def test_task_with_zero_priority(self):
+        self.mytask.priority = 0
+
+        with patch.object(self.app, 'send_task') as send_task:
+            self.mytask.apply_async()
+
+        assert send_task.call_args.kwargs['priority'] == 0
+
+    def test_apply_async_does_not_mutate_cached_execution_options(self):
+        """apply_async() must not mutate cached execution options."""
+        task = self.task_with_ignored_result
+        original_options = task._get_exec_options().copy()
+
+        with patch.object(self.app, 'send_task'):
+            task.apply_async()
+
+        assert task._get_exec_options() == original_options
 
     def test_task_with_result(self):
         with patch.object(self.app, 'send_task') as send_task:

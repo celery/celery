@@ -782,6 +782,16 @@ Preload options
 The :program:`celery` umbrella command supports the concept of 'preload
 options'.  These are special options passed to all sub-commands.
 
+.. versionchanged:: 5.7
+
+    Preload options now work with commands installed through the
+    ``celery.commands`` entry point (e.g. Flower). A callback that cannot
+    accept an option receives it only through ``user_preload_options``.
+    The signal is now sent for every sub-command. Built-in commands that
+    never used ``handle_preload_options``, such as :program:`report`, send
+    ``user_preload_options`` too, because ``consume_preload_options`` wraps
+    every command. That is the intended behavior.
+
 You can add new preload options, for example to specify a configuration
 template:
 

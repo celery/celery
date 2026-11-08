@@ -1,8 +1,15 @@
 """Redis result store backend."""
+import math
+import select
+import selectors
+import threading
 import time
+import warnings
+from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
+from uuid import uuid4
 
 from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
@@ -12,6 +19,7 @@ from redis import CredentialProvider
 
 from celery import states
 from celery._state import task_join_will_block
+from celery.app.amqp import _callback_publish_max_retries
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
 from celery.exceptions import BackendStoreError, ChordError, ImproperlyConfigured
@@ -47,6 +55,11 @@ You need to install the redis library with support of \
 sentinel in order to use the Redis result store backend.
 """
 
+W_REDIS_COMPRESSION_DISABLED = """\
+The Redis result backend is configured with decode_responses enabled.
+The result_compression setting is ignored and results are stored uncompressed.
+"""
+
 W_REDIS_SSL_CERT_OPTIONAL = """
 Setting ssl_cert_reqs=CERT_OPTIONAL when connecting to redis means that \
 celery might not validate the identity of the redis broker when connecting. \
@@ -71,7 +84,127 @@ CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
 
+# Records the result of a chord header task, unless a result for the same
+# task was already recorded: a header task can run more than once (e.g.
+# redelivered after a lost worker when using acks_late), and must only count
+# once, even if the runs returned different results. Returns the number of
+# results recorded so far, and the chord's total diff and size.
+#
+# When the chord completes, this script atomically acquires the callback
+# dispatch claim within the same execution. This prevents a race where two
+# workers both detect completion and attempt to dispatch the callback.
+CHORD_PART_RETURN_LUA = """
+local jkey, tkey, skey, dkey, gkey, ckey = KEYS[1], KEYS[2], KEYS[3], KEYS[4], KEYS[5], KEYS[6]
+local tid, value, ordered, score = ARGV[1], ARGV[2], ARGV[3], ARGV[4]
+local expires, group_expires = tonumber(ARGV[5]), tonumber(ARGV[6])
+local claim_expires = tonumber(ARGV[7])
+local claim_token = ARGV[8]
+
+-- Prevent late duplicates from recreating chord state after successful cleanup.
+local done_marker = redis.call('GET', ckey)
+if done_marker == 'done' then
+    return {-1, 0, 0, 0}
+end
+
+-- Key the check on the task id and header index, so it doesn't merge two
+-- header entries that share the task id of a reused frozen signature.
+local member = tid .. ':' .. score
+if redis.call('SISMEMBER', dkey, member) == 0 then
+    if ordered == '1' then
+        redis.call('ZADD', jkey, score, value)
+    else
+        redis.call('RPUSH', jkey, value)
+    end
+    redis.call('SADD', dkey, member)
+end
+local readycount
+if ordered == '1' then
+    readycount = redis.call('ZCOUNT', jkey, '-inf', '+inf')
+else
+    readycount = redis.call('LLEN', jkey)
+end
+if expires > 0 then
+    for _, key in ipairs({jkey, tkey, skey, dkey}) do
+        redis.call('EXPIRE', key, expires)
+    end
+    if group_expires > 0 then
+        redis.call('EXPIRE', gkey, group_expires)
+    end
+end
+
+local totaldiff = redis.call('GET', tkey)
+local size = redis.call('GET', skey)
+local claimed = 0
+if size and readycount == tonumber(size) + tonumber(totaldiff or 0) then
+    if redis.call('SET', ckey, claim_token, 'NX', 'EX', claim_expires) then
+        claimed = 1
+    end
+end
+
+return {readycount, totaldiff, size, claimed}
+"""
+
+# Release the claim and remove chord data atomically if the token matches.
+# After successful cleanup, set a done marker to prevent late duplicates from
+# recreating chord state or dispatching the callback again.
+CHORD_CLEANUP_LUA = """
+local ckey = KEYS[1]
+local jkey = KEYS[2]
+local tkey = KEYS[3]
+local skey = KEYS[4]
+local dkey = KEYS[5]
+local token = ARGV[1]
+local done_expires = tonumber(ARGV[2])
+
+if redis.call('GET', ckey) == token then
+    redis.call('DEL', jkey, tkey, skey, dkey)
+    if done_expires and done_expires > 0 then
+        redis.call('SET', ckey, 'done', 'EX', done_expires)
+    end
+    return 1
+end
+return 0
+"""
+
+# Extend a dispatch lease while this worker still owns it, or reacquire an
+# expired lease while chord data remains. The checks and updates are atomic.
+CHORD_CLAIM_EXTEND_LUA = """
+local ckey, skey = KEYS[1], KEYS[2]
+local token = ARGV[1]
+local expires = tonumber(ARGV[2])
+if redis.call('GET', ckey) == token then
+    return redis.call('EXPIRE', ckey, expires)
+end
+if not redis.call('GET', ckey) and redis.call('EXISTS', skey) == 1 then
+    return redis.call('SET', ckey, token, 'EX', expires, 'NX') and 1 or 0
+end
+return 0
+"""
+
 logger = get_logger(__name__)
+
+_NO_SOCKET = object()
+
+
+class _LockDepth(threading.local):
+    #: how many ``_locked()`` blocks this thread is inside.
+    value = 0
+
+
+def _socket_readable(sock, timeout):
+    try:
+        # looked up per call so gevent/eventlet patching after import applies
+        poll = getattr(select, 'poll', None)
+        if poll is not None:
+            poller = poll()
+            poller.register(sock, select.POLLIN)
+            return bool(poller.poll(None if timeout is None else timeout * 1000))
+        with selectors.DefaultSelector() as selector:
+            selector.register(sock, selectors.EVENT_READ)
+            return bool(selector.select(timeout))
+    except (OSError, ValueError):
+        # closed or replaced while we were not holding the lock
+        return True
 
 
 class ResultConsumer(BaseResultConsumer):
@@ -84,48 +217,74 @@ class ResultConsumer(BaseResultConsumer):
         self._ensure = self.backend.ensure
         self._connection_errors = self.backend.connection_errors
         self.subscribed_to = set()
+        # redis-py pubsub is not safe for concurrent use, but subscribe/
+        # unsubscribe can be called from any thread or greenlet (e.g. from
+        # AsyncResult.__del__ during garbage collection) while the drainer
+        # is polling the same socket.  Serialize all pubsub operations.
+        self._reset_sync()
+
+    def _reset_sync(self):
+        self._pubsub_lock = threading.RLock()
+        # keys whose unsubscribe is left to the current lock holder, see
+        # cancel_for().
+        self._pending_unsubscribe = set()
+        # only one thread waits on the socket, the others wait for it here.
+        self._pubsub_read = threading.Condition(self._pubsub_lock)
+        self._socket_waiter = False
+        self._lock_depth = _LockDepth()
 
     def on_after_fork(self):
+        # the lock may have been held by a thread that did not survive
+        # the fork, so the child starts with a fresh one.
+        self._reset_sync()
         try:
             self.backend.client.connection_pool.reset()
-            if self._pubsub is not None:
-                self._pubsub.close()
+            with self._locked():
+                if self._pubsub is not None:
+                    self._pubsub.close()
         except KeyError as e:
             logger.warning(str(e))
         super().on_after_fork()
 
     def _reconnect_pubsub(self):
-        self._pubsub = None
-        self.backend.client.connection_pool.reset()
-        # task state might have changed when the connection was down so we
-        # retrieve meta for all subscribed tasks before going into pubsub mode
-        if self.subscribed_to:
-            metas = self.backend.client.mget(self.subscribed_to)
-            metas = [meta for meta in metas if meta]
-            for meta in metas:
-                self.on_state_change(self._decode_result(meta), None)
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        # subscribed_to maybe empty after on_state_change
-        if self.subscribed_to:
-            self._pubsub.subscribe(*self.subscribed_to)
-        else:
-            # redis-py < 5.3.0 requires ``command_name`` as a positional
-            # argument to ``ConnectionPool.get_connection``. The argument was
-            # made optional (and ignored) in 5.3.0+, so passing it stays
-            # compatible across both ranges (#10294).
-            try:
-                self._pubsub.connection = (
-                    self._pubsub.connection_pool.get_connection()
-                )
-            except TypeError:
-                self._pubsub.connection = (
-                    self._pubsub.connection_pool.get_connection('pubsub')
-                )
-            # even if there is nothing to subscribe, we should not lose the callback after connecting.
-            # The on_connect callback will re-subscribe to any channels we previously subscribed to.
-            self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
+        with self._locked():
+            self._pubsub = None
+            self.backend.client.connection_pool.reset()
+            # task state might have changed when the connection was down so we
+            # retrieve meta for all subscribed tasks before going into pubsub mode
+            if self.subscribed_to:
+                metas = self.backend.client.mget(self.subscribed_to)
+                metas = [meta for meta in metas if meta]
+                for meta in metas:
+                    self.on_state_change(self._decode_result(meta), None)
+            self._pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
+            # Cancels queued so far (e.g. by on_state_change above) are only
+            # sent when the lock is released.  The new connection never
+            # subscribed to those channels, so just forget them: left in
+            # subscribed_to, a later consume_from() of the same task would
+            # think it is subscribed and never get its result.
+            self.subscribed_to -= self._pending_unsubscribe
+            self._pending_unsubscribe.clear()
+            if self.subscribed_to:
+                self._pubsub.subscribe(*self.subscribed_to)
+            else:
+                # redis-py < 5.3.0 requires ``command_name`` as a positional
+                # argument to ``ConnectionPool.get_connection``. The argument was
+                # made optional (and ignored) in 5.3.0+, so passing it stays
+                # compatible across both ranges (#10294).
+                try:
+                    self._pubsub.connection = (
+                        self._pubsub.connection_pool.get_connection()
+                    )
+                except TypeError:
+                    self._pubsub.connection = (
+                        self._pubsub.connection_pool.get_connection('pubsub')
+                    )
+                # even if there is nothing to subscribe, we should not lose the callback after connecting.
+                # The on_connect callback will re-subscribe to any channels we previously subscribed to.
+                self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     def _reconnect(self):
         """Re-establish the Redis pub/sub connection with retry."""
@@ -141,10 +300,11 @@ class ResultConsumer(BaseResultConsumer):
         self._maybe_cancel_ready_task(meta)
 
     def start(self, initial_task_id, **kwargs):
-        self._pubsub = self.backend.client.pubsub(
-            ignore_subscribe_messages=True,
-        )
-        self._consume_from(initial_task_id)
+        with self._locked():
+            self._pubsub = self.backend.client.pubsub(
+                ignore_subscribe_messages=True,
+            )
+            self._consume_from(initial_task_id)
 
     def on_wait_for_pending(self, result, **kwargs):
         for meta in result._iter_meta(**kwargs):
@@ -169,37 +329,144 @@ class ResultConsumer(BaseResultConsumer):
                         pending_messages.total -= len(buf)
 
     def stop(self):
-        if self._pubsub is not None:
-            self._pubsub.close()
+        with self._locked():
+            if self._pubsub is not None:
+                self._pubsub.close()
 
     def drain_events(self, timeout=None):
-        if self._pubsub:
-            with self.reconnect_on_error():
-                message = self._pubsub.get_message(timeout=timeout)
-                if message and message['type'] == 'message':
-                    self.on_state_change(self._decode_result(message['data']), message)
-        elif timeout:
-            time.sleep(timeout)
+        # Only hold the lock to read.  Waiting for the socket under it would
+        # starve subscribe/unsubscribe callers for the whole poll interval,
+        # and forever under gevent, whose lock does not hand off on release.
+        with self._locked():
+            pubsub = self._pubsub
+            if pubsub is not None:
+                if self._socket_waiter:
+                    # a message it reads may be ours, and then the socket
+                    # would stay quiet for us until the timeout.
+                    self._pubsub_read.wait(1.0 if timeout is None else timeout)
+                    return
+                if self._drain_one(pubsub, timeout):
+                    return
+                self._socket_waiter = True
+        if pubsub is None:
+            if timeout:
+                time.sleep(timeout)
+            return
+        readable = False
+        try:
+            readable = self._wait_for_pubsub(pubsub, timeout)
+        finally:
+            with self._locked():
+                self._socket_waiter = False
+                try:
+                    if readable and self._pubsub is pubsub:
+                        self._drain_one(pubsub, timeout)
+                finally:
+                    self._pubsub_read.notify_all()
+
+    def _drain_one(self, pubsub, timeout):
+        with self.reconnect_on_error():
+            connection = pubsub.connection
+            # checked before waiting on the raw socket: data already in the
+            # parser buffer, or decrypted by TLS, is invisible to poll().
+            if not (pubsub.subscribed and connection is not None and
+                    connection.can_read(timeout=0)):
+                return False
+            message = pubsub.get_message(timeout=timeout)
+            if message and message['type'] == 'message':
+                self.on_state_change(
+                    self._decode_result(message['data']), message)
+        return True
+
+    def _wait_for_pubsub(self, pubsub, timeout):
+        # Runs without the lock, so it must not touch the connection's
+        # parser or buffer; it only waits on the raw socket.
+        # Capped: poll() is not woken when a reconnect closes this socket.
+        wait = 1.0 if timeout is None else min(timeout, 1.0)
+        if not pubsub.subscribed:
+            return pubsub.subscribed_event.wait(wait)
+        # _sock is private redis-py API.  None means disconnected, so report
+        # readable and let the locked can_read() reconnect.  Should it ever
+        # go away, fall back to checking once per interval.
+        sock = getattr(pubsub.connection, '_sock', _NO_SOCKET)
+        if sock is _NO_SOCKET:
+            time.sleep(wait)
+            return True
+        if sock is None:
+            return True
+        return _socket_readable(sock, wait)
 
     def consume_from(self, task_id):
-        if self._pubsub is None:
-            return self.start(task_id)
-        self._consume_from(task_id)
+        with self._locked():
+            if self._pubsub is None:
+                return self.start(task_id)
+            self._consume_from(task_id)
 
     def _consume_from(self, task_id):
         key = self._get_key_for_task(task_id)
+        self._pending_unsubscribe.discard(key)
         if key not in self.subscribed_to:
             self.subscribed_to.add(key)
             with self.reconnect_on_error():
                 self._pubsub.subscribe(key)
 
     def cancel_for(self, task_id):
-        key = self._get_key_for_task(task_id)
-        if key in self.subscribed_to:
-            self.subscribed_to.discard(key)
-            if self._pubsub:
-                with self.reconnect_on_error():
-                    self._pubsub.unsubscribe(key)
+        # Never blocks: this runs from AsyncResult.__del__, where a gevent
+        # greenlet cannot switch away.  If the lock is busy, or this thread
+        # already holds it, the holder unsubscribes on the way out.
+        self._pending_unsubscribe.add(self._get_key_for_task(task_id))
+        self._flush_pending_unsubscribe()
+
+    def _flush_pending_unsubscribe(self):
+        if self._lock_depth.value:
+            # This thread is inside a pubsub operation, e.g. the garbage
+            # collector ran AsyncResult.__del__ in the middle of a subscribe
+            # or get_message().  The lock is reentrant and would let us in,
+            # but the connection must only see one operation at a time (and
+            # before 6.4 redis-py's own pubsub lock is not reentrant, so a
+            # nested command deadlocks).  The outermost _locked() flushes on
+            # exit.
+            return
+        # Re-check after every release: a key added while we held the lock
+        # may have missed its own acquire attempt.
+        while self._pending_unsubscribe and \
+                self._pubsub_lock.acquire(blocking=False):
+            self._lock_depth.value += 1
+            try:
+                while self._pending_unsubscribe:
+                    key = self._pending_unsubscribe.pop()
+                    if key in self.subscribed_to:
+                        self.subscribed_to.discard(key)
+                        if self._pubsub:
+                            with self.reconnect_on_error():
+                                self._pubsub.unsubscribe(key)
+            finally:
+                self._lock_depth.value -= 1
+                self._pubsub_lock.release()
+
+    @contextmanager
+    def _locked(self):
+        # Every pubsub operation runs in here, one at a time: the lock keeps
+        # other threads out, and the depth makes cancel_for() calls from this
+        # thread (e.g. AsyncResult.__del__ run by the garbage collector)
+        # wait until the outermost block is done with the connection.
+        depth = self._lock_depth
+        try:
+            with self._pubsub_lock:
+                depth.value += 1
+                try:
+                    yield
+                finally:
+                    depth.value -= 1
+        except BaseException:
+            # The pending keys may belong to other results, so failing to
+            # unsubscribe them must not replace this operation's own error.
+            try:
+                self._flush_pending_unsubscribe()
+            except Exception:
+                logger.exception('Failed to unsubscribe pending results')
+            raise
+        self._flush_pending_unsubscribe()
 
 
 class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
@@ -220,8 +487,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
     supports_autoexpire = True
     supports_native_join = True
-    # Results are stored as opaque strings, which Redis keeps byte for byte.
+    # Redis preserves binary payloads; response decoding disables compression.
     supports_result_compression = True
+    supports_failure_expires = True
 
     #: Maximal length of string value in Redis.
     #: 512 MB - https://redis.io/topics/data-types
@@ -232,6 +500,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                  connection_pool=None, **kwargs):
         super().__init__(expires_type=int, **kwargs)
         _get = self.app.conf.get
+        failure_expires = _get('result_failure_expires')
+        self.failure_expires = (
+            self.expires if failure_expires is None
+            else self.prepare_expires(failure_expires, type=int))
         if self.redis is None:
             raise ImproperlyConfigured(E_REDIS_MISSING.strip())
 
@@ -309,6 +581,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
 
         if url:
             self.connparams = self._params_from_url(url, self.connparams)
+
+        if self.compression and self.connparams.get('decode_responses'):
+            warnings.warn(W_REDIS_COMPRESSION_DISABLED, UserWarning)
+            self.compression = None
 
         # If we've received SSL parameters via query string or the
         # redis_backend_use_ssl dict, check ssl_cert_reqs is valid. If set
@@ -526,16 +802,23 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             retries, max_retries or 'Inf', humanize_seconds(tts, 'in '))
         return tts
 
-    def set(self, key, value, **retry_policy):
+    def _set_with_state(self, key, value, state):
+        if state == states.FAILURE:
+            return self.set(key, value, expires=self.failure_expires)
+        return self.set(key, value)
+
+    def set(self, key, value, expires=None, **retry_policy):
         if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
             raise BackendStoreError('value too large for Redis backend')
 
-        return self.ensure(self._set, (key, value), **retry_policy)
+        return self.ensure(self._set, (key, value, expires), **retry_policy)
 
-    def _set(self, key, value):
+    def _set(self, key, value, expires=None):
+        if expires is None:
+            expires = self.expires
         with self.client.pipeline() as pipe:
-            if self.expires:
-                pipe.setex(key, self.expires, value)
+            if expires:
+                pipe.setex(key, expires, value)
             else:
                 pipe.set(key, value)
             pipe.publish(key, value)
@@ -570,8 +853,19 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             raise chord_error
         return retval
 
+    def _set_chord_key(self, key, value):
+        if isinstance(value, str) and len(value) > self._MAX_STR_VALUE_SIZE:
+            raise BackendStoreError('value too large for Redis backend')
+        set_key = partial(self.client.set, ex=self.chord_expires or None)
+        return self.ensure(set_key, (key, value))
+
     def set_chord_size(self, group_id, chord_size):
-        self.set(self.get_key_for_group(group_id, '.s'), chord_size)
+        # Reapplying a frozen chord reuses its group id, but represents a new run.
+        self.ensure(
+            self.client.delete,
+            (self.get_key_for_group(group_id, '.c'),),
+        )
+        self._set_chord_key(self.get_key_for_group(group_id, '.s'), chord_size)
 
     def apply_chord(self, header_result_args, body, **kwargs):
         # If any of the child results of this chord are complex (ie. group
@@ -583,7 +877,9 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if not isinstance(header_result_args[1], _regen):
             header_result = self.app.GroupResult(*header_result_args)
             if any(isinstance(nr, GroupResult) for nr in header_result.results):
-                header_result.save(backend=self)
+                self._set_chord_key(
+                    self.get_key_for_group(header_result.id),
+                    self.encode({'result': header_result.as_tuple()}))
 
     @cached_property
     def _chord_zset(self):
@@ -592,6 +888,48 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     @cached_property
     def _transport_options(self):
         return self.app.conf.get('result_backend_transport_options', {})
+
+    @cached_property
+    def _chord_part_return_script(self):
+        return self.client.register_script(CHORD_PART_RETURN_LUA)
+
+    @cached_property
+    def _chord_cleanup_script(self):
+        return self.client.register_script(CHORD_CLEANUP_LUA)
+
+    @cached_property
+    def _chord_claim_extend_script(self):
+        return self.client.register_script(CHORD_CLAIM_EXTEND_LUA)
+
+    def _chord_publish_claim_expires(self, initial_expires, callback):
+        """Estimate the time needed for callback publish retries."""
+        conf = self.app.conf
+        callback_options = callback.options
+        default_policy = conf.task_publish_retry_policy or {}
+        policy = dict(default_policy)
+        policy.update(callback_options.get('retry_policy') or {})
+        retry = callback_options.get('retry')
+        if retry is None:
+            retry = conf.task_publish_retry
+        retries = (
+            _callback_publish_max_retries(policy, default_policy)
+            if retry else 0
+        )
+        timeout = conf.broker_connection_timeout
+        if timeout is None:
+            return initial_expires * 2
+        retries = max(0, int(retries))
+        timeout = max(0, float(timeout))
+        start = float(policy.get('interval_start', 0))
+        step = float(policy.get('interval_step', 0.2))
+        maximum = float(policy.get('interval_max', 1))
+        waits = sum(min(start + step * n, maximum) for n in range(retries))
+        # This is an estimate of connection-attempt time, with one additional
+        # connection timeout to leave room for publish and broker confirmation.
+        return max(
+            initial_expires,
+            math.ceil((retries + 1) * timeout + waits + max(timeout, 1)),
+        )
 
     def on_chord_part_return(self, request, state, result,
                              propagate=None, **kwargs):
@@ -606,29 +944,44 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         jkey = self.get_key_for_group(gid, '.j')
         tkey = self.get_key_for_group(gid, '.t')
         skey = self.get_key_for_group(gid, '.s')
+        dkey = self.get_key_for_group(gid, '.d')
+        ckey = self.get_key_for_group(gid, '.c')
         result = self.encode_result(result, state)
         encoded = self.encode([1, tid, state, result])
-        with client.pipeline() as pipe:
-            pipeline = (
-                pipe.zadd(jkey, {encoded: group_index}).zcount(jkey, "-inf", "+inf")
-                if self._chord_zset
-                else pipe.rpush(jkey, encoded).llen(jkey)
-            ).get(tkey).get(skey)
-            if self.expires:
-                pipeline = pipeline \
-                    .expire(jkey, self.expires) \
-                    .expire(tkey, self.expires) \
-                    .expire(skey, self.expires)
 
-            _, readycount, totaldiff, chord_size_bytes = pipeline.execute()[:4]
+        # Keep the initial claim tied to the join timeout for crash recovery.
+        # The publishing retry budget is added only after joining, just before
+        # callback.delay(), so slow publishing does not consume that budget.
+        #
+        # When result_chord_join_timeout is None, the join can wait indefinitely
+        # but the claim still has a bounded lifetime (default 10 seconds). This is
+        # a known trade-off: a worker with an unbounded join timeout could lose
+        # its claim to another worker while still waiting, potentially causing a
+        # duplicate dispatch. Users requiring unbounded joins should be aware of
+        # this limitation.
+        join_timeout = app.conf.result_chord_join_timeout or 5.0
+        claim_expires = max(5, int(join_timeout * 2))
+        claim_token = uuid4().hex
 
-        totaldiff = int(totaldiff or 0)
+        done_expires = int(max(claim_expires * 2, 300))
+
+        readycount, totaldiff, chord_size_bytes, claimed = self._chord_part_return_script(
+            keys=[jkey, tkey, skey, dkey, self.get_key_for_group(gid), ckey],
+            args=[tid, encoded, 1 if self._chord_zset else 0, group_index,
+                  self.chord_expires or 0, self._chord_result_expires,
+                  claim_expires, claim_token],
+            client=client,
+        )
+
+        if readycount == -1:
+            return
 
         if chord_size_bytes:
             try:
                 callback = maybe_signature(request.chord, app=app)
-                total = int(chord_size_bytes) + totaldiff
-                if readycount == total:
+                totaldiff = int(totaldiff or 0)
+                total = int(chord_size_bytes or 0) + totaldiff
+                if readycount == total and claimed:
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -662,8 +1015,22 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                                 pipeline = pipe.lrange(jkey, 0, total)
                             resl, = pipeline.execute()
                         resl = [unpack(tup, decode) for tup in resl]
+                    publish_expires = self._chord_publish_claim_expires(
+                        claim_expires, callback,
+                    )
+                    extended = self._chord_claim_extend_script(
+                        keys=[ckey, skey],
+                        args=[claim_token, publish_expires],
+                        client=client,
+                    )
+                    if not extended:
+                        logger.warning(
+                            'Chord callback for %r not published: dispatch '
+                            'claim is no longer owned by this worker', gid,
+                        )
+                        return
                     try:
-                        callback.delay(resl)
+                        app.amqp._retry_publish(callback.delay, resl)
                     except Exception as exc:  # pylint: disable=broad-except
                         logger.exception(
                             'Chord callback for %r raised: %r', request.group, exc)
@@ -672,21 +1039,34 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             ChordError(f'Callback error: {exc!r}'),
                         )
                     finally:
-                        with client.pipeline() as pipe:
-                            pipe \
-                                .delete(jkey) \
-                                .delete(tkey) \
-                                .delete(skey) \
-                                .execute()
+                        cleaned = self._chord_cleanup_script(
+                            keys=[ckey, jkey, tkey, skey, dkey],
+                            args=[claim_token, done_expires],
+                            client=client,
+                        )
+                        if not cleaned:
+                            logger.warning(
+                                'Chord callback claim for %r was lost before '
+                                'cleanup; chord data was left for expiry', gid,
+                            )
             except ChordError as exc:
                 logger.exception('Chord %r raised: %r', request.group, exc)
-                return self.chord_error_from_stack(callback, exc)
+                try:
+                    return self.chord_error_from_stack(callback, exc)
+                finally:
+                    # Drop the chord size, so a copy of a header task that
+                    # arrives later doesn't fail the chord again. The saved
+                    # results stay, as before.
+                    client.delete(skey)
             except Exception as exc:  # pylint: disable=broad-except
                 logger.exception('Chord %r raised: %r', request.group, exc)
-                return self.chord_error_from_stack(
-                    callback,
-                    ChordError(f'Join error: {exc!r}'),
-                )
+                try:
+                    return self.chord_error_from_stack(
+                        callback,
+                        ChordError(f'Join error: {exc!r}'),
+                    )
+                finally:
+                    client.delete(skey)
 
     def _create_client(self, **params):
         return self._get_client()(

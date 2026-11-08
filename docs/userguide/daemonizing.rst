@@ -155,7 +155,7 @@ when absolutely necessary.
 Example Django configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Django users now uses the exact same template as above,
+Django users can now use the exact same template as above,
 but make sure that the module that defines your Celery app instance
 also sets a default value for :envvar:`DJANGO_SETTINGS_MODULE`
 as shown in the example Django project in :ref:`django-first-steps`.
@@ -362,7 +362,7 @@ Commonly such errors are caused by insufficient permissions
 to read from, or write to a file, and also by syntax errors
 in configuration modules, user modules, third-party libraries,
 or even from Celery itself (if you've found a bug you
-should :ref:`report it <reporting-bugs>`).
+should :ref:`report it <bug-tracker>`).
 
 
 .. _daemon-systemd-generic:

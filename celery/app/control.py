@@ -340,7 +340,7 @@ class Inspect:
         return self._request('active_queues')
 
     def query_task(self, *ids):
-        """Return detail of tasks currently executed by workers.
+        """Return details of tasks currently scheduled, reserved or executed by workers.
 
         Arguments:
             *ids (str): IDs of tasks to be queried.

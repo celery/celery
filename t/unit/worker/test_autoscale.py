@@ -1,4 +1,5 @@
 import sys
+from threading import Event, Thread
 from time import monotonic
 from unittest.mock import Mock, patch
 
@@ -34,6 +35,33 @@ class MockPool(BasePool):
 
 
 class test_WorkerComponent:
+
+    def test_start_without_event_loop(self):
+        parent = Mock(name='parent')
+        parent.autoscale = True
+        parent.use_eventloop = False
+        parent.consumer.on_task_message = set()
+        parent.steps = []
+        step = autoscale.WorkerComponent(parent)
+        step.include(parent)
+        step.start(parent)
+        assert (parent.autoscaler.on_task_received in
+                parent.consumer.on_task_message)
+        parent.autoscaler.start.assert_called_once_with()
+
+    def test_start_custom_autoscaler_without_task_callback(self):
+        parent = Mock(name='parent')
+        parent.autoscale = True
+        parent.use_eventloop = False
+        parent.consumer.on_task_message = set()
+        parent.steps = []
+        scaler = Mock(spec=['start'])
+        parent.autoscaler_cls = Mock(return_value=scaler)
+        step = autoscale.WorkerComponent(parent)
+        step.include(parent)
+        step.start(parent)
+        assert not parent.consumer.on_task_message
+        scaler.start.assert_called_once_with()
 
     def test_register_with_event_loop(self):
         parent = Mock(name='parent')
@@ -75,6 +103,57 @@ class test_Autoscaler:
 
     def setup_method(self):
         self.pool = MockPool(3)
+
+    def test_task_receipt_does_not_wait_for_pool_resize(self):
+        scaler = autoscale.Autoscaler(self.pool, 10, 3)
+        received = Event()
+
+        def receive_task():
+            scaler.on_task_received(Mock(name='request'))
+            received.set()
+
+        receiver = Thread(target=receive_task)
+        with scaler.mutex:
+            receiver.start()
+            received_while_locked = received.wait(timeout=5)
+        receiver.join(timeout=5)
+        assert received_while_locked
+
+    def test_last_scale_up_in_custom_subclass(self):
+        class Scaler(autoscale.Autoscaler):
+            def scale_up(self, n):
+                self._last_scale_up = autoscale.monotonic()
+                return self._grow(n)
+
+        scaler = Scaler(self.pool, 10, 3, keepalive=30)
+        with patch('celery.worker.autoscale.monotonic', return_value=100):
+            scaler.scale_up(7)
+        with patch('celery.worker.autoscale.monotonic', return_value=131):
+            scaler.scale_down(7)
+        assert self.pool.num_processes == 3
+
+    @pytest.mark.parametrize('use_eventloop', [True, False])
+    def test_keepalive_after_task_received(self, use_eventloop):
+        scaler = autoscale.Autoscaler(self.pool, 10, 3, keepalive=30)
+        req = Mock(name='request')
+        with patch('celery.worker.autoscale.monotonic', return_value=100):
+            scaler.scale_up(7)
+        with patch('celery.worker.autoscale.monotonic', return_value=200):
+            with patch.object(state, 'reserved_requests', [req] * 10):
+                if use_eventloop:
+                    scaler.maybe_scale(req)
+                else:
+                    scaler.on_task_received(req)
+
+        with patch('celery.worker.autoscale.monotonic', return_value=201):
+            scaler.maybe_scale()
+        assert self.pool.num_processes == 10
+        with patch('celery.worker.autoscale.monotonic', return_value=230):
+            scaler.maybe_scale()
+        assert self.pool.num_processes == 10
+        with patch('celery.worker.autoscale.monotonic', return_value=231):
+            scaler.maybe_scale()
+        assert self.pool.num_processes == 3
 
     def test_stop(self):
 

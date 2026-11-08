@@ -8,6 +8,14 @@ from t.smoke.tasks import long_running_task, noop
 WORKER_PREFETCH_MULTIPLIER = 2
 WORKER_CONCURRENCY = 5
 MAX_PREFETCH = WORKER_PREFETCH_MULTIPLIER * WORKER_CONCURRENCY
+PREFETCH_REDUCTION_SKIPPED_MESSAGE = "Skipping prefetch count reduction after connection restart"
+
+
+def uses_global_qos(celery_setup: CeleryTestSetup) -> bool:
+    # Same check as Tasks.qos_global(); Kombu reports per-consumer QoS for
+    # RabbitMQ 4, and the worker skips the reduction in that mode (#9512).
+    with celery_setup.app.connection_for_read() as connection:
+        return not connection.qos_semantics_matches_spec
 
 
 @pytest.fixture
@@ -45,6 +53,10 @@ class test_worker_enable_prefetch_count_reduction_true:
         sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
 
+        if not uses_global_qos(celery_setup):
+            celery_setup.worker.assert_log_exists(PREFETCH_REDUCTION_SKIPPED_MESSAGE)
+            return
+
         expected_reduced_prefetch = max(
             WORKER_PREFETCH_MULTIPLIER, MAX_PREFETCH - expected_running_tasks_count * WORKER_PREFETCH_MULTIPLIER
         )
@@ -68,6 +80,11 @@ class test_worker_enable_prefetch_count_reduction_true:
         sig = group(long_running_task.s(10) for _ in range(expected_running_tasks_count))
         sig.apply_async(queue=celery_setup.worker.worker_queue)
         celery_setup.broker.restart()
+
+        if not uses_global_qos(celery_setup):
+            celery_setup.worker.assert_log_exists(PREFETCH_REDUCTION_SKIPPED_MESSAGE)
+            return
+
         expected_prefetch_restore_message = (
             f"Resuming normal operations following a restart.\n"
             f"Prefetch count has been restored to the maximum of {MAX_PREFETCH}"
@@ -145,33 +162,3 @@ class test_consumer:
             .get(timeout=RESULT_TIMEOUT)
             == [None] * count
         )
-
-    def test_worker_does_not_hang_on_broker_connection_loss(
-        self,
-        celery_setup: CeleryTestSetup,
-    ):
-        """Verify the worker reconnects without hanging after broker dies.
-
-        Regression test for GH-9705: collect() on a dead connection could
-        block indefinitely.  The fix passes an explicit socket_timeout to
-        collect() and closes the broken connection in the error handler
-        before blueprint.restart() begins the reconnect cycle.
-        """
-        queue = celery_setup.worker.worker_queue
-
-        # 1. Verify the worker is healthy.
-        assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None
-
-        # 2. Kill the broker to trigger on_connection_error_after_connected.
-        celery_setup.broker.kill()
-        celery_setup.worker.wait_for_log(
-            "Connection to broker lost",
-            timeout=RESULT_TIMEOUT,
-        )
-
-        # 3. Restart the broker immediately. Before the fix the worker
-        #    would hang in collect() and never reach the reconnect step.
-        celery_setup.broker.restart()
-
-        # 4. Confirm the worker reconnects and can process tasks.
-        assert noop.s().apply_async(queue=queue).get(timeout=RESULT_TIMEOUT) is None

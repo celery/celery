@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from google.cloud.exceptions import NotFound
+from kombu.exceptions import OperationalError
 
+from celery import uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -273,10 +276,41 @@ class test_GCSBackend:
         )
         assert client1 == mock_firestore_instance
         assert client2 == mock_firestore_instance
-        assert backend._pid == 123
+        assert backend._firestore_pid == 123
         mock_pid.return_value = 456
         _ = backend.firestore_client
-        assert backend._pid == 456
+        assert backend._firestore_pid == 456
+
+    @pytest.mark.parametrize('order', [
+        ('firestore_client', 'client'),
+        ('client', 'firestore_client'),
+    ])
+    @patch('celery.backends.gcs.firestore.Client')
+    @patch('celery.backends.gcs.Client')
+    @patch('celery.backends.gcs.getpid')
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    def test_new_clients_after_fork_whichever_client_is_used_first(
+        self, mock_firestore_ttl, mock_pid, mock_client, mock_firestore_client,
+        order,
+    ):
+        mock_firestore_ttl.return_value = True
+        mock_pid.return_value = 123
+        backend = GCSBackend(app=self.app)
+        storage_client = backend.client
+        firestore_client = backend.firestore_client
+
+        # The process forks, so both clients have to be rebuilt, whichever
+        # one is asked for first.
+        mock_pid.return_value = 456
+        mock_client.return_value = Mock()
+        mock_firestore_client.return_value = Mock()
+
+        old_clients = {
+            'firestore_client': firestore_client,
+            'client': storage_client,
+        }
+        for name in order:
+            assert getattr(backend, name) is not old_clients[name]
 
     @patch('celery.backends.gcs.firestore_admin_v1.FirestoreAdminClient')
     @patch('celery.backends.gcs.firestore_admin_v1.GetFieldRequest')
@@ -340,6 +374,7 @@ class test_GCSBackend:
     @patch.object(GCSBackend, '_delete_chord_key')
     @patch('celery.backends.gcs.allow_join_result')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @pytest.mark.parametrize('refused', [False, True])
     def test_on_chord_part_return(
         self,
         mock_firestore_ttl,
@@ -348,6 +383,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        refused,
     ):
         request = MagicMock()
         request.group = 'group_id'
@@ -362,6 +398,18 @@ class test_GCSBackend:
             'result2',
         ]
         mock_maybe_signature.return_value = MagicMock()
+        mock_maybe_signature.return_value.id = 'callback-id'
+        if refused:
+            message = self.app.amqp.as_task_v2(uuid(), 'callback', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'callback', message)
+
+            mock_maybe_signature.return_value.delay.side_effect = delay
 
         b = GCSBackend(app=self.app)
         b.on_chord_part_return(request, state, result)
@@ -376,7 +424,8 @@ class test_GCSBackend:
             timeout=self.app.conf.result_chord_join_timeout,
             propagate=True,
         )
-        mock_maybe_signature.return_value.delay.assert_called_once_with(
+        assert mock_maybe_signature.return_value.delay.call_count == 1
+        assert mock_maybe_signature.return_value.delay.call_args == call(
             ['result1', 'result2']
         )
         mock_delete_chord_key.assert_called_once_with(group_key)

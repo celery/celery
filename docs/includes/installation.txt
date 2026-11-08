@@ -71,10 +71,10 @@ Transports and Backends
     for using the :setting:`task_remote_tracebacks` feature.
 
 :``celery[memcache]``:
-    for using Memcached as a result backend (using :pypi:`pylibmc`)
+    for using Memcached as a result backend (using :pypi:`pymemcache`).
 
 :``celery[pymemcache]``:
-    for using Memcached as a result backend (pure-Python implementation).
+    alias of ``celery[memcache]``, kept for backward compatibility.
 
 :``celery[cassandra]``:
     for using Apache Cassandra/Astra DB as a result backend with DataStax driver.
@@ -166,7 +166,7 @@ pip commands:
     $ pip install https://github.com/celery/billiard/zipball/main#egg=billiard
     $ pip install https://github.com/celery/py-amqp/zipball/main#egg=amqp
     $ pip install https://github.com/celery/kombu/zipball/main#egg=kombu
-    $ pip install https://github.com/celery/vine/zipball/main#egg=vine
+    $ pip install https://github.com/celery/vine/zipball/master#egg=vine
 
 With git
 ~~~~~~~~

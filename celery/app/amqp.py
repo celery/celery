@@ -2,21 +2,29 @@
 import numbers
 from collections import namedtuple
 from collections.abc import Mapping
-from datetime import timedelta
+from contextvars import ContextVar
 from weakref import WeakValueDictionary
 
 from kombu import Connection, Consumer, Exchange, Producer, Queue, pools
 from kombu.common import Broadcast
-from kombu.utils.functional import maybe_list
+from kombu.exceptions import OperationalError
+from kombu.utils.functional import maybe_list, retry_over_time
 from kombu.utils.objects import cached_property
 
 from celery import signals
+from celery.utils.log import get_logger
 from celery.utils.nodenames import anon_nodename
 from celery.utils.saferepr import saferepr
 from celery.utils.text import indent as textindent
-from celery.utils.time import maybe_make_aware
+from celery.utils.time import add_seconds_to_datetime, maybe_make_aware
 
 from . import routes as _routes
+
+logger = get_logger(__name__)
+
+# Default cap for worker callback publishes when the policy leaves max_retries
+# unset (None would retry forever in apply_async() on the client).
+_CALLBACK_PUBLISH_MAX_RETRIES = 3
 
 __all__ = ('AMQP', 'Queues', 'task_message')
 
@@ -31,6 +39,31 @@ key={0.routing_key}
 
 task_message = namedtuple('task_message',
                           ('headers', 'properties', 'body', 'sent_event'))
+
+# Set while AMQP._retry_publish sends a callback, so that each of its
+# messages is retried on its own, waiting as its retry policy says.
+_callback_publish_retry = ContextVar('_callback_publish_retry', default=False)
+
+
+def _publish_retry_errors(retry_policy, connection):
+    retry_errors = retry_policy.get('retry_errors') or ()
+    if retry_errors and not isinstance(retry_errors, tuple):
+        retry_errors = tuple(retry_errors)
+    return (
+        OperationalError,
+        *connection.recoverable_connection_errors,
+        *retry_errors,
+    )
+
+
+def _callback_publish_max_retries(retry_policy, default_policy):
+    max_retries = retry_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if max_retries is not None:
+        return max_retries
+    capped = default_policy.get('max_retries', _CALLBACK_PUBLISH_MAX_RETRIES)
+    if capped is None:
+        capped = _CALLBACK_PUBLISH_MAX_RETRIES
+    return capped
 
 
 def utf8dict(d, encoding='utf-8'):
@@ -92,6 +125,12 @@ class Queues(dict):
     def __setitem__(self, name, queue):
         if self.default_exchange and not queue.exchange:
             queue.exchange = self.default_exchange
+        if not queue.routing_key:
+            queue.routing_key = self.default_routing_key
+        if self.max_priority is not None:
+            if queue.queue_arguments is None:
+                queue.queue_arguments = {}
+            self._set_max_priority(queue.queue_arguments)
         super().__setitem__(name, queue)
         if queue.alias:
             self.aliases[queue.alias] = queue
@@ -130,14 +169,8 @@ class Queues(dict):
         return self._add(Queue.from_dict(name, **options))
 
     def _add(self, queue):
-        if queue.exchange is None or queue.exchange.name == '':
+        if self.default_exchange and (queue.exchange is None or queue.exchange.name == ''):
             queue.exchange = self.default_exchange
-        if not queue.routing_key:
-            queue.routing_key = self.default_routing_key
-        if self.max_priority is not None:
-            if queue.queue_arguments is None:
-                queue.queue_arguments = {}
-            self._set_max_priority(queue.queue_arguments)
         self[queue.name] = queue
         return queue
 
@@ -195,13 +228,14 @@ class Queues(dict):
             else:
                 consume_from = self._consume_from
 
-            for queue in exclude:
-                consume_from.pop(queue, None)
+            for name in exclude:
+                queue = self.aliases.get(name)
+                consume_from.pop(queue.name if queue is not None else name, None)
 
     def new_missing(self, name):
         queue_arguments = None
         if self.create_missing_queue_type and self.create_missing_queue_type != "classic":
-            if self.create_missing_queue_type not in ("classic", "quorum"):
+            if self.create_missing_queue_type != "quorum":
                 raise ValueError(
                     f"Invalid queue type '{self.create_missing_queue_type}'. "
                     "Valid types are 'classic' and 'quorum'."
@@ -261,6 +295,16 @@ class AMQP:
             2: self.as_task_v2,
         }
         self.app._conf.bind_to(self._handle_conf_update)
+
+    def _retry_publish(self, publish, *args, **kwargs):
+        """Publish a callback, waiting between its publish retries."""
+        if self.app.conf.task_always_eager:
+            return publish(*args, **kwargs)
+        token = _callback_publish_retry.set(True)
+        try:
+            return publish(*args, **kwargs)
+        finally:
+            _callback_publish_retry.reset(token)
 
     @cached_property
     def create_task_message(self):
@@ -344,14 +388,14 @@ class AMQP:
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             eta = maybe_make_aware(
-                now + timedelta(seconds=countdown), tz=timezone,
+                add_seconds_to_datetime(now, countdown), tz=timezone,
             )
         if isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
             timezone = timezone or self.app.timezone
             expires = maybe_make_aware(
-                now + timedelta(seconds=expires), tz=timezone,
+                add_seconds_to_datetime(now, expires), tz=timezone,
             )
         if not isinstance(eta, str):
             eta = eta and eta.isoformat()
@@ -435,13 +479,15 @@ class AMQP:
         if countdown:  # convert countdown to ETA
             self._verify_seconds(countdown, 'countdown')
             now = now or self.app.now()
-            eta = now + timedelta(seconds=countdown)
+            eta = add_seconds_to_datetime(now, countdown)
         if isinstance(expires, numbers.Real):
             self._verify_seconds(expires, 'expires')
             now = now or self.app.now()
-            expires = now + timedelta(seconds=expires)
-        eta = eta and eta.isoformat()
-        expires = expires and expires.isoformat()
+            expires = add_seconds_to_datetime(now, expires)
+        if not isinstance(eta, str):
+            eta = eta and eta.isoformat()
+        if not isinstance(expires, str):
+            expires = expires and expires.isoformat()
 
         return task_message(
             headers={},
@@ -489,9 +535,7 @@ class AMQP:
         default_delivery_mode = self.app.conf.task_default_delivery_mode
         queues = self.queues
         send_before_publish = signals.before_task_publish.send
-        before_receivers = signals.before_task_publish.receivers
         send_after_publish = signals.after_task_publish.send
-        after_receivers = signals.after_task_publish.receivers
 
         send_task_sent = signals.task_sent.send   # XXX compat (remove 6.0)
         sent_receivers = signals.task_sent.receivers   # XXX compat (remove 6.0)
@@ -511,7 +555,6 @@ class AMQP:
                               compression=None, declare=None,
                               headers=None, exchange_type=None,
                               timeout=None, confirm_timeout=None, **kwargs):
-            retry = default_retry if retry is None else retry
             headers2, properties, body, sent_event = message
             if headers:
                 headers2.update(headers)
@@ -552,18 +595,19 @@ class AMQP:
 
             # merge default and custom policy
             retry = default_retry if retry is None else retry
-            _rp = (dict(default_policy, **retry_policy) if retry_policy
-                   else default_policy)
+            _rp = (
+                dict(default_policy, **retry_policy)
+                if retry_policy
+                else dict(default_policy)
+            )
 
-            if before_receivers:
-                send_before_publish(
-                    sender=name, body=body,
-                    exchange=exchange, routing_key=routing_key,
-                    declare=declare, headers=headers2,
-                    properties=properties, retry_policy=retry_policy,
-                )
-            ret = producer.publish(
-                body,
+            send_before_publish(
+                sender=name, body=body,
+                exchange=exchange, routing_key=routing_key,
+                declare=declare, headers=headers2,
+                properties=properties, retry_policy=_rp,
+            )
+            publish_kwargs = dict(
                 exchange=exchange,
                 routing_key=routing_key,
                 serializer=serializer or default_serializer,
@@ -574,9 +618,51 @@ class AMQP:
                 timeout=timeout, confirm_timeout=confirm_timeout,
                 **properties
             )
-            if after_receivers:
-                send_after_publish(sender=name, body=body, headers=headers2,
-                                   exchange=exchange, routing_key=routing_key)
+            if retry and _callback_publish_retry.get():
+                # The parent task already ran, so retry only this message,
+                # waiting as the policy says and reconnecting when needed.
+                max_retries = _callback_publish_max_retries(_rp, default_policy)
+                conn = producer.connection
+
+                def on_publish_retry(exc, intervals, retries):
+                    if retries == 0 and _rp.get('max_retries') is None:
+                        logger.warning(
+                            'Unbounded max_retries for worker callback %r; '
+                            'using %s retries instead.', name, max_retries,
+                        )
+                    producer.revive(conn)
+                    wait = next(intervals)
+                    logger.warning(
+                        'Retrying refused callback publish for %r '
+                        '(%s/%s, waiting %ss): %r',
+                        name, retries + 1, max_retries, wait, exc,
+                    )
+                    return wait
+
+                try:
+                    ret = retry_over_time(
+                        producer.publish,
+                        _publish_retry_errors(_rp, conn),
+                        args=(body,),
+                        kwargs=dict(publish_kwargs, retry=False),
+                        errback=on_publish_retry,
+                        max_retries=max_retries,
+                        interval_start=_rp.get('interval_start', 0),
+                        interval_step=_rp.get('interval_step', 0.2),
+                        interval_max=_rp.get('interval_max', 1),
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        'Giving up refused callback publish for %r: %r',
+                        name, exc,
+                    )
+                    raise
+            else:
+                ret = producer.publish(body, **publish_kwargs)
+            send_after_publish(
+                sender=name, body=body, headers=headers2,
+                exchange=exchange, routing_key=routing_key,
+            )
             if sent_receivers:  # XXX deprecated
                 if isinstance(body, tuple):  # protocol version 2
                     send_task_sent(
@@ -601,7 +687,7 @@ class AMQP:
                     'routing_key': routing_key,
                 })
                 evd.publish('task-sent', sent_event,
-                            producer, retry=retry, retry_policy=retry_policy)
+                            producer, retry=retry, retry_policy=_rp)
             return ret
         return send_task_message
 
@@ -657,7 +743,9 @@ class AMQP:
         return self.app.events.Dispatcher(enabled=False)
 
     def _handle_conf_update(self, *args, **kwargs):
-        if ('task_routes' in kwargs or 'task_routes' in args):
-            self.flush_routes()
-            self.router = self.Router()
-        return
+        route_keys = self.app.conf._to_keys('task_routes')
+        for key in route_keys:
+            if key in kwargs or (args and key in args[0]):
+                self.flush_routes()
+                self.router = self.Router()
+                return

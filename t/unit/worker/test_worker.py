@@ -19,6 +19,7 @@ from kombu.transport.memory import Transport
 from kombu.utils.uuid import uuid
 
 import t.skip
+from celery import signals
 from celery.apps.worker import safe_say
 from celery.bootsteps import CLOSE, RUN, TERMINATE, StartStopStep
 from celery.concurrency.base import BasePool
@@ -27,12 +28,14 @@ from celery.exceptions import (ImproperlyConfigured, InvalidTaskError, TaskRevok
 from celery.platforms import EX_FAILURE
 from celery.utils.nodenames import worker_direct
 from celery.utils.serialization import pickle
+from celery.utils.sysinfo import CpuBudget
 from celery.utils.timer2 import Timer
 from celery.worker import autoscale, components, consumer, state
 from celery.worker import worker as worker_module
 from celery.worker.consumer import Consumer
 from celery.worker.pidbox import gPidbox
 from celery.worker.request import Request
+from t.unit.conftest import restore_execv_state
 
 
 def MockStep(step=None):
@@ -738,6 +741,17 @@ class test_WorkController(ConsumerCase):
     def test_on_consumer_ready(self):
         self.worker.on_consumer_ready(Mock())
 
+    def test_pool_start_method_default(self):
+        assert self.worker.pool_start_method == 'fork'
+
+    def test_pool_start_method_spawn(self):
+        worker = self.create_worker(pool_start_method='spawn')
+        assert worker.pool_start_method == 'spawn'
+
+    def test_pool_start_method_invalid(self):
+        with pytest.raises(ImproperlyConfigured):
+            self.create_worker(pool_start_method='forkserver')
+
     def test_setup_queues_worker_direct(self):
         self.app.conf.worker_direct = True
         self.app.amqp.__dict__['queues'] = Mock()
@@ -789,6 +803,140 @@ class test_WorkController(ConsumerCase):
         self.worker.blueprint = None
         self.worker._shutdown()
 
+    def test_warm_shutdown_does_not_cap_the_broker_socket(self):
+        # A warm shutdown runs against a healthy broker and still has acks to
+        # flush.  Capping those writes would turn a slow broker into lost acks
+        # and redelivered - so twice-executed - tasks, which is worse than the
+        # hang it would prevent.  Bounding belongs in on_cold_shutdown, where
+        # the caller has already asked to stop now.
+        sock, peer = socket.socketpair()
+        try:
+            sock.settimeout(None)
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+            self.worker.consumer = Mock(name='consumer')
+            self.worker.consumer.connection = connection
+
+            seen = {}
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.stop.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            self.worker._shutdown()
+
+            assert seen['timeout'] is None, (
+                'warm shutdown must leave the broker socket unbounded so '
+                'in-flight acks can still be flushed'
+            )
+        finally:
+            sock.close()
+            peer.close()
+
+    def test_cold_shutdown_bounds_open_broker_sockets(self):
+        # Issue 975 has an earlier entry point than _shutdown(): the cold
+        # shutdown handler cancels the task consumer itself, and for amqp that
+        # is a basic_cancel which waits for a reply.  Reaching it means
+        # _shutdown() never runs, so the bound has to be applied here too.
+        from celery.apps.worker import on_cold_shutdown
+        # Import the module the same way on_cold_shutdown does, so the flags
+        # restored below are the ones it actually mutates.
+        from celery.worker import state as worker_state
+
+        sock, peer = socket.socketpair()
+        # on_cold_shutdown sets the global shutdown flags; leaving them set
+        # trips the sanity_no_shutdown_flags_set fixture for every test that
+        # runs after this one.
+        prev_flags = (worker_state.should_stop, worker_state.should_terminate)
+        try:
+            sock.settimeout(None)
+
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+
+            worker = Mock(name='worker')
+            worker.consumer.connection = connection
+            seen = {}
+            worker.consumer.task_consumer.cancel.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            with patch('celery.apps.worker.install_worker_term_hard_handler'), \
+                    patch('celery.apps.worker.safe_say'):
+                on_cold_shutdown(worker)
+
+            assert seen['timeout'] == worker_module.SHUTDOWN_SOCKET_TIMEOUT
+        finally:
+            worker_state.should_stop, worker_state.should_terminate = prev_flags
+            sock.close()
+            peer.close()
+
+    def test_cold_shutdown_survives_cancel_timeout(self):
+        # With the socket bounded, cancel() raises on a silent peer instead
+        # of hanging.  The handler must still cancel active requests and set
+        # the terminate flag, or the worker never shuts down.
+        from celery.apps.worker import on_cold_shutdown
+        from celery.worker import state as worker_state
+
+        prev_flags = (worker_state.should_stop, worker_state.should_terminate)
+        try:
+            worker = Mock(name='worker')
+            worker.consumer.connection = None
+            worker.consumer.connection_errors = (OSError,)
+            worker.consumer.channel_errors = ()
+            worker.consumer.task_consumer.cancel.side_effect = (
+                socket.timeout('timed out'))
+
+            with patch('celery.apps.worker.install_worker_term_hard_handler'), \
+                    patch('celery.apps.worker.safe_say'):
+                on_cold_shutdown(worker)
+
+            worker.consumer.cancel_active_requests.assert_called_once_with()
+            assert worker_state.should_terminate is True
+        finally:
+            worker_state.should_stop, worker_state.should_terminate = prev_flags
+
+    def test_terminate_without_consumer(self):
+        # terminate() must tolerate a worker whose consumer was never
+        # created, as signal_consumer_close() already does.
+        self.worker.__dict__.pop('consumer', None)
+        self.worker.blueprint = Mock(name='blueprint')
+        self.worker.blueprint.state = RUN
+        self.worker.terminate()
+        self.worker.blueprint.stop.assert_called_once()
+
+    def test_terminate_bounds_open_broker_sockets(self):
+        # Cold paths that never run on_cold_shutdown (WorkerTerminate raised
+        # by the consumer, embedded callers) all land in terminate().
+        sock, peer = socket.socketpair()
+        try:
+            sock.settimeout(None)
+            connection = Mock(name='connection')
+            connection.transport.channels = None
+            connection._connection._transport.sock = sock
+            self.worker.consumer = Mock(name='consumer')
+            self.worker.consumer.connection = connection
+
+            seen = {}
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.state = RUN
+            self.worker.blueprint.stop.side_effect = (
+                lambda *a, **kw: seen.update(timeout=sock.gettimeout()))
+
+            self.worker.terminate()
+
+            assert seen['timeout'] == worker_module.SHUTDOWN_SOCKET_TIMEOUT
+        finally:
+            sock.close()
+            peer.close()
+
+    def test_shutdown_without_consumer_connection(self):
+        # Shutdown can run before the consumer ever connected.
+        self.worker.consumer = None
+        self.worker.blueprint = Mock(name='blueprint')
+        self.worker._shutdown()
+        self.worker.blueprint.stop.assert_called_once()
+
     @patch('celery.worker.worker.create_pidlock')
     def test_use_pidfile(self, create_pidlock):
         create_pidlock.return_value = Mock()
@@ -818,6 +966,288 @@ class test_WorkController(ConsumerCase):
             timer_cls='celery.utils.timer2.Timer',
         )
         assert worker.autoscaler
+
+    def test_concurrency_explicit_int_unchanged(self):
+        worker = self.app.WorkController(
+            concurrency=4, pool_cls='prefork', loglevel=0,
+        )
+        assert worker.concurrency == 4
+
+    def test_concurrency_string_int_is_coerced(self):
+        # Env vars and direct ``app.conf.worker_concurrency = "4"`` set
+        # the value as a string; worker.setup_instance must coerce it.
+        worker = self.app.WorkController(
+            concurrency='4', pool_cls='prefork', loglevel=0,
+        )
+        assert worker.concurrency == 4
+
+    def test_concurrency_string_garbage_falls_back_to_cpu_count(self):
+        # Invalid strings are treated as unset and fall through to cpu_count,
+        # with a warning so the operator sees their config was rejected.
+        # self.logger is worker_module.logger, mocked in setup_method.
+        with patch('celery.worker.worker.cpu_count', return_value=7):
+            worker = self.app.WorkController(
+                concurrency='not-a-number',
+                pool_cls='prefork',
+                loglevel=0,
+            )
+        assert worker.concurrency == 7
+        # The message is deferred to on_start() because setup_instance()
+        # runs before logging is configured.
+        worker.on_start()
+        warning_calls = [
+            call for call in self.logger.warning.call_args_list
+            if any('not-a-number' in str(a) for a in call.args)
+        ]
+        assert warning_calls, (
+            f"expected warning mentioning 'not-a-number'; "
+            f"got: {self.logger.warning.call_args_list}"
+        )
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_resolution_logged_on_start(
+        self, mock_budget,
+    ):
+        # setup_instance() runs before logging handlers exist, so the
+        # resolution message must be deferred to on_start() or it is
+        # silently dropped in a real worker (caught by the smoke tests).
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        assert not self.logger.info.called
+        assert worker._pending_concurrency_log is not None
+        worker.on_start()
+        info_calls = [
+            call for call in self.logger.info.call_args_list
+            if "worker_concurrency='auto' resolved to" in str(call.args)
+        ]
+        assert info_calls
+        assert worker._pending_concurrency_log is None
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_prefork_caps_to_cgroup(
+        self, mock_budget,
+    ):
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_solo_no_cap(self, mock_budget):
+        # solo.TaskPool hard-codes ``limit = 1``; ``concurrency`` only feeds
+        # prefetch there, so the cgroup quota is not consulted.
+        mock_budget.return_value = CpuBudget(8, 8, None)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='solo', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+        worker.on_start()
+        assert any(
+            "only sizes the prefork pool" in call.args[0]
+            and 'solo' in call.args
+            for call in self.logger.info.call_args_list
+        )
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_prefork_subclass_caps_to_cgroup(
+        self, mock_budget,
+    ):
+        # Classification is by ``issubclass``, so a user subclass living in
+        # an arbitrary module is still treated as CPU-bound.
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+
+        class MyPool(PreforkPool):
+            pass
+        MyPool.__module__ = 'myproj.pools'
+
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls=MyPool, loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+        assert worker.pool_cls is MyPool
+        assert worker._pending_concurrency_log[2][1].startswith('myproj.pools:')
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_no_quota_logged(self, mock_budget):
+        # No cgroup quota anywhere in the chain: the INFO line says so
+        # instead of silently reporting the host count.
+        mock_budget.return_value = CpuBudget(8, 8, None)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        assert worker.concurrency == 8
+        worker.on_start()
+        assert any(
+            'no cgroup cpu quota found' in str(call.args)
+            for call in self.logger.info.call_args_list
+        )
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_resolved_after_worker_init(self, mock_budget):
+        # worker_init handlers may monkey-patch (gevent/eventlet), so the pool
+        # class must not be imported before the signal is sent.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+        seen = []
+
+        def on_worker_init(sender, **kwargs):
+            seen.append((sender.pool_cls, sender.concurrency))
+
+        signals.worker_init.connect(on_worker_init, weak=False)
+        try:
+            with patch(
+                'celery.worker.worker._concurrency.get_implementation',
+                wraps=worker_module._concurrency.get_implementation,
+            ) as gi:
+                worker = self.app.WorkController(
+                    concurrency='auto', pool_cls='prefork', loglevel=0,
+                )
+        finally:
+            signals.worker_init.disconnect(on_worker_init)
+        assert seen == [('prefork', 'auto')]
+        gi.assert_called_once_with('prefork')
+        assert worker.pool_cls is PreforkPool
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_gevent_no_cap(self, mock_budget):
+        # gevent is an optional extra; skip if not installed in this env.
+        pytest.importorskip('gevent')
+        mock_budget.return_value = CpuBudget(8, 8, None)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='gevent', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_eventlet_no_cap(self, mock_budget):
+        # eventlet is an optional extra; skip if not installed in this env.
+        pytest.importorskip('eventlet')
+        mock_budget.return_value = CpuBudget(8, 8, None)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='eventlet', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_threads_no_cap(self, mock_budget):
+        mock_budget.return_value = CpuBudget(8, 8, None)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='threads', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=False)
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_case_insensitive(self, mock_budget):
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='AUTO', pool_cls='prefork', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_processes_alias_caps_to_cgroup(
+        self, mock_budget,
+    ):
+        # ``processes`` is the legacy alias for prefork; treat as CPU-bound.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='processes', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_dotted_import_path_caps_to_cgroup(
+        self, mock_budget,
+    ):
+        # Celery docs use the dotted-path form for custom pool registration:
+        # ``worker_pool = 'celery.concurrency.prefork:TaskPool'``.
+        # It resolves to the prefork class, so ``auto`` must cap to cgroup.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto',
+            pool_cls='celery.concurrency.prefork:TaskPool',
+            loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_class_object_caps_to_cgroup(
+        self, mock_budget,
+    ):
+        # If a caller passes the resolved class directly (instead of a name),
+        # branching must still recognize it as CPU-bound.
+        from celery.concurrency.prefork import TaskPool as PreforkPool
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls=PreforkPool, loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+        # The CLI passes a class; the log must still name the alias.
+        assert worker._pending_concurrency_log[2][1] == 'prefork'
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_cli_overrides_config(self, mock_budget):
+        # The explicit ``concurrency`` arg (CLI ``-c``) wins over
+        # ``worker_concurrency`` in config via ``either``; ``auto`` rides
+        # through that precedence like any other value.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        self.app.conf.worker_concurrency = 4
+        worker = self.app.WorkController(
+            concurrency='auto', pool_cls='prefork', loglevel=0,
+        )
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2  # auto-resolved, not the config 4
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_from_config(self, mock_budget):
+        # ``worker_concurrency = "auto"`` set in config (no CLI override)
+        # resolves the same way.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        self.app.conf.worker_concurrency = 'auto'
+        worker = self.app.WorkController(pool_cls='prefork', loglevel=0)
+        mock_budget.assert_called_once_with(use_cgroup_quota=True)
+        assert worker.concurrency == 2
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_int_cli_overrides_config_auto(self, mock_budget):
+        # The reverse: an explicit integer on the CLI wins over
+        # ``worker_concurrency = "auto"`` in config, and the cgroup read is
+        # never attempted.
+        self.app.conf.worker_concurrency = 'auto'
+        worker = self.app.WorkController(
+            concurrency=8, pool_cls='prefork', loglevel=0,
+        )
+        mock_budget.assert_not_called()
+        assert worker.concurrency == 8
+
+    @patch('celery.worker.worker.cpu_budget')
+    def test_concurrency_auto_with_autoscale(self, mock_budget):
+        # ``auto`` resolves without crashing when ``--autoscale`` is also
+        # given; the autoscale bounds take over sizing (max/min), while the
+        # resolved value is what min falls back to when autoscale is absent.
+        mock_budget.return_value = CpuBudget(2, 8, 2.0)
+        worker = self.app.WorkController(
+            concurrency='auto', autoscale=[10, 3], pool_cls='prefork',
+            loglevel=0,
+        )
+        assert worker.concurrency == 2
+        assert worker.max_concurrency == 10
+        assert worker.min_concurrency == 3
 
     @t.skip.if_win32
     @pytest.mark.sleepdeprived_patched_module(autoscale)
@@ -1204,12 +1634,15 @@ class test_WorkController(ConsumerCase):
         w.use_eventloop = True
         w.consumer.restart_count = -1
         pool = components.Pool(w)
-        pool.create(w)
-        pool.register_with_event_loop(w, w.hub)
-        if sys.platform != 'win32':
-            assert isinstance(w.semaphore, LaxBoundedSemaphore)
-            P = w.pool
-            P.start()
+        # Starting the pool can mark this process as a spawned pool child,
+        # which changes how @app.task binds for every test that follows.
+        with restore_execv_state():
+            pool.create(w)
+            pool.register_with_event_loop(w, w.hub)
+            if sys.platform != 'win32':
+                assert isinstance(w.semaphore, LaxBoundedSemaphore)
+                P = w.pool
+                P.start()
 
     def test_wait_for_soft_shutdown(self):
         worker = self.worker

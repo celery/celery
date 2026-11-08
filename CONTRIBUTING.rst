@@ -161,7 +161,7 @@ If you'd like to submit the information encrypted our PGP key is::
 Other bugs
 ----------
 
-Bugs can always be described to the :ref:`mailing-list`, but the best
+Bugs can always be described on `GitHub Discussions`_, but the best
 way to report an issue and to ensure a timely response is to use the
 issue tracker.
 
@@ -175,7 +175,7 @@ and participate in the discussion.
 2) **Determine if your bug is really a bug**.
 
 You shouldn't file a bug if you're requesting support. For that you can use
-the :ref:`mailing-list`, or :ref:`irc-channel`. If you still need support
+`GitHub Discussions`_. If you still need support
 you can open a github issue, please prepend the title with ``[QUESTION]``.
 
 3) **Make sure your bug hasn't already been reported**.
@@ -261,8 +261,8 @@ issue tracker.
 * :pypi:`django-celery-beat`: https://github.com/celery/django-celery-beat/issues
 * :pypi:`django-celery-results`: https://github.com/celery/django-celery-results/issues
 
-If you're unsure of the origin of the bug you can ask the
-:ref:`mailing-list`, or just use the Celery issue tracker.
+If you're unsure of the origin of the bug you can ask on
+`GitHub Discussions`_, or just use the Celery issue tracker.
 
 Contributors guide to the code base
 ===================================
@@ -460,97 +460,83 @@ Because of the many components of Celery, such as a broker and backend,
 development and testing cycle.
 
 The Docker components can be found within the :file:`docker/` folder. The
-Docker image is parameterized by the `PYTHON_IMAGE` build argument and uses
+Docker image is parameterized by the ``PYTHON_IMAGE`` build argument and uses
 the corresponding official Python or PyPy base image.
 
 The Docker Compose configuration provides a service for each supported Python
 version:
 
-* `celery311` -- Python 3.11
-* `celery312` -- Python 3.12
-* `celery313` -- Python 3.13
-* `celery314` -- Python 3.14
-* `celerypypy311` -- PyPy 3.11
+* ``celery311`` -- Python 3.11
+* ``celery312`` -- Python 3.12
+* ``celery313`` -- Python 3.13
+* ``celery314`` -- Python 3.14
+* ``celerypypy311`` -- PyPy 3.11
 
 To build all Docker images:
 
 .. code-block:: console
 
-```
-$ make docker-build
-```
+    $ make docker-build
 
 To build a specific Python version, use Docker Compose directly. For example:
 
 .. code-block:: console
 
-```
-$ docker compose -f docker/docker-compose.yml build celery312
-```
+    $ docker compose -f docker/docker-compose.yml build celery312
 
 and run a command in the container via:
 
 .. code-block:: console
 
-```
-$ docker compose -f docker/docker-compose.yml run --rm celery312 <command>
-```
+    $ docker compose -f docker/docker-compose.yml run --rm celery312 <command>
 
-where `<command>` is a command to execute in a Docker container. The
-`--rm` flag indicates that the container should be removed after it is
+where ``<command>`` is a command to execute in a Docker container. The
+``--rm`` flag indicates that the container should be removed after it is
 exited and is useful to prevent accumulation of unwanted containers.
 
 Some useful commands to run:
 
-* `bash`
+* ``bash``
 
   To enter the Docker container like a normal shell:
 
   .. code-block:: console
 
-  ```
-    $ docker compose -f docker/docker-compose.yml run --rm celery312 bash
-  ```
+      $ docker compose -f docker/docker-compose.yml run --rm celery312 bash
 
-* `pytest t/unit`
+* ``pytest t/unit``
 
   To run the unit tests using Python 3.12:
 
   .. code-block:: console
 
-  ```
-    $ docker compose -f docker/docker-compose.yml run --rm celery312 \
-        pytest t/unit
-  ```
+      $ docker compose -f docker/docker-compose.yml run --rm celery312 \
+          pytest t/unit
 
-* `pytest t/integration`
+* ``pytest t/integration``
 
   To run the integration tests using Python 3.12:
 
   .. code-block:: console
 
-  ```
-    $ docker compose -f docker/docker-compose.yml run --rm celery312 \
-        pytest t/integration
-  ```
+      $ docker compose -f docker/docker-compose.yml run --rm celery312 \
+          pytest t/integration
 
 The Python version can be changed by selecting the corresponding Docker
-Compose service. For example, `celery311`, `celery313`, `celery314`, or
-`celerypypy311` can be used instead of `celery312`.
+Compose service. For example, ``celery311``, ``celery313``, ``celery314``, or
+``celerypypy311`` can be used instead of ``celery312``.
 
 The Dockerfile can also be built directly with a specific Python base image
-by providing the `PYTHON_IMAGE` build argument:
+by providing the ``PYTHON_IMAGE`` build argument:
 
 .. code-block:: console
 
-```
-$ docker build \
-    --build-arg PYTHON_IMAGE=python:3.12-slim-bookworm \
-    -f docker/Dockerfile .
-```
+    $ docker build \
+        --build-arg PYTHON_IMAGE=python:3.12-slim-bookworm \
+        -f docker/Dockerfile .
 
-The default value of `PYTHON_IMAGE` is
-`python:3.14-slim-bookworm`.
+The default value of ``PYTHON_IMAGE`` is
+``python:3.14-slim-bookworm``.
 
 By default, Docker Compose will mount the Celery source tree in the Docker
 container, allowing code changes and testing to be immediately visible inside
@@ -559,10 +545,10 @@ to use, are also defined in the :file:`docker/docker-compose.yml` file.
 
 The :file:`docker/docker-compose.yml` file defines the necessary environment
 variables and services to run integration tests. The Python-specific services
-also mount the codebase and set the `PYTHONPATH` environment variable to
-`/home/developer/celery`. By setting `PYTHONPATH` the service allows the
+also mount the codebase and set the ``PYTHONPATH`` environment variable to
+``/home/developer/celery``. By setting ``PYTHONPATH`` the service allows the
 mounted codebase to be used as a global module for development. If you prefer,
-you can also run `python -m pip install -e .` to install the codebase in
+you can also run ``python -m pip install -e .`` to install the codebase in
 development mode.
 
 If you would like to run a Django or stand alone project to manually test or
@@ -573,36 +559,37 @@ Assuming a folder structure such as:
 
 .. code-block:: console
 
-```
-+ celery_project
-  + celery # repository cloned here.
-  + my_project
-    - manage.py
-    + my_project
-      - views.py
-```
+    + celery_project
+      + celery # repository cloned here.
+      + my_project
+        - manage.py
+        + my_project
+          - views.py
 
 .. code-block:: yaml
 
-services:
-celery312:
-image: celery/celery:dev-py312
-environment:
-TEST_BROKER: amqp://rabbit:5672
-TEST_BACKEND: redis://redis
-volumes:
-- ../../celery:/home/developer/celery
-- ../my_project:/home/developer/my_project
-depends_on:
-- rabbit
-- redis
-rabbit:
-image: rabbitmq:latest
-redis:
-image: redis:latest
+    services:
+      celery312:
+        image: celery/celery:dev-py312
+        environment:
+          TEST_BROKER: amqp://rabbit:5672
+          TEST_BACKEND: redis://redis
+        volumes:
+          - ../../celery:/home/developer/celery
+          - ../my_project:/home/developer/my_project
+        depends_on:
+          - rabbit
+          - redis
+      rabbit:
+        image: rabbitmq:latest
+      redis:
+        image: redis:latest
 
 In the previous example, we are using the Python 3.12 image built from this
 repository and mounting the Celery code base as well as our custom project.
+
+.. _`Docker`: https://www.docker.com/
+.. _`docker-compose`: https://docs.docker.com/compose/
 
 .. _contributing-testing:
 
@@ -1535,7 +1522,8 @@ following:
 
 * Also add the previous version under the "versions" tab.
 
-.. _`mailing-list`: https://groups.google.com/group/celery-users
+.. _`GitHub Discussions`: https://github.com/celery/celery/discussions
+
 
 .. _`irc-channel`: https://docs.celeryq.dev/en/latest/getting-started/resources.html#irc
 

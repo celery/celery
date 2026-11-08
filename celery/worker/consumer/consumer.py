@@ -8,7 +8,7 @@ import errno
 import logging
 import os
 import warnings
-from collections import defaultdict
+from collections import defaultdict, deque
 from time import sleep
 
 from billiard.common import restart_state
@@ -30,10 +30,11 @@ from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
 from celery.utils.objects import Bunch
 from celery.utils.text import truncate
+from celery.utils.threads import bound_open_broker_sockets
 from celery.utils.time import humanize_seconds, rate
 from celery.worker import loops
-from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, successful_requests,
-                                 task_reserved)
+from celery.worker.state import (active_requests, maybe_shutdown, requests, reserved_requests, scheduled_requests,
+                                 successful_requests, task_reserved)
 
 __all__ = ('Consumer', 'Evloop', 'dump_body')
 
@@ -158,6 +159,14 @@ class Consumer:
     #: as sending heartbeats.
     timer = None
 
+    #: Entries on the event loop timer before the consumer last started
+    #: connecting to the broker.
+    timer_entries_before_start = None
+
+    #: Entries the event loop registered on its timer for the current
+    #: connection, or :const:`None` if it has not registered them yet.
+    timer_entries_registered = None
+
     restart_count = -1  # first start is the same as a restart
 
     #: This flag will be turned off after the first failed
@@ -236,6 +245,10 @@ class Consumer:
         else:
             self.amqheartbeat = 0
 
+        # Reused for every buffered event, so that the hub's ready set
+        # holds at most one pending flush.
+        self._flush_events_promise = promise(self._flush_events)
+
         if not hasattr(self, 'loop'):
             self.loop = loops.asynloop if hub else loops.synloop
 
@@ -245,7 +258,7 @@ class Consumer:
             # connect again.
             self.app.conf.broker_connection_timeout = None
 
-        self._pending_operations = []
+        self._pending_operations = deque()
 
         self.steps = []
         self.blueprint = self.Blueprint(
@@ -255,6 +268,10 @@ class Consumer:
         self.blueprint.apply(self, **dict(worker_options or {}, **kwargs))
 
     def call_soon(self, p, *args, **kwargs):
+        """Schedule a callback.
+
+        Callback ordering is not guaranteed across pool implementations.
+        """
         p = ppartial(p, *args, **kwargs)
         if self.hub:
             return self.hub.call_soon(p)
@@ -289,7 +306,7 @@ class Consumer:
         if not self.hub:
             while self._pending_operations:
                 try:
-                    self._pending_operations.pop()()
+                    self._pending_operations.popleft()()
                 except Exception as exc:  # pylint: disable=broad-except
                     logger.exception('Pending callback raised: %r', exc)
 
@@ -378,6 +395,13 @@ class Consumer:
                 recoverable_errors = (self.connection_errors + self.channel_errors)
             else:
                 recoverable_errors = self.connection_errors
+            if self.hub is not None:
+                # Entries added to the timer from here on, by connecting
+                # and starting the event loop, belong to this connection
+                # (see :func:`celery.worker.loops.asynloop`).
+                self.timer_entries_before_start = loops._timer_entries(
+                    self.hub.timer)
+                self.timer_entries_registered = None
             try:
                 blueprint.start(self)
             except recoverable_errors as exc:
@@ -404,7 +428,30 @@ class Consumer:
                     else:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
+                    self._cancel_connection_timer_entries()
                     blueprint.restart(self)
+
+    def _cancel_connection_timer_entries(self):
+        """Cancel the timer entries registered for the failed connection.
+
+        :func:`~celery.worker.loops.asynloop` records the entries it
+        registered for the connection.  If the connection failed before
+        that, e.g. in a bootstep that runs after the transport connected,
+        every entry added since the consumer started connecting belongs to
+        it: the event loop was not running, so nothing else added entries
+        in the meantime.  Without this, those entries would be part of the
+        next attempt's snapshot and never be cancelled.
+
+        Cancelling an entry twice is harmless, so this also runs after
+        :func:`~celery.worker.loops.asynloop` cancelled its own entries.
+        """
+        if self.hub is None or self.timer_entries_before_start is None:
+            return
+        entries = self.timer_entries_registered
+        if entries is None:
+            entries = (loops._timer_entries(self.hub.timer) -
+                       self.timer_entries_before_start)
+        loops._cancel_timer_entries(self.hub.timer, entries)
 
     def _get_connection_retry_type(self, is_connection_loss_on_startup):
         return ('broker_connection_retry_on_startup'
@@ -417,13 +464,15 @@ class Consumer:
               'Trying to reconnect...')
 
     def on_connection_error_after_connected(self, exc):
-        warn(CONNECTION_RETRY, exc_info=True)
+        # Keep the exception in the warning so default-level logs still say
+        # what went wrong, but leave the traceback for debug logging where
+        # application log handlers will not capture it.
+        warn('%s (%r)', CONNECTION_RETRY, exc)
+        debug('Connection error: %r', exc, exc_info=exc)
+        # Bound the sockets that are already open before cleanup reads from
+        # them; collect()'s socket_timeout only applies to new sockets.
+        bound_open_broker_sockets(self.connection, COLLECT_SOCKET_TIMEOUT)
         try:
-            # Pass an explicit socket_timeout so that cleanup I/O on a
-            # broken connection (e.g. _brpop_read during Channel.close)
-            # cannot block indefinitely.  The default of None would set
-            # the global socket timeout to blocking-forever, which can
-            # cause the worker to hang here and never reach the reconnect.
             self.connection.collect(socket_timeout=COLLECT_SOCKET_TIMEOUT)
         except Exception:  # pylint: disable=broad-except
             pass
@@ -543,6 +592,31 @@ class Consumer:
                 requests.pop(r.id, None)
         reserved_requests.clear()
         reserved_requests.update(tuple(active_requests))
+        # Scheduled (ETA/countdown) requests never became reserved, so they
+        # aren't covered by the cleanup above. Cancel their pending timer
+        # entries (through self.timer.cancel(), not entry.cancel()
+        # directly, since e.g. the Eventlet timer relies on that to catch
+        # GreenletExit) so the callback can't fire after we've torn down
+        # this connection (neither event loop cancels them: synloop's error
+        # path cancels nothing, and asynloop's only cancels the entries it
+        # registered for the connection, which doesn't include these), then
+        # drop our copies since the broker may redeliver these tasks to
+        # another worker on reconnect.
+        for r in tuple(scheduled_requests):
+            entry = r._eta_timer_entry
+            if entry is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling ETA timer entry: %r', exc)
+            # A request can be in both sets: with a threaded timer an ETA
+            # already in the past fires immediately, so task_reserved() may
+            # have run before the strategy registered the request as
+            # scheduled.  Never drop one that's reserved/running.
+            if r not in active_requests and r not in reserved_requests:
+                requests.pop(r.id, None)
+        scheduled_requests.clear()
         if self.pool and self.pool.flush:
             self.pool.flush()
 
@@ -627,7 +701,7 @@ class Consumer:
 
     def on_send_event_buffered(self):
         if self.hub:
-            self.hub._ready.add(self._flush_events)
+            self.hub.call_soon(self._flush_events_promise)
 
     def add_task_queue(self, queue, exchange=None, exchange_type=None,
                        routing_key=None, **options):
@@ -653,8 +727,9 @@ class Consumer:
 
     def cancel_task_queue(self, queue):
         info('Canceling queue %s', queue)
-        self.app.amqp.queues.deselect(queue)
-        self.task_consumer.cancel_by_queue(queue)
+        queues = self.app.amqp.queues
+        queues.deselect(queue)
+        self.task_consumer.cancel_by_queue(queues.aliases.get(queue, queue))
 
     def apply_eta_task(self, task):
         """Method called by the timer to apply a task with an ETA/countdown."""

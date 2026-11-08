@@ -8,6 +8,8 @@ from celery import Celery, chord
 from t.integration.tasks import add
 from t.smoke.tasks import long_running_task, summarize_results
 
+PENDING_OPERATIONS_QUEUE = "pending_operations_queue"
+
 
 class test_control:
     def test_sanity(self, celery_setup: CeleryTestSetup):
@@ -23,6 +25,91 @@ class test_control:
         while celery_setup.worker.container.status != "exited":
             celery_setup.worker.container.reload()
         assert celery_setup.worker.container.attrs["State"]["ExitCode"] == 0
+
+    def test_report(self, celery_setup: CeleryTestSetup):
+        responses = celery_setup.app.control.inspect().report()
+        assert responses
+        for replies in responses.values():
+            assert "software -> celery:" in replies["ok"]
+
+    def test_report_with_multiserver_result_backend(self, celery_setup: CeleryTestSetup):
+        app = celery_setup.app
+        orig_backend = app.conf.result_backend
+        try:
+            app.conf.result_backend = (
+                "cache+memcached://172.19.26.240:11211;172.19.26.242:11211/"
+            )
+            report = app.bugreport()
+            assert "cache+memcached://172.19.26.240:11211;172.19.26.242:11211/" in report
+
+            app.conf.result_backend = (
+                "sentinel://:secret1@h1:26379;sentinel://:secret2@h2:26379/0"
+            )
+            report = app.bugreport()
+            assert "secret1" not in report
+            assert "secret2" not in report
+            assert "sentinel://:********@h1:26379;sentinel://:********@h2:26379/0" in report
+
+            app.conf.result_backend = "redis://:p,ass@word@localhost:6379/0"
+            report = app.bugreport()
+            assert "p,ass@word" not in report
+            assert "redis://:********@localhost:6379/0" in report
+
+            app.conf.result_backend = "redis://user:p,a@ss@localhost:6379/0"
+            report = app.bugreport()
+            assert "p,a@ss" not in report
+            assert "redis://user:********@localhost:6379/0" in report
+        finally:
+            app.conf.result_backend = orig_backend
+
+
+class test_pending_operation_order:
+    @pytest.fixture
+    def default_worker_command(self, default_worker_container_cls):
+        return default_worker_container_cls.command(
+            "--pool=gevent",
+            "--concurrency=1",
+        )
+
+    def test_add_then_cancel_consumer_preserves_order(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        app = celery_setup.app
+        worker = celery_setup.worker
+        destination = [worker.hostname()]
+
+        replies = app.control.broadcast(
+            "schedule_add_then_cancel_consumer",
+            arguments={"queue": PENDING_OPERATIONS_QUEUE},
+            destination=destination,
+            reply=True,
+            timeout=RESULT_TIMEOUT,
+        )
+        assert replies == [
+            {worker.hostname(): {"scheduled": PENDING_OPERATIONS_QUEUE}}
+        ]
+
+        @retry(stop=stop_after_attempt(20), wait=wait_fixed(0.5), reraise=True)
+        def wait_until_pending_operations_are_drained() -> None:
+            replies = app.control.broadcast(
+                "pending_operations_count",
+                destination=destination,
+                reply=True,
+                timeout=RESULT_TIMEOUT,
+            )
+            assert replies == [{worker.hostname(): 0}]
+
+        wait_until_pending_operations_are_drained()
+
+        active_queues = app.control.inspect(
+            destination=destination,
+            timeout=RESULT_TIMEOUT,
+        ).active_queues()
+        assert active_queues is not None
+        assert PENDING_OPERATIONS_QUEUE not in {
+            queue["name"] for queue in active_queues[worker.hostname()]
+        }
 
 
 class test_revoke_chord_member:
