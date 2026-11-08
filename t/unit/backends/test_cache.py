@@ -109,6 +109,81 @@ class test_CacheBackend:
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 
+    def test_set_get_chord_size(self):
+        tb = CacheBackend(backend='memory://', app=self.app)
+        gid = uuid()
+        assert tb.get_chord_size(gid) is None
+        tb.set_chord_size(gid, 7)
+        assert tb.get_chord_size(gid) == 7
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_uses_stored_chord_size(self, restore):
+        """Only the final part return restores the group (issue #11045).
+
+        With the chord size stored by set_chord_size(), the backend must
+        not fetch and decode the whole group on every header task return.
+        """
+        tb = CacheBackend(backend='memory://', app=self.app)
+
+        deps = Mock()
+        deps.__len__ = Mock(return_value=2)
+        deps.results = []
+        restore.return_value = deps
+        task = Mock()
+        task.name = 'foobarbaz'
+        self.app.tasks['foobarbaz'] = task
+        task.request.chord = signature(task)
+
+        result_args = (
+            uuid(),
+            [self.app.AsyncResult(uuid()) for _ in range(2)],
+        )
+        task.request.id = uuid()
+        task.request.group = result_args[0]
+        tb.apply_chord(result_args, None)
+        tb.set_chord_size(result_args[0], 2)
+
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
+        restore.assert_not_called()
+
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
+        restore.assert_called_once()
+        deps.join_native.assert_called_with(propagate=True, timeout=3.0)
+        deps.delete.assert_called_with()
+        assert tb.get_chord_size(result_args[0]) is None
+
+    @patch('celery.result.GroupResult.restore')
+    def test_on_chord_part_return_uses_request_chord_size(self, restore):
+        """A chord_size carried by the request avoids the restore too."""
+        tb = CacheBackend(backend='memory://', app=self.app)
+
+        deps = Mock()
+        deps.__len__ = Mock(return_value=2)
+        deps.results = []
+        restore.return_value = deps
+        task = Mock()
+        task.name = 'foobarbaz'
+        self.app.tasks['foobarbaz'] = task
+        chord = signature(task)
+        chord['chord_size'] = 2
+        task.request.chord = chord
+
+        result_args = (
+            uuid(),
+            [self.app.AsyncResult(uuid()) for _ in range(2)],
+        )
+        task.request.id = uuid()
+        task.request.group = result_args[0]
+        tb.apply_chord(result_args, None)
+
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
+        restore.assert_not_called()
+
+        tb.on_chord_part_return(task.request, 'SUCCESS', 10)
+        restore.assert_called_once()
+        deps.join_native.assert_called_with(propagate=True, timeout=3.0)
+        deps.delete.assert_called_with()
+
     @pytest.mark.parametrize(
         'result_expires,chord_expires,expected_chord,expected_result', [
             (100, 600, 600, 600),

@@ -1897,6 +1897,7 @@ class test_KeyValueStoreBackend:
         callback = Mock(name='callback')
         request = Mock(name='request')
         request.group = 'gid'
+        request.chord = {}
         maybe_signature.return_value = callback
         self.b.on_chord_part_return(request, states.SUCCESS, 10)
         self.b.chord_error_from_stack.assert_called_with(
@@ -1913,6 +1914,7 @@ class test_KeyValueStoreBackend:
         callback = Mock(name='callback')
         request = Mock(name='request')
         request.group = 'gid'
+        request.chord = {}
         maybe_signature.return_value = callback
         self.b.on_chord_part_return(request, states.SUCCESS, 10)
         self.b.chord_error_from_stack.assert_called_with(

@@ -1426,6 +1426,60 @@ class BaseKeyValueStoreBackend(Backend):
         self.expire(self.get_key_for_group(header_result.id),
                     self._chord_result_expires)
 
+    def set_chord_size(self, group_id, chord_size):
+        # Stored under the same '.s' suffix the Redis backend uses, so the
+        # size survives until the chord completes without keeping the
+        # whole group blob around for counting.
+        key = self.get_key_for_group(group_id, '.s')
+        self.set(key, self.encode(chord_size))
+        self.expire(key, self.chord_expires)
+
+    def get_chord_size(self, group_id):
+        """Return the chord size stored by :meth:`set_chord_size`.
+
+        Returns :const:`None` when no size was stored (e.g. chords applied
+        before this was implemented) or the stored value is unusable, in
+        which case the caller falls back to restoring the group.
+        """
+        raw = self.get(self.get_key_for_group(group_id, '.s'))
+        if raw is None:
+            return None
+        try:
+            return int(self.decode(raw))
+        except Exception:  # pylint: disable=broad-except
+            return None
+
+    def _restore_chord_deps(self, gid, request):
+        """Restore the chord header group, reporting failures to the callback.
+
+        Returns the restored :class:`~celery.result.GroupResult`, or
+        :const:`None` when it could not be restored (the chord error has
+        already been reported to the callback in that case).
+        """
+        app = self.app
+        try:
+            deps = GroupResult.restore(gid, backend=self)
+        except Exception as exc:  # pylint: disable=broad-except
+            callback = maybe_signature(request.chord, app=app)
+            logger.exception('Chord %r raised: %r', gid, exc)
+            self.chord_error_from_stack(
+                callback,
+                ChordError(f'Cannot restore group: {exc!r}'),
+            )
+            return None
+        if deps is None:
+            try:
+                raise ValueError(gid)
+            except ValueError as exc:
+                callback = maybe_signature(request.chord, app=app)
+                logger.exception('Chord callback %r raised: %r', gid, exc)
+                self.chord_error_from_stack(
+                    callback,
+                    ChordError(f'GroupResult {gid} no longer exists'),
+                )
+            return None
+        return deps
+
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
             return
@@ -1434,35 +1488,31 @@ class BaseKeyValueStoreBackend(Backend):
         if not gid:
             return
         key = self.get_key_for_chord(gid)
-        try:
-            deps = GroupResult.restore(gid, backend=self)
-        except Exception as exc:  # pylint: disable=broad-except
-            callback = maybe_signature(request.chord, app=app)
-            logger.exception('Chord %r raised: %r', gid, exc)
-            return self.chord_error_from_stack(
-                callback,
-                ChordError(f'Cannot restore group: {exc!r}'),
-            )
-        if deps is None:
-            try:
-                raise ValueError(gid)
-            except ValueError as exc:
-                callback = maybe_signature(request.chord, app=app)
-                logger.exception('Chord callback %r raised: %r', gid, exc)
-                return self.chord_error_from_stack(
-                    callback,
-                    ChordError(f'GroupResult {gid} no longer exists'),
-                )
-        val = self.incr(key)
-        # Set the chord size to the value defined in the request, or fall back
-        # to the number of dependencies we can see from the restored result
+        # Set the chord size to the value defined in the request, or the one
+        # stored when the header was applied, or fall back to the number of
+        # dependencies we can see from the restored result. The group is
+        # only restored when its size is unknown, or when this is the last
+        # part and the results are needed to fire the callback, so counting
+        # a chord of N header tasks no longer fetches and decodes the whole
+        # group N times (issue #11045).
         size = request.chord.get("chord_size")
         if size is None:
+            size = self.get_chord_size(gid)
+        deps = None
+        if size is None:
+            deps = self._restore_chord_deps(gid, request)
+            if deps is None:
+                return
             size = len(deps)
+        val = self.incr(key)
         if val > size:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
         elif val == size:
+            if deps is None:
+                deps = self._restore_chord_deps(gid, request)
+                if deps is None:
+                    return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
@@ -1493,6 +1543,7 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                self.delete(self.get_key_for_group(gid, '.s'))
                 # The chord is done: give the header results back their
                 # normal lifetime.
                 for dep in deps.results:
