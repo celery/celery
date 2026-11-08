@@ -23,7 +23,7 @@ def _get_utc_now():
     return datetime.now(timezone.utc)
 
 
-def _name_indexes_after(table):
+def _rename_indexes_with_table(table):
     # SQLAlchemy names an ``index=True`` index after the table name it had
     # when the model was declared, so rename it with the table: index names
     # must be unique per schema (PostgreSQL) or per database (SQLite).
