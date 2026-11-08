@@ -14,7 +14,7 @@ __all__ = ('assert_idempotent',)
 
 
 def assert_idempotent(task, args=(), kwargs=None, *, observe, reset=None,
-                      concurrent=True, rounds=5, timeout=10.0, **options):
+                      concurrent=True, rounds=10, timeout=10.0, **options):
     """Run ``task`` twice with one task id and compare what ``observe`` sees.
 
     Each run calls :meth:`~celery.app.task.Task.apply`.
