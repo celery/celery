@@ -496,6 +496,55 @@ class test_DatabaseBackend:
         assert tb.task_cls.__table__.name == 'foo'
         assert tb.taskset_cls.__table__.name == 'bar'
 
+    def test_table_name_config_names_indexes_after_tables(self):
+        self.app.conf.database_table_names = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_foo_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_bar_date_done'}
+
+    def test_long_table_names_keep_index_names_within_the_limit(self):
+        from sqlalchemy.dialects import postgresql
+        from sqlalchemy.schema import CreateIndex
+        self.app.conf.database_table_names = {
+            'task': 'x' * 51 + '_taskmeta',
+            'group': 'y' * 50 + '_groupmeta',
+        }
+        self.app.conf.database_create_tables_at_setup = False
+        tb = DatabaseBackend(self.uri, app=self.app)
+        for table in (tb.task_cls.__table__, tb.taskset_cls.__table__):
+            for index in table.indexes:
+                ddl = str(CreateIndex(index).compile(dialect=postgresql.dialect()))
+                name = ddl.split()[2]
+                assert len(name) <= 63, name
+
+    def test_default_table_names_keep_default_index_names(self):
+        # Existing databases already have these indexes; their names must not change.
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_celery_taskmeta_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_celery_tasksetmeta_date_done'}
+
+    def test_two_apps_with_their_own_table_names_share_a_database(self, tmp_path):
+        # Index names are unique per database on SQLite (per schema on
+        # PostgreSQL). With one shared name, SQLite skips the second app's
+        # index, and PostgreSQL fails to create the second app's tables.
+        from sqlalchemy import inspect
+        uri = f'sqlite:///{tmp_path / "shared.db"}'
+        for app_name in ('billing', 'reports'):
+            self.app.conf.database_table_names = {
+                'task': f'{app_name}_taskmeta',
+                'group': f'{app_name}_groupmeta',
+            }
+            tb = DatabaseBackend(uri, app=self.app)
+            tb.store_result(f'{app_name}-task', 42, states.SUCCESS)
+            assert tb.get_task_meta(f'{app_name}-task', cache=False)['status'] == states.SUCCESS
+        inspector = inspect(tb.session_manager.get_engine(tb.url))
+        for table in ('billing_taskmeta', 'billing_groupmeta', 'reports_taskmeta', 'reports_groupmeta'):
+            indexed = [i['column_names'] for i in inspector.get_indexes(table)]
+            assert ['date_done'] in indexed, f'{table} has no date_done index'
+
     def test_table_creation_at_setup_config(self):
         from sqlalchemy import inspect
         self.app.conf.database_create_tables_at_setup = True
