@@ -23,17 +23,14 @@ def _get_utc_now():
     return datetime.now(timezone.utc)
 
 
-def _configure_table(table, id_column, schema, name):
-    table.schema = schema
-    id_column.default.schema = schema
-    table.name = name
+def _name_indexes_after(table):
     # SQLAlchemy names an ``index=True`` index after the table name it had
-    # when the model was declared, so rename it along with the table: index
-    # names must be unique per schema (PostgreSQL) or per database (SQLite).
+    # when the model was declared, so rename it with the table: index names
+    # must be unique per schema (PostgreSQL) or per database (SQLite).
     for index in table.indexes:
         columns = list(index.columns)
         if len(columns) == 1:
-            index.name = sa.schema.conv(f'ix_{name}_{columns[0].name}')
+            index.name = sa.schema.conv(f'ix_{table.name}_{columns[0].name}')
 
 
 class Task(ResultModelBase):
@@ -74,7 +71,10 @@ class Task(ResultModelBase):
 
     @classmethod
     def configure(cls, schema=None, name=None):
-        _configure_table(cls.__table__, cls.id, schema, name or cls.__tablename__)
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__
+        _name_indexes_after(cls.__table__)
 
 
 class TaskExtended(Task):
@@ -138,4 +138,7 @@ class TaskSet(ResultModelBase):
 
     @classmethod
     def configure(cls, schema=None, name=None):
-        _configure_table(cls.__table__, cls.id, schema, name or cls.__tablename__)
+        cls.__table__.schema = schema
+        cls.id.default.schema = schema
+        cls.__table__.name = name or cls.__tablename__
+        _name_indexes_after(cls.__table__)
