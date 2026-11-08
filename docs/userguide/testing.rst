@@ -121,7 +121,7 @@ twice with one task id, using :meth:`~@Task.apply`, and fails if the second
 run fails or changes what ``observe()`` returns.
 
 It runs the copies one after the other first. Then it calls ``reset()`` and
-starts both task bodies together in two threads, a few times over.
+starts both task bodies together in two threads, 10 times by default.
 
 .. code-block:: python
 
