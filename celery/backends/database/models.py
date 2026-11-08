@@ -141,4 +141,4 @@ class TaskSet(ResultModelBase):
         cls.__table__.schema = schema
         cls.id.default.schema = schema
         cls.__table__.name = name or cls.__tablename__
-        _name_indexes_after(cls.__table__)
+        _rename_indexes_with_table(cls.__table__)
