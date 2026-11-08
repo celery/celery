@@ -2554,6 +2554,22 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             assert producer.publish.call_count == 2
             assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
 
+    @pytest.mark.parametrize('ordered', [True, False])
+    @pytest.mark.parametrize('exc', [SystemExit(1), KeyboardInterrupt()])
+    def test_on_chord_part_return__callback_publish_interrupted(self, ordered, exc):
+        # A hard time limit raises SystemExit in the pool process. The chord
+        # keys are cleaned up either way, so the chord must fail instead of
+        # staying PENDING with no body sent.
+        self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        with self.chord_context(1) as (_, request, callback):
+            callback.delay.side_effect = exc
+            with patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(type(exc)):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_called_once_with(callback, ANY)
+            assert isinstance(error.call_args[0][1], ChordError)
+            assert self.b.get_key_for_group(request.group, '.j') not in self.b.client.keyspace
+
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
             callback.delay.side_effect = KeyError(10)

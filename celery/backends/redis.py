@@ -1038,6 +1038,19 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             callback,
                             ChordError(f'Callback error: {exc!r}'),
                         )
+                    except BaseException as exc:
+                        # A hard time limit or a cold shutdown stops the
+                        # publish with SystemExit. The cleanup below still
+                        # marks the chord done, so fail it here rather than
+                        # leave it PENDING with no body sent.
+                        logger.error(
+                            'Chord callback for %r interrupted: %r',
+                            request.group, exc)
+                        self.chord_error_from_stack(
+                            callback,
+                            ChordError(f'Callback publish interrupted: {exc!r}'),
+                        )
+                        raise
                     finally:
                         cleaned = self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
