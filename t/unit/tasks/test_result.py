@@ -344,6 +344,22 @@ class test_AsyncResult:
         assert none_res.get() is None
         assert none_res.state == states.SUCCESS
 
+    def test_get_cached_result_calls_callback(self):
+        # A ready() call fills the result cache; get() on the cached
+        # result must still fire the callback when propagate=False
+        # (#11044), and return the same value as the uncached path.
+        ok_res = self.app.AsyncResult(self.task1['id'])
+        assert ok_res.ready()  # fills ok_res._cache
+        ok_callback = Mock(name='ok_callback')
+        assert ok_res.get(propagate=False, callback=ok_callback) == 'the'
+        ok_callback.assert_called_once_with(ok_res.id, 'the')
+
+        nok_res = self.app.AsyncResult(self.task3['id'])
+        assert nok_res.ready()  # fills nok_res._cache
+        nok_callback = Mock(name='nok_callback')
+        assert nok_res.get(propagate=False, callback=nok_callback)
+        nok_callback.assert_called_once_with(nok_res.id, nok_res.result)
+
     def test_get_when_ignored(self):
         result = self.app.AsyncResult(uuid())
         result.ignored = True

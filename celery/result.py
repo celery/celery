@@ -253,9 +253,11 @@ class AsyncResult(ResultBase):
             _on_interval.then(on_interval)
 
         if self._cache:
-            if propagate:
-                self.maybe_throw(callback=callback)
-            return self.result
+            # maybe_throw() returns the cached result, fires the callback
+            # and re-raises failures only when propagate is true, matching
+            # the uncached path below (#11044): previously a cached result
+            # skipped the callback entirely when propagate was false.
+            return self.maybe_throw(propagate=propagate, callback=callback)
 
         self.backend.add_pending_result(self)
         return self.backend.wait_for_pending(
