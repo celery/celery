@@ -520,6 +520,22 @@ class test_DatabaseBackend:
                 name = ddl.split()[2]
                 assert len(name) <= 63, name
 
+    def test_renaming_indexes_leaves_multi_column_indexes_alone(self):
+        import sqlalchemy as sa
+
+        from celery.backends.database.models import _rename_indexes_with_table
+        table = sa.Table(
+            'results', sa.MetaData(),
+            sa.Column('date_done', sa.DateTime, index=True),
+            sa.Column('status', sa.String(50)),
+        )
+        sa.Index('ix_status_date_done', table.c.status, table.c.date_done)
+        table.name = 'myapp_results'
+        _rename_indexes_with_table(table)
+        assert {i.name for i in table.indexes} == {
+            'ix_myapp_results_date_done', 'ix_status_date_done',
+        }
+
     def test_default_table_names_keep_default_index_names(self):
         # Existing databases already have these indexes; their names must not change.
         tb = DatabaseBackend(self.uri, app=self.app)
