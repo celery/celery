@@ -108,6 +108,46 @@ in this example:
             with raises(Retry):
                 send_order(product.pk, 3, Decimal(30.6))
 
+.. _testing-run-twice:
+
+Checking that a task can run twice
+----------------------------------
+
+.. versionadded:: 5.8
+
+A task can run twice with the same task id (see :ref:`task-run-twice`).
+:func:`~celery.contrib.testing.idempotency.assert_idempotent` runs a task
+twice with one task id, using :meth:`~@Task.apply`, and fails if the second
+run fails or changes what ``observe()`` returns.
+
+It runs the copies one after the other first. Then it calls ``reset()`` and
+starts both task bodies together in two threads, a few times over.
+
+.. code-block:: python
+
+    import pytest
+
+    from celery.contrib.testing.idempotency import assert_idempotent
+
+    from proj.models import Shipment
+    from proj.tasks import ship_order
+
+    @pytest.mark.django_db(transaction=True)
+    def test_ship_order_can_run_twice(order):
+        assert_idempotent(
+            ship_order, (order.pk,),
+            observe=lambda: list(Shipment.objects.values_list('order_id')),
+            reset=lambda: Shipment.objects.all().delete(),
+        )
+
+A pass is evidence, not proof. The threads find a race between a check and an
+update only when the task body switches threads in between, which happens
+during I/O such as a database or Redis call.
+
+Each thread opens its own database connection, so it can't see rows that the
+test created inside an open transaction. That's why the example uses
+``transaction=True`` with :pypi:`pytest-django`.
+
 .. _pytest_plugin:
 
 pytest

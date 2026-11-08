@@ -2194,6 +2194,75 @@ system, like `memcached`_.
 
 .. _`memcached`: http://memcached.org/
 
+.. _task-run-twice:
+
+Tasks that run more than once
+-----------------------------
+
+.. versionadded:: 5.8
+
+A task can run twice with the same task id. This happens when a worker is
+lost while :attr:`~Task.acks_late` is enabled, when the Redis or SQS
+visibility timeout expires before the message is acknowledged, when an
+acknowledgement is lost with the broker connection, or when a message is
+published twice.
+
+Running a task twice is safe when it leaves the same effects as running it
+once. Write the result instead of adding to it, use upserts, and pass the task
+id as the idempotency key to APIs that accept one.
+
+When a side effect can't be repeated, the task can claim its task id first
+with :func:`~celery.contrib.idempotency.claim_or_skip`. The claim function
+must be atomic across all workers, such as Redis ``SET NX`` or an insert into
+a table with a unique key. A run that finds the claim taken raises
+:exc:`~celery.exceptions.Ignore`, so it doesn't store a result or call the
+task's callbacks again.
+
+.. code-block:: python
+
+    from celery.contrib.idempotency import claim_or_skip
+
+    def claim(key):
+        return bool(redis_client.set(key, 1, nx=True))
+
+    @app.task(bind=True, acks_late=True)
+    def send_receipt(self, order_id):
+        claim_or_skip(self, claim)
+        mailer.send_receipt(order_id)
+
+Where the claim is stored decides what happens when a run stops after it:
+
+* Stored on its own, as above, the body runs at most once. If the worker is
+  lost after the claim, the receipt is lost too.
+* Stored in the same database transaction as the side effects, a run that
+  stops before the commit loses its claim too, and the next run does the
+  work. Only the writes in that transaction happen exactly once.
+
+.. code-block:: python
+
+    from django.db import IntegrityError, transaction
+
+    def claim(key):
+        try:
+            with transaction.atomic():
+                ClaimedTask.objects.create(key=key)
+        except IntegrityError:
+            return False
+        return True
+
+    @app.task(bind=True, acks_late=True)
+    def ship_order(self, order_id):
+        with transaction.atomic():
+            claim_or_skip(self, claim)
+            Order.objects.filter(id=order_id).update(status='shipped')
+            Shipment.objects.create(order_id=order_id)
+
+Checking for a stored ``SUCCESS`` state before running, as
+:setting:`worker_deduplicate_successful_tasks` does, doesn't stop two runs
+that overlap: both can read the state before either stores it.
+
+To test a task for this, see :ref:`testing-run-twice`.
+
 .. _task-state:
 
 State
