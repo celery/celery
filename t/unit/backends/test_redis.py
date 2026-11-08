@@ -2570,6 +2570,25 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             assert isinstance(error.call_args[0][1], ChordError)
             assert self.b.get_key_for_group(request.group, '.j') not in self.b.client.keyspace
 
+    def test_on_chord_part_return__dispatch_interrupted_before_publish(self):
+        # SystemExit while reading the header results, after the claim
+        with self.chord_context(1) as (_, request, callback):
+            with patch.object(self.b, '_unpack_chord_result', side_effect=SystemExit(1)), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_called_once_with(callback, ANY)
+            callback.delay.assert_not_called()
+
+    def test_on_chord_part_return__interrupted_before_last_part(self):
+        # Other parts are still running, so the chord is left to them.
+        with self.chord_context(2) as (_, request, callback):
+            with patch('celery.backends.redis.maybe_signature', side_effect=SystemExit(1)), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_not_called()
+
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
             callback.delay.side_effect = KeyError(10)

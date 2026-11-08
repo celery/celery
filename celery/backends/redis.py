@@ -977,11 +977,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             return
 
         if chord_size_bytes:
+            dispatching = False
             try:
                 callback = maybe_signature(request.chord, app=app)
                 totaldiff = int(totaldiff or 0)
                 total = int(chord_size_bytes or 0) + totaldiff
                 if readycount == total and claimed:
+                    dispatching = True
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -1038,19 +1040,6 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             callback,
                             ChordError(f'Callback error: {exc!r}'),
                         )
-                    except BaseException as exc:
-                        # A hard time limit or a cold shutdown stops the
-                        # publish with SystemExit. The cleanup below still
-                        # marks the chord done, so fail it here rather than
-                        # leave it PENDING with no body sent.
-                        logger.error(
-                            'Chord callback for %r interrupted: %r',
-                            request.group, exc)
-                        self.chord_error_from_stack(
-                            callback,
-                            ChordError(f'Callback publish interrupted: {exc!r}'),
-                        )
-                        raise
                     finally:
                         cleaned = self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
@@ -1080,6 +1069,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     )
                 finally:
                     client.delete(skey)
+            except BaseException as exc:
+                # A hard time limit or a cold shutdown raises SystemExit. If
+                # it lands after this header claimed the dispatch, no other
+                # header will send the body, so fail the chord rather than
+                # leave it PENDING with no errback.
+                if dispatching:
+                    logger.error(
+                        'Chord callback for %r interrupted: %r',
+                        request.group, exc)
+                    self.chord_error_from_stack(
+                        callback,
+                        ChordError(f'Callback dispatch interrupted: {exc!r}'),
+                    )
+                raise
 
     def _create_client(self, **params):
         return self._get_client()(
