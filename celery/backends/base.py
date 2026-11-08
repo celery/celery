@@ -878,8 +878,8 @@ class Backend:
                     self.base_sleep_between_retries_ms, retries,
                     self.max_sleep_between_retries_ms, True) / 1000
                 if deadline is not None:
-                    sleep_amount = min(sleep_amount, STORE_RETRY_MAX_SLEEP,
-                                       max(remaining, 0))
+                    if remaining > 0:
+                        sleep_amount = min(sleep_amount, STORE_RETRY_MAX_SLEEP, remaining)
                     logger.warning(
                         'Failed operation %s: %r. Retrying in %.2fs.',
                         name, exc, sleep_amount)
