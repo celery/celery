@@ -1700,6 +1700,23 @@ class test_apply_task(TasksCase):
             ('after_return', 'FAILURE'),
         ]
 
+    def test_apply_propagate_still_runs_link_error_errback(self):
+        # Even when the exception is propagated to the caller, the
+        # link_error errback must run first (see issue #5666).
+        calls = []
+
+        @self.app.task(shared=False)
+        def errback(request, exc, traceback):
+            calls.append(('errback', repr(exc)))
+
+        @self.app.task(shared=False)
+        def hooked_raising():
+            raise KeyError('foo')
+
+        with pytest.raises(KeyError):
+            hooked_raising.apply(throw=True, link_error=errback.s())
+        assert calls == [('errback', "KeyError('foo')")]
+
     def test_apply_request_context_is_ok(self):
         self.app.conf.task_eager_propagates = True
         self.task_check_request_context.apply()
