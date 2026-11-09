@@ -592,7 +592,7 @@ class test_DynamoDBBackend:
         self.backend._client.put_item.assert_called_once_with(
             TableName='celery',
             Item={
-                'id': {'S': "b'key'"},
+                'id': {'S': 'key'},
                 'result': {'B': b'token'},
                 'timestamp': {'N': str(self._static_timestamp)},
                 'ttl': {'N': str(int(self._static_timestamp + 30))},

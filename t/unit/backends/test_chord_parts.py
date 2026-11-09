@@ -6,6 +6,7 @@ against the memory and memcached cache backends, DynamoDB (moto) and GCS
 (in-memory fakes of its storage and Firestore).
 """
 import random
+import warnings
 from contextlib import ExitStack
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -158,7 +159,11 @@ def backend(request, app):
                     backend='memcache://127.0.0.1:11211/', app=app)
     elif request.param == 'dynamodb':
         from celery.backends.dynamodb import DynamoDBBackend
-        with mock_aws():
+
+        # Its get() and set() format bytes keys with str(), which python -bb
+        # turns into an error.
+        with mock_aws(), warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
             yield DynamoDBBackend(app=app, url='dynamodb://@us-east-1')
     else:
         from celery.backends.gcs import GCSBackend

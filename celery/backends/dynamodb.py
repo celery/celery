@@ -4,7 +4,7 @@ from ipaddress import ip_address
 from time import sleep, time
 from typing import Any, Dict
 
-from kombu.utils.encoding import str_to_bytes
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 from kombu.utils.url import _parse_url as parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -555,7 +555,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _add_chord_key(self, key, token):
         # A conditional put only stores an item that isn't there yet.
-        key, token = str(key), str_to_bytes(token)
+        key, token = bytes_to_str(key), str_to_bytes(token)
         try:
             self.client.put_item(
                 ConditionExpression='attribute_not_exists(#key)',
