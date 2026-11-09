@@ -798,11 +798,17 @@ class MockCallbacks:
 
     def __new__(cls, *args, **kwargs):
         r = Mock(name=cls.__name__)
+        # so isinstance() checks against the fake's class hold.
+        r.__class__ = cls
         cls.__init__(r, *args, **kwargs)
-        for key, value in vars(cls).items():
-            if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
-                if inspect.ismethod(value) or inspect.isfunction(value):
-                    r.__getattr__(key).side_effect = _bind(value, r)
-                else:
-                    r.__setattr__(key, value)
+        # base classes first, so a subclass overrides what it inherits.
+        for klass in reversed(cls.__mro__):
+            if klass in (object, MockCallbacks):
+                continue
+            for key, value in vars(klass).items():
+                if key not in ('__dict__', '__weakref__', '__new__', '__init__'):
+                    if inspect.ismethod(value) or inspect.isfunction(value):
+                        r.__getattr__(key).side_effect = _bind(value, r)
+                    else:
+                        r.__setattr__(key, value)
         return r

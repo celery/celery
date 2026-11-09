@@ -1763,6 +1763,16 @@ Note that the ``ssl_cert_reqs`` string should be one of ``required``,
 ``optional``, or ``none`` (though, for backwards compatibility, the string
 may also be one of ``CERT_REQUIRED``, ``CERT_OPTIONAL``, ``CERT_NONE``).
 
+To connect to a Redis Cluster, give the URL of any node (database ``0``
+only) and set the ``cluster`` key of
+:setting:`result_backend_transport_options`, see
+:ref:`redis-result-backend-cluster`:
+
+.. code-block:: python
+
+    result_backend = 'redis://host:port/0'
+    result_backend_transport_options = {'cluster': True}
+
 
 .. setting:: redis_backend_health_check_interval
 

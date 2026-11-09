@@ -130,6 +130,20 @@ jobs:
     with:
       test_path: ${{ matrix.test_path }}
 
+  # The whole integration suite against a single-node Redis Cluster result
+  # backend, on one Python version.
+  Integration-tests-redis-cluster:
+    needs: [Unit, Discover-test-modules]
+    if: needs.Unit.result == 'success'
+    strategy:
+      matrix:
+        test_path: ${{ fromJson(needs.Discover-test-modules.outputs.integration) }}
+    uses: ./.github/workflows/integration-tests.yml
+    with:
+      test_path: ${{ matrix.test_path }}
+      python_versions: '["3.13"]'
+      tox_environments: '["redis_cluster"]'
+
   Smoke-tests:
     needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
