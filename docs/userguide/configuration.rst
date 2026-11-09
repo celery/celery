@@ -1504,6 +1504,14 @@ Cache backend settings
     Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
     has been removed.
 
+.. versionchanged:: 5.7
+
+    A chord now counts each header task once, even when the broker delivers
+    the task again, and a copy that returns after the chord completed no
+    longer calls the body's errbacks. For each header task, the backend adds
+    a key with the memcached ``add`` command and keeps it as long as the
+    header task's result.
+
 .. note::
 
     The cache backend requires the :pypi:`pymemcache` library, which can be

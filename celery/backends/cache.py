@@ -178,6 +178,13 @@ class DummyClient:
     def incr(self, key, delta=1):
         return self.cache.incr(key, delta)
 
+    def add(self, key, value, *args, **kwargs):
+        with self.cache.mutex:
+            if key in self.cache:
+                return False
+            self.cache[key] = value
+            return True
+
     def touch(self, key, expire):
         pass
 
@@ -243,6 +250,15 @@ class CacheBackend(KeyValueStoreBackend):
 
     def incr(self, key):
         return self.client.incr(key, 1)
+
+    def _add_chord_part(self, key, token):
+        # memcached's add only stores a key that isn't there yet. Keep the
+        # record as long as the header results.
+        token = ensure_bytes(token)
+        if self.client.add(key, token, self._chord_result_expires,
+                           noreply=False):
+            return True
+        return self.client.get(key) == token
 
     def expire(self, key, value):
         return self.client.touch(key, value or 0)
