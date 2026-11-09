@@ -52,10 +52,11 @@ class ChordParts:
         self.body.freeze()
         backend.apply_chord((self.group_id, self.headers), self.body)
 
-    def returns(self, index):
+    def returns(self, index, ignore_result=False):
         """Report header task ``index`` as done, with its index as result."""
         request = Context(id=self.headers[index].id, group=self.group_id,
-                          group_index=index, chord=self.body)
+                          group_index=index, chord=self.body,
+                          task='header', ignore_result=ignore_result)
         self.backend.mark_as_done(request.id, index, request=request)
 
     def killed(self, index):
@@ -216,6 +217,18 @@ def test_an_expired_group_fails_the_chord_once(app, backend):
     assert chord.bodies == []
     assert [str(exc) for exc in chord.errors] == [
         f'GroupResult {chord.group_id} no longer exists']
+
+
+def test_a_header_task_ignoring_its_result_fails_the_chord_once(app, backend):
+    chord = ChordParts(app, backend, size=3)
+    chord.returns(0, ignore_result=True)
+    chord.returns(0, ignore_result=True)
+    chord.returns(1, ignore_result=True)
+    chord.returns(2)
+    assert chord.bodies == []
+    assert [str(exc) for exc in chord.errors] == [
+        f'Chord header task header[{chord.headers[0].id}] ignores its '
+        'result: header tasks must store it']
 
 
 def test_header_entries_sharing_a_task_id(app, backend):

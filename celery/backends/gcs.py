@@ -263,8 +263,10 @@ class GCSBackend(GCSBackendBase):
         gid = request.group
         if not gid:
             return
-        key = self.get_key_for_chord(gid)
         # As in KeyValueStoreBackend.on_chord_part_return.
+        if self._chord_part_ignores_result(request):
+            return
+        key = self.get_key_for_chord(gid)
         val = self.incr(key)
         size = request.chord.get("chord_size")
         if size is None:

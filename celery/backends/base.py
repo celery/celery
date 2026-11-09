@@ -1249,6 +1249,23 @@ class BaseKeyValueStoreBackend(Backend):
         return self._add_chord_key(
             self.get_key_for_chord(group_id, '.done'), uuid())
 
+    def _chord_part_ignores_result(self, request):
+        """Fail the chord, once, if this header task stores no result.
+
+        The chord only completes once every header result is stored.
+        """
+        if not (self.implements_add and _is_request_ignore_result(request)):
+            return False
+        if self._claim_chord(request.group):
+            try:
+                raise ChordError(
+                    f'Chord header task {request.task}[{request.id}] '
+                    'ignores its result: header tasks must store it')
+            except ChordError as exc:
+                self.chord_error_from_stack(
+                    maybe_signature(request.chord, app=self.app), exc)
+        return True
+
     def _chord_parts_returned(self, deps):
         """Return whether every header task stored a ready result."""
         ids = [result.id for result in deps.results]
@@ -1448,6 +1465,8 @@ class BaseKeyValueStoreBackend(Backend):
         app = self.app
         gid = request.group
         if not gid:
+            return
+        if self._chord_part_ignores_result(request):
             return
         key = self.get_key_for_chord(gid)
         try:

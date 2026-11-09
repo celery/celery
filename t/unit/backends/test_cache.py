@@ -99,6 +99,7 @@ class test_CacheBackend:
         )
         task.request.id = uuid()
         task.request.group = result_args[0]
+        task.request.ignore_result = False
         tb.apply_chord(result_args, None)
 
         deps.join_native.assert_not_called()
@@ -128,6 +129,7 @@ class test_CacheBackend:
         task = Mock()
         task.request.id = uuid()
         task.request.group = gid = uuid()
+        task.request.ignore_result = False
         task.request.chord = {}
         with patch.object(tb.client, 'set') as client_set, \
                 patch.object(tb, 'expire') as expire:
@@ -155,6 +157,7 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.id = uuid()
         task.request.group = gid = uuid()
+        task.request.ignore_result = False
         task.request.chord = signature(task)
         header = [self.app.AsyncResult(uuid()) for _ in range(2)]
         restore.return_value.__len__ = Mock(return_value=1)
@@ -591,6 +594,7 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 )
                 task.request.id = uuid()
                 task.request.group = result_args[0]
+                task.request.ignore_result = False
                 b.apply_chord(result_args, None)
 
                 b.on_chord_part_return(task.request, 'SUCCESS', 10)

@@ -388,6 +388,7 @@ class test_GCSBackend:
     ):
         request = MagicMock()
         request.group = 'group_id'
+        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()
@@ -555,6 +556,7 @@ class test_GCSBackend:
         """Test on_chord_part_return when join_native raises exception."""
         request = MagicMock()
         request.group = 'group_id'
+        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()
@@ -609,6 +611,7 @@ class test_GCSBackend:
         """Test on_chord_part_return when callback.delay raises exception (line 302)."""
         request = MagicMock()
         request.group = 'group_id'
+        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()
