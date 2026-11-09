@@ -3596,6 +3596,8 @@ class test_RedisBackend_cluster(basetest_RedisBackend):
         # redis-py rejects the argument outright, even when it is 0.
         assert 'db' not in b.client.cluster_kwargs
         assert 'connection_class' not in b.client.cluster_kwargs
+        # the default False is deprecated and omitted for RedisCluster
+        assert 'retry_on_timeout' not in b.client.cluster_kwargs
 
     def test_url_selecting_a_database_is_refused(self):
         b = self.Backend('redis://localhost:7000/1', app=self.app)
@@ -3622,6 +3624,11 @@ class test_RedisBackend_cluster(basetest_RedisBackend):
         b = self.Backend('redis://localhost:7000', app=self.app)
         assert b.client.cluster_kwargs['ssl'] is True
         assert b.client.cluster_kwargs['ssl_ca_certs'] == '/path/to/ca.crt'
+
+    def test_retry_on_timeout_is_kept_when_enabled(self):
+        self.app.conf.redis_retry_on_timeout = True
+        b = self.Backend('redis://localhost:7000/0', app=self.app)
+        assert b.client.cluster_kwargs['retry_on_timeout'] is True
 
     def test_missing_cluster_client_class(self):
         class legacy_redis:
