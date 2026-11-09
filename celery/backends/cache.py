@@ -254,8 +254,9 @@ class CacheBackend(KeyValueStoreBackend):
 
     def _add_chord_key(self, key, token):
         token = ensure_bytes(token)
-        if self.client.add(key, token, self._chord_result_expires,
-                           noreply=False):
+        # memcached reads a longer expiry as an absolute time.
+        expires = min(self._chord_key_expires, MAX_RELATIVE_EXPIRES)
+        if self.client.add(key, token, expires, noreply=False):
             return True
         return self.client.get(key) == token
 

@@ -478,7 +478,7 @@ class test_GCSBackend:
         (data,), _ = mock_firestore_document.return_value.create.call_args
         assert data['token'] == 'token'
         assert data[backend._field_expires] > (
-            datetime.now(timezone.utc) + timedelta(seconds=86000))
+            datetime.now(timezone.utc) + timedelta(days=2, seconds=-60))
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch.object(GCSBackend, '_firestore_document')

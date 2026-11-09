@@ -595,7 +595,7 @@ class test_DynamoDBBackend:
                 'id': {'S': 'key'},
                 'result': {'B': b'token'},
                 'timestamp': {'N': str(self._static_timestamp)},
-                'ttl': {'N': str(int(self._static_timestamp + 30))},
+                'ttl': {'N': str(int(self._static_timestamp + 2 * 86400))},
             },
             ConditionExpression='attribute_not_exists(#key)',
             ExpressionAttributeNames={'#key': 'id'},

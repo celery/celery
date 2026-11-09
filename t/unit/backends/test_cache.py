@@ -170,13 +170,18 @@ class test_CacheBackend:
         assert expire.call_args_list == [
             call(tb.get_key_for_task(result.id), 100) for result in header]
 
-    def test_add_chord_key_keeps_it_as_long_as_the_header_results(self):
-        self.app.conf.result_expires = 86400
+    # Twice the header results' lifetime, at most 30 days, after which
+    # memcached reads it as an absolute time.
+    @pytest.mark.parametrize('result_expires,expected', [
+        (86400, 172800), (timedelta(days=20), 30 * 86400)])
+    def test_add_chord_key_keeps_it_twice_as_long_as_the_header_results(
+            self, result_expires, expected):
+        self.app.conf.result_expires = result_expires
         self.app.conf.result_chord_expires = 600
         tb = CacheBackend(backend='memory://', app=self.app)
         with patch.object(tb.client, 'add', return_value=True) as add:
             assert tb._add_chord_key(b'key', 'token') is True
-        add.assert_called_once_with(b'key', b'token', 86400, noreply=False)
+        add.assert_called_once_with(b'key', b'token', expected, noreply=False)
 
     def test_warns_on_chord_expires_over_30_days(self):
         self.app.conf.result_chord_expires = timedelta(days=31)

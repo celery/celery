@@ -555,11 +555,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
 
     def _add_chord_key(self, key, token):
         key, token = bytes_to_str(key), str_to_bytes(token)
+        request_parameters = self._prepare_put_request(key, token)
+        if self._has_ttl() and self._chord_key_expires:
+            request_parameters['Item'][self._ttl_field.name] = {
+                self._ttl_field.data_type:
+                    str(int(time() + self._chord_key_expires))}
         try:
             self.client.put_item(
                 ConditionExpression='attribute_not_exists(#key)',
                 ExpressionAttributeNames={'#key': self._key_field.name},
-                **self._prepare_put_request(key, token))
+                **request_parameters)
         except ClientError as error:
             if error.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise

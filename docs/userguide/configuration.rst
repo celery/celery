@@ -1511,8 +1511,9 @@ Cache backend settings
     after the chord completed no longer calls the body's errbacks, and a
     chord whose header result was lost fails. The backend adds a key for
     each header task that returns, and one for the chord when it completes,
-    with the memcached ``add`` command, and keeps them as long as the header
-    results.
+    with the memcached ``add`` command, and keeps them for twice
+    :setting:`result_expires`, or twice :setting:`result_chord_expires` when
+    that is longer, but at most 30 days.
 
 .. note::
 
@@ -2333,9 +2334,10 @@ GCS backend settings
     after the chord completed no longer calls the body's errbacks, and a
     chord whose header result was lost fails. The backend creates a
     Firestore document for each header task that returns, and one for the
-    chord when it completes, which expire a day later, like the chord
-    counter. When a document already exists, the backend reads it, so the
-    service account also needs read access to the Firestore collection.
+    chord when it completes, and keeps them for twice
+    :setting:`result_expires`, or twice :setting:`result_chord_expires` when
+    that is longer. When a document already exists, the backend reads it, so
+    the service account also needs read access to the Firestore collection.
 
 .. note::
 
@@ -2498,8 +2500,9 @@ AWS DynamoDB backend settings
     after the chord completed no longer calls the body's errbacks, and a
     chord whose header result was lost fails. The backend stores an item for
     each header task that returns, and one for the chord when it completes,
-    with a conditional ``PutItem``. With ``ttl_seconds`` set, the items
-    expire like the results.
+    with a conditional ``PutItem``. With ``ttl_seconds`` set, it keeps them
+    for twice :setting:`result_expires`, or twice
+    :setting:`result_chord_expires` when that is longer.
 
 .. note::
 

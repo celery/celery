@@ -7,6 +7,7 @@ against the memory and memcached cache backends, DynamoDB (moto) and GCS
 """
 import os
 import random
+import time
 import warnings
 from contextlib import ExitStack
 from types import SimpleNamespace
@@ -253,6 +254,22 @@ def test_a_lost_header_result_fails_the_chord_once(app, backend):
     backend.delete(backend.get_key_for_task(chord.headers[0].id))
     chord.returns(1)
     chord.returns(1)
+    assert chord.bodies == []
+    assert [str(exc) for exc in chord.errors] == [
+        f'Chord header results missing: {chord.headers[0].id}']
+
+
+@pytest.mark.parametrize('backend', ['pymemcache'], indirect=True)
+def test_a_header_result_that_expired_fails_the_chord(app, backend):
+    # A backlog stretched the chord past the lifetime of its first result,
+    # while later header tasks kept the group and counter alive.
+    from pymemcache.test import utils
+    lifetime, start = backend._chord_result_expires, time.time()
+    chord = ChordParts(app, backend, size=3)
+    for index, age in enumerate((0, 0.6, 1.2)):
+        clock = SimpleNamespace(time=lambda: start + age * lifetime)
+        with patch.object(utils, 'time', clock):
+            chord.returns(index)
     assert chord.bodies == []
     assert [str(exc) for exc in chord.errors] == [
         f'Chord header results missing: {chord.headers[0].id}']
