@@ -1430,6 +1430,8 @@ class BaseKeyValueStoreBackend(Backend):
         # Stored under the same '.s' suffix the Redis backend uses, so the
         # size survives until the chord completes without keeping the
         # whole group blob around for counting.
+        if not self.implements_incr:
+            return
         key = self.get_key_for_group(group_id, '.s')
         self.set(key, self.encode(chord_size))
         self.expire(key, self.chord_expires)
