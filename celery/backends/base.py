@@ -1427,11 +1427,14 @@ class BaseKeyValueStoreBackend(Backend):
                     self._chord_result_expires)
 
     def set_chord_size(self, group_id, chord_size):
+        if not self.implements_incr:
+            # Backends without incr never read or delete the '.s' key
+            # (on_chord_part_return returns early for them) and some have
+            # no expiry, so storing it would leak one key per chord.
+            return
         # Stored under the same '.s' suffix the Redis backend uses, so the
         # size survives until the chord completes without keeping the
         # whole group blob around for counting.
-        if not self.implements_incr:
-            return
         key = self.get_key_for_group(group_id, '.s')
         self.set(key, self.encode(chord_size))
         self.expire(key, self.chord_expires)

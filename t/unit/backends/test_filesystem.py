@@ -61,6 +61,20 @@ class test_FilesystemBackend:
         tb.mark_as_done(uuid(), 42)
         assert len(os.listdir(self.directory)) == 1
 
+    def test_set_chord_size_leaves_no_key_without_incr(self):
+        """A chord leaves no '.s' key behind on this backend (#11045).
+
+        The filesystem backend has implements_incr False: it never reads
+        or deletes the '.s' key and has no expiry, so storing the chord
+        size would leak one file per chord.
+        """
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        assert not tb.implements_incr
+        gid = uuid()
+        tb.set_chord_size(gid, 3)
+        assert tb.get_chord_size(gid) is None
+        assert os.listdir(self.directory) == []
+
     def test_done_task_is_SUCCESS(self):
         tb = FilesystemBackend(app=self.app, url=self.url)
         tid = uuid()
