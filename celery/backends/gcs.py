@@ -317,9 +317,10 @@ class GCSBackend(GCSBackendBase):
     def _add_chord_key(self, key, token):
         doc = self._firestore_document(key)
         data = {'token': token}
-        if self._chord_key_expires:
+        expires = self._chord_key_expires(self.ttl)
+        if expires:
             data[self._field_expires] = datetime.now(timezone.utc) + timedelta(
-                seconds=self._chord_key_expires)
+                seconds=expires)
         try:
             doc.create(data)
         except Conflict:

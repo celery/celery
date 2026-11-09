@@ -584,8 +584,11 @@ class test_DynamoDBBackend:
         assert call_kwargs['Item'] == expected_kwargs['Item']
         assert call_kwargs['TableName'] == 'celery'
 
-    def test_add_chord_key(self):
-        self.backend.time_to_live_seconds = 30
+    # Twice the header results' lifetime: result_expires, or ttl_seconds
+    # when that is longer.
+    @pytest.mark.parametrize('ttl,expected', [(30, 2 * 86400), (5 * 86400, 10 * 86400)])
+    def test_add_chord_key(self, ttl, expected):
+        self.backend.time_to_live_seconds = ttl
         self.backend._client = MagicMock()
         with patch('celery.backends.dynamodb.time', self._mock_time):
             assert self.backend._add_chord_key(b'key', 'token') is True
@@ -595,7 +598,7 @@ class test_DynamoDBBackend:
                 'id': {'S': 'key'},
                 'result': {'B': b'token'},
                 'timestamp': {'N': str(self._static_timestamp)},
-                'ttl': {'N': str(int(self._static_timestamp + 2 * 86400))},
+                'ttl': {'N': str(int(self._static_timestamp + expected))},
             },
             ConditionExpression='attribute_not_exists(#key)',
             ExpressionAttributeNames={'#key': 'id'},

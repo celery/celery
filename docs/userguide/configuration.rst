@@ -2335,9 +2335,10 @@ GCS backend settings
     chord whose header result was lost fails. The backend creates a
     Firestore document for each header task that returns, and one for the
     chord when it completes, and keeps them for twice
-    :setting:`result_expires`, or twice :setting:`result_chord_expires` when
-    that is longer. When a document already exists, the backend reads it, so
-    the service account also needs read access to the Firestore collection.
+    :setting:`result_expires`, :setting:`result_chord_expires` or
+    ``gcs_ttl``, whichever is longest. When a document already exists, the
+    backend reads it, so the service account also needs read access to the
+    Firestore collection.
 
 .. note::
 
@@ -2501,8 +2502,8 @@ AWS DynamoDB backend settings
     chord whose header result was lost fails. The backend stores an item for
     each header task that returns, and one for the chord when it completes,
     with a conditional ``PutItem``. With ``ttl_seconds`` set, it keeps them
-    for twice :setting:`result_expires`, or twice
-    :setting:`result_chord_expires` when that is longer.
+    for twice :setting:`result_expires`, :setting:`result_chord_expires` or
+    ``ttl_seconds``, whichever is longest.
 
 .. note::
 

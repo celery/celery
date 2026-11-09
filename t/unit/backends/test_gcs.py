@@ -469,16 +469,22 @@ class test_GCSBackend:
         mock_chord_error_from_stack.assert_called()
         assert deps is None
 
+    # Twice the header results' lifetime: result_expires, or gcs_ttl when
+    # that is longer.
+    @pytest.mark.parametrize('ttl,days', [(0, 2), (5 * 86400, 10)])
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch.object(GCSBackend, '_firestore_document')
-    def test_add_chord_key(self, mock_firestore_document, mock_firestore_ttl):
+    def test_add_chord_key(self, mock_firestore_document, mock_firestore_ttl, ttl, days):
         backend = GCSBackend(app=self.app)
+        backend.ttl = ttl
         assert backend._add_chord_key(b'key', 'token') is True
         mock_firestore_document.assert_called_once_with(b'key')
         (data,), _ = mock_firestore_document.return_value.create.call_args
         assert data['token'] == 'token'
         assert data[backend._field_expires] > (
-            datetime.now(timezone.utc) + timedelta(days=2, seconds=-60))
+            datetime.now(timezone.utc) + timedelta(days=days, seconds=-60))
+        assert data[backend._field_expires] < (
+            datetime.now(timezone.utc) + timedelta(days=days, seconds=60))
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch.object(GCSBackend, '_firestore_document')

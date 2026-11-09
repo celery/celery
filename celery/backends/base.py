@@ -1243,11 +1243,12 @@ class BaseKeyValueStoreBackend(Backend):
     def incr(self, key):
         raise NotImplementedError('Does not implement incr')
 
-    @property
-    def _chord_key_expires(self):
-        # Twice the header results' lifetime: a header's key outlives its
-        # result, and the done key outlives late copies of header tasks.
-        return 2 * int(self._chord_result_expires)
+    def _chord_key_expires(self, result_ttl=None):
+        # Twice the header results' lifetime, including the backend's own
+        # result TTL: a header's key outlives its result, and the done key
+        # outlives late copies of header tasks. 0 means no expiry.
+        expires = self._chord_result_expires
+        return 2 * int(max(expires, result_ttl or 0)) if expires else 0
 
     def _claim_chord(self, group_id):
         """Return :const:`True` for the one run that completes or fails it."""
