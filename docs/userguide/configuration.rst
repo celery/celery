@@ -2478,6 +2478,14 @@ Result is always serialized as text.
 AWS DynamoDB backend settings
 -----------------------------
 
+.. versionchanged:: 5.7
+
+    A chord now counts each header task once, even when the broker delivers
+    the task again, and a copy that returns after the chord completed no
+    longer calls the body's errbacks. For each header task, the backend
+    stores an item with a conditional ``PutItem``. With ``ttl_seconds``
+    set, the item expires like the results.
+
 .. note::
 
     The Dynamodb backend requires the :pypi:`boto3` library.

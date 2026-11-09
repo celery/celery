@@ -10,8 +10,73 @@ from celery.app.task import Context
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
+from t.unit.backends.chord_parts import ChordParts, check_random_chords
 
 pytest.importorskip('boto3')
+
+
+@pytest.fixture
+def moto_app():
+    with mock_aws(), Celery('chord-parts', broker='memory://',
+                            backend='dynamodb://@us-east-1',
+                            set_as_current=False) as app:
+        app.conf.result_chord_join_timeout = 0.1
+        yield app
+
+
+def test_chord_counts_a_header_task_once(moto_app):
+    chord = ChordParts(moto_app, moto_app.backend)
+    chord.returns(0)
+    chord.returns(0)
+    assert chord.bodies == []
+    assert chord.errors == []
+    chord.returns(1)
+    chord.returns(1)
+    chord.returns(0)
+    assert chord.bodies == [[0, 1]]
+    assert chord.errors == []
+
+
+def test_chord_counts_a_header_task_whose_put_was_retried(moto_app):
+    # The first conditional put stored the item, but its reply was lost, so
+    # botocore sent it again.
+    client = moto_app.backend.client
+    put_item = client.put_item
+
+    def put_item_retried(**kwargs):
+        if 'ConditionExpression' in kwargs:
+            put_item(**kwargs)
+        return put_item(**kwargs)
+
+    chord = ChordParts(moto_app, moto_app.backend)
+    with patch.object(client, 'put_item', put_item_retried):
+        chord.returns(0)
+        chord.returns(1)
+    assert chord.bodies == [[0, 1]]
+    assert chord.errors == []
+
+
+def test_chord_part_put_raises_other_errors(moto_app):
+    from botocore.exceptions import ClientError
+    client = moto_app.backend.client
+    put_item = client.put_item
+    throttled = ClientError(
+        {'Error': {'Code': 'ProvisionedThroughputExceededException'}},
+        'PutItem')
+
+    def put_item_throttled(**kwargs):
+        if 'ConditionExpression' in kwargs:
+            raise throttled
+        return put_item(**kwargs)
+
+    chord = ChordParts(moto_app, moto_app.backend)
+    with patch.object(client, 'put_item', put_item_throttled):
+        with pytest.raises(ClientError):
+            chord.returns(0)
+
+
+def test_random_chords(moto_app):
+    check_random_chords(moto_app, moto_app.backend, range(40))
 
 
 def test_chord_publish_retry_does_not_increment_dynamodb_again():
@@ -583,6 +648,18 @@ class test_DynamoDBBackend:
         }
         assert call_kwargs['Item'] == expected_kwargs['Item']
         assert call_kwargs['TableName'] == 'celery'
+
+    def test_chord_part_record_expires_with_ttl(self):
+        self.backend.time_to_live_seconds = 30
+        self.backend._client = MagicMock()
+        with patch('celery.backends.dynamodb.time', self._mock_time):
+            assert self.backend._add_chord_part(b'part', 'token') is True
+        _, call_kwargs = self.backend._client.put_item.call_args
+        assert call_kwargs['Item']['ttl'] == {
+            'N': str(int(self._static_timestamp + 30))}
+        assert call_kwargs['ConditionExpression'] == (
+            'attribute_not_exists(#key)')
+        assert call_kwargs['ExpressionAttributeNames'] == {'#key': 'id'}
 
     def test_delete(self):
         self.backend._client = Mock(name='_client')
