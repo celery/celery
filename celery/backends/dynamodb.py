@@ -68,6 +68,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
     _available_fields = None
 
     implements_incr = True
+    implements_add = True
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -552,21 +553,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
         new_count: str = item_response["Attributes"][self._count_filed.name][self._count_filed.data_type]
         return int(new_count)
 
-    def _add_chord_part(self, key, token):
-        # A conditional put only stores an item that isn't there yet. The
-        # record expires like the header results.
-        key = str(key)
-        token = str_to_bytes(token)
-        request_parameters = self._prepare_put_request(key, token)
-        request_parameters.update(
-            ConditionExpression='attribute_not_exists(#key)',
-            ExpressionAttributeNames={'#key': self._key_field.name},
-        )
+    def _add_chord_key(self, key, token):
+        # A conditional put only stores an item that isn't there yet.
+        key, token = str(key), str_to_bytes(token)
         try:
-            self.client.put_item(**request_parameters)
+            self.client.put_item(
+                ConditionExpression='attribute_not_exists(#key)',
+                ExpressionAttributeNames={'#key': self._key_field.name},
+                **self._prepare_put_request(key, token))
         except ClientError as error:
-            code = error.response.get('Error', {}).get('Code')
-            if code != 'ConditionalCheckFailedException':
+            if error.response['Error']['Code'] != 'ConditionalCheckFailedException':
                 raise
             return self.get(key) == token
         return True

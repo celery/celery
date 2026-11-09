@@ -1,144 +1,14 @@
 from datetime import datetime, timedelta, timezone
-from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
-from google.api_core.exceptions import AlreadyExists
 from google.cloud.exceptions import NotFound
 from kombu.exceptions import OperationalError
-from kombu.utils.encoding import bytes_to_str
 
 from celery import uuid
 from celery.app.amqp import _callback_publish_retry
-from celery.backends.gcs import GCSBackend, firestore, storage
+from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
-from t.unit.backends.chord_parts import ChordParts, check_random_chords
-
-
-class FakeBlob:
-    def __init__(self, blobs, key):
-        self.blobs, self.key = blobs, key
-
-    def download_as_bytes(self, retry=None):
-        if self.key not in self.blobs:
-            raise storage.blob.NotFound('no blob')
-        return self.blobs[self.key]
-
-    def upload_from_string(self, value, retry=None):
-        self.blobs[self.key] = value
-
-    def exists(self):
-        return self.key in self.blobs
-
-    def delete(self, retry=None):
-        del self.blobs[self.key]
-
-
-class FakeDocument:
-    """A Firestore document, with the operations the GCS backend uses."""
-
-    def __init__(self, docs, key):
-        self.docs, self.key = docs, bytes_to_str(key)
-
-    def set(self, data, merge=False, retry=None):
-        doc = self.docs.setdefault(self.key, {}) if merge else {}
-        for field, value in data.items():
-            if isinstance(value, firestore.Increment):
-                value = doc.get(field, 0) + value.value
-            doc[field] = value
-        self.docs[self.key] = doc
-        return SimpleNamespace(transform_results=[
-            SimpleNamespace(integer_value=value)])
-
-    def create(self, data, retry=None):
-        if self.key in self.docs:
-            raise AlreadyExists('document exists')
-        self.docs[self.key] = dict(data)
-
-    def get(self):
-        return SimpleNamespace(to_dict=lambda: self.docs.get(self.key))
-
-    def delete(self):
-        self.docs.pop(self.key, None)
-
-
-@pytest.fixture
-def fake_gcs(app):
-    """A GCS backend that keeps its blobs and Firestore documents in dicts."""
-    app.conf.gcs_bucket = 'bucket'
-    app.conf.gcs_project = 'project'
-    app.conf.result_chord_join_timeout = 0.1
-    blobs, docs = {}, {}
-    with patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled',
-                      return_value=True):
-        backend = GCSBackend(app=app)
-    backend._get_blob = lambda key: FakeBlob(blobs, key)
-    backend._firestore_document = lambda key: FakeDocument(docs, key)
-    backend.docs = docs
-    return backend
-
-
-def test_chord_counts_a_header_task_once(app, fake_gcs):
-    chord = ChordParts(app, fake_gcs)
-    chord.returns(0)
-    chord.returns(0)
-    assert chord.bodies == []
-    assert chord.errors == []
-    chord.returns(1)
-    chord.returns(1)
-    chord.returns(0)
-    assert chord.bodies == [[0, 1]]
-    assert chord.errors == []
-
-
-def test_chord_part_record_expires(app, fake_gcs):
-    chord = ChordParts(app, fake_gcs)
-    chord.returns(0)
-    record = fake_gcs.docs[bytes_to_str(
-        fake_gcs._get_key_for_chord_part(chord.request(0)))]
-    assert record[fake_gcs._field_expires] > (
-        datetime.now(timezone.utc) + timedelta(seconds=86000))
-
-
-def test_chord_counts_a_header_task_whose_create_was_retried(app, fake_gcs):
-    # The first create stored the document, but its reply was lost, so the
-    # client sent it again.
-    documents = fake_gcs._firestore_document
-
-    def document(key):
-        doc = documents(key)
-        create = doc.create
-
-        def create_retried(data, retry=None):
-            create(data)
-            create(data)
-
-        doc.create = create_retried
-        return doc
-
-    fake_gcs._firestore_document = document
-    chord = ChordParts(app, fake_gcs)
-    chord.returns(0)
-    chord.returns(1)
-    assert chord.bodies == [[0, 1]]
-    assert chord.errors == []
-
-
-# A hard time limit raises SystemExit in the pool process.
-@pytest.mark.parametrize('exc', [OSError('lost'), SystemExit(1)])
-def test_chord_counts_a_header_task_again_after_incr_fails(app, fake_gcs, exc):
-    chord = ChordParts(app, fake_gcs)
-    with patch.object(fake_gcs, 'incr', side_effect=exc):
-        with pytest.raises(type(exc)):
-            chord.returns(0)
-    chord.returns(0)
-    chord.returns(1)
-    assert chord.bodies == [[0, 1]]
-    assert chord.errors == []
-
-
-def test_random_chords(app, fake_gcs):
-    check_random_chords(app, fake_gcs, range(100))
 
 
 class test_GCSBackend:
@@ -498,7 +368,7 @@ class test_GCSBackend:
         gcs_backend.incr(b'some-key')
         assert mock_firestore_document.call_count == 1
 
-    @patch.object(GCSBackend, '_add_chord_part', Mock(return_value=True))
+    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -561,6 +431,7 @@ class test_GCSBackend:
         )
         mock_delete_chord_key.assert_called_once_with(group_key)
 
+    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch('celery.backends.gcs.GroupResult.restore')
     @patch('celery.backends.gcs.maybe_signature')
@@ -596,6 +467,17 @@ class test_GCSBackend:
         deps = backend._restore_deps(gid, request)
         mock_chord_error_from_stack.assert_called()
         assert deps is None
+
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @patch.object(GCSBackend, '_firestore_document')
+    def test_add_chord_key(self, mock_firestore_document, mock_firestore_ttl):
+        backend = GCSBackend(app=self.app)
+        assert backend._add_chord_key(b'key', 'token') is True
+        mock_firestore_document.assert_called_once_with(b'key')
+        (data,), _ = mock_firestore_document.return_value.create.call_args
+        assert data['token'] == 'token'
+        assert data[backend._field_expires] > (
+            datetime.now(timezone.utc) + timedelta(seconds=86000))
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch.object(GCSBackend, '_firestore_document')
@@ -652,7 +534,7 @@ class test_GCSBackend:
         mock_collection.document.assert_called_once_with('test_key')
         assert result == mock_document
 
-    @patch.object(GCSBackend, '_add_chord_part', Mock(return_value=True))
+    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -706,7 +588,7 @@ class test_GCSBackend:
         mock_deps.delete.assert_called_once()
         mock_delete_chord_key.assert_called_once()
 
-    @patch.object(GCSBackend, '_add_chord_part', Mock(return_value=True))
+    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')

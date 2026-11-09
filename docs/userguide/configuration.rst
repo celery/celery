@@ -1506,11 +1506,11 @@ Cache backend settings
 
 .. versionchanged:: 5.7
 
-    A chord now counts each header task once, even when the broker delivers
-    the task again, and a copy that returns after the chord completed no
-    longer calls the body's errbacks. For each header task, the backend adds
-    a key with the memcached ``add`` command and keeps it as long as the
-    header task's result.
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks. When a
+    chord completes, the backend adds one key for it with the memcached
+    ``add`` command, and keeps it as long as the header results.
 
 .. note::
 
@@ -2326,12 +2326,13 @@ GCS backend settings
 
 .. versionchanged:: 5.7
 
-    A chord now counts each header task once, even when the broker delivers
-    the task again, and a copy that returns after the chord completed no
-    longer calls the body's errbacks. For each header task, the backend
-    creates a Firestore document that expires a day later, like the chord
-    counter. When the document already exists, the backend reads it, so the
-    service account also needs read access to the Firestore collection.
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks. When a
+    chord completes, the backend creates one Firestore document for it,
+    which expires a day later, like the chord counter. When the document
+    already exists, the backend reads it, so the service account also needs
+    read access to the Firestore collection.
 
 .. note::
 
@@ -2489,11 +2490,12 @@ AWS DynamoDB backend settings
 
 .. versionchanged:: 5.7
 
-    A chord now counts each header task once, even when the broker delivers
-    the task again, and a copy that returns after the chord completed no
-    longer calls the body's errbacks. For each header task, the backend
-    stores an item with a conditional ``PutItem``. With ``ttl_seconds``
-    set, the item expires like the results.
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks. When a
+    chord completes, the backend stores one item for it with a conditional
+    ``PutItem``. With ``ttl_seconds`` set, the item expires like the
+    results.
 
 .. note::
 

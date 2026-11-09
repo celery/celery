@@ -2,7 +2,7 @@ import sys
 import types
 from contextlib import contextmanager
 from datetime import timedelta
-from unittest.mock import ANY, Mock, call, patch
+from unittest.mock import Mock, call, patch
 
 import pytest
 from kombu.utils.encoding import bytes_to_str, ensure_bytes, str_to_bytes
@@ -11,7 +11,6 @@ from celery import signature, states, uuid
 from celery.backends.cache import CacheBackend, DummyClient, backends
 from celery.exceptions import CDeprecationWarning, ImproperlyConfigured
 from t.unit import conftest
-from t.unit.backends.chord_parts import ChordParts, check_random_chords
 
 
 class SomeClass:
@@ -106,7 +105,6 @@ class test_CacheBackend:
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         deps.join_native.assert_not_called()
 
-        task.request.id = uuid()
         tb.on_chord_part_return(task.request, 'SUCCESS', 10)
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
@@ -139,18 +137,13 @@ class test_CacheBackend:
         expire.assert_called_once_with(
             tb.get_key_for_group(gid), expected_result)
         tb.client.set(tb.get_key_for_chord(gid), 0)
-        with patch.object(tb, 'expire') as expire, \
-                patch.object(tb.client, 'add', wraps=tb.client.add) as add:
+        with patch.object(tb, 'expire') as expire:
             tb.on_chord_part_return(task.request, states.SUCCESS, 1)
         expire.assert_has_calls([
             call(tb.get_key_for_chord(gid), expected_chord),
             call(tb.get_key_for_group(gid), expected_result),
             call(tb.get_key_for_task(task.request.id), expected_result),
         ])
-        # The record that counts this part lives as long as its result.
-        add.assert_called_once_with(
-            tb._get_key_for_chord_part(task.request), ANY, expected_result,
-            noreply=False)
 
     @patch('celery.result.GroupResult.restore')
     def test_on_chord_part_return_resets_header_results(self, restore):
@@ -166,92 +159,21 @@ class test_CacheBackend:
         header = [self.app.AsyncResult(uuid()) for _ in range(2)]
         restore.return_value.__len__ = Mock(return_value=1)
         restore.return_value.results = header
+        for result in header:
+            tb.store_result(result.id, 1, states.SUCCESS)
         tb.client.set(tb.get_key_for_chord(gid), 0)
         with patch.object(tb, 'expire') as expire:
             tb.on_chord_part_return(task.request, states.SUCCESS, 1)
         assert expire.call_args_list == [
             call(tb.get_key_for_task(result.id), 100) for result in header]
 
-    def chord(self, size=2):
-        # A chord that counts a header task too early fails on the join.
-        self.app.conf.result_chord_join_timeout = 0.1
-        return ChordParts(self.app, self.tb, size)
-
-    def test_chord_counts_a_header_task_once(self):
-        # The broker delivered header task 0 again, and both copies return.
-        chord = self.chord()
-        chord.returns(0)
-        chord.returns(0)
-        assert chord.bodies == []
-        assert chord.errors == []
-        chord.returns(1)
-        assert chord.bodies == [[0, 1]]
-        assert chord.errors == []
-
-    def test_chord_ignores_a_header_task_returning_after_completion(self):
-        chord = self.chord()
-        chord.returns(0)
-        chord.returns(1)
-        chord.returns(1)
-        chord.returns(0)
-        assert chord.bodies == [[0, 1]]
-        assert chord.errors == []
-
-    def test_chord_still_fails_when_its_group_expired(self):
-        chord = self.chord()
-        chord.returns(0)
-        chord.expire_group()
-        chord.returns(1)
-        chord.returns(1)
-        assert chord.bodies == []
-        assert [str(exc) for exc in chord.errors] == [
-            f'GroupResult {chord.group_id} no longer exists']
-
-    def test_chord_counts_a_retried_header_task(self):
-        # A retry runs with the same task id, and only its last run returns.
-        chord = self.chord()
-        chord.retries(0)
-        chord.returns(1)
-        chord.retries(0)
-        chord.returns(0)
-        assert chord.bodies == [[0, 1]]
-        assert chord.errors == []
-
-    # A hard time limit raises SystemExit in the pool process.
-    @pytest.mark.parametrize('exc', [OSError('lost'), SystemExit(1)])
-    def test_chord_counts_a_header_task_again_after_incr_fails(self, exc):
-        chord = self.chord()
-        with patch.object(self.tb, 'incr', side_effect=exc):
-            with pytest.raises(type(exc)):
-                chord.returns(0)
-        chord.returns(0)
-        chord.returns(1)
-        assert chord.bodies == [[0, 1]]
-        assert chord.errors == []
-
-    def test_chord_counts_header_tasks_without_group_index(self):
-        # Clients before 4.4.7 send header tasks without a group index.
-        chord = self.chord()
-        for index in range(2):
-            request = chord.request(index)
-            request.group_index = None
-            self.tb.mark_as_done(request.id, index, request=request)
-        assert chord.bodies == [[0, 1]]
-        assert chord.errors == []
-
-    def test_chord_counts_header_entries_sharing_a_task_id(self):
-        # A frozen signature used twice in a header has one task id.
-        task_id = uuid()
-        self.app.conf.result_chord_join_timeout = 0.1
-        chord = ChordParts(self.app, self.tb, task_ids=[task_id, task_id])
-        chord.returns(0)
-        chord.returns(1)
-        assert len(chord.bodies) == 1
-        assert chord.errors == []
-
-    def test_random_chords(self):
-        self.app.conf.result_chord_join_timeout = 0.1
-        check_random_chords(self.app, self.tb, range(300))
+    def test_add_chord_key_keeps_it_as_long_as_the_header_results(self):
+        self.app.conf.result_expires = 86400
+        self.app.conf.result_chord_expires = 600
+        tb = CacheBackend(backend='memory://', app=self.app)
+        with patch.object(tb.client, 'add', return_value=True) as add:
+            assert tb._add_chord_key(b'key', 'token') is True
+        add.assert_called_once_with(b'key', b'token', 86400, noreply=False)
 
     def test_warns_on_chord_expires_over_30_days(self):
         self.app.conf.result_chord_expires = timedelta(days=31)
@@ -669,62 +591,14 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 )
                 task.request.id = uuid()
                 task.request.group = result_args[0]
-                task.request.group_index = 0
                 b.apply_chord(result_args, None)
 
                 b.on_chord_part_return(task.request, 'SUCCESS', 10)
                 deps.join_native.assert_not_called()
 
-                task.request.id = uuid()
                 b.on_chord_part_return(task.request, 'SUCCESS', 10)
                 deps.join_native.assert_called_with(propagate=True, timeout=3.0)
                 deps.delete.assert_called_with()
-
-    def pymemcache_backend(self, **options):
-        from celery.backends import cache
-        self.app.conf.cache_backend_options = options
-        self.app.conf.result_chord_join_timeout = 0.1
-        return cache.CacheBackend(
-            backend='memcache://127.0.0.1:11211/', app=self.app)
-
-    def test_chord_counts_a_header_task_once(self):
-        with self.mock_pymemcache():
-            with conftest.reset_modules('celery.backends.cache'):
-                chord = ChordParts(self.app, self.pymemcache_backend())
-                for index in (0, 0, 1, 1, 0):
-                    chord.returns(index)
-                assert chord.bodies == [[0, 1]]
-                assert chord.errors == []
-
-    def test_chord_counts_a_header_task_whose_add_was_retried(self):
-        # The first add stored the key, but its reply was lost, so the
-        # RetryingClient sent it again.
-        with self.mock_pymemcache():
-            with conftest.reset_modules('celery.backends.cache'):
-                b = self.pymemcache_backend(retry_attempts=2, retry_delay=0)
-                client = b.client._client
-                add, lost = client.add, []
-
-                def add_losing_first_reply(*args, **kwargs):
-                    stored = add(*args, **kwargs)
-                    if not lost:
-                        lost.append(stored)
-                        raise TimeoutError('reply lost')
-                    return stored
-
-                client.add = add_losing_first_reply
-                chord = ChordParts(self.app, b)
-                chord.returns(0)
-                chord.returns(1)
-                assert lost == [True]
-                assert chord.bodies == [[0, 1]]
-                assert chord.errors == []
-
-    def test_random_chords(self):
-        with self.mock_pymemcache():
-            with conftest.reset_modules('celery.backends.cache'):
-                check_random_chords(
-                    self.app, self.pymemcache_backend(), range(100))
 
     def test_cache_backend_without_expiry(self):
         """Test that result_expires=None is sent as an integer to pymemcache."""

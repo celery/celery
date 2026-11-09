@@ -7,7 +7,6 @@ from threading import RLock
 from kombu.utils.encoding import bytes_to_str
 from kombu.utils.functional import dictfilter
 from kombu.utils.url import url_to_parts
-from kombu.utils.uuid import uuid
 
 from celery.backends.base import _create_chord_error_with_cause
 from celery.canvas import maybe_signature
@@ -166,6 +165,7 @@ class GCSBackend(GCSBackendBase):
     """
 
     implements_incr = True
+    implements_add = True
     supports_native_join = True
 
     # Blobs are uploaded from and downloaded to bytes.
@@ -264,31 +264,19 @@ class GCSBackend(GCSBackendBase):
         if not gid:
             return
         key = self.get_key_for_chord(gid)
-        # Count each header part once, like KeyValueStoreBackend does.
-        part_key = self._get_key_for_chord_part(request)
-        claimed = self._add_chord_part(part_key, uuid())
-        if claimed is False:
-            return
-        try:
-            val = self.incr(key)
-        except BaseException:
-            if claimed:
-                self._delete_chord_key(part_key)
-            raise
+        # As in KeyValueStoreBackend.on_chord_part_return.
+        val = self.incr(key)
         size = request.chord.get("chord_size")
         if size is None:
             deps = self._restore_deps(gid, request)
             if deps is None:
                 return
             size = len(deps)
-        if val > size:  # pragma: no cover
-            logger.warning(
-                'Chord counter incremented too many times for %r', gid
-            )
-        elif val == size:
+        if val >= size:
             # Read the deps once, to reduce the number of reads from GCS ($$)
             deps = self._restore_deps(gid, request)
-            if deps is None:
+            if deps is None or not (self._chord_parts_returned(deps) and
+                                    self._claim_chord(gid)):
                 return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native
@@ -325,9 +313,8 @@ class GCSBackend(GCSBackendBase):
                 # Firestore doesn't have an exact ttl policy, so delete the key.
                 self._delete_chord_key(key)
 
-    def _add_chord_part(self, key, token):
-        # Firestore's create fails if the document exists. The record expires
-        # like the chord counter.
+    def _add_chord_key(self, key, token):
+        # Firestore's create fails if the document exists.
         doc = self._firestore_document(key)
         expires = datetime.now(timezone.utc) + timedelta(seconds=86400)
         try:
@@ -349,6 +336,10 @@ class GCSBackend(GCSBackendBase):
             )
             return
         if deps is None:
+            # A copy that returns after the chord completed finds the chord
+            # claimed. Otherwise the group expired: fail the chord, once.
+            if not self._claim_chord(gid):
+                return
             try:
                 raise ValueError(gid)
             except ValueError as exc:

@@ -205,6 +205,7 @@ class CacheBackend(KeyValueStoreBackend):
     supports_autoexpire = True
     supports_native_join = True
     implements_incr = True
+    implements_add = True
 
     def __init__(self, app, expires=None, backend=None,
                  options=None, url=None, **kwargs):
@@ -251,9 +252,8 @@ class CacheBackend(KeyValueStoreBackend):
     def incr(self, key):
         return self.client.incr(key, 1)
 
-    def _add_chord_part(self, key, token):
-        # memcached's add only stores a key that isn't there yet. Keep the
-        # record as long as the header results.
+    def _add_chord_key(self, key, token):
+        # memcached's add only stores a key that isn't there yet.
         token = ensure_bytes(token)
         if self.client.add(key, token, self._chord_result_expires,
                            noreply=False):

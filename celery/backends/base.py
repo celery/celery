@@ -1177,6 +1177,9 @@ class BaseKeyValueStoreBackend(Backend):
     group_keyprefix = 'celery-taskset-meta-'
     chord_keyprefix = 'chord-unlock-'
     implements_incr = False
+    #: Set by backends with ``_add_chord_key(key, token)``, which adds the key
+    #: unless it exists, and returns whether it holds ``token`` afterwards.
+    implements_add = False
 
     def __init__(self, *args, **kwargs):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
@@ -1241,19 +1244,17 @@ class BaseKeyValueStoreBackend(Backend):
     def incr(self, key):
         raise NotImplementedError('Does not implement incr')
 
-    def _add_chord_part(self, key, token):
-        """Record a chord header part as counted, unless it already is.
+    def _claim_chord(self, group_id):
+        """Return :const:`True` for the one run that completes or fails it."""
+        return self._add_chord_key(
+            self.get_key_for_chord(group_id, '.done'), uuid())
 
-        The record should outlive the chord, so that a copy of a header task
-        that returns after the chord completed finds it.
-
-        Returns:
-            bool: :const:`True` if ``key`` holds ``token`` afterwards, also
-                when a retried request stored it before, :const:`False` if it
-                holds another token, or :const:`None` if this backend can't
-                do this atomically, so every run of a header task counts.
-        """
-        return None
+    def _chord_parts_returned(self, deps):
+        """Return whether every header task stored a ready result."""
+        ids = [result.id for result in deps.results]
+        ready = self._mget_to_results(
+            self.mget([self.get_key_for_task(task_id) for task_id in ids]), ids)
+        return len(ready) == len(set(ids))
 
     def expire(self, key, value):
         pass
@@ -1275,12 +1276,6 @@ class BaseKeyValueStoreBackend(Backend):
         if not group_id:
             raise ValueError(f'group_id must not be empty. Got {group_id} instead.')
         return self._get_key_for(self.chord_keyprefix, group_id, key)
-
-    def _get_key_for_chord_part(self, request):
-        """Get the key that records a chord header part as counted."""
-        group_index = getattr(request, 'group_index', None)
-        return self.get_key_for_chord(
-            request.group, f'.{request.id}.{group_index}')
 
     def _get_key_for(self, prefix, id, key=''):
         key_t = self.key_t
@@ -1455,10 +1450,6 @@ class BaseKeyValueStoreBackend(Backend):
         if not gid:
             return
         key = self.get_key_for_chord(gid)
-        # A header task can return more than once, e.g. when the broker
-        # delivers it again. Count each part once, by task id and header
-        # index as the Redis backend does.
-        part_key = self._get_key_for_chord_part(request)
         try:
             deps = GroupResult.restore(gid, backend=self)
         except Exception as exc:  # pylint: disable=broad-except
@@ -1469,10 +1460,9 @@ class BaseKeyValueStoreBackend(Backend):
                 ChordError(f'Cannot restore group: {exc!r}'),
             )
         if deps is None:
-            # A copy that returns after the chord completed finds the group
-            # deleted, and the record of its part, which outlives the chord.
-            # Only a part that was never counted fails the chord here.
-            if self._add_chord_part(part_key, uuid()) is False:
+            # A copy that returns after the chord completed finds it claimed.
+            # Otherwise the group expired: fail the chord, once.
+            if self.implements_add and not self._claim_chord(gid):
                 return
             try:
                 raise ValueError(gid)
@@ -1483,26 +1473,19 @@ class BaseKeyValueStoreBackend(Backend):
                     callback,
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
-        claimed = self._add_chord_part(part_key, uuid())
-        if claimed is False:
-            return
-        try:
-            val = self.incr(key)
-        except BaseException:
-            # Let a later run count this part, as it would without the
-            # record, also when a time limit interrupts this one.
-            if claimed:
-                self.delete(part_key)
-            raise
+        val = self.incr(key)
         # Set the chord size to the value defined in the request, or fall back
         # to the number of dependencies we can see from the restored result
         size = request.chord.get("chord_size")
         if size is None:
             size = len(deps)
-        if val > size:  # pragma: no cover
+        if val > size and not self.implements_add:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
-        elif val == size:
+        # A header task that runs again counts again, so the counter can reach
+        # the size early: check the results, and let one run complete it.
+        elif val >= size and (not self.implements_add or (
+                self._chord_parts_returned(deps) and self._claim_chord(gid))):
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
