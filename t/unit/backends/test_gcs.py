@@ -368,7 +368,8 @@ class test_GCSBackend:
         gcs_backend.incr(b'some-key')
         assert mock_firestore_document.call_count == 1
 
-    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -388,7 +389,6 @@ class test_GCSBackend:
     ):
         request = MagicMock()
         request.group = 'group_id'
-        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()
@@ -535,7 +535,8 @@ class test_GCSBackend:
         mock_collection.document.assert_called_once_with('test_key')
         assert result == mock_document
 
-    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -556,7 +557,6 @@ class test_GCSBackend:
         """Test on_chord_part_return when join_native raises exception."""
         request = MagicMock()
         request.group = 'group_id'
-        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()
@@ -590,7 +590,8 @@ class test_GCSBackend:
         mock_deps.delete.assert_called_once()
         mock_delete_chord_key.assert_called_once()
 
-    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -611,7 +612,6 @@ class test_GCSBackend:
         """Test on_chord_part_return when callback.delay raises exception (line 302)."""
         request = MagicMock()
         request.group = 'group_id'
-        request.ignore_result = False
         request.chord = {'chord_size': 2}
         state = MagicMock()
         result = MagicMock()

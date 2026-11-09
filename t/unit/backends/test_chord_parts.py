@@ -5,6 +5,7 @@ deliver a task again, so a test can report one several times. Each test runs
 against the memory and memcached cache backends, DynamoDB (moto) and GCS
 (in-memory fakes of its storage and Firestore).
 """
+import os
 import random
 import warnings
 from contextlib import ExitStack
@@ -146,6 +147,15 @@ class FakeDocument:
         self.docs.pop(self.key, None)
 
 
+class FakeFirestore:
+    def __init__(self, docs):
+        self.docs = docs
+
+    def get_all(self, documents):
+        for doc in documents:
+            yield SimpleNamespace(id=doc.key, exists=doc.key in self.docs)
+
+
 @pytest.fixture(params=['memory', 'pymemcache', 'dynamodb', 'gcs'])
 def backend(request, app):
     # A chord that completes too early fails on the join.
@@ -175,6 +185,8 @@ def backend(request, app):
         blobs, docs = {}, {}
         gcs._get_blob = lambda key: FakeBlob(blobs, key)
         gcs._firestore_document = lambda key: FakeDocument(docs, key)
+        gcs._firestore_client = FakeFirestore(docs)
+        gcs._firestore_pid = os.getpid()
         yield gcs
 
 
@@ -229,6 +241,21 @@ def test_a_header_task_ignoring_its_result_fails_the_chord_once(app, backend):
     assert [str(exc) for exc in chord.errors] == [
         f'Chord header task header[{chord.headers[0].id}] ignores its '
         'result: header tasks must store it']
+
+
+def test_a_lost_header_result_fails_the_chord_once(app, backend):
+    chord = ChordParts(app, backend)
+    chord.returns(0)
+    chord.returns(0)
+    # Header task 1 hasn't returned yet: wait for its result.
+    assert chord.errors == []
+    # Header task 0's result is lost, as when memcached evicts it.
+    backend.delete(backend.get_key_for_task(chord.headers[0].id))
+    chord.returns(1)
+    chord.returns(1)
+    assert chord.bodies == []
+    assert [str(exc) for exc in chord.errors] == [
+        f'Chord header results missing: {chord.headers[0].id}']
 
 
 def test_header_entries_sharing_a_task_id(app, backend):

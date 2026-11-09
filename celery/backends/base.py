@@ -1249,29 +1249,59 @@ class BaseKeyValueStoreBackend(Backend):
         return self._add_chord_key(
             self.get_key_for_chord(group_id, '.done'), uuid())
 
-    def _chord_part_ignores_result(self, request):
-        """Fail the chord, once, if this header task stores no result.
-
-        The chord only completes once every header result is stored.
-        """
-        if not (self.implements_add and _is_request_ignore_result(request)):
-            return False
+    def _fail_chord_once(self, request, message):
         if self._claim_chord(request.group):
             try:
-                raise ChordError(
-                    f'Chord header task {request.task}[{request.id}] '
-                    'ignores its result: header tasks must store it')
+                raise ChordError(message)
             except ChordError as exc:
                 self.chord_error_from_stack(
                     maybe_signature(request.chord, app=self.app), exc)
+
+    def _chord_part_returns(self, request):
+        """Record that a header part returned, or fail the chord, once.
+
+        The chord only completes once every header result is stored, so a
+        header that stores no result fails it. Returns :const:`False` then.
+        """
+        if not self.implements_add:
+            return True
+        if _is_request_ignore_result(request):
+            self._fail_chord_once(
+                request, f'Chord header task {request.task}[{request.id}] '
+                'ignores its result: header tasks must store it')
+            return False
+        self._add_chord_key(
+            self._get_key_for_chord_part(request.group, request.id), uuid())
         return True
 
-    def _chord_parts_returned(self, deps):
-        """Return whether every header task stored a ready result."""
+    def _get_key_for_chord_part(self, group_id, task_id):
+        # As a str, so that every backend reads it back with mget().
+        return bytes_to_str(self.get_key_for_chord(group_id, f'.{task_id}'))
+
+    def _chord_keys_exist(self, keys):
+        values = self.mget(keys)
+        if hasattr(values, 'items'):
+            return [key in values for key in keys]
+        return [value is not None for value in values]
+
+    def _complete_chord_once(self, request, deps):
+        """Return :const:`True` for the one run that completes the chord.
+
+        Wait while a header result is missing, unless every header with a
+        missing result recorded that it returned: then fail the chord.
+        """
         ids = [result.id for result in deps.results]
         ready = self._mget_to_results(
             self.mget([self.get_key_for_task(task_id) for task_id in ids]), ids)
-        return len(ready) == len(set(ids))
+        missing = [task_id for task_id in ids if task_id not in ready]
+        if not missing:
+            return self._claim_chord(request.group)
+        if all(self._chord_keys_exist([
+                self._get_key_for_chord_part(request.group, task_id)
+                for task_id in missing])):
+            self._fail_chord_once(
+                request, f'Chord header results missing: {", ".join(missing)}')
+        return False
 
     def expire(self, key, value):
         pass
@@ -1466,8 +1496,6 @@ class BaseKeyValueStoreBackend(Backend):
         gid = request.group
         if not gid:
             return
-        if self._chord_part_ignores_result(request):
-            return
         key = self.get_key_for_chord(gid)
         try:
             deps = GroupResult.restore(gid, backend=self)
@@ -1492,6 +1520,8 @@ class BaseKeyValueStoreBackend(Backend):
                     callback,
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
+        if not self._chord_part_returns(request):
+            return
         val = self.incr(key)
         # Set the chord size to the value defined in the request, or fall back
         # to the number of dependencies we can see from the restored result
@@ -1505,8 +1535,8 @@ class BaseKeyValueStoreBackend(Backend):
             # A header task that runs again counts again, so the counter can
             # reach the size early: check the results, and let one run
             # complete it.
-            if self.implements_add and not (
-                    self._chord_parts_returned(deps) and self._claim_chord(gid)):
+            if self.implements_add and not self._complete_chord_once(
+                    request, deps):
                 return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join

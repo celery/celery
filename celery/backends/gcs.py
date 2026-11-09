@@ -264,7 +264,7 @@ class GCSBackend(GCSBackendBase):
         if not gid:
             return
         # As in KeyValueStoreBackend.on_chord_part_return.
-        if self._chord_part_ignores_result(request):
+        if not self._chord_part_returns(request):
             return
         key = self.get_key_for_chord(gid)
         val = self.incr(key)
@@ -277,8 +277,7 @@ class GCSBackend(GCSBackendBase):
         if val >= size:
             # Read the deps once, to reduce the number of reads from GCS ($$)
             deps = self._restore_deps(gid, request)
-            if deps is None or not (self._chord_parts_returned(deps) and
-                                    self._claim_chord(gid)):
+            if deps is None or not self._complete_chord_once(request, deps):
                 return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native
@@ -324,6 +323,13 @@ class GCSBackend(GCSBackendBase):
         except Conflict:
             return (doc.get().to_dict() or {}).get('token') == token
         return True
+
+    def _chord_keys_exist(self, keys):
+        # The keys are Firestore documents: read them in one batch.
+        documents = [self._firestore_document(key) for key in keys]
+        found = {snapshot.id for snapshot in
+                 self.firestore_client.get_all(documents) if snapshot.exists}
+        return [bytes_to_str(key) in found for key in keys]
 
     def _restore_deps(self, gid, request):
         app = self.app
