@@ -1482,10 +1482,13 @@ class BaseKeyValueStoreBackend(Backend):
         if val > size and not self.implements_add:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
-        # A header task that runs again counts again, so the counter can reach
-        # the size early: check the results, and let one run complete it.
-        elif val >= size and (not self.implements_add or (
-                self._chord_parts_returned(deps) and self._claim_chord(gid))):
+        elif val >= size:
+            # A header task that runs again counts again, so the counter can
+            # reach the size early: check the results, and let one run
+            # complete it.
+            if self.implements_add and not (
+                    self._chord_parts_returned(deps) and self._claim_chord(gid)):
+                return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
