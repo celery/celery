@@ -2324,6 +2324,15 @@ Timeout in seconds for reading of an azure block blob.
 GCS backend settings
 --------------------
 
+.. versionchanged:: 5.7
+
+    A chord now counts each header task once, even when the broker delivers
+    the task again, and a copy that returns after the chord completed no
+    longer calls the body's errbacks. For each header task, the backend
+    creates a Firestore document that expires a day later, like the chord
+    counter. When the document already exists, the backend reads it, so the
+    service account also needs read access to the Firestore collection.
+
 .. note::
 
     This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
