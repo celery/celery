@@ -554,7 +554,6 @@ class DynamoDBBackend(KeyValueStoreBackend):
         return int(new_count)
 
     def _add_chord_key(self, key, token):
-        # A conditional put only stores an item that isn't there yet.
         key, token = bytes_to_str(key), str_to_bytes(token)
         try:
             self.client.put_item(

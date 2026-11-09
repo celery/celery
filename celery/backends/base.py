@@ -1177,8 +1177,7 @@ class BaseKeyValueStoreBackend(Backend):
     group_keyprefix = 'celery-taskset-meta-'
     chord_keyprefix = 'chord-unlock-'
     implements_incr = False
-    #: Set by backends with ``_add_chord_key(key, token)``, which adds the key
-    #: unless it exists, and returns whether it holds ``token`` afterwards.
+    #: Set by backends with ``_add_chord_key(key, token)``: add unless present.
     implements_add = False
 
     def __init__(self, *args, **kwargs):
@@ -1258,11 +1257,7 @@ class BaseKeyValueStoreBackend(Backend):
                     maybe_signature(request.chord, app=self.app), exc)
 
     def _chord_part_returns(self, request):
-        """Record that a header part returned, or fail the chord, once.
-
-        The chord only completes once every header result is stored, so a
-        header that stores no result fails it. Returns :const:`False` then.
-        """
+        """Record that a header part returned; fail the chord if it can't."""
         if not self.implements_add:
             return True
         if _is_request_ignore_result(request):
@@ -1281,14 +1276,13 @@ class BaseKeyValueStoreBackend(Backend):
     def _chord_keys_exist(self, keys):
         values = self.mget(keys)
         if hasattr(values, 'items'):
-            return [key in values for key in keys]
+            values = [values.get(key) for key in keys]
         return [value is not None for value in values]
 
     def _complete_chord_once(self, request, deps):
         """Return :const:`True` for the one run that completes the chord.
 
-        Wait while a header result is missing, unless every header with a
-        missing result recorded that it returned: then fail the chord.
+        A missing result whose header returned was lost: fail the chord.
         """
         ids = [result.id for result in deps.results]
         ready = self._mget_to_results(
@@ -1533,8 +1527,7 @@ class BaseKeyValueStoreBackend(Backend):
                            gid)
         elif val >= size:
             # A header task that runs again counts again, so the counter can
-            # reach the size early: check the results, and let one run
-            # complete it.
+            # reach the size before every header returned.
             if self.implements_add and not self._complete_chord_once(
                     request, deps):
                 return

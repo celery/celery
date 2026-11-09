@@ -253,7 +253,6 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.incr(key, 1)
 
     def _add_chord_key(self, key, token):
-        # memcached's add only stores a key that isn't there yet.
         token = ensure_bytes(token)
         if self.client.add(key, token, self._chord_result_expires,
                            noreply=False):

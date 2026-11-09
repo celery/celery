@@ -315,7 +315,6 @@ class GCSBackend(GCSBackendBase):
                 self._delete_chord_key(key)
 
     def _add_chord_key(self, key, token):
-        # Firestore's create fails if the document exists.
         doc = self._firestore_document(key)
         expires = datetime.now(timezone.utc) + timedelta(seconds=86400)
         try:
@@ -325,7 +324,6 @@ class GCSBackend(GCSBackendBase):
         return True
 
     def _chord_keys_exist(self, keys):
-        # The keys are Firestore documents: read them in one batch.
         documents = [self._firestore_document(key) for key in keys]
         found = {snapshot.id for snapshot in
                  self.firestore_client.get_all(documents) if snapshot.exists}
@@ -344,8 +342,7 @@ class GCSBackend(GCSBackendBase):
             )
             return
         if deps is None:
-            # A copy that returns after the chord completed finds the chord
-            # claimed. Otherwise the group expired: fail the chord, once.
+            # As in KeyValueStoreBackend.on_chord_part_return.
             if not self._claim_chord(gid):
                 return
             try:
