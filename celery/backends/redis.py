@@ -977,7 +977,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             return
 
         if chord_size_bytes:
-            dispatching = False
+            dispatching = sent = False
             try:
                 callback = maybe_signature(request.chord, app=app)
                 totaldiff = int(totaldiff or 0)
@@ -1043,7 +1043,7 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     else:
                         # The body is sent: an interrupt from here on must
                         # not fail the chord.
-                        dispatching = False
+                        sent = True
                     finally:
                         cleaned = self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
@@ -1079,18 +1079,20 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                 # header will send the body, so fail the chord rather than
                 # leave it PENDING with no errback.
                 if dispatching:
-                    logger.error(
-                        'Chord callback for %r interrupted: %r',
-                        request.group, exc)
                     try:
-                        self.chord_error_from_stack(
-                            callback,
-                            ChordError(
-                                f'Callback dispatch interrupted: {exc!r}'),
-                        )
+                        if not sent:
+                            logger.error(
+                                'Chord callback for %r interrupted: %r',
+                                request.group, exc)
+                            self.chord_error_from_stack(
+                                callback,
+                                ChordError(
+                                    f'Callback dispatch interrupted: {exc!r}'),
+                            )
                     finally:
                         # As above: a copy of a header task that arrives
-                        # later must not send the body of a failed chord.
+                        # later must not send the body, of a failed chord
+                        # or a second time.
                         client.delete(skey)
                 raise
 

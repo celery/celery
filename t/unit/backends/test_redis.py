@@ -2595,6 +2595,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
                     self.b.on_chord_part_return(request, states.SUCCESS, 10)
             callback.delay.assert_called_once()
             error.assert_not_called()
+            # A copy of the header task that arrives later doesn't send
+            # the body a second time.
+            assert self.b.get_key_for_group(
+                request.group, '.s') not in self.b.client.keyspace
 
     def test_on_chord_part_return__interrupted_before_last_part(self):
         # Other parts are still running, so the chord is left to them.
