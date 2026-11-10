@@ -259,6 +259,25 @@ def test_a_lost_header_result_fails_the_chord_once(app, backend):
         f'Chord header results missing: {chord.headers[0].id}']
 
 
+def test_a_header_task_returning_during_the_check_is_not_lost(app, backend):
+    chord = ChordParts(app, backend)
+    chord.returns(0)
+    keys_exist = backend._chord_keys_exist
+
+    def header_1_returns_first(keys):
+        # Header task 1 stores its result and its key right after the
+        # results were read, and hasn't counted yet.
+        with patch.object(backend, '_chord_keys_exist', keys_exist):
+            chord.killed(1)
+        return keys_exist(keys)
+
+    with patch.object(backend, '_chord_keys_exist',
+                      side_effect=header_1_returns_first):
+        chord.returns(0)
+    assert chord.errors == []
+    assert chord.bodies == [[0, 1]]
+
+
 @pytest.mark.parametrize('backend', ['pymemcache'], indirect=True)
 def test_a_header_result_that_expired_fails_the_chord(app, backend):
     # A backlog stretched the chord past the lifetime of its first result,

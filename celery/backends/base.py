@@ -1291,18 +1291,23 @@ class BaseKeyValueStoreBackend(Backend):
 
         A missing result whose header returned was lost: fail the chord.
         """
-        ids = [result.id for result in deps.results]
-        ready = self._mget_to_results(
-            self.mget([self.get_key_for_task(task_id) for task_id in ids]), ids)
-        missing = [task_id for task_id in ids if task_id not in ready]
-        if not missing:
-            return self._claim_chord(request.group)
-        if all(self._chord_keys_exist([
+        missing = self._missing_results([r.id for r in deps.results])
+        if missing and all(self._chord_keys_exist([
                 self._get_key_for_chord_part(request.group, task_id)
                 for task_id in missing])):
-            self._fail_chord_once(
-                request, f'Chord header results missing: {", ".join(missing)}')
-        return False
+            # A header stores its result before its key, so one that
+            # returned between the two reads shows up on a second read.
+            missing = self._missing_results(missing)
+            if missing:
+                self._fail_chord_once(
+                    request,
+                    f'Chord header results missing: {", ".join(missing)}')
+        return not missing and self._claim_chord(request.group)
+
+    def _missing_results(self, ids):
+        ready = self._mget_to_results(
+            self.mget([self.get_key_for_task(task_id) for task_id in ids]), ids)
+        return [task_id for task_id in ids if task_id not in ready]
 
     def expire(self, key, value):
         pass
