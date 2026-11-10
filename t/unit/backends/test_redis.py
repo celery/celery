@@ -2580,6 +2580,18 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             error.assert_called_once_with(callback, ANY)
             callback.delay.assert_not_called()
 
+    def test_on_chord_part_return__interrupted_after_publish(self):
+        # The body is already sent, so an interrupt during the cleanup
+        # leaves the chord alone.
+        with self.chord_context(1) as (_, request, callback):
+            with patch.object(type(self.b), '_chord_cleanup_script',
+                              Mock(side_effect=SystemExit(1))), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            callback.delay.assert_called_once()
+            error.assert_not_called()
+
     def test_on_chord_part_return__interrupted_before_last_part(self):
         # Other parts are still running, so the chord is left to them.
         with self.chord_context(2) as (_, request, callback):

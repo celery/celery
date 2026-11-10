@@ -1040,6 +1040,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             callback,
                             ChordError(f'Callback error: {exc!r}'),
                         )
+                    else:
+                        # The body is sent: an interrupt from here on must
+                        # not fail the chord.
+                        dispatching = False
                     finally:
                         cleaned = self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
