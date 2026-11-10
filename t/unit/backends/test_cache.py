@@ -184,6 +184,27 @@ class test_CacheBackend:
         deps.join_native.assert_called_with(propagate=True, timeout=3.0)
         deps.delete.assert_called_with()
 
+    @patch('celery.result.GroupResult.restore', return_value=None)
+    def test_on_chord_part_return_group_gone_at_completion(self, restore):
+        """A chord whose group result is gone still fails, once (#1094)."""
+        tb = CacheBackend(backend='memory://', app=self.app)
+        tb.chord_error_from_stack = Mock()
+        task = Mock()
+        task.name = 'foobarbaz'
+        self.app.tasks['foobarbaz'] = task
+        task.request.chord = signature(task)
+        gid = uuid()
+        task.request.group = gid
+        tb.apply_chord((gid, [self.app.AsyncResult(uuid()) for _ in range(2)]), None)
+        tb.set_chord_size(gid, 2)
+
+        for _ in range(2):
+            task.request.id = uuid()
+            tb.on_chord_part_return(task.request, 'SUCCESS', 10)
+
+        tb.chord_error_from_stack.assert_called_once()
+        assert 'no longer exists' in str(tb.chord_error_from_stack.call_args[0][1])
+
     @pytest.mark.parametrize(
         'result_expires,chord_expires,expected_chord,expected_result', [
             (100, 600, 600, 600),
