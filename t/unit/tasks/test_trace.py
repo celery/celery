@@ -738,6 +738,7 @@ class test_trace(TraceCase):
 
         assert isinstance(restored, ExceptionInfo)
         assert restored.internal is True
+        assert restored.type is Exception
         assert isinstance(restored.exception, ValueError)
         assert restored.exception.args == ('internal error',)
         assert restored.traceback == einfo.traceback
