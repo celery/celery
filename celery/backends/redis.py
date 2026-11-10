@@ -1082,10 +1082,16 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     logger.error(
                         'Chord callback for %r interrupted: %r',
                         request.group, exc)
-                    self.chord_error_from_stack(
-                        callback,
-                        ChordError(f'Callback dispatch interrupted: {exc!r}'),
-                    )
+                    try:
+                        self.chord_error_from_stack(
+                            callback,
+                            ChordError(
+                                f'Callback dispatch interrupted: {exc!r}'),
+                        )
+                    finally:
+                        # As above: a copy of a header task that arrives
+                        # later must not send the body of a failed chord.
+                        client.delete(skey)
                 raise
 
     def _create_client(self, **params):

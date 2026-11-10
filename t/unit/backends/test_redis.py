@@ -2579,6 +2579,10 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
                     self.b.on_chord_part_return(request, states.SUCCESS, 10)
             error.assert_called_once_with(callback, ANY)
             callback.delay.assert_not_called()
+            # A copy of the header task that arrives later finds the chord
+            # closed, and doesn't send the body after the errback ran.
+            assert self.b.get_key_for_group(
+                request.group, '.s') not in self.b.client.keyspace
 
     def test_on_chord_part_return__interrupted_after_publish(self):
         # The body is already sent, so an interrupt during the cleanup
