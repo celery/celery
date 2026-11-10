@@ -263,6 +263,23 @@ class test_store_result_retry:
             assert any(isinstance(arg, OSError) for arg in c.args)
         assert backend.on_backend_retryable_error.call_count == 10
 
+    def test_retries_left_after_the_deadline_still_sleep(self, clock):
+        # The time limit is already up, but result_backend_always_retry still
+        # allows max_retries tries: they keep the backoff instead of looping
+        # without a pause.
+        backend = self.FlakyBackend(10, app=self.app)
+        backend._sleep = clock.sleep
+        token = store_retry.set((TIMEOUT, clock.now - 1))
+        try:
+            with pytest.raises(BackendStoreError):
+                backend.store_result('id-1', 42, states.SUCCESS)
+        finally:
+            store_retry.reset(token)
+
+        assert backend.calls == 4
+        assert len(clock.sleeps) == 3
+        assert sum(clock.sleeps) > 0
+
     def test_without_the_timeout_keeps_max_retries(self, clock):
         backend = self.FlakyBackend(10, app=self.app)
         backend._sleep = clock.sleep
