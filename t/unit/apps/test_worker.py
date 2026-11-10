@@ -233,24 +233,28 @@ class test_shutdown_handler:
         assert state.should_terminate == 0
         assert worker.consumer.cancel_active_requests.call_count == 2
 
-    def test_threads_cold_shutdown_runs_outside_the_signal_handler(self, monkeypatch):
+    def test_threads_cold_shutdown_runs_outside_the_signal_handler(self):
+        from celery.apps.worker import on_cold_shutdown
         from celery.concurrency.thread import TaskPool
 
-        callback = Mock()
-        monkeypatch.setattr('celery.apps.worker.on_cold_shutdown', callback)
         pool = TaskPool(limit=1)
         worker = Mock(pool=pool)
         worker._cold_shutdown_scheduled = False
+        worker.consumer.connection = None
+        worker.consumer.task_consumer = None
+        worker.consumer.pool = pool
         try:
-            handler = self._install(worker, how='Cold', callback=callback)
+            handler = self._install(worker, how='Cold', callback=on_cold_shutdown)
             handler()
             handler()
-            callback.assert_not_called()
+            worker.wait_for_soft_shutdown.assert_not_called()
             assert state.should_terminate is None
             worker.consumer.call_soon.assert_called_once()
             run_shutdown, from_signal = worker.consumer.call_soon.call_args.args
-            run_shutdown(from_signal)
-            callback.assert_called_once_with(worker)
+            with patch.object(pool, 'stop', wraps=pool.stop) as stop:
+                run_shutdown(from_signal)
+                stop.assert_called_once_with()
+            worker.wait_for_soft_shutdown.assert_called_once_with()
             assert state.should_terminate == 0
         finally:
             pool.stop()
