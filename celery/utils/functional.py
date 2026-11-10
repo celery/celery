@@ -325,7 +325,7 @@ class _regen(UserList, list):
         )
 
 
-def _argsfromspec(spec, replace_defaults=True):
+def _argsfromspec(spec, replace_defaults=True, posonlyargcount=0):
     if spec.defaults:
         split = len(spec.defaults)
         defaults = (list(range(len(spec.defaults))) if replace_defaults
@@ -348,9 +348,13 @@ def _argsfromspec(spec, replace_defaults=True):
     else:
         kwonlyargs, kwonlyargs_optional = spec.kwonlyargs, []
 
+    args = list(positional) + [f'{k}={v}' for k, v in optional]
+    if posonlyargcount:
+        # the argspec does not tell positional-only arguments apart.
+        args.insert(posonlyargcount, '/')
+
     return ', '.join(filter(None, [
-        ', '.join(positional),
-        ', '.join(f'{k}={v}' for k, v in optional),
+        ', '.join(args),
         f'*{varargs}' if varargs else None,
         '*' if (kwonlyargs or kwonlyargs_optional) and not varargs else None,
         ', '.join(kwonlyargs) if kwonlyargs else None,
@@ -426,7 +430,11 @@ def head_from_fun(fun: Callable[..., Any], bound: bool = False) -> str:
         name = fun.__name__
     definition = FUNHEAD_TEMPLATE.format(
         fun_name=name,
-        fun_args=_argsfromspec(_getfullargspec(fun)),
+        fun_args=_argsfromspec(
+            _getfullargspec(fun),
+            posonlyargcount=getattr(
+                getattr(fun, '__code__', None), 'co_posonlyargcount', 0),
+        ),
         fun_value=1,
     )
     logger.debug(definition)
