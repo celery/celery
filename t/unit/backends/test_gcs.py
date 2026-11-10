@@ -368,6 +368,7 @@ class test_GCSBackend:
         gcs_backend.incr(b'some-key')
         assert mock_firestore_document.call_count == 1
 
+    @patch.object(GCSBackend, 'delete')
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -383,6 +384,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        mock_delete,
         refused,
     ):
         request = MagicMock()
@@ -429,6 +431,59 @@ class test_GCSBackend:
             ['result1', 'result2']
         )
         mock_delete_chord_key.assert_called_once_with(group_key)
+
+    @patch('celery.backends.gcs.maybe_signature')
+    @patch.object(GCSBackend, 'incr')
+    @patch.object(GCSBackend, '_restore_deps')
+    @patch.object(GCSBackend, '_delete_chord_key')
+    @patch.object(GCSBackend, 'get_chord_size')
+    @patch.object(GCSBackend, 'delete')
+    @patch('celery.backends.gcs.allow_join_result')
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    def test_on_chord_part_return_uses_stored_chord_size(
+        self,
+        mock_firestore_ttl,
+        mock_allow_join_result,
+        mock_delete,
+        mock_get_chord_size,
+        mock_delete_chord_key,
+        mock_restore_deps,
+        mock_incr,
+        mock_maybe_signature,
+    ):
+        """Only the final part return restores the group (issue #11045).
+
+        With the chord size stored by set_chord_size(), the backend must
+        not restore the whole group on every header task return.
+        """
+        request = MagicMock()
+        request.group = 'group_id'
+        request.chord = {}  # no chord_size carried by the request
+        mock_firestore_ttl.return_value = True
+        mock_get_chord_size.return_value = 2
+        mock_restore_deps.return_value = MagicMock()
+        mock_restore_deps.return_value.join_native.return_value = [
+            'result1',
+            'result2',
+        ]
+        mock_maybe_signature.return_value = MagicMock()
+
+        b = GCSBackend(app=self.app)
+
+        mock_incr.return_value = 1
+        b.on_chord_part_return(request, MagicMock(), MagicMock())
+        mock_restore_deps.assert_not_called()
+
+        mock_incr.return_value = 2
+        b.on_chord_part_return(request, MagicMock(), MagicMock())
+        mock_restore_deps.assert_called_once_with('group_id', request)
+        mock_restore_deps.return_value.join_native.assert_called_once_with(
+            timeout=self.app.conf.result_chord_join_timeout,
+            propagate=True,
+        )
+        mock_delete.assert_called_once_with(
+            b.get_key_for_group('group_id', '.s')
+        )
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch('celery.backends.gcs.GroupResult.restore')
@@ -521,6 +576,7 @@ class test_GCSBackend:
         mock_collection.document.assert_called_once_with('test_key')
         assert result == mock_document
 
+    @patch.object(GCSBackend, 'delete')
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -537,6 +593,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        mock_delete,
     ):
         """Test on_chord_part_return when join_native raises exception."""
         request = MagicMock()
@@ -574,6 +631,7 @@ class test_GCSBackend:
         mock_deps.delete.assert_called_once()
         mock_delete_chord_key.assert_called_once()
 
+    @patch.object(GCSBackend, 'delete')
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -590,6 +648,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        mock_delete,
     ):
         """Test on_chord_part_return when callback.delay raises exception (line 302)."""
         request = MagicMock()

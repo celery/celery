@@ -266,6 +266,13 @@ class GCSBackend(GCSBackendBase):
         val = self.incr(key)
         size = request.chord.get("chord_size")
         if size is None:
+            # The size stored when the header was applied (see
+            # BaseKeyValueStoreBackend.set_chord_size); only restore the
+            # whole group when neither source knows the size, so counting
+            # a chord of N header tasks does not fetch the group N times
+            # (issue #11045).
+            size = self.get_chord_size(gid)
+        if size is None:
             deps = self._restore_deps(gid, request)
             if deps is None:
                 return
@@ -313,6 +320,7 @@ class GCSBackend(GCSBackendBase):
                 deps.delete()
                 # Firestore doesn't have an exact ttl policy, so delete the key.
                 self._delete_chord_key(key)
+                self.delete(self.get_key_for_group(gid, '.s'))
 
     def _restore_deps(self, gid, request):
         app = self.app

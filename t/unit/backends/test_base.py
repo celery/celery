@@ -1633,6 +1633,21 @@ class test_KeyValueStoreBackend:
         assert not self.b.implements_incr
         self.b.on_chord_part_return(None, None, None)
 
+    def test_set_chord_size_noop_without_incr(self):
+        """set_chord_size() stores nothing without incr (issue #11045).
+
+        Backends with implements_incr False never read or delete the
+        '.s' key (on_chord_part_return returns early for them) and some
+        have no expiry, so storing the chord size would leak one key
+        per chord. The chord then behaves as before: the group is
+        restored on every part return.
+        """
+        gid = uuid()
+        assert self.b.get_chord_size(gid) is None
+        self.b.set_chord_size(gid, 3)
+        assert self.b.get_chord_size(gid) is None
+        assert self.b.get(self.b.get_key_for_group(gid, '.s')) is None
+
     def test_get_store_delete_result(self):
         tid = uuid()
         self.b.mark_as_done(tid, 'Hello world')
@@ -1897,6 +1912,7 @@ class test_KeyValueStoreBackend:
         callback = Mock(name='callback')
         request = Mock(name='request')
         request.group = 'gid'
+        request.chord = {}
         maybe_signature.return_value = callback
         self.b.on_chord_part_return(request, states.SUCCESS, 10)
         self.b.chord_error_from_stack.assert_called_with(
@@ -1913,6 +1929,7 @@ class test_KeyValueStoreBackend:
         callback = Mock(name='callback')
         request = Mock(name='request')
         request.group = 'gid'
+        request.chord = {}
         maybe_signature.return_value = callback
         self.b.on_chord_part_return(request, states.SUCCESS, 10)
         self.b.chord_error_from_stack.assert_called_with(
