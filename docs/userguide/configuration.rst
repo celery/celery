@@ -1515,6 +1515,10 @@ Cache backend settings
     :setting:`result_expires`, or twice :setting:`result_chord_expires` when
     that is longer, but at most 30 days.
 
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
+
 .. note::
 
     The cache backend requires the :pypi:`pymemcache` library, which can be
@@ -2340,6 +2344,10 @@ GCS backend settings
     backend reads it, so the service account also needs read access to the
     Firestore collection.
 
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
+
 .. note::
 
     This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
@@ -2504,6 +2512,10 @@ AWS DynamoDB backend settings
     with a conditional ``PutItem``. With ``ttl_seconds`` set, it keeps them
     for twice :setting:`result_expires`, :setting:`result_chord_expires` or
     ``ttl_seconds``, whichever is longest.
+
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
 
 .. note::
 
