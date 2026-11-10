@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Mapping, MutableMapping
 from copy import copy
 from unittest.mock import Mock
@@ -6,6 +7,7 @@ import pytest
 
 from celery.app.defaults import Option
 from celery.app.utils import Settings, bugreport, filter_hidden_settings, sanitize_url
+from celery.exceptions import CDeprecationWarning
 
 
 class test_Settings:
@@ -60,6 +62,63 @@ class test_Settings:
         assert dict(copied) == dict(settings)
         if not cleared:
             assert copied.deprecated_settings is settings.deprecated_settings
+
+    @pytest.mark.parametrize('namespace', ['CELERY', 'CELERY_'])
+    def test_namespaced_new_setting_names_are_not_deprecated(self, namespace):
+        # With namespace='CELERY', result_backend is spelled
+        # CELERY_RESULT_BACKEND, which is also its old setting name.
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object({
+                'CELERY_BROKER_URL': 'memory://',
+                'CELERY_RESULT_BACKEND': 'cache+memory://',
+                'CELERY_TASK_SERIALIZER': 'json',
+            }, namespace=namespace)
+            assert app.conf.result_backend == 'cache+memory://'
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                assert not app.conf.maybe_warn_deprecated_settings()
+            assert [str(w.message) for w in caught] == []
+
+    @pytest.mark.parametrize('namespace, config, old_name', [
+        # CELERY_ALWAYS_EAGER is still read with namespace='CELERY', but the
+        # namespaced name of task_always_eager is CELERY_TASK_ALWAYS_EAGER.
+        ('CELERY', {
+            'CELERY_RESULT_BACKEND': 'cache+memory://',
+            'CELERY_ALWAYS_EAGER': True,
+        }, 'CELERY_ALWAYS_EAGER'),
+        # With namespace='celery', result_backend is celery_result_backend.
+        ('celery', {
+            'CELERY_RESULT_BACKEND': 'cache+memory://',
+            'celery_task_always_eager': True,
+        }, 'CELERY_RESULT_BACKEND'),
+    ])
+    def test_namespaced_old_setting_names_are_deprecated(
+            self, namespace, config, old_name):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object(config, namespace=namespace)
+            assert app.conf.result_backend == 'cache+memory://'
+            assert app.conf.task_always_eager is True
+            with pytest.warns(CDeprecationWarning) as caught:
+                assert app.conf.maybe_warn_deprecated_settings()
+            assert len(caught) == 1
+            assert f'{old_name!r} setting is deprecated' in str(
+                caught[0].message)
+
+    def test_old_setting_names_are_deprecated_without_namespace(self):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object({
+                'CELERY_RESULT_BACKEND': 'cache+memory://',
+                'CELERY_ALWAYS_EAGER': True,
+            })
+            assert app.conf.result_backend == 'cache+memory://'
+            assert app.conf.task_always_eager is True
+            with pytest.warns(CDeprecationWarning) as caught:
+                assert app.conf.maybe_warn_deprecated_settings()
+            messages = [str(w.message) for w in caught]
+            assert len(messages) == 2
+            for old_name in ('CELERY_RESULT_BACKEND', 'CELERY_ALWAYS_EAGER'):
+                assert any(f'{old_name!r} setting is deprecated' in m
+                           for m in messages)
 
     def test_is_mapping(self):
         """Settings should be a collections.Mapping"""
