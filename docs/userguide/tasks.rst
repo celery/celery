@@ -599,6 +599,13 @@ When you call ``retry`` it'll send a new message, using the same
 task-id, and it'll take care to make sure the message is delivered
 to the same queue as the originating task.
 
+.. versionchanged:: 5.7
+
+    Retries now preserve the ``ignore_result`` value passed to
+    :meth:`~@Task.apply_async` or :meth:`~@send_task`.
+    Previously, retries discarded this override and used the task's
+    :attr:`~@Task.ignore_result` setting.
+
 When a task is retried this is also recorded as a task state,
 so that you can track the progress of the task using the result
 instance (see :ref:`task-states`).
@@ -1782,6 +1789,12 @@ Available handlers
 
     The return value of this handler is ignored.
 
+    If this handler raises, the worker logs the exception at ``ERROR`` level
+    and the task stays ``SUCCESS``: errbacks don't run and the
+    :signal:`task_failure` and :signal:`task_internal_error` signals aren't
+    sent. When the task runs eagerly (``apply()``, :setting:`task_always_eager`)
+    the exception propagates to the caller.
+
 .. method:: on_retry(self, exc, task_id, args, kwargs, einfo)
 
     Retry handler.
@@ -1840,6 +1853,10 @@ Available handlers
     :param einfo: :class:`~billiard.einfo.ExceptionInfo` instance.
 
     The return value of this handler is ignored.
+
+    If this handler raises, the worker logs the exception at ``ERROR`` level
+    and the outcome that was already recorded stands. When the task runs
+    eagerly the exception propagates to the caller.
 
 Example usage
 ~~~~~~~~~~~~~
@@ -2448,7 +2465,7 @@ To make API calls to `Akismet`_ I use the `akismet.py`_ library written by
 
         return is_spam
 
-.. _`Akismet`: http://akismet.com/faq/
+.. _`Akismet`: https://akismet.com/
 .. _`akismet.py`: http://www.voidspace.org.uk/downloads/akismet.py
 .. _`Michael Foord`: http://www.voidspace.org.uk/
 .. _`exponential backoff`: https://en.wikipedia.org/wiki/Exponential_backoff
