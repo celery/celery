@@ -154,6 +154,53 @@ class test_shutdown_handler:
         _shutdown_handler(worker, sig=sig, how=how, callback=callback, exitcode=exitcode)
         return self.fake_signals[sig]
 
+    def test_gevent_cold_shutdown_can_yield(self, monkeypatch):
+        gevent = pytest.importorskip('gevent')
+        from celery.concurrency.gevent import TaskPool
+
+        observed = []
+
+        def cold_shutdown(worker):
+            gevent.sleep(0)
+            observed.append(state.should_terminate)
+
+        monkeypatch.setattr('celery.apps.worker.on_cold_shutdown', cold_shutdown)
+        worker = Mock(pool=TaskPool())
+        worker._cold_shutdown_scheduled = False
+        quit_handler = self._install(worker, sig='SIGQUIT', how='Cold', callback=cold_shutdown)
+        term_handler = self._install(worker, sig='SIGTERM', how='Cold', callback=cold_shutdown)
+
+        gevent.get_hub().loop.run_callback(quit_handler)
+        gevent.get_hub().loop.run_callback(term_handler)
+        with gevent.Timeout(2):
+            while state.should_terminate is None:
+                gevent.sleep(0.001)
+
+        assert observed == [None]
+        assert state.should_terminate == 0
+
+    def test_threads_cold_shutdown_runs_outside_the_signal_handler(self, monkeypatch):
+        from celery.concurrency.thread import TaskPool
+
+        callback = Mock()
+        monkeypatch.setattr('celery.apps.worker.on_cold_shutdown', callback)
+        pool = TaskPool(limit=1)
+        worker = Mock(pool=pool)
+        worker._cold_shutdown_scheduled = False
+        try:
+            handler = self._install(worker, how='Cold', callback=callback)
+            handler()
+            handler()
+            callback.assert_not_called()
+            assert state.should_terminate is None
+            worker.consumer.call_soon.assert_called_once()
+            run_shutdown, from_signal = worker.consumer.call_soon.call_args.args
+            run_shutdown(from_signal)
+            callback.assert_called_once_with(worker)
+            assert state.should_terminate == 0
+        finally:
+            pool.stop()
+
     @patch('celery.apps.worker.current_process')
     def test_sets_should_stop_even_if_safe_say_raises(self, current_process):
         current_process.return_value._name = 'MainProcess'

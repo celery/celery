@@ -31,7 +31,8 @@ class test_thread_TaskPool:
         with pytest.raises(RuntimeError):
             x.on_apply(operator.add, (2, 2), {}, noop, noop)
 
-    def test_on_stop_cancels_pending_futures(self):
+    @pytest.mark.parametrize('shutdown_method', ['on_stop', 'terminate'])
+    def test_shutdown_cancels_pending_futures(self, shutdown_method):
         import threading
 
         from celery.concurrency import thread
@@ -58,7 +59,7 @@ class test_thread_TaskPool:
 
             # Stop the pool in a background thread — should cancel the pending future
             def _run_on_stop():
-                x.on_stop()
+                getattr(x, shutdown_method)()
 
             stop_thread = threading.Thread(target=_run_on_stop)
             stop_thread.start()

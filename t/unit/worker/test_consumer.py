@@ -961,6 +961,21 @@ class test_Consumer(ConsumerTestCase):
             active_requests.clear()
             successful_requests.clear()
 
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_cancel_active_requests_leaves_running_thread_tasks_alone(self, monkeypatch):
+        from celery.concurrency.thread import TaskPool
+
+        c = self.get_consumer()
+        request = Mock()
+        request.task.acks_late = False
+        monkeypatch.setattr('celery.worker.consumer.consumer.active_requests', {request})
+        c.pool = TaskPool(limit=1)
+        try:
+            c.cancel_active_requests()
+            request.cancel.assert_not_called()
+        finally:
+            c.pool.stop()
+
     def test_ensure_connected_uses_legacy_retry_when_startup_retry_is_undefined(self):
         c = self.get_consumer()
         c.first_connection_attempt = True
