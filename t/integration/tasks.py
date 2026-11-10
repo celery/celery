@@ -91,6 +91,12 @@ def add_ignore_result(x, y):
     return x + y
 
 
+@shared_task(ignore_result=False)
+def add_with_result(x, y):
+    """Add two numbers."""
+    return x + y
+
+
 @shared_task
 def raise_error(*args):
     """Deliberately raise an error."""
@@ -153,6 +159,25 @@ def sum_and_record(self, values, redis_key):
 def add_replaced(self, x, y):
     """Add two numbers (via the add task)."""
     raise self.replace(add.s(x, y))
+
+
+@shared_task(bind=True)
+def record_replaced_task_nesting(self, replacements, nesting=None):
+    """Record the nesting level across successive task replacements."""
+    if nesting is None:
+        nesting = []
+    nesting.append(self.request.replaced_task_nesting)
+    if replacements:
+        replacement = record_replaced_task_nesting.s(replacements - 1, nesting)
+        # Keep the caller's result queue when using the RPC backend.
+        return self.replace(replacement.set(reply_to=self.request.reply_to))
+    return nesting
+
+
+@shared_task(bind=True)
+def add_replaced_with_chain(self, x, y):
+    """Add two numbers (via a chain of the add and identity tasks)."""
+    raise self.replace(chain(add.s(x, y), identity.s()))
 
 
 @shared_task(bind=True)
@@ -270,6 +295,26 @@ def retry_unpickleable(self, foo, bar, *, retry_kwargs):
     raise self.retry(exc=UnpickleableException(foo, bar), **retry_kwargs)
 
 
+@shared_task(bind=True, max_retries=1)
+def retry_with_args_after_kwargs(self, foo, bar, label=None):
+    if not self.request.retries:
+        raise self.retry(args=(foo + 1, bar + 1), countdown=0)
+    return {
+        'foo': foo, 'bar': bar, 'label': label,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
+
+
+@shared_task(bind=True, max_retries=1)
+def retry_with_kwargs_after_args(self, foo, bar):
+    if not self.request.retries:
+        raise self.retry(kwargs={'foo': foo + 1}, countdown=0)
+    return {
+        'foo': foo, 'bar': bar,
+        'retries': self.request.retries, 'is_eager': self.request.is_eager,
+    }
+
+
 @shared_task(bind=True, expires=120.0, max_retries=1)
 def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     """Task that fails and is retried. Returns the number of retries."""
@@ -278,6 +323,20 @@ def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     raise self.retry(countdown=countdown,
                      expires=expires,
                      max_retries=max_retries)
+
+
+@shared_task(bind=True, ignore_result=True)
+def retry_once_ignore_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
+
+
+@shared_task(bind=True, ignore_result=False)
+def retry_once_with_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
 
 
 @shared_task(bind=True, max_retries=1)

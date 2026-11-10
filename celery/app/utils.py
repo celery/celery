@@ -146,7 +146,9 @@ class Settings(ConfigurationView):
         return Settings({}, self.maps[:-1])
 
     def value_set_for(self, key):
-        return key in self.without_defaults()
+        self.finalize()
+        # Also find settings given with a namespace or an old setting name.
+        return key in Settings({}, self.maps[:-1], self._keys, self.prefix)
 
     def find_option(self, name, namespace=''):
         """Search for option by name.

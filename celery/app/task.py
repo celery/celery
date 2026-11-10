@@ -1,4 +1,5 @@
 """Task implementation: request context and the task base class."""
+import inspect
 import sys
 import types
 
@@ -70,6 +71,28 @@ def _reprtask(task, fmt=None, flags=None):
         task, flags=_strflags(flags),
         app=appstr(task._app) if task._app else None,
     )
+
+
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
 
 
 class Context:
@@ -708,8 +731,6 @@ class Task:
             args, kwargs = self._dump_pydantic_arguments(args, kwargs)
 
         options.setdefault('ignore_result', self.ignore_result)
-        if self.priority:
-            options.setdefault('priority', self.priority)
 
         app = self._get_app()
         if app.conf.task_always_eager:
@@ -765,7 +786,14 @@ class Task:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        options = {**request.as_execution_options(), **extra_options}
+        options = {
+            **request.as_execution_options(),
+            # Keep the caller's ignore_result for the retry.  Read through
+            # get_actual_ignore_result(): Context's class-level False
+            # default would otherwise look like an explicit override.
+            'ignore_result': get_actual_ignore_result(self, request),
+            **extra_options
+        }
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:
@@ -863,6 +891,43 @@ class Task:
         if not eta and countdown is None:
             countdown = self.default_retry_delay
 
+        # Explicit args/kwargs can change how a task's parameters are passed
+        # on retry. Keep inherited values that do not conflict with the new
+        # calling convention (see #6494).
+        if ((args is not None and kwargs is None and request.kwargs) or
+                (kwargs is not None and args is None and request.args)):
+            try:
+                signature = inspect.signature(self.run)
+            except (TypeError, ValueError):
+                pass  # Let normal task argument validation handle this case.
+            else:
+                if args is not None:
+                    positional = [
+                        p for p in signature.parameters.values()
+                        if p.kind in (inspect.Parameter.POSITIONAL_ONLY,
+                                      inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                    ]
+                    kwargs = dict(request.kwargs)
+                    for p in positional[:len(args)]:
+                        if p.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                            kwargs.pop(p.name, None)
+                else:
+                    # An explicit keyword may replace an inherited positional
+                    # argument. Bind inherited values to names so *args and
+                    # positional-only parameters keep their original positions.
+                    try:
+                        bound = signature.bind_partial(*request.args)
+                    except TypeError:
+                        pass  # Let normal task argument validation handle this case.
+                    else:
+                        kwargs = dict(kwargs)
+                        for name in list(kwargs):
+                            if (name in bound.arguments and
+                                    signature.parameters[name].kind ==
+                                    inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                                bound.arguments[name] = kwargs.pop(name)
+                        args, kwargs = bound.args, {**bound.kwargs, **kwargs}
+
         is_eager = request.is_eager
         S = self.signature_from_request(
             request, args, kwargs,
@@ -952,7 +1017,7 @@ class Task:
                 None if self.time_limit is None and self.soft_time_limit is None
                 else [self.time_limit, self.soft_time_limit]
             ),
-            'ignore_result': options.get('ignore_result', False),
+            'ignore_result': options.get('ignore_result', self.ignore_result),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),
@@ -1093,12 +1158,13 @@ class Task:
             sig.link(callback)
         for errback in maybe_list(self.request.errbacks) or []:
             sig.link_error(errback)
-        # If the replacement signature is a chain, we need to push callbacks
+        # If the replacement signature is a chain, we need to move callbacks
         # down to the final task so they run at the right time even if we
-        # proceed to link further tasks from the original request below
+        # proceed to link further tasks from the original request below.
+        # Leaving them on the chain as well would link them twice.
         if isinstance(sig, _chain) and "link" in sig.options:
             final_task_links = sig.tasks[-1].options.setdefault("link", [])
-            final_task_links.extend(maybe_list(sig.options["link"]))
+            final_task_links.extend(maybe_list(sig.options.pop("link")))
         # We need to freeze the replacement signature with the current task's
         # ID to ensure that we don't disassociate it from the existing task IDs
         # which would break previously constructed results objects.
