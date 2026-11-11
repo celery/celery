@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from kombu.utils import symbol_by_name
 from kombu.utils.functional import retry_over_time
@@ -80,6 +80,21 @@ is redis://. A Redis SSL connection URL should use the scheme rediss://.
 E_REDIS_SSL_CERT_REQS_MISSING_INVALID = """
 A rediss:// URL must have parameter ssl_cert_reqs and this must be set to \
 CERT_REQUIRED, CERT_OPTIONAL, or CERT_NONE
+"""
+
+E_REDIS_CLUSTER_MISSING = """
+The installed redis library has no RedisCluster client, which the \
+'cluster' result backend transport option requires.
+"""
+
+E_REDIS_CLUSTER_DB = """
+Redis Cluster only has database 0: the result backend URL must not select \
+another database when the 'cluster' transport option is enabled.
+"""
+
+E_REDIS_CLUSTER_SOCKET = """
+Redis Cluster does not support Unix socket connections: the 'cluster' \
+transport option requires a redis:// or rediss:// result backend URL.
 """
 
 E_LOST = 'Connection to Redis lost: Retry (%s/%s) %s.'
@@ -207,6 +222,19 @@ def _socket_readable(sock, timeout):
         return True
 
 
+def _hash_tag(group_id):
+    """Wrap the id in braces, so Redis Cluster hashes only that part of a key."""
+    if isinstance(group_id, UUID):
+        group_id = str(group_id)
+    if isinstance(group_id, bytes):
+        if group_id.startswith(b'{') and group_id.endswith(b'}'):
+            return group_id
+        return b'{' + group_id + b'}'
+    if group_id.startswith('{') and group_id.endswith('}'):
+        return group_id
+    return '{' + group_id + '}'
+
+
 class ResultConsumer(BaseResultConsumer):
     _pubsub = None
 
@@ -238,7 +266,7 @@ class ResultConsumer(BaseResultConsumer):
         # the fork, so the child starts with a fresh one.
         self._reset_sync()
         try:
-            self.backend.client.connection_pool.reset()
+            self._reset_connection_pool()
             with self._locked():
                 if self._pubsub is not None:
                     self._pubsub.close()
@@ -246,14 +274,23 @@ class ResultConsumer(BaseResultConsumer):
             logger.warning(str(e))
         super().on_after_fork()
 
+    def _reset_connection_pool(self):
+        # redis.RedisCluster has no ``connection_pool``: it keeps one pool
+        # per node and drops them itself when a node becomes unreachable.
+        pool = getattr(self.backend.client, 'connection_pool', None)
+        if pool is not None:
+            pool.reset()
+
     def _reconnect_pubsub(self):
         with self._locked():
             self._pubsub = None
-            self.backend.client.connection_pool.reset()
+            self._reset_connection_pool()
             # task state might have changed when the connection was down so we
             # retrieve meta for all subscribed tasks before going into pubsub mode
             if self.subscribed_to:
-                metas = self.backend.client.mget(self.subscribed_to)
+                # through the backend, so a cluster client can split the
+                # keys by slot instead of sending one CROSSSLOT MGET.
+                metas = self.backend.mget(list(self.subscribed_to))
                 metas = [meta for meta in metas if meta]
                 for meta in metas:
                     self.on_state_change(self._decode_result(meta), None)
@@ -270,21 +307,25 @@ class ResultConsumer(BaseResultConsumer):
             if self.subscribed_to:
                 self._pubsub.subscribe(*self.subscribed_to)
             else:
-                # redis-py < 5.3.0 requires ``command_name`` as a positional
-                # argument to ``ConnectionPool.get_connection``. The argument was
-                # made optional (and ignored) in 5.3.0+, so passing it stays
-                # compatible across both ranges (#10294).
-                try:
-                    self._pubsub.connection = (
-                        self._pubsub.connection_pool.get_connection()
-                    )
-                except TypeError:
-                    self._pubsub.connection = (
-                        self._pubsub.connection_pool.get_connection('pubsub')
-                    )
-                # even if there is nothing to subscribe, we should not lose the callback after connecting.
-                # The on_connect callback will re-subscribe to any channels we previously subscribed to.
-                self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
+                self._bind_idle_pubsub()
+
+    def _bind_idle_pubsub(self):
+        # even if there is nothing to subscribe, we should not lose the callback after connecting.
+        # The on_connect callback will re-subscribe to any channels we previously subscribed to.
+        pool = self._pubsub.connection_pool
+        if pool is None:
+            # A cluster pubsub picks its node, and so its pool, from the
+            # first channel subscribed to; there is nothing to bind yet.
+            return
+        # redis-py < 5.3.0 requires ``command_name`` as a positional
+        # argument to ``ConnectionPool.get_connection``. The argument was
+        # made optional (and ignored) in 5.3.0+, so passing it stays
+        # compatible across both ranges (#10294).
+        try:
+            self._pubsub.connection = pool.get_connection()
+        except TypeError:
+            self._pubsub.connection = pool.get_connection('pubsub')
+        self._pubsub.connection.register_connect_callback(self._pubsub.on_connect)
 
     def _reconnect(self):
         """Re-establish the Redis pub/sub connection with retry."""
@@ -781,11 +822,26 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
         if not task_join_will_block():
             self.result_consumer.consume_from(task_id)
 
+    def _client_is_cluster(self):
+        cluster_cls = getattr(self.redis, 'RedisCluster', None)
+        return cluster_cls is not None and isinstance(self.client, cluster_cls)
+
     def get(self, key):
         return self.client.get(key)
 
     def mget(self, keys):
+        if self._client_is_cluster():
+            # task keys hash to different slots, which one MGET cannot span
+            return self.client.mget_nonatomic(keys)
         return self.client.mget(keys)
+
+    def get_key_for_group(self, group_id, key=''):
+        if group_id and self._client_is_cluster():
+            # The chord scripts touch every suffix of this key in one call,
+            # which a cluster only allows when they hash to the same slot:
+            # it hashes only the part between the braces.
+            group_id = _hash_tag(group_id)
+        return super().get_key_for_group(group_id, key)
 
     def ensure(self, fun, args, **policy):
         retry_policy = dict(self.retry_policy, **policy)
@@ -816,6 +872,14 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
     def _set(self, key, value, expires=None):
         if expires is None:
             expires = self.expires
+        if self._client_is_cluster():
+            # redis-py refuses PUBLISH inside a cluster pipeline.
+            if expires:
+                self.client.set(key, value, ex=expires)
+            else:
+                self.client.set(key, value)
+            self.client.publish(key, value)
+            return
         with self.client.pipeline() as pipe:
             if expires:
                 pipe.setex(key, expires, value)
@@ -1069,9 +1133,30 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     client.delete(skey)
 
     def _create_client(self, **params):
+        if self._transport_options.get('cluster'):
+            return self._create_cluster_client(**params)
         return self._get_client()(
             connection_pool=self._get_pool(**params),
         )
+
+    def _create_cluster_client(self, **params):
+        cluster_cls = getattr(self.redis, 'RedisCluster', None)
+        if cluster_cls is None:
+            raise ImproperlyConfigured(E_REDIS_CLUSTER_MISSING.strip())
+        if 'path' in params:
+            raise ImproperlyConfigured(E_REDIS_CLUSTER_SOCKET.strip())
+        # a cluster has no databases; redis-py rejects the argument outright
+        if int(params.pop('db', 0) or 0):
+            raise ImproperlyConfigured(E_REDIS_CLUSTER_DB.strip())
+        # the cluster client builds its own per-node pools and connections
+        connection_class = params.pop('connection_class', None)
+        if connection_class is not None and issubclass(
+                connection_class, redis.SSLConnection):
+            params['ssl'] = True
+        if not params.get('retry_on_timeout'):
+            # deprecated by redis-py, and the default when left out
+            params.pop('retry_on_timeout', None)
+        return cluster_cls(**params)
 
     def _get_client(self):
         return self.redis.StrictRedis

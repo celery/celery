@@ -265,6 +265,7 @@ def test_chord_part_return_records_each_header_task_once(
         pytest.skip('Requires redis result backend.')
 
     app.conf.result_backend_transport_options = dict(
+        app.conf.result_backend_transport_options,
         result_chord_ordered=ordered,
     )
     backend = app.backend

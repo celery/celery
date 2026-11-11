@@ -588,6 +588,28 @@ Assuming a folder structure such as:
 In the previous example, we are using the Python 3.12 image built from this
 repository and mounting the Celery code base as well as our custom project.
 
+The ``redis-cluster`` service is a single-node Redis Cluster, started by
+:file:`docker/redis-cluster/entrypoint.sh`. To run the integration tests with
+the Redis result backend on that cluster (the ``redis_cluster`` tox
+environment), point the backend at it and enable the ``cluster`` transport
+option:
+
+.. code-block:: console
+
+    $ docker compose -f docker/docker-compose.yml run --rm \
+        -e TEST_BACKEND=redis://redis-cluster:7000/0 -e TEST_BACKEND_CLUSTER=1 \
+        celery312 pytest t/integration
+
+The same entrypoint can run the cluster without Docker Compose, for example
+on port 7000 of the host:
+
+.. code-block:: console
+
+    $ docker run --detach --network host -e REDIS_CLUSTER_PORT=7000 \
+        -v "$PWD/docker/redis-cluster/entrypoint.sh:/entrypoint.sh:ro" \
+        --entrypoint /bin/sh redis:latest /entrypoint.sh
+    $ TEST_BACKEND=redis://localhost:7000/0 TEST_BACKEND_CLUSTER=1 pytest t/integration
+
 .. _`Docker`: https://www.docker.com/
 .. _`docker-compose`: https://docs.docker.com/compose/
 

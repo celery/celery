@@ -2468,7 +2468,10 @@ class test_chord:
         # Use group ID to get preserved group result.
         backend = fail.app.backend
         j_key = backend.get_key_for_group(original_group_id, '.j')
-        redis_connection = get_redis_connection()
+        # Read it through the backend's own client: the result backend may
+        # be a different server (e.g. a Redis Cluster) than the one the
+        # redis_* helper tasks use.
+        redis_connection = backend.client
         # The redis key is either a list or a zset (a redis sorted set) depending on configuration
         if manager.app.conf.result_backend_transport_options.get(
             'result_chord_ordered', True
