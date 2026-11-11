@@ -555,8 +555,27 @@ class test_chunks(CanvasCase):
         assert call_kwargs['queue'] == 'q1'
         assert call_kwargs['countdown'] == 3
         assert call_kwargs['task_id'] == task_id
-        assert call_kwargs['link'] == [callback]
         assert call_kwargs['route_name'] == self.add.name
+
+    def test_apply_async_does_not_pass_link_to_group(self):
+        """A group cannot carry link/link_error; publishing must not fail."""
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+        s.link(self.add.s(1))
+        s.link_error(self.add.s(2))
+
+        s.group = Mock(name='group')
+        s.apply_async()
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert 'link' not in call_kwargs
+        assert 'link_error' not in call_kwargs
+
+    def test_apply_async_call_route_name_takes_precedence(self):
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+
+        s.group = Mock(name='group')
+        s.apply_async(route_name='custom-route')
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom-route'
 
     def test_apply_async_call_options_override_signature_options(self):
         s = self.add.chunks(zip(range(100), range(100)), 10)
