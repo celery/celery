@@ -1975,6 +1975,32 @@ class test_ConnectionStep:
 
         assert c.connection is None
 
+    # ------------------------------------------------------------------
+    # info() - consumed by `inspect stats`
+    # ------------------------------------------------------------------
+
+    def test_info_represents_unserializable_values_as_repr(self):
+        """info() JSON-represents values the reply serializer cannot encode.
+
+        broker_transport_options entries such as a redis-py Retry object made
+        kombu's dumps() raise EncodeError, so `inspect stats` got no reply
+        and the worker dropped its pidbox (#11056).
+        """
+        step, c = self._get_step_and_consumer()
+        unserializable = object()
+        conn = Mock(name='conn')
+        conn.info.return_value = {
+            'hostname': 'localhost',
+            'transport_options': {'retry': unserializable},
+        }
+        c.connection = conn
+
+        result = step.info(c)
+
+        assert result['broker']['hostname'] == 'localhost'
+        assert result['broker']['transport_options']['retry'] == \
+            repr(unserializable)
+
     def test_close_connection_is_safe_when_none(self):
         """close_connection() does not crash when c.connection is None."""
         step, c = self._get_step_and_consumer()
