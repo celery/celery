@@ -47,6 +47,7 @@ class _RealConsumer(consumer_module.Consumer):
         # whole test session. It already starts out empty.
         self.task_consumer = Mock()
         self.task_buckets = defaultdict(lambda: None)
+        self._limit_timers = {}
         self.qos = Mock()
         self.on_task_request = Mock()
         self.disable_rate_limits = True

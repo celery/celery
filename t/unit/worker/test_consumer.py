@@ -4,7 +4,7 @@ import socket
 from collections import deque
 from time import monotonic
 from types import SimpleNamespace
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 import pytest
 from amqp import ChannelError
@@ -12,6 +12,7 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
 from kombu.asynchronous import Hub
 from kombu.asynchronous.timer import Timer
+from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -55,6 +56,7 @@ def on_close_ctx():
     consumer.controller = Mock()
     consumer.controller.semaphore = Mock()
     consumer.task_buckets = {}
+    consumer._limit_timers = {}
     consumer.pool = Mock()
     consumer.pool.flush = Mock()
 
@@ -436,7 +438,7 @@ class test_Consumer(ConsumerTestCase):
         assert c._limit_order == limit_order + 1
         bucket.can_consume.assert_called_with(4)
         c.timer.call_after.assert_called_with(
-            3.33, c._schedule_bucket_request, (bucket,),
+            3.33, c._on_bucket_wakeup, (bucket, ANY),
             priority=c._limit_order,
         )
         bucket.expected_time.assert_called_with(4)
@@ -472,6 +474,129 @@ class test_Consumer(ConsumerTestCase):
             c.qos.decrement_eventually.assert_called_with()
             bucket.add.assert_called_with((request, 1))
             task_reserved.assert_called_with(bucket)
+
+    def waiting_bucket(self):
+        bucket = Mock(name='bucket')
+        bucket.contents = deque()
+        bucket.add = bucket.contents.append
+        bucket.pop = bucket.contents.popleft
+        bucket.can_consume.return_value = False
+        bucket.expected_time.return_value = 1.0
+        return bucket
+
+    def fire_bucket_timer(self, c, bucket):
+        """Run the callback of the last timer armed for ``bucket``."""
+        _, callback, args = c.timer.call_after.call_args.args
+        assert args[0] is bucket
+        callback(*args)
+
+    def test_limit_task_arms_one_timer_per_bucket(self):
+        # Each request that waits for tokens must not arm a timer of its
+        # own: every such timer re-arms itself until the bucket is empty,
+        # so on a busy queue the timers would grow with the requests.
+        c = self.get_consumer()
+        c.timer = Timer()
+        bucket = TokenBucket(fill_rate=1, capacity=1)
+        assert bucket.can_consume(1)  # use the only token
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            for _ in range(10):
+                c._limit_task(Mock(), bucket, 1)
+
+        move_to_pool.assert_not_called()
+        assert len(bucket.contents) == 10
+        assert len(c.timer.queue) == 1
+
+    def test_limit_task_arms_a_timer_for_each_bucket(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        first, second = self.waiting_bucket(), self.waiting_bucket()
+
+        c._limit_task(Mock(), first, 1)
+        c._limit_task(Mock(), second, 1)
+        c._limit_task(Mock(), first, 1)
+
+        assert c.timer.call_after.call_count == 2
+
+    def test_on_bucket_wakeup_arms_the_next_timer(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        first, second = Mock(), Mock()
+        c._limit_task(first, bucket, 1)
+        c._limit_task(second, bucket, 1)
+        assert c.timer.call_after.call_count == 1
+        bucket.can_consume.side_effect = [True, False]
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            self.fire_bucket_timer(c, bucket)
+
+        move_to_pool.assert_called_once_with(first)
+        assert list(bucket.contents) == [(second, 1)]
+        assert c.timer.call_after.call_count == 2
+        assert c._limit_timers[bucket][1] is c.timer.call_after.return_value
+
+    def test_on_bucket_wakeup_of_a_replaced_timer_does_nothing(self):
+        # If two timers were armed for one bucket, for example by the timer
+        # thread and the consumer at the same time, the timer that is no
+        # longer recorded must stop.  Otherwise both chains of timers would
+        # serve the bucket until it is empty.
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        c._limit_task(Mock(), bucket, 1)
+        _, callback, stale_args = c.timer.call_after.call_args.args
+        c._limit_timers.clear()
+        c._limit_task(Mock(), bucket, 1)  # arms the recorded timer
+        armed = c._limit_timers[bucket]
+
+        callback(*stale_args)
+
+        assert c.timer.call_after.call_count == 2
+        assert c._limit_timers[bucket] is armed
+        bucket.can_consume.assert_called_with(1)
+        assert len(bucket.contents) == 2
+
+    def test_on_bucket_wakeup_forgets_the_timer_of_an_empty_bucket(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        request = Mock()
+        c._limit_task(request, bucket, 1)
+        bucket.can_consume.return_value = True
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            self.fire_bucket_timer(c, bucket)
+
+        move_to_pool.assert_called_once_with(request)
+        assert c.timer.call_after.call_count == 1
+        assert bucket not in c._limit_timers
+
+        c._limit_task(Mock(), bucket, 1)  # tokens are available
+
+        assert c.timer.call_after.call_count == 1
+
+    def test_limit_task_arms_a_timer_again_after_on_close(self):
+        # on_close() empties the buckets and cancels their timers, so the
+        # cancelled timers never fire.  A bucket must not count as armed
+        # after that, or its requests would wait for ever.
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        c._limit_task(Mock(), bucket, 1)
+        _, entry = c._limit_timers[bucket]
+
+        c.on_close()
+        c._limit_task(Mock(), bucket, 1)
+
+        c.timer.cancel.assert_called_once_with(entry)
+        assert c.timer.call_after.call_count == 2
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
@@ -828,6 +953,32 @@ class test_Consumer(ConsumerTestCase):
         assert state.requests.get(running.id) is running
         assert running in state.active_requests
         assert running not in state.scheduled_requests
+
+    def test_on_close_cancels_and_forgets_rate_limit_timers(self, on_close_ctx):
+        """The buckets are emptied, so their pending timers have nothing
+        to do.  They must be cancelled through ``self.timer.cancel(entry)``
+        and forgotten, so that the next connection can arm new ones.
+        """
+        state, Consumer, consumer = on_close_ctx
+        bucket, entry = Mock(name='bucket'), Mock(name='entry')
+        consumer._limit_timers = {bucket: (object(), entry)}
+
+        Consumer.on_close(consumer)
+
+        consumer.timer.cancel.assert_called_once_with(entry)
+        entry.cancel.assert_not_called()
+        assert consumer._limit_timers == {}
+
+    def test_on_close_forgets_rate_limit_timers_if_cancel_raises(self, on_close_ctx):
+        state, Consumer, consumer = on_close_ctx
+        consumer.timer.cancel.side_effect = RuntimeError('boom')
+        consumer._limit_timers = {
+            Mock(name='bucket'): (object(), Mock(name='entry')),
+        }
+
+        Consumer.on_close(consumer)
+
+        assert consumer._limit_timers == {}
 
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
@@ -1326,6 +1477,7 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.controller.semaphore = Mock()
         consumer.task_buckets = {}
+        consumer._limit_timers = {}
         consumer.initial_prefetch_count = 1
         consumer.connection = Mock()
         consumer.connection.connection_errors = ()
