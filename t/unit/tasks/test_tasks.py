@@ -598,6 +598,17 @@ class test_task_retries(TasksCase):
         finally:
             task.pop_request()
 
+    @pytest.mark.parametrize('override', [True, False])
+    def test_signature_from_request__keeps_ignore_result(self, override):
+        self.retry_task.push_request(ignore_result=override)
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is override
+
+    def test_signature_from_request__ignore_result_default(self):
+        self.retry_task.push_request()
+        sig = self.retry_task.signature_from_request()
+        assert sig.options['ignore_result'] is self.retry_task.ignore_result
+
     def test_signature_from_request__passes_headers(self):
         self.retry_task.push_request()
         self.retry_task.request.headers = {'custom': 10.1}
@@ -1897,6 +1908,22 @@ class test_apply_task(TasksCase):
         assert f.traceback
         with pytest.raises(KeyError):
             f.get()
+
+    @pytest.mark.parametrize('ignore_result, options, expected_state', [
+        (True, {}, 'PENDING'),
+        (False, {}, 'SUCCESS'),
+        (True, {'ignore_result': False}, 'SUCCESS'),
+        (False, {'ignore_result': True}, 'PENDING'),
+    ])
+    def test_apply_respects_ignore_result(self, ignore_result, options, expected_state):
+        self.app.conf.task_store_eager_result = True
+
+        @self.app.task(shared=False, ignore_result=ignore_result)
+        def task():
+            pass
+
+        result = task.apply(**options)
+        assert self.app.AsyncResult(result.id).state == expected_state
 
     def test_apply_eager_populates_request_task(self):
         task_to_apply = self.task_check_request_context
