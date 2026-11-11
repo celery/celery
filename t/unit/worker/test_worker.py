@@ -973,6 +973,21 @@ class test_WorkController(ConsumerCase):
         )
         assert worker.concurrency == 4
 
+    def test_on_start_warns_when_eta_task_limit_is_unset(self):
+        self.app.conf.worker_eta_task_limit = None
+        worker = self.create_worker()
+        worker.on_start()
+        self.logger.warning.assert_any_call(worker_module.ETA_TASK_LIMIT_UNSET)
+
+    def test_on_start_does_not_warn_when_eta_task_limit_is_set(self):
+        self.app.conf.worker_eta_task_limit = 100
+        worker = self.create_worker()
+        worker.on_start()
+        assert all(
+            c.args != (worker_module.ETA_TASK_LIMIT_UNSET,)
+            for c in self.logger.warning.call_args_list
+        )
+
     def test_concurrency_string_int_is_coerced(self):
         # Env vars and direct ``app.conf.worker_concurrency = "4"`` set
         # the value as a string; worker.setup_instance must coerce it.

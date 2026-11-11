@@ -3770,7 +3770,8 @@ until some of the existing ETA tasks are executed.
 This setting helps prevent memory exhaustion when a queue contains a large number
 of tasks with ETA/countdown values, as these tasks are held in memory until their
 execution time. Without this limit, workers may fetch thousands of ETA tasks into
-memory, potentially causing out-of-memory issues.
+memory, potentially causing out-of-memory issues. A worker started without
+this setting logs a warning saying so.
 
 .. note::
 
