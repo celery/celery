@@ -29,7 +29,7 @@ from weakref import WeakValueDictionary, ref
 
 from billiard import pool as _pool
 from billiard.compat import isblocking, setblocking
-from billiard.pool import ACK, NACK, RUN, TERMINATE, WorkersJoined
+from billiard.pool import ACK, EX_RECYCLE, NACK, RUN, TERMINATE, WorkersJoined
 from billiard.queues import _SimpleQueue
 from kombu.asynchronous import ERR, WRITE
 from kombu.serialization import pickle as _pickle
@@ -767,6 +767,17 @@ class AsynPool(_pool.Pool):
             """Called when a worker process exits."""
             if getattr(proc, 'dead', None):
                 return
+            if proc.exitcode == EX_RECYCLE:
+                # Issue #8916: billiard logs a recycle after
+                # max_tasks_per_child only at DEBUG, and nothing in the
+                # parent says the child was replaced.
+                logger.info(
+                    'Child process pid:%r recycled (max_tasks_per_child=%r, '
+                    'max_memory_per_child=%r)%s',
+                    proc.pid, self._maxtasksperchild,
+                    getattr(self, '_max_memory_per_child', None),
+                    ', starting a replacement' if self._state == RUN else '',
+                )
             process_flush_queues(proc)
             _remove_from_index(
                 proc.outq._reader, proc, fileno_to_outq, remove_reader,
