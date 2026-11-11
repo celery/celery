@@ -175,8 +175,19 @@ class DummyClient:
     def delete(self, key, *args, **kwargs):
         self.cache.pop(key, None)
 
+    def delete_multi(self, keys):
+        for key in keys:
+            self.cache.pop(key, None)
+
     def incr(self, key, delta=1):
         return self.cache.incr(key, delta)
+
+    def add(self, key, value, *args, **kwargs):
+        with self.cache.mutex:
+            if key in self.cache:
+                return False
+            self.cache[key] = value
+            return True
 
     def touch(self, key, expire):
         pass
@@ -198,6 +209,7 @@ class CacheBackend(KeyValueStoreBackend):
     supports_autoexpire = True
     supports_native_join = True
     implements_incr = True
+    implements_add = True
 
     def __init__(self, app, expires=None, backend=None,
                  options=None, url=None, **kwargs):
@@ -235,6 +247,9 @@ class CacheBackend(KeyValueStoreBackend):
     def delete(self, key):
         return self.client.delete(key)
 
+    def _delete_keys(self, keys):
+        self.client.delete_multi(keys)
+
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])
         self.client.set(chord_key, 0, self.chord_expires or 0)
@@ -243,6 +258,14 @@ class CacheBackend(KeyValueStoreBackend):
 
     def incr(self, key):
         return self.client.incr(key, 1)
+
+    def _add_chord_key(self, key, token):
+        token = ensure_bytes(token)
+        # memcached reads a longer expiry as an absolute time.
+        expires = min(self._chord_key_expires(), MAX_RELATIVE_EXPIRES)
+        if self.client.add(key, token, expires, noreply=False):
+            return True
+        return self.client.get(key) == token
 
     def expire(self, key, value):
         return self.client.touch(key, value or 0)

@@ -1504,6 +1504,22 @@ Cache backend settings
     Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
     has been removed.
 
+.. versionchanged:: 5.7
+
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks, and a
+    chord whose header result was lost fails. The backend adds a key for
+    each header task that returns, and one for the chord when it completes,
+    with the memcached ``add`` command, and keeps them for twice
+    :setting:`result_expires`, or twice :setting:`result_chord_expires` when
+    that is longer, but at most 30 days. It deletes the header tasks' keys
+    when the chord completes.
+
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
+
 .. note::
 
     The cache backend requires the :pypi:`pymemcache` library, which can be
@@ -2316,6 +2332,24 @@ Timeout in seconds for reading of an azure block blob.
 GCS backend settings
 --------------------
 
+.. versionchanged:: 5.7
+
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks, and a
+    chord whose header result was lost fails. The backend creates a
+    Firestore document for each header task that returns, and one for the
+    chord when it completes, and keeps them for twice
+    :setting:`result_expires`, :setting:`result_chord_expires` or
+    ``gcs_ttl``, whichever is longest. It deletes the header tasks'
+    documents when the chord completes. When a document already exists, the
+    backend reads it, so the service account also needs read access to the
+    Firestore collection.
+
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
+
 .. note::
 
     This gcs backend driver requires :pypi:`google-cloud-storage` and :pypi:`google-cloud-firestore`.
@@ -2469,6 +2503,24 @@ Result is always serialized as text.
 
 AWS DynamoDB backend settings
 -----------------------------
+
+.. versionchanged:: 5.7
+
+    A chord now completes once, after every header task stored its result,
+    even when the broker delivers a header task again. A copy that returns
+    after the chord completed no longer calls the body's errbacks, and a
+    chord whose header result was lost fails. The backend stores an item for
+    each header task that returns, and one for the chord when it completes,
+    with a conditional ``PutItem``. It deletes the header tasks' items when
+    the chord completes. With ``ttl_seconds`` set, it keeps the others for
+    twice :setting:`result_expires`, :setting:`result_chord_expires` or
+    ``ttl_seconds``, whichever is longest. Without ``ttl_seconds`` the
+    chord's item, and the items of a chord that never completes, are not
+    removed, as results aren't.
+
+    Upgrade the workers of a chord together, or let running chords finish
+    first. While workers with and without this change share a chord, a
+    header task delivered twice can leave it pending or run its body twice.
 
 .. note::
 

@@ -4,6 +4,7 @@ from ipaddress import ip_address
 from time import sleep, time
 from typing import Any, Dict
 
+from kombu.utils.encoding import bytes_to_str, str_to_bytes
 from kombu.utils.url import _parse_url as parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -67,6 +68,7 @@ class DynamoDBBackend(KeyValueStoreBackend):
     _available_fields = None
 
     implements_incr = True
+    implements_add = True
 
     def __init__(self, url=None, table_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -543,6 +545,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
         request_parameters = self._prepare_get_request(key)
         self.client.delete_item(**request_parameters)
 
+    def _delete_keys(self, keys):
+        # Best effort: a key the service doesn't process is left to its TTL.
+        requests = [
+            {'DeleteRequest': {
+                'Key': self._prepare_get_request(bytes_to_str(key))['Key']}}
+            for key in keys]
+        for start in range(0, len(requests), 25):
+            self.client.batch_write_item(RequestItems={
+                self.table_name: requests[start:start + 25]})
+
     def incr(self, key: bytes) -> int:
         """Atomically increase the chord_count and return the new count"""
         key = str(key)
@@ -550,6 +562,24 @@ class DynamoDBBackend(KeyValueStoreBackend):
         item_response = self.client.update_item(**request_parameters)
         new_count: str = item_response["Attributes"][self._count_filed.name][self._count_filed.data_type]
         return int(new_count)
+
+    def _add_chord_key(self, key, token):
+        key, token = bytes_to_str(key), str_to_bytes(token)
+        request_parameters = self._prepare_put_request(key, token)
+        expires = self._chord_key_expires(self.time_to_live_seconds)
+        if self._has_ttl() and expires:
+            request_parameters['Item'][self._ttl_field.name] = {
+                self._ttl_field.data_type: str(int(time() + expires))}
+        try:
+            self.client.put_item(
+                ConditionExpression='attribute_not_exists(#key)',
+                ExpressionAttributeNames={'#key': self._key_field.name},
+                **request_parameters)
+        except ClientError as error:
+            if error.response['Error']['Code'] != 'ConditionalCheckFailedException':
+                raise
+            return self.get(key) == token
+        return True
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])

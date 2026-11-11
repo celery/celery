@@ -368,6 +368,8 @@ class test_GCSBackend:
         gcs_backend.incr(b'some-key')
         assert mock_firestore_document.call_count == 1
 
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -430,6 +432,7 @@ class test_GCSBackend:
         )
         mock_delete_chord_key.assert_called_once_with(group_key)
 
+    @patch.object(GCSBackend, '_claim_chord', Mock(return_value=True))
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch('celery.backends.gcs.GroupResult.restore')
     @patch('celery.backends.gcs.maybe_signature')
@@ -465,6 +468,23 @@ class test_GCSBackend:
         deps = backend._restore_deps(gid, request)
         mock_chord_error_from_stack.assert_called()
         assert deps is None
+
+    # Twice the header results' lifetime: result_expires, or gcs_ttl when
+    # that is longer.
+    @pytest.mark.parametrize('ttl,days', [(0, 2), (5 * 86400, 10)])
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @patch.object(GCSBackend, '_firestore_document')
+    def test_add_chord_key(self, mock_firestore_document, mock_firestore_ttl, ttl, days):
+        backend = GCSBackend(app=self.app)
+        backend.ttl = ttl
+        assert backend._add_chord_key(b'key', 'token') is True
+        mock_firestore_document.assert_called_once_with(b'key')
+        (data,), _ = mock_firestore_document.return_value.create.call_args
+        assert data['token'] == 'token'
+        assert data[backend._field_expires] > (
+            datetime.now(timezone.utc) + timedelta(days=days, seconds=-60))
+        assert data[backend._field_expires] < (
+            datetime.now(timezone.utc) + timedelta(days=days, seconds=60))
 
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch.object(GCSBackend, '_firestore_document')
@@ -521,6 +541,8 @@ class test_GCSBackend:
         mock_collection.document.assert_called_once_with('test_key')
         assert result == mock_document
 
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')
@@ -574,6 +596,8 @@ class test_GCSBackend:
         mock_deps.delete.assert_called_once()
         mock_delete_chord_key.assert_called_once()
 
+    @patch.object(GCSBackend, '_chord_part_returns', Mock(return_value=True))
+    @patch.object(GCSBackend, '_complete_chord_once', Mock(return_value=True))
     @patch('celery.backends.gcs.maybe_signature')
     @patch.object(GCSBackend, 'incr')
     @patch.object(GCSBackend, '_restore_deps')

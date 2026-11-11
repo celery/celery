@@ -99,6 +99,7 @@ class test_CacheBackend:
         )
         task.request.id = uuid()
         task.request.group = result_args[0]
+        task.request.ignore_result = False
         tb.apply_chord(result_args, None)
 
         deps.join_native.assert_not_called()
@@ -128,6 +129,7 @@ class test_CacheBackend:
         task = Mock()
         task.request.id = uuid()
         task.request.group = gid = uuid()
+        task.request.ignore_result = False
         task.request.chord = {}
         with patch.object(tb.client, 'set') as client_set, \
                 patch.object(tb, 'expire') as expire:
@@ -155,15 +157,31 @@ class test_CacheBackend:
         self.app.tasks['foobarbaz'] = task
         task.request.id = uuid()
         task.request.group = gid = uuid()
+        task.request.ignore_result = False
         task.request.chord = signature(task)
         header = [self.app.AsyncResult(uuid()) for _ in range(2)]
         restore.return_value.__len__ = Mock(return_value=1)
         restore.return_value.results = header
+        for result in header:
+            tb.store_result(result.id, 1, states.SUCCESS)
         tb.client.set(tb.get_key_for_chord(gid), 0)
         with patch.object(tb, 'expire') as expire:
             tb.on_chord_part_return(task.request, states.SUCCESS, 1)
         assert expire.call_args_list == [
             call(tb.get_key_for_task(result.id), 100) for result in header]
+
+    # Twice the header results' lifetime, at most 30 days, after which
+    # memcached reads it as an absolute time.
+    @pytest.mark.parametrize('result_expires,expected', [
+        (86400, 172800), (timedelta(days=20), 30 * 86400)])
+    def test_add_chord_key_keeps_it_twice_as_long_as_the_header_results(
+            self, result_expires, expected):
+        self.app.conf.result_expires = result_expires
+        self.app.conf.result_chord_expires = 600
+        tb = CacheBackend(backend='memory://', app=self.app)
+        with patch.object(tb.client, 'add', return_value=True) as add:
+            assert tb._add_chord_key(b'key', 'token') is True
+        add.assert_called_once_with(b'key', b'token', expected, noreply=False)
 
     def test_warns_on_chord_expires_over_30_days(self):
         self.app.conf.result_chord_expires = timedelta(days=31)
@@ -581,6 +599,7 @@ class test_pymemcache_integration(MockPyMemcacheMixin):
                 )
                 task.request.id = uuid()
                 task.request.group = result_args[0]
+                task.request.ignore_result = False
                 b.apply_chord(result_args, None)
 
                 b.on_chord_part_return(task.request, 'SUCCESS', 10)
