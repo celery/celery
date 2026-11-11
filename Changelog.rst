@@ -5,43 +5,125 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
-an overview of what's new in Celery 5.6.
+in the main branch & 5.7.x series, please see :ref:`whatsnew-5.7` for
+an overview of what's new in Celery 5.7.0.
 
 
-Unreleased
-==========
+.. _version-5.7.0:
 
-- An exception raised by ``Task.on_success`` or ``Task.after_return`` in a
-  worker is now logged at ``ERROR`` level instead of being recorded as a task
-  failure. The task's errbacks no longer run for a task that succeeded, and a
-  failed task is no longer recorded a second time. Broken hooks therefore no
-  longer send the ``task_failure`` or ``task_internal_error`` signals. Eager
-  execution still propagates the exception (#10724).
-- The Redis result backend now counts each chord header task only once,
-  even when the task runs again, as it can after a lost worker with
-  ``acks_late``. Header results are now saved with a Lua script. If your
-  Redis user has an ACL that lists the commands it can run, add
-  ``EVALSHA``, ``SCRIPT LOAD``, ``SISMEMBER`` and ``SADD``. Without them,
-  header tasks fail when they store their results, and neither the chord
-  body nor its error callbacks run. A Redis-compatible service or proxy has
-  to support ``EVALSHA`` and ``SCRIPT LOAD`` too (#10919).
-- ``saferepr`` no longer drops or unbalances closing brackets when ``maxlen``
-  is reached: a container whose last element was truncated is now closed,
-  without a misleading ``, ...``, and a nested container that starts after
-  the limit is left out entirely instead of leaving a stray closing bracket.
-  This affected ``argsrepr`` / ``kwargsrepr`` and logged result reprs
-  (#10760).
-- The MongoDB result backend now keeps the first ``SUCCESS`` stored for a
-  task and ignores later writes for that task id. That includes calling
-  ``AbortableAsyncResult.abort()`` on a finished task and reusing a task
-  id, until ``forget()`` clears the stored result (#10944).
-- The Cassandra result backend now preserves a stored ``SUCCESS`` across
-  later state updates. Each attempted write first reads the newest row
-  using ``cassandra_read_consistency``, adding a read and making writes
-  depend on that read succeeding. Concurrent writers can still race.
-  ``forget()`` now deletes all rows for a task so its id can be reused
-  without waiting for entries to expire (#10945).
+5.7.0
+======
+
+:release-date: 2026-11-05
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0 Stable Release is now available for testing and deploy to production.
+Please help us test this version and report any issues.
+
+
+What's Changed Since 5.7.0rc1
+==============================
+
+This section summarizes the changes made since the Celery 5.7.0rc1 pre-release.
+
+Canvas, Chains, Groups, and Chords
+----------------------------------
+
+* Run a replaced task's callbacks once when it is replaced with a chain (`:ghpull:`10927`).
+* Fix chord link and link-error options so they are passed to the body only (`:ghpull:`10778`).
+* Fix stamped header revocation (`:ghpull:`10884`).
+* Count each chord header task only once in the Redis backend (`:ghpull:`10919`).
+* Fix Redis chord claim cleanup ownership (`:ghpull:`10998`).
+* Fail the chord when ``chord_unlock`` retry is refused by the broker (`:ghpull:`10959`).
+
+Task Execution and Result Handling
+----------------------------------
+
+* Fix retry argument conflicts when switching calling conventions (`:ghpull:`10895`).
+* Pass values to backend hooks by position again (`:ghpull:`10918`).
+* Don't mark a task ``REVOKED`` while another worker is running it (`:ghpull:`10922`).
+* Keep the first ``SUCCESS`` in the database, MongoDB, and Cassandra backends (`:ghpull:`10920`, :ghpull:`10944`, :ghpull:`10945`).
+* Don't record ``FAILURE`` when ``on_success`` raises after ``SUCCESS`` was stored (`:ghpull:`10759`).
+* Don't fail a task whose ``SUCCESS`` was stored before the worker was lost (`:ghpull:`10752`).
+* Fix a worker hang in ``WorkerLostError`` when ``result_backend_always_retry=True`` (`:ghpull:`10960`).
+* Fix ``send_task()`` overriding ``ignore_result`` defaults (`:ghpull:`10953`).
+* Preserve ``ignore_result`` overrides across task retries (`:ghpull:`10958`).
+* Make ``Task.apply()`` respect the ``task.ignore_result`` default (`:ghpull:`11001`).
+* Don't store ``RETRY`` for an ignored result when retrying after a lost worker (`:ghpull:`11009`).
+* Track every ``AsyncResult`` waiting on a task ID (`:ghpull:`10956`).
+* Allow ``ResultSet.add()`` after the set's results are ready (`:ghpull:`10930`).
+* Use the documented retry defaults in the database backend (`:ghpull:`10921`).
+* Fix Manager warning output during retries (`:ghpull:`10948`).
+* Wait between retries when the broker refuses a callback publish (`:ghpull:`10975`).
+* Merge signature options in ``map`` and ``starmap`` ``apply_async()`` (`:ghpull:`10787`).
+* Stop gating task publishing signals on cached receiver lists (`:ghpull:`10791`).
+
+Worker Operations
+-----------------
+
+* Ensure worker shutdown state is set even if the shutdown handler's logging or signal dispatch raises (`:ghpull:`10738`).
+* Cover the second call of ``_ensure_after_fork`` in a test (`:ghpull:`10924`).
+* Cancel only per-connection timer entries on broker reconnect instead of clearing the worker timer (`:ghpull:`10901`).
+
+Celery Beat and Scheduling
+--------------------------
+
+* Keep Celery Beat running when a schedule entry fails, and reject impossible crontab dates (`:ghpull:`10896`).
+* Fix solar schedule timing across daylight-saving time changes (`:ghpull:`10915`).
+* Enhance timezone localization tests (`:ghpull:`10996`).
+* Use Cuba's 2025 fall-back in the midnight DST tests (`:ghpull:`11011`).
+
+Utilities and Data Structures
+-----------------------------
+
+* Don't expire or evict re-added ``LimitedSet`` items using their old timestamp (`:ghpull:`10758`).
+* Give entries copied by ``LimitedSet.update()`` this set's sequence numbers (`:ghpull:`10943`).
+* Keep the closing bracket when ``saferepr`` truncates the last element (`:ghpull:`10771`).
+* Fix ``MultiParser`` to honor its configured ``Node`` class (`:ghpull:`10938`).
+
+Application and Configuration
+-----------------------------
+
+* Raise a clear error when ``@shared_task`` is applied twice (`:ghpull:`10889`).
+
+Documentation and Developer Experience
+--------------------------------------
+
+* Fix an incorrect sentence in the user guide (`:ghpull:`10902`).
+* Document the quorum queue delivery limit (`:ghpull:`10926`).
+* Improve signature documentation (`:ghpull:`10978`).
+* Update the pull request template with AI-spamming guidelines (`:ghpull:`10979`).
+* Add guidance for AI agents in the Celery project (`:ghpull:`10999`).
+
+Dependencies and Packaging
+--------------------------
+
+* Update ``click-plugins`` requirement to ``>=1.1.1.2`` (`:ghpull:`10899`).
+* Update Django requirement to ``>=3.2.1`` (`:ghpull:`10816`).
+* Replace ``brotlipy`` with ``brotlicffi`` in the Brotli extra (`:ghpull:`10992`).
+* Update Brotli dependencies for PyPy and CPython (`:ghpull:`10994`).
+* Update Billiard and click-repl versions in requirements (`:ghpull:`11002`).
+* Update ``grpcio`` to ``1.85.1`` (`:ghpull:`11006`).
+* Update Kombu to ``5.7.0`` (`:ghpull:`11007`).
+
+Development Dependencies
+------------------------
+
+* Update GitHub CodeQL action to ``4.39.0`` and ``4.39.1`` (`:ghpull:`10900`, :ghpull:`10974`).
+* Update Pydantic to ``2.14.1`` (`:ghpull:`10903`).
+* Update tox to ``4.65.0`` (`:ghpull:`10935`).
+* Update mypy to ``2.4.0`` (`:ghpull:`10984`).
+* Update ``grpcio`` to ``1.84.1`` (`:ghpull:`10973`).
+* Update ``azure-storage-blob`` to ``12.31.1`` (`:ghpull:`11005`).
+* Update ``google-cloud-storage`` to ``3.17.1`` (`:ghpull:`11013`).
+* Update ``azure-identity`` to ``1.27.0`` (`:ghpull:`11020`).
+
+Testing
+-------
+
+* Assert exact task replacement nesting levels (`:ghpull:`10925`).
+* Run mock assertions inside ``pytest.raises`` (`:ghpull:`11004`).
+
 
 
 .. _version-5.7.0rc1:
