@@ -38,6 +38,7 @@
     celery.states
     celery.contrib.abortable
     celery.contrib.django.task
+    celery.contrib.idempotency
     celery.contrib.migrate
     celery.contrib.pytest
     celery.contrib.sphinx
@@ -45,6 +46,7 @@
     celery.contrib.testing.app
     celery.contrib.testing.manager
     celery.contrib.testing.mocks
+    celery.contrib.testing.idempotency
     celery.contrib.rdb
     celery.events
     celery.events.receiver
