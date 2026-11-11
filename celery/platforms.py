@@ -83,6 +83,17 @@ environment variable (but please think about this before you do).
 User information: uid={uid} euid={euid} gid={gid} egid={egid}
 """
 
+UNKNOWN_GROUP_DISALLOWED = """\
+The worker's gid or egid could not be found in the group database,
+so it is treated as privileged. Accepting messages serialized with
+pickle in this state is a very bad idea!
+
+If you really want to continue then you have to set the C_FORCE_ROOT
+environment variable (but please think about this before you do).
+
+User information: uid={uid} euid={euid} gid={gid} egid={egid}
+"""
+
 ROOT_DISCOURAGED = """\
 You're running the worker with superuser privileges: this is
 absolutely not recommended!
@@ -874,7 +885,8 @@ def check_privileges(accept_content):
     except KeyError:
         warnings.warn(SecurityWarning(ASSUMING_ROOT), stacklevel=2)
         _warn_or_raise_security_error(egid, euid, gid, uid,
-                                      pickle_or_serialize)
+                                      pickle_or_serialize,
+                                      warn_root=uid == 0 or euid == 0)
         return
 
     # Get the group and effective group name based on gid
@@ -894,13 +906,18 @@ def check_privileges(accept_content):
                                       pickle_or_serialize)
 
 
-def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize):
+def _warn_or_raise_security_error(egid, euid, gid, uid, pickle_or_serialize,
+                                  *, warn_root=True):
     c_force_root = os.environ.get('C_FORCE_ROOT', False)
 
     if pickle_or_serialize and not c_force_root:
-        raise SecurityError(ROOT_DISALLOWED.format(
+        message = ROOT_DISALLOWED if warn_root else UNKNOWN_GROUP_DISALLOWED
+        raise SecurityError(message.format(
             uid=uid, euid=euid, gid=gid, egid=egid,
         ))
+
+    if not warn_root:
+        return
 
     warnings.warn(SecurityWarning(ROOT_DISCOURAGED.format(
         uid=uid, euid=euid, gid=gid, egid=egid,
