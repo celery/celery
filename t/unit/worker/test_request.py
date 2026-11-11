@@ -1264,6 +1264,34 @@ class test_Request(RequestCase):
         assert self.mytask.backend.get_status(job.id) == states.SUCCESS
         assert errbacks == []
 
+    def test_on_failure_WorkerLostError_after_callbacks_dispatched(self):
+        # #10954: link published, SUCCESS not stored yet, marker present.
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        @self.app.task(shared=False)
+        def announce(result):
+            return result
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        child = self.app.AsyncResult('child-1')
+        job._context.children.append(child)
+        self.mytask.backend.mark_callbacks_dispatched(job.id, 42, job._context)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert self.mytask.backend.get_result(job.id) == 42
+        assert errbacks == []
+        # Marker is cleared once SUCCESS is stored.
+        assert self.mytask.backend.get_callbacks_dispatched(job.id) is None
+
     def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
         try:
             raise WorkerLostError()
