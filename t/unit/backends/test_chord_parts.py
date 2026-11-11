@@ -61,6 +61,14 @@ class ChordParts:
                           task='header', ignore_result=ignore_result)
         self.backend.mark_as_done(request.id, index, request=request)
 
+    def fails(self, index, ignore_result=False):
+        """Report header task ``index`` as failed, with its failure stored."""
+        request = Context(id=self.headers[index].id, group=self.group_id,
+                          group_index=index, chord=self.body,
+                          task='header', ignore_result=ignore_result)
+        self.backend.mark_as_failure(
+            request.id, ValueError('boom'), request=request)
+
     def killed(self, index):
         """Report header task ``index``, killed after it stored its result."""
         with ExitStack() as stack:
@@ -242,6 +250,18 @@ def test_a_header_task_ignoring_its_result_fails_the_chord_once(app, backend):
     assert [str(exc) for exc in chord.errors] == [
         f'Chord header task header[{chord.headers[0].id}] ignores its '
         'result: header tasks must store it']
+
+
+def test_a_stored_failure_of_a_header_ignoring_its_result(app, backend):
+    # With store_errors_even_if_ignored the failure is stored, so the chord
+    # reports that failure, as it does for any other header task.
+    chord = ChordParts(app, backend)
+    chord.returns(0)
+    chord.fails(1, ignore_result=True)
+    assert chord.bodies == []
+    assert len(chord.errors) == 1
+    assert "ValueError('boom')" in str(chord.errors[0])
+    assert 'ignores its result' not in str(chord.errors[0])
 
 
 def test_a_lost_header_result_fails_the_chord_once(app, backend):

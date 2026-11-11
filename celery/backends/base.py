@@ -1267,7 +1267,11 @@ class BaseKeyValueStoreBackend(Backend):
         """Record that a header part returned; fail the chord if it can't."""
         if not self.implements_add:
             return True
-        if _is_request_ignore_result(request):
+        # A failure is stored even when the result is ignored, if the task
+        # sets store_errors_even_if_ignored: only a header with nothing
+        # stored fails the chord here.
+        if (_is_request_ignore_result(request)
+                and self._missing_results([request.id])):
             self._fail_chord_once(
                 request, f'Chord header task {request.task}[{request.id}] '
                 'ignores its result: header tasks must store it')
