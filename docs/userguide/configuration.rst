@@ -1410,6 +1410,13 @@ you to customize the table names:
         'group': 'myapp_groupmeta',
     }
 
+.. versionchanged:: 5.7
+
+    The ``date_done`` indexes are named after the configured tables
+    (``ix_myapp_taskmeta_date_done`` above), so apps with different table
+    names can share a database or schema. Tables created before this change
+    keep their existing index.
+
 .. note::
 
     Starting in Celery 5.7, the database result backend supports storing task
