@@ -2465,6 +2465,16 @@ Default: :const:`True`
 Should meta saved as text or as native json.
 Result is always serialized as text.
 
+When using the ``pickle`` result serializer, binary payloads are Base64-encoded
+before they are stored in Elasticsearch. This increases their size by roughly
+one third.
+
+When ``elasticsearch_save_meta_as_text`` is disabled, extended task metadata
+such as ``args`` and ``kwargs`` may be stored as Base64-encoded strings with
+``pickle``. This can conflict with field mappings in an existing
+Elasticsearch index that expect arrays or objects. When upgrading, use a
+new index if the existing field mappings are incompatible.
+
 .. _conf-dynamodb-result-backend:
 
 AWS DynamoDB backend settings
