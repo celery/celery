@@ -371,7 +371,7 @@ def enable_events(state):
         return nok('event dispatcher unavailable')
     if dispatcher.groups and 'task' not in dispatcher.groups:
         dispatcher.groups.add('task')
-        logger.info('Events of group {task} enabled by remote.')
+        logger.info("Events of group task enabled by remote.")
         return ok('task events enabled')
     return ok('task events already enabled')
 
@@ -384,7 +384,7 @@ def disable_events(state):
         return nok('event dispatcher unavailable')
     if 'task' in dispatcher.groups:
         dispatcher.groups.discard('task')
-        logger.info('Events of group {task} disabled by remote.')
+        logger.info("Events of group task disabled by remote.")
         return ok('task events disabled')
     return ok('task events already disabled')
 
