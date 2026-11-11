@@ -165,6 +165,10 @@ Cold Shutdown
 Cold shutdown is initiated when the worker receives the :sig:`QUIT` signal. The worker will stop
 all currently executing tasks and terminate immediately.
 
+.. versionchanged:: 5.7
+    The threads pool cancels queued tasks and lets running tasks finish during cold shutdown.
+    Running threads cannot be safely interrupted, so they may outlast the soft shutdown timeout.
+
 .. _worker-REMAP_SIGTERM:
 
 .. note::

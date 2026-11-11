@@ -10,6 +10,7 @@ import logging
 import os
 import platform as _platform
 import sys
+from contextlib import nullcontext
 from datetime import datetime
 from functools import partial
 
@@ -334,8 +335,8 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
         exitcode (int, optional): The exit code to use. Defaults to EX_OK.
         verbose (bool, optional): Whether to print the type of shutdown. Defaults to True.
     """
-    def _handle_request(*args):
-        with in_sighandler():
+    def _run_shutdown(from_signal):
+        with in_sighandler() if from_signal else nullcontext():
             from celery.worker import state
             try:
                 if current_process()._name == 'MainProcess':
@@ -357,8 +358,40 @@ def _shutdown_handler(worker: Worker, sig='SIGTERM', how='Warm', callback=None, 
                 # worker_soft_shutdown_timeout before cancelling tasks, and
                 # state.maybe_shutdown()/Request.on_timeout()/on_failure()
                 # all branch on should_terminate during that window.
-                setattr(state, {'Warm': 'should_stop',
-                                'Cold': 'should_terminate'}[how], exitcode)
+                # The original greenlet still owns teardown after a second signal.
+                if from_signal or callback is not during_soft_shutdown:
+                    setattr(state, {'Warm': 'should_stop',
+                                    'Cold': 'should_terminate'}[how], exitcode)
+    scheduled = False
+
+    def _handle_request(*args):
+        nonlocal scheduled
+        defer = None
+        pool = worker.pool
+        if callback in (on_cold_shutdown, during_soft_shutdown) and getattr(pool, 'is_green', False):
+            from celery.concurrency.gevent import TaskPool as GeventPool
+
+            if isinstance(pool, GeventPool):
+                # A gevent signal callback runs on the hub and cannot wait or do broker I/O.
+                defer = pool.spawn_n
+        elif callback is on_cold_shutdown:
+            from celery.concurrency.thread import TaskPool as ThreadPool
+
+            if isinstance(pool, ThreadPool):
+                # A signal can interrupt executor.submit() with its shutdown lock held.
+                defer = worker.consumer.call_soon
+
+        if defer is None:
+            _run_shutdown(True)
+            return
+        if callback is on_cold_shutdown:
+            if worker.__dict__.get('_cold_shutdown_scheduled'):
+                return
+            worker._cold_shutdown_scheduled = True
+        if not scheduled:
+            scheduled = True
+            defer(_run_shutdown, False)
+
     _handle_request.__name__ = str(f'worker_{how}')
     platforms.signals[sig] = _handle_request
 
@@ -479,7 +512,9 @@ def on_cold_shutdown(worker: Worker):
     worker.consumer.cancel_active_requests()
 
     from celery.worker import state
-    state.should_terminate = True
+    deferred = getattr(worker, '_cold_shutdown_scheduled', False) is True
+    if not deferred:
+        state.should_terminate = True
 
     # Stop the pool to allow successful tasks call on_success()
     if worker.consumer.pool:
