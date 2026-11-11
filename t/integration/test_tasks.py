@@ -640,14 +640,10 @@ class test_tasks:
         res = return_properties.apply_async(app_id="1234")
         assert res.get(timeout=TIMEOUT)["app_id"] == "1234"
 
-    @flaky
     def test_soft_time_limit_exceeding_time_limit(self):
 
         with pytest.raises(ValueError, match='soft_time_limit must be less than or equal to time_limit'):
-            result = soft_time_limit_must_exceed_time_limit.apply_async()
-            result.get(timeout=5)
-
-            assert result.status == 'FAILURE'
+            soft_time_limit_must_exceed_time_limit.apply_async()
 
     @flaky
     def test_request_time_limits_set_via_apply_async(self, manager):
