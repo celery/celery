@@ -2554,6 +2554,61 @@ class test_RedisBackend_chords_simple(basetest_RedisBackend):
             assert producer.publish.call_count == 2
             assert self.b.get_key_for_group(request.group, '.s') not in self.b.client.keyspace
 
+    @pytest.mark.parametrize('ordered', [True, False])
+    @pytest.mark.parametrize('exc', [SystemExit(1), KeyboardInterrupt()])
+    def test_on_chord_part_return__callback_publish_interrupted(self, ordered, exc):
+        # A hard time limit raises SystemExit in the pool process. The chord
+        # keys are cleaned up either way, so the chord must fail instead of
+        # staying PENDING with no body sent.
+        self.app.conf.result_backend_transport_options = {'result_chord_ordered': ordered}
+        with self.chord_context(1) as (_, request, callback):
+            callback.delay.side_effect = exc
+            with patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(type(exc)):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_called_once_with(callback, ANY)
+            assert isinstance(error.call_args[0][1], ChordError)
+            assert self.b.get_key_for_group(request.group, '.j') not in self.b.client.keyspace
+
+    def test_on_chord_part_return__dispatch_interrupted_before_publish(self):
+        # SystemExit while reading the header results, after the claim
+        with self.chord_context(1) as (_, request, callback):
+            with patch.object(self.b, '_unpack_chord_result', side_effect=SystemExit(1)), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_called_once_with(callback, ANY)
+            callback.delay.assert_not_called()
+            # A copy of the header task that arrives later finds the chord
+            # closed, and doesn't send the body after the errback ran.
+            assert self.b.get_key_for_group(
+                request.group, '.s') not in self.b.client.keyspace
+
+    def test_on_chord_part_return__interrupted_after_publish(self):
+        # The body is already sent, so an interrupt during the cleanup
+        # leaves the chord alone.
+        with self.chord_context(1) as (_, request, callback):
+            with patch.object(type(self.b), '_chord_cleanup_script',
+                              Mock(side_effect=SystemExit(1))), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            callback.delay.assert_called_once()
+            error.assert_not_called()
+            # A copy of the header task that arrives later doesn't send
+            # the body a second time.
+            assert self.b.get_key_for_group(
+                request.group, '.s') not in self.b.client.keyspace
+
+    def test_on_chord_part_return__interrupted_before_last_part(self):
+        # Other parts are still running, so the chord is left to them.
+        with self.chord_context(2) as (_, request, callback):
+            with patch('celery.backends.redis.maybe_signature', side_effect=SystemExit(1)), \
+                    patch.object(self.b, 'chord_error_from_stack') as error:
+                with pytest.raises(SystemExit):
+                    self.b.on_chord_part_return(request, states.SUCCESS, 10)
+            error.assert_not_called()
+
     def test_on_chord_part_return__callback_raises(self):
         with self.chord_context(1) as (_, request, callback):
             callback.delay.side_effect = KeyError(10)

@@ -977,11 +977,13 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
             return
 
         if chord_size_bytes:
+            dispatching = sent = False
             try:
                 callback = maybe_signature(request.chord, app=app)
                 totaldiff = int(totaldiff or 0)
                 total = int(chord_size_bytes or 0) + totaldiff
                 if readycount == total and claimed:
+                    dispatching = True
                     header_result = GroupResult.restore(gid, app=app)
                     if header_result is not None:
                         # If we manage to restore a `GroupResult`, then it must
@@ -1038,6 +1040,10 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                             callback,
                             ChordError(f'Callback error: {exc!r}'),
                         )
+                    else:
+                        # The body is sent: an interrupt from here on must
+                        # not fail the chord.
+                        sent = True
                     finally:
                         cleaned = self._chord_cleanup_script(
                             keys=[ckey, jkey, tkey, skey, dkey],
@@ -1067,6 +1073,28 @@ class RedisBackend(BaseKeyValueStoreBackend, AsyncBackendMixin):
                     )
                 finally:
                     client.delete(skey)
+            except BaseException as exc:
+                # A hard time limit or a cold shutdown raises SystemExit. If
+                # it lands after this header claimed the dispatch, no other
+                # header will send the body, so fail the chord rather than
+                # leave it PENDING with no errback.
+                if dispatching:
+                    try:
+                        if not sent:
+                            logger.error(
+                                'Chord callback for %r interrupted: %r',
+                                request.group, exc)
+                            self.chord_error_from_stack(
+                                callback,
+                                ChordError(
+                                    f'Callback dispatch interrupted: {exc!r}'),
+                            )
+                    finally:
+                        # As above: a copy of a header task that arrives
+                        # later must not send the body, of a failed chord
+                        # or a second time.
+                        client.delete(skey)
+                raise
 
     def _create_client(self, **params):
         return self._get_client()(
