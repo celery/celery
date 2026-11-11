@@ -1513,7 +1513,8 @@ Cache backend settings
     each header task that returns, and one for the chord when it completes,
     with the memcached ``add`` command, and keeps them for twice
     :setting:`result_expires`, or twice :setting:`result_chord_expires` when
-    that is longer, but at most 30 days.
+    that is longer, but at most 30 days. It deletes the header tasks' keys
+    when the chord completes.
 
     Upgrade the workers of a chord together, or let running chords finish
     first. While workers with and without this change share a chord, a
@@ -2340,7 +2341,8 @@ GCS backend settings
     Firestore document for each header task that returns, and one for the
     chord when it completes, and keeps them for twice
     :setting:`result_expires`, :setting:`result_chord_expires` or
-    ``gcs_ttl``, whichever is longest. When a document already exists, the
+    ``gcs_ttl``, whichever is longest. It deletes the header tasks'
+    documents when the chord completes. When a document already exists, the
     backend reads it, so the service account also needs read access to the
     Firestore collection.
 
@@ -2509,9 +2511,12 @@ AWS DynamoDB backend settings
     after the chord completed no longer calls the body's errbacks, and a
     chord whose header result was lost fails. The backend stores an item for
     each header task that returns, and one for the chord when it completes,
-    with a conditional ``PutItem``. With ``ttl_seconds`` set, it keeps them
-    for twice :setting:`result_expires`, :setting:`result_chord_expires` or
-    ``ttl_seconds``, whichever is longest.
+    with a conditional ``PutItem``. It deletes the header tasks' items when
+    the chord completes. With ``ttl_seconds`` set, it keeps the others for
+    twice :setting:`result_expires`, :setting:`result_chord_expires` or
+    ``ttl_seconds``, whichever is longest. Without ``ttl_seconds`` the
+    chord's item, and the items of a chord that never completes, are not
+    removed, as results aren't.
 
     Upgrade the workers of a chord together, or let running chords finish
     first. While workers with and without this change share a chord, a

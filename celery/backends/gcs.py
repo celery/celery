@@ -313,6 +313,7 @@ class GCSBackend(GCSBackendBase):
                 deps.delete()
                 # Firestore doesn't have an exact ttl policy, so delete the key.
                 self._delete_chord_key(key)
+                self._delete_chord_part_keys(gid, deps)
 
     def _add_chord_key(self, key, token):
         doc = self._firestore_document(key)
@@ -359,6 +360,14 @@ class GCSBackend(GCSBackendBase):
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
         return deps
+
+    def _delete_keys(self, keys):
+        # A Firestore batch takes up to 500 writes.
+        for start in range(0, len(keys), 500):
+            batch = self.firestore_client.batch()
+            for key in keys[start:start + 500]:
+                batch.delete(self._firestore_document(key))
+            batch.commit()
 
     def _delete_chord_key(self, key):
         doc = self._firestore_document(key)

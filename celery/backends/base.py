@@ -1280,6 +1280,18 @@ class BaseKeyValueStoreBackend(Backend):
             self._get_key_for_chord_part(request.group, request.id), uuid())
         return True
 
+    def _delete_chord_part_keys(self, group_id, deps):
+        # The chord's done key stays: it stops a late copy of a header task.
+        # Header entries can share a task id, and so a key.
+        if self.implements_add:
+            self._delete_keys(list(dict.fromkeys(
+                self._get_key_for_chord_part(group_id, result.id)
+                for result in deps.results)))
+
+    def _delete_keys(self, keys):
+        for key in keys:
+            self.delete(key)
+
     def _get_key_for_chord_part(self, group_id, task_id):
         # As a str, so that every backend reads it back with mget().
         return bytes_to_str(self.get_key_for_chord(group_id, f'.{task_id}'))
@@ -1577,6 +1589,7 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                self._delete_chord_part_keys(gid, deps)
                 # The chord is done: give the header results back their
                 # normal lifetime.
                 for dep in deps.results:

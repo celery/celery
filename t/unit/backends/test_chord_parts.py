@@ -164,6 +164,12 @@ class FakeFirestore:
         for doc in documents:
             yield SimpleNamespace(id=doc.key, exists=doc.key in self.docs)
 
+    def batch(self):
+        deletes = []
+        return SimpleNamespace(
+            delete=deletes.append,
+            commit=lambda: [doc.delete() for doc in deletes])
+
 
 @pytest.fixture(params=['memory', 'pymemcache', 'dynamodb', 'gcs'])
 def backend(request, app):
@@ -262,6 +268,24 @@ def test_a_stored_failure_of_a_header_ignoring_its_result(app, backend):
     assert len(chord.errors) == 1
     assert "ValueError('boom')" in str(chord.errors[0])
     assert 'ignores its result' not in str(chord.errors[0])
+
+
+def test_a_done_chord_keeps_only_its_done_key(app, backend):
+    # Nothing else removes these keys on a backend without an expiry. The
+    # done key stays, to stop a copy of a header task that returns later.
+    size = 30  # more than one DynamoDB batch of 25
+    chord = ChordParts(app, backend, size=size)
+    part_keys = [backend._get_key_for_chord_part(chord.group_id, header.id)
+                 for header in chord.headers]
+    for index in range(size - 1):
+        chord.returns(index)
+    assert all(backend._chord_keys_exist(part_keys[:-1]))
+    chord.returns(size - 1)
+    assert chord.bodies == [list(range(size))]
+    assert not any(backend._chord_keys_exist(part_keys))
+    chord.returns(0)
+    assert chord.bodies == [list(range(size))] and chord.errors == []
+    assert not backend._claim_chord(chord.group_id)
 
 
 def test_a_lost_header_result_fails_the_chord_once(app, backend):

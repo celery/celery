@@ -175,6 +175,10 @@ class DummyClient:
     def delete(self, key, *args, **kwargs):
         self.cache.pop(key, None)
 
+    def delete_multi(self, keys):
+        for key in keys:
+            self.cache.pop(key, None)
+
     def incr(self, key, delta=1):
         return self.cache.incr(key, delta)
 
@@ -242,6 +246,9 @@ class CacheBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         return self.client.delete(key)
+
+    def _delete_keys(self, keys):
+        self.client.delete_multi(keys)
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])

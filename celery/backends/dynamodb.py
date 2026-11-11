@@ -545,6 +545,16 @@ class DynamoDBBackend(KeyValueStoreBackend):
         request_parameters = self._prepare_get_request(key)
         self.client.delete_item(**request_parameters)
 
+    def _delete_keys(self, keys):
+        # Best effort: a key the service doesn't process is left to its TTL.
+        requests = [
+            {'DeleteRequest': {
+                'Key': self._prepare_get_request(bytes_to_str(key))['Key']}}
+            for key in keys]
+        for start in range(0, len(requests), 25):
+            self.client.batch_write_item(RequestItems={
+                self.table_name: requests[start:start + 25]})
+
     def incr(self, key: bytes) -> int:
         """Atomically increase the chord_count and return the new count"""
         key = str(key)
