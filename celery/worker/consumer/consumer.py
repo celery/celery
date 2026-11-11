@@ -344,6 +344,8 @@ class Consumer:
             abs(index) * self.prefetch_multiplier)
 
     def _limit_move_to_pool(self, request):
+        if request._holds_prefetch_slot:
+            self.qos.decrement_eventually()
         task_reserved(request)
         self.on_task_request(request)
 
@@ -372,13 +374,27 @@ class Consumer:
                 break
 
     def _limit_task(self, request, bucket, tokens):
+        # The message stays unacknowledged while the request waits for a
+        # token, so like an ETA task it gets its own prefetch slot, or a
+        # backlog of rate limited tasks fills the prefetch window and no
+        # other task is fetched until it drains (Issue #8119).
+        # No slot is needed without a prefetch limit (value 0), and none is
+        # taken past worker_eta_task_limit: QoS clamps that increment, and
+        # giving back a slot that was never added would push the prefetch
+        # count below its baseline.
+        qos = self.qos
+        with qos._mutex:
+            request._holds_prefetch_slot = bool(qos.value) and (
+                qos.max_prefetch is None or qos.value < qos.max_prefetch)
+            if request._holds_prefetch_slot:
+                qos.increment_eventually()
         bucket.add((request, tokens))
         return self._schedule_bucket_request(bucket)
 
     def _limit_post_eta(self, request, bucket, tokens):
+        # Give back the ETA slot, the bucket takes its own.
         self.qos.decrement_eventually()
-        bucket.add((request, tokens))
-        return self._schedule_bucket_request(bucket)
+        return self._limit_task(request, bucket, tokens)
 
     def start(self):
         blueprint = self.blueprint
