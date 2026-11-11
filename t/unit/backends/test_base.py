@@ -1833,6 +1833,33 @@ class test_KeyValueStoreBackend:
         assert {id: state['result'] for id, state in got.items()} == ids
         sleep.assert_not_called()
 
+    def test_get_many__max_iterations_skips_final_sleep(self):
+        """A poll capped by max_iterations must not sleep after its last check.
+
+        ResultSet._iter_meta polls with max_iterations=1, so the sleep at
+        the end of that single iteration delayed every join by one
+        interval without any further check to justify it (#11042).
+        """
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        for task in tasks:
+            self.b._cache[task] = {'status': 'PENDING'}
+        assert not list(self.b.get_many(tasks, interval=0.5, max_iterations=1))
+        sleep.assert_not_called()
+
+    def test_get_many__max_iterations_2_sleeps_once(self):
+        """N checks sleep N-1 times: no nap after the last one.
+
+        Pins the general rule so an off-by-one cannot sneak back in if the
+        iteration counter moves again (#11042).
+        """
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        for task in tasks:
+            self.b._cache[task] = {'status': 'PENDING'}
+        assert not list(self.b.get_many(tasks, interval=0.5, max_iterations=2))
+        assert sleep.call_count == 1
+
     def test_get_many__ids_completing_on_the_deadline_is_not_a_timeout(self):
         """Satisfying the last id as the budget runs out is a success."""
         sleep = self.patching('time.sleep')
