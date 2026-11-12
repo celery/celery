@@ -703,6 +703,10 @@ name:
     running workers know, unless it was started with
     :option:`celery worker --without-mingle`.
 
+    The file holds revoked task ids only. Revokes made with
+    :control:`revoke_by_stamped_headers` aren't stored in it, as the warning
+    in that section says.
+
 See also :ref:`worker-files`
 
 Note that remote control commands must be working for revokes to work.
