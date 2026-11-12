@@ -4,11 +4,15 @@ import pprint
 
 import click
 from amqp import Connection, Message
-from click_repl import register_repl
 
 __all__ = ('amqp',)
 
 from celery.bin.base import handle_preload_options
+
+try:
+    from click_repl import register_repl
+except ImportError:
+    register_repl = None
 
 
 def dump_message(message):
@@ -309,4 +313,12 @@ def basic_ack(amqp_context, delivery_tag):
             amqp_context.echo_ok()
 
 
-register_repl(amqp)
+if register_repl:
+    register_repl(amqp)
+else:
+    @amqp.command(name='repl')
+    def repl():
+        """Start an interactive shell (requires celery[repl])."""
+        raise click.ClickException(
+            'You need to install the click-repl library to use the AMQP '
+            'shell (it is included in the celery[repl] extra).')
