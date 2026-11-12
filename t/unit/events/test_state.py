@@ -565,6 +565,27 @@ class test_State:
         r.play()
         assert len(list(r.state.alive_workers())) == 3
 
+    def test_task_event_updates_worker_heartbeat_with_local_received(self):
+        s = State()
+        # A worker whose clock is behind the receiver's still just sent an
+        # event, so the heartbeat recorded for it is the time the event was
+        # received here, and the worker is alive.
+        timestamp, local_received = time() - 600, time()
+        with patch('celery.events.state.warn'):
+            s.event({
+                'type': 'task-received',
+                'uuid': uuid(),
+                'name': 'task1',
+                'hostname': 'utest1',
+                'clock': 1,
+                'timestamp': timestamp,
+                'local_received': local_received,
+            })
+        worker = s.workers['utest1']
+        assert worker.heartbeats == [local_received]
+        assert worker.alive
+        assert list(s.alive_workers()) == [worker]
+
     def test_tasks_by_worker(self):
         r = ev_snapshot(State())
         r.play()
