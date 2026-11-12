@@ -7,7 +7,6 @@ from importlib.metadata import entry_points
 
 import click
 import click.exceptions
-from click_didyoumean import DYMGroup
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -53,7 +52,7 @@ else:
 
 
 @with_plugins(_PLUGINS)
-@click.group(cls=DYMGroup, invoke_without_command=True)
+@click.group(invoke_without_command=True)
 @click.option('-A',
               '--app',
               envvar='APP',
