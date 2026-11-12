@@ -750,7 +750,7 @@ class Request:
         requeue = False
         if self.task.acks_late:
             is_timeout = isinstance(exc, TimeLimitExceeded)
-            ack_flag = self.task.acks_on_timeout if is_timeout else self.task.acks_on_failure
+            ack_flag = self.task.acks_on_timeout if is_timeout else self._acks_on_failure(exc)
             reject = (
                 (self.task.reject_on_worker_lost and is_worker_lost
                  and not max_retries_exceeded)
@@ -804,6 +804,19 @@ class Request:
         if not return_ok:
             error('Task handler raised error: %r', exc,
                   exc_info=exc_info.exc_info)
+
+    def _acks_on_failure(self, exc):
+        """Return whether a failed task's message should be acknowledged."""
+        acks_on_failure = self.task.acks_on_failure
+        if not callable(acks_on_failure):
+            return acks_on_failure
+        try:
+            return bool(acks_on_failure(exc))
+        except Exception as callback_exc:
+            error('acks_on_failure callback for %s[%s] raised: %r, '
+                  'acknowledging the message',
+                  self.task_name, self.id, callback_exc, exc_info=True)
+            return True
 
     def _retry_worker_lost(self, exc, exc_info):
         """Retry the task after its worker was lost, return False if not retried."""
