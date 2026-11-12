@@ -693,6 +693,19 @@ name:
 
     celery multi start 2 -l INFO --statedb=/var/run/celery/%n.state
 
+.. note::
+
+    The worker writes this file when it shuts down. A worker that is killed,
+    for example with :sig:`KILL` or by the out-of-memory killer, doesn't
+    write it. The revokes it received since it started are then missing from
+    the file, and a revoked task that is delivered again after the restart
+    runs. At startup the worker still gets the revoked ids that other
+    running workers know, unless it was started with
+    :option:`celery worker --without-mingle`.
+
+    The file holds revoked task ids only. Revokes made with
+    :control:`revoke_by_stamped_headers` aren't stored in it, as the warning
+    in that section says.
 
 See also :ref:`worker-files`
 
