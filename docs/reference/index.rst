@@ -67,6 +67,7 @@
     celery.worker.consumer.events
     celery.worker.consumer.gossip
     celery.worker.consumer.heart
+    celery.worker.consumer.liveness
     celery.worker.consumer.mingle
     celery.worker.consumer.tasks
     celery.worker.worker

@@ -86,6 +86,37 @@ def test_cli_disable_prefetch_flag(isolated_cli_runner: CliRunner):
         assert kwargs['disable_prefetch'] is True
 
 
+def test_cli_liveness_file_flag(isolated_cli_runner: CliRunner):
+    Logging._setup = True
+    with patch('celery.bin.worker.worker.callback') as worker_callback_mock:
+        res = isolated_cli_runner.invoke(
+            celery,
+            ["-A", "t.unit.bin.proj.app", "worker", "--pool", "solo", "--liveness-file", "/tmp/%n.alive"],
+            catch_exceptions=False,
+        )
+        assert res.exit_code == 0
+        _, kwargs = worker_callback_mock.call_args
+        assert kwargs['liveness_file'] == '/tmp/%n.alive'
+
+
+@pytest.mark.parametrize('args,expected', [
+    (["--liveness-file", "/tmp/%n.alive"], '/tmp/%n.alive'),  # the step expands %n
+    ([], None),  # the step falls back to worker_liveness_file
+])
+def test_cli_liveness_file_reaches_the_worker(isolated_cli_runner: CliRunner, args, expected):
+    from t.unit.bin.proj.app import app
+    Logging._setup = True
+    with patch.object(app, 'Worker') as Worker:
+        Worker.return_value.exitcode = 0
+        res = isolated_cli_runner.invoke(
+            celery,
+            ["-A", "t.unit.bin.proj.app", "worker", "--pool", "solo", *args],
+            catch_exceptions=False,
+        )
+    assert res.exit_code == 0, res.output
+    assert Worker.call_args[1]['liveness_file'] == expected
+
+
 def test_disable_prefetch_affects_qos_behavior(mock_app, mock_consumer):
     mock_app.conf.worker_disable_prefetch = True
     original_can_consume = mock_consumer.task_consumer.channel.qos.can_consume
