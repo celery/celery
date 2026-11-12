@@ -963,7 +963,13 @@ Stores made from the task body, such as
 :meth:`Task.update_state() <celery.app.task.Task.update_state>`, stores made
 from the worker's main process, such as after a pool process is lost, and
 reads by clients don't wait. Set to ``0`` or :const:`None` to turn the wait
-off.
+off. A task that can't store ``STARTED`` then goes back to the queue at once,
+and keeps coming back, with a warning each time, until the backend is back.
+
+On a RabbitMQ quorum queue every requeue counts as a delivery, and the queue
+drops a message after its delivery limit, 20 by default. That limit bounds the
+outage a task survives, to about 20 times this timeout, or to about 20
+deliveries with the wait off.
 
 
 .. setting:: result_backend_base_sleep_between_retries_ms

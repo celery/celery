@@ -176,6 +176,8 @@ class test_started_store_with_redis_backend:
         with pytest.raises(Reject):
             self.trace(task)
 
+        # It stops before the limit, so the task is requeued, not interrupted.
+        assert self.clock.now < 5
         assert self.clock.now == pytest.approx(5 - STORE_RETRY_LIMIT_MARGIN)
 
     def test_stores_from_the_task_body_fail_fast(self):
