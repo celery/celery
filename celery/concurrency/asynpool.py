@@ -1082,11 +1082,15 @@ class AsynPool(_pool.Pool):
         # cancel all tasks that haven't been accepted so that NACK is sent
         # if synack is enabled, otherwise discard them from the cache
         # since they will be redelivered by the broker.
+        # Without synack a job that was written runs in its child whether
+        # or not we saw it accepted: keep it, so that its result is handled
+        # and its message acked, and not also delivered again. A write that
+        # started but didn't finish is completed below.
         for job in tuple(self._cache.values()):
             if not job._accepted:
                 if self.synack:
                     job._cancel()
-                else:
+                elif job._write_to is None:
                     job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
@@ -1181,9 +1185,13 @@ class AsynPool(_pool.Pool):
             # always has a live worker, while a worker that died (whose fd may
             # since have been reused by a fresh replacement) must not be
             # re-counted as busy.
+            #
+            # Without synack a written job counts as running too, accepted
+            # or not: flush() kept it above because its child runs it.
             still_busy = set()
             for job in self._cache.values():
-                if not job._accepted:
+                if not job._accepted and (
+                        self.synack or job._write_to is None):
                     continue
                 proc = job._write_to or job._scheduled_for
                 if proc is not None and proc._is_alive():
