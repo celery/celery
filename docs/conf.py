@@ -31,6 +31,7 @@ globals().update(conf.build_config(
         'celery.contrib.testing.tasks',
         'celery.bin',
         'celery.bin.celeryd_detach',
+        'celery.bin.click_plugins',
         'celery.contrib',
         r'celery.fixups.*',
         'celery.local',

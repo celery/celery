@@ -1,5 +1,6 @@
 -r test-ci-base.txt
 -r extras/auth.txt
+-r extras/repl.txt
 -r extras/solar.txt
 -r extras/mongodb.txt
 -r extras/yaml.txt

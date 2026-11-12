@@ -7,8 +7,6 @@ from importlib.metadata import entry_points
 
 import click
 import click.exceptions
-from click_didyoumean import DYMGroup
-from click_plugins import with_plugins
 
 from celery import VERSION_BANNER
 from celery.app.utils import find_app
@@ -16,6 +14,7 @@ from celery.bin.amqp import amqp
 from celery.bin.base import CeleryCommand, CeleryOption, CLIContext, consume_preload_options
 from celery.bin.beat import beat
 from celery.bin.call import call
+from celery.bin.click_plugins import with_plugins
 from celery.bin.control import control, inspect, status
 from celery.bin.events import events
 from celery.bin.graph import graph
@@ -53,7 +52,7 @@ else:
 
 
 @with_plugins(_PLUGINS)
-@click.group(cls=DYMGroup, invoke_without_command=True)
+@click.group(invoke_without_command=True)
 @click.option('-A',
               '--app',
               envvar='APP',
