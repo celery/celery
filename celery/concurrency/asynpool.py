@@ -1084,7 +1084,8 @@ class AsynPool(_pool.Pool):
         # since they will be redelivered by the broker.
         # Without synack a job that was written runs in its child whether
         # or not we saw it accepted: keep it, so that its result is handled
-        # and its message acked, and not also delivered again.
+        # and its message acked, and not also delivered again. A write that
+        # started but didn't finish is completed below.
         for job in tuple(self._cache.values()):
             if not job._accepted:
                 if self.synack:
