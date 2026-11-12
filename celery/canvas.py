@@ -1175,12 +1175,15 @@ class _chain(Signature):
         else:
             return NotImplemented
 
-    def clone(self, *args, **kwargs):
+    def clone(self, args=None, kwargs=None, **opts):
         to_signature = maybe_signature
-        signature = super().clone(*args, **kwargs)
+        # Partial arguments belong to the first task, not the chain's metadata.
+        signature = super().clone(**opts)
         signature.kwargs['tasks'] = [
-            to_signature(sig, app=self._app, clone=True)
-            for sig in signature.kwargs['tasks']
+            to_signature(sig, app=self._app).clone(args=args, kwargs=kwargs)
+            if index == 0 and not self.immutable and (args or kwargs)
+            else to_signature(sig, app=self._app, clone=True)
+            for index, sig in enumerate(signature.kwargs['tasks'])
         ]
         return signature
 
