@@ -263,7 +263,8 @@ Module Overview
 - celery.bin
 
     Command-line applications.
-    :file:`setup.py` creates setuptools entry-points for these.
+    :file:`pyproject.toml` creates setuptools entry-points for these
+    (see ``[project.scripts]``).
 
 - celery.concurrency
 

@@ -1,3 +1,53 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "celery"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+description = "Distributed Task Queue."
+readme = "README.rst"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+keywords = ["task", "job", "queue", "distributed", "messaging", "actor"]
+authors = [
+    {name = "Ask Solem", email = "auvipy@gmail.com"},
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Software Development :: Object Brokering",
+    "Framework :: Celery",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://docs.celeryq.dev/"
+Documentation = "https://docs.celeryq.dev/en/stable/"
+Changelog = "https://docs.celeryq.dev/en/stable/changelog.html"
+Code = "https://github.com/celery/celery"
+Tracker = "https://github.com/celery/celery/issues"
+Funding = "https://opencollective.com/celery"
+
+[project.scripts]
+celery = "celery.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["celery*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "celery.__version__"}
+
 [tool.pytest.ini_options]
 addopts = "--strict-markers"
 testpaths = "t/unit/"
