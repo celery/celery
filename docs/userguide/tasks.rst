@@ -1824,6 +1824,15 @@ Available handlers
        result backend with ``FAILURE`` state. External clients may observe
        the task as failed while this handler is still running.
 
+    .. note::
+       Not called when the pool process that runs the task is lost, for
+       example when the out-of-memory killer ends it. The task is then
+       stored as ``FAILURE`` with :exc:`@WorkerLostError`
+       from the main worker process, errbacks run and :signal:`task_failure`
+       is sent, but ``on_failure`` and ``after_return`` are not called.
+       Use the signal or an errback for cleanup that must also cover a lost
+       process.
+
     :param exc: The exception raised by the task.
     :param task_id: Unique id of the failed task.
     :param args: Original arguments for the failed task.

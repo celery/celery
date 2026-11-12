@@ -282,6 +282,15 @@ are executed in a timely manner you should monitor the queue for congestion. Use
 Munin, or similar tools, to receive alerts, so appropriate action can be
 taken to ease the workload. See :ref:`monitoring-munin`.
 
+.. note::
+
+    ``countdown`` and a numeric ``expires`` become a date and time on the
+    clock of the process that sends the task, and the worker compares that
+    with its own clock. If the two clocks differ, a task can start before
+    its countdown is over, and a task with ``expires`` can be discarded
+    before it expired or run after its expiry. Keep the clocks of the
+    clients and the workers in sync, for example with NTP.
+
 If the task has a :attr:`~@Task.rate_limit` configured, the rate limit
 is enforced once the ETA has passed: the task starts no earlier than its
 ETA, and rate limiting may delay it further beyond that point.
