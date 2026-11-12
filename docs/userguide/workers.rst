@@ -700,7 +700,8 @@ name:
     write it. The revokes it received since it started are then missing from
     the file, and a revoked task that is delivered again after the restart
     runs. At startup the worker still gets the revoked ids that other
-    running workers know.
+    running workers know, unless it was started with
+    :option:`celery worker --without-mingle`.
 
 See also :ref:`worker-files`
 
