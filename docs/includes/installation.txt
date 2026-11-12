@@ -88,9 +88,6 @@ Transports and Backends
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
-:``celery[riak]``:
-    for using Riak as a result backend.
-
 :``celery[dynamodb]``:
     for using AWS DynamoDB as a result backend.
 

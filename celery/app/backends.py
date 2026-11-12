@@ -26,7 +26,6 @@ BACKEND_ALIASES = {
     'couchbase': 'celery.backends.couchbase:CouchbaseBackend',
     'couchdb': 'celery.backends.couchdb:CouchBackend',
     'cosmosdbsql': 'celery.backends.cosmosdbsql:CosmosDBSQLBackend',
-    'riak': 'celery.backends.riak:RiakBackend',
     'file': 'celery.backends.filesystem:FilesystemBackend',
     'disabled': 'celery.backends.base:DisabledBackend',
     'consul': 'celery.backends.consul:ConsulBackend',
@@ -42,6 +41,11 @@ def by_name(backend=None, loader=None,
             extension_namespace='celery.result_backends'):
     """Get backend class by name/alias."""
     backend = backend or 'disabled'
+    if backend == 'riak':
+        raise ImproperlyConfigured(
+            'The Riak result backend was removed in Celery 5.0.0 (#5686); '
+            'configure a different result backend.'
+        )
     loader = loader or current_app.loader
     aliases = dict(BACKEND_ALIASES, **loader.override_backends)
     aliases.update(load_extension_class_names(extension_namespace))
