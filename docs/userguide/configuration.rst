@@ -4682,6 +4682,15 @@ A value of 0 (default) means sync based on timing - default of 3 minutes as dete
 scheduler.sync_every. If set to 1, beat will call sync after every task
 message sent.
 
+.. note::
+
+    Between two syncs, the time an entry last ran is only in memory. A beat
+    that is killed, for example with :sig:`KILL` or by the out-of-memory
+    killer, starts again from the last sync and can send again a run that it
+    already sent. A beat that is stopped cleanly writes the file first. Set
+    this to 1 if a repeated run is worse for you than a write for every
+    message.
+
 .. setting:: beat_max_loop_interval
 
 ``beat_max_loop_interval``
