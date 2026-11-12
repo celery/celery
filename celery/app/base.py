@@ -738,6 +738,7 @@ class Celery:
         decorated_fun = fun
         name = name or self.gen_task_name(fun.__name__, fun.__module__)
         base = base or self.Task
+        base = base if isinstance(base, tuple) else (base,)
 
         if name not in self._tasks:
             if pydantic is True:
@@ -748,7 +749,7 @@ class Celery:
                 dump_pydantic_arguments = None
 
             run = fun if bind else staticmethod(fun)
-            task = type(fun.__name__, (base,), dict({
+            task = type(fun.__name__, base, dict({
                 'app': self,
                 'name': name,
                 'run': run,
