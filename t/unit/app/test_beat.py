@@ -471,6 +471,20 @@ class test_Scheduler:
         scheduler.update_from_dict(s)
         assert 0 < scheduler.tick() <= min(nums) - 0.010
 
+    def test_tick_delay_never_exceeds_the_entry_next_run(self):
+        # The heap stores an absolute timestamp, and the delay is recovered by
+        # subtracting two of them; with a fixed clock the result is the same on
+        # every machine, and it must not be longer than the entry asked for
+        # (it asked for a second, less the 10ms of drift tick() applies).
+        now = datetime(2026, 1, 1, 12, 0, 0, 123456, tzinfo=timezone.utc)
+        scheduler = mScheduler(app=self.app)
+        scheduler.add(
+            name='test_tick_delay_never_exceeds_the_entry_next_run',
+            schedule=mocked_schedule(False, 1, nowfun=lambda: now),
+        )
+
+        assert scheduler.tick() == 1 - 0.010
+
     def test_ticks_microseconds(self):
         scheduler = mScheduler(app=self.app)
 

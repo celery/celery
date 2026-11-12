@@ -222,6 +222,19 @@ def _evaluate_entry_kwargs(entry_kwargs):
     }
 
 
+def _delay_seconds(timestamp, now):
+    """Return the time between two epoch timestamps, in whole microseconds.
+
+    :meth:`Scheduler._when` stores an absolute timestamp, and a float at
+    today's epoch magnitude only resolves to about 0.24 microseconds, so
+    recovering a delay by subtracting two of them can return a value up to
+    0.12 microseconds *longer* than the one the entry asked for -- a delay the
+    scheduler would then sleep past.  Both timestamps are built from datetimes,
+    which carry microseconds, so cut the difference back to that resolution.
+    """
+    return int((timestamp - now) * 1000000) / 1000000.0
+
+
 class Scheduler:
     """Scheduler for periodic tasks.
 
@@ -366,7 +379,7 @@ class Scheduler:
         entry = event[2]
         now = self._when(entry, 0)
         if event[0] > now:
-            return min(event[0] - now, max_interval)
+            return min(_delay_seconds(event[0], now), max_interval)
 
         try:
             is_due, next_time_to_run = self.is_due(entry)
@@ -382,7 +395,8 @@ class Scheduler:
                 return 0
             else:
                 heappush(H, verify)
-                return min(verify[0] - self._when(verify[2], 0), max_interval)
+                return min(_delay_seconds(verify[0], self._when(verify[2], 0)),
+                           max_interval)
 
         # Heap says this entry should be ready by now, but the entry requests
         # to retry later.  Reheap it at that retry time, otherwise it just
@@ -396,7 +410,8 @@ class Scheduler:
             return 0 if H and H[0][2] is not entry else min(adjust(reschedule_delay), max_interval)
         else:
             heappush(H, verify)
-            return min(verify[0] - self._when(verify[2], 0), max_interval)
+            return min(_delay_seconds(verify[0], self._when(verify[2], 0)),
+                       max_interval)
 
     def schedules_equal(self, old_schedules, new_schedules):
         if old_schedules is new_schedules is None:
