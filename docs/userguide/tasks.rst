@@ -556,6 +556,10 @@ You can disable the argument checking for any task by setting its
     >>> add.delay(8)
     <AsyncResult: f59d71ca-1549-43e0-be41-4e8821a83c0c>
 
+To disable argument checking by default for all tasks in an application,
+configure :setting:`strict_typing` before the tasks are bound. A task's
+explicit ``typing`` option takes precedence over this application default.
+
 .. _task-hiding-sensitive-information:
 
 Hiding sensitive information in arguments
