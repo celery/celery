@@ -13,9 +13,8 @@ from .base import KeyValueStoreBackend
 
 try:
     from pyArango import connection as py_arango_connection
-    from pyArango.theExceptions import AQLQueryError
 except ImportError:
-    py_arango_connection = AQLQueryError = None
+    py_arango_connection = None
 
 __all__ = ('ArangoDbBackend',)
 
