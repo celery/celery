@@ -231,3 +231,108 @@ class test_shutdown_handler:
         callback.assert_not_called()
         safe_say_mock.assert_not_called()
         assert state.should_stop == 0
+
+
+class test_autoreload:
+
+    def test_start_autoreloader(self):
+        from celery.apps import worker as worker_module
+        w = Mock(autoreload=True)
+        w.app.IS_macOS = w.app.IS_WINDOWS = False
+        with patch('celery.worker.autoreload.Autoreloader') as Reloader:
+            worker_module.Worker.start_autoreloader(w)
+        Reloader.assert_called_once_with(w._on_autoreload)
+        Reloader.return_value.start.assert_called_once_with()
+        assert w._autoreloader is Reloader.return_value
+
+    @pytest.mark.parametrize('macos, windows, name', [
+        (True, False, 'macOS'), (False, True, 'Windows')])
+    def test_start_autoreloader_not_supported(self, macos, windows, name):
+        from celery.apps import worker as worker_module
+        w = Mock(autoreload=True)
+        w.app.IS_macOS, w.app.IS_WINDOWS = macos, windows
+        with patch('celery.worker.autoreload.Autoreloader') as Reloader, \
+                patch.object(worker_module, 'logger') as logger:
+            worker_module.Worker.start_autoreloader(w)
+        Reloader.assert_not_called()
+        assert logger.warning.call_args[0][1] == name
+
+    def test_on_autoreload_restarts(self, monkeypatch):
+        from celery.apps import worker as worker_module
+        monkeypatch.setattr(state, 'should_stop', None)
+        monkeypatch.setattr(state, 'should_terminate', None)
+        with patch.object(worker_module, 'restart_worker') as restart:
+            worker_module.Worker._on_autoreload(Mock(), '/mod.py')
+        restart.assert_called_once_with()
+
+    @pytest.mark.parametrize('attr, value', [
+        ('should_stop', 0), ('should_terminate', True)])
+    def test_on_autoreload_ignored_while_shutting_down(
+            self, monkeypatch, attr, value):
+        from celery.apps import worker as worker_module
+        monkeypatch.setattr(state, 'should_stop', None)
+        monkeypatch.setattr(state, 'should_terminate', None)
+        monkeypatch.setattr(state, attr, value)
+        with patch.object(worker_module, 'restart_worker') as restart:
+            worker_module.Worker._on_autoreload(Mock(), '/mod.py')
+        restart.assert_not_called()
+
+    def test_on_close_stops_autoreloader(self, make_worker):
+        w = make_worker()
+        w._autoreloader = Mock()
+        with patch.object(WorkController, 'on_close') as on_close:
+            w.on_close()
+        w._autoreloader.stop.assert_called_once_with()
+        on_close.assert_called_once_with()
+
+    def test_on_close_without_autoreloader(self, make_worker):
+        w = make_worker()
+        with patch.object(WorkController, 'on_close') as on_close:
+            w.on_close()
+        on_close.assert_called_once_with()
+
+    @pytest.fixture
+    def make_worker(self, app):
+        def _make(**kwargs):
+            return Worker(app=app, hostname='test@example.com',
+                          concurrency=2, pool='solo', **kwargs)
+        return _make
+
+    def test_autoreload_disabled_by_default(self, make_worker):
+        assert make_worker().autoreload is False
+
+    @pytest.mark.parametrize('autoreload, started', [(True, 1), (False, 0)])
+    def test_on_start_starts_autoreloader_if_enabled(
+            self, make_worker, autoreload, started):
+        w = make_worker(autoreload=autoreload, quiet=True)
+        assert w.autoreload is autoreload
+        w.redirect_stdouts = False
+        w._custom_logging = True
+        with patch.object(WorkController, 'on_start'), \
+                patch.object(w, 'install_platform_tweaks'), \
+                patch.object(w, 'set_process_status'), \
+                patch.object(w, 'start_autoreloader') as start:
+            w.on_start()
+        assert start.call_count == started
+
+    def test_restart_worker(self, monkeypatch):
+        from celery.apps import worker as worker_module
+        monkeypatch.setattr(state, 'should_stop', None)
+        with patch.object(worker_module, 'safe_say') as say, \
+                patch('atexit.register') as register:
+            worker_module.restart_worker()
+        say.assert_called_once()
+        assert 'Restarting celery worker' in say.call_args[0][0]
+        register.assert_called_once_with(worker_module._reload_current_worker)
+        assert state.should_stop == worker_module.EX_OK
+
+    def test_sighup_handler_restarts_worker(self):
+        from celery.apps import worker as worker_module
+        with patch.object(worker_module.platforms, 'signals') as signals:
+            worker_module.install_worker_restart_handler(Mock())
+        (sig, handler), _ = signals.__setitem__.call_args
+        assert sig == 'SIGHUP'
+        with patch.object(worker_module, 'restart_worker') as restart, \
+                patch.object(worker_module, 'set_in_sighandler'):
+            handler()
+        restart.assert_called_once_with()
