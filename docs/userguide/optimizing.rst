@@ -260,6 +260,77 @@ are picklable and that your worker entry point is guarded by
 ``if __name__ == '__main__':``.
 
 
+.. _optimizing-prefork-memory-sharing:
+
+Memory sharing with the prefork pool
+------------------------------------
+
+The prefork pool starts its children with :func:`os.fork`, so each child begins
+with a copy-on-write view of the master process's memory. The app modules, the
+task registry, and everything else imported before the fork stay shared until a
+page is written to.
+
+Python's cyclic garbage collector works against that sharing. A full collection
+in a child touches the garbage-collector header of every tracked object it
+walks, even when the object survives, and each child then ends up with a private
+copy of those pages. On a worker that imports hundreds of megabytes of code,
+that can turn what looked like cheap sharing into a large per-child footprint.
+
+:func:`gc.freeze` moves the objects that exist at freeze time into a permanent
+generation that the collector never walks again. Freeze them in the master
+process before the pool forks, with the :signal:`worker_init` signal:
+
+.. code-block:: python
+
+    import gc
+
+    from celery.signals import worker_init
+
+    @worker_init.connect
+    def freeze_gc_before_fork(**kwargs):
+        # Collect first: frozen objects are never collected again.
+        gc.collect()
+        gc.freeze()
+
+:signal:`worker_init` is sent in the master process before the pool starts, so
+every child inherits the frozen generations, including the children Celery
+creates later to replace workers that reach
+:setting:`worker_max_tasks_per_child` or
+:setting:`worker_max_memory_per_child`.
+
+If you want the stronger pattern from the :mod:`gc` documentation, disable the
+collector early in the master process, freeze before the fork, and enable it
+again in each child with :signal:`worker_process_init`:
+
+.. code-block:: python
+
+    import gc
+
+    from celery.signals import worker_init, worker_process_init
+
+    @worker_init.connect
+    def freeze_gc_before_fork(**kwargs):
+        gc.collect()
+        gc.disable()
+        gc.freeze()
+
+    @worker_process_init.connect
+    def enable_gc_in_child(**kwargs):
+        gc.enable()
+
+Measure the effect with PSS (the ``Pss`` field of
+``/proc/<pid>/smaps_rollup``), not RSS. RSS counts the shared pages in every
+process, so it overstates what the sharing saves.
+
+.. note::
+
+    Freezing only helps with the ``fork`` start method; children started with
+    ``spawn`` have no shared pages to begin with (see
+    :ref:`optimizing-pool-start-method`). Reference-count updates still write to
+    pages, so freeze only objects that live for the whole worker lifetime and
+    keep the number of long-lived objects created after the fork small.
+
+
 .. rubric:: Footnotes
 
 .. [*] The chapter is available to read for free here:
