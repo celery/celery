@@ -397,9 +397,6 @@ Transports and Backends
 :``celery[elasticsearch]``:
     for using Elasticsearch as a result backend.
 
-:``celery[riak]``:
-    for using Riak as a result backend.
-
 :``celery[cosmosdbsql]``:
     for using Azure Cosmos DB as a result backend (using ``pydocumentdb``)
 

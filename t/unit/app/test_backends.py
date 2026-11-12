@@ -97,6 +97,12 @@ class test_backends:
         with pytest.raises(ImportError):
             backends.by_name('fasodaopjeqijwqe', app.loader)
 
+    def test_riak_backend_was_removed(self, app):
+        with pytest.raises(ImproperlyConfigured, match='removed in Celery 5.0.0'):
+            backends.by_name('riak', app.loader)
+        with pytest.raises(ImproperlyConfigured, match='removed in Celery 5.0.0'):
+            backends.by_url('riak://localhost/0', app.loader)
+
     def test_backend_by_url(self, app, url='redis://localhost/1'):
         from celery.backends.redis import RedisBackend
         backend, url_ = backends.by_url(url, app.loader)
