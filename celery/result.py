@@ -253,9 +253,7 @@ class AsyncResult(ResultBase):
             _on_interval.then(on_interval)
 
         if self._cache:
-            if propagate:
-                self.maybe_throw(callback=callback)
-            return self.result
+            return self.maybe_throw(propagate=propagate, callback=callback)
 
         self.backend.add_pending_result(self)
         return self.backend.wait_for_pending(

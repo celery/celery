@@ -344,6 +344,13 @@ class test_AsyncResult:
         assert none_res.get() is None
         assert none_res.state == states.SUCCESS
 
+    def test_get__callback_is_called_for_cached_meta(self):
+        ok_res = self.app.AsyncResult(self.task1['id'])
+        assert ok_res.get() == 'the'  # fills the meta cache
+        callback = Mock(name='callback')
+        assert ok_res.get(propagate=False, callback=callback) == 'the'
+        callback.assert_called_with(ok_res.id, 'the')
+
     def test_get_when_ignored(self):
         result = self.app.AsyncResult(uuid())
         result.ignored = True
