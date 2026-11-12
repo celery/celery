@@ -1775,9 +1775,12 @@ Default: Not configured
 
 The Redis backend supports health checks.  This value must be
 set as an integer whose value is the number of seconds between
-health checks.  If a ConnectionError or a TimeoutError is
-encountered during the health check, the connection will be
-re-established and the command retried exactly once.
+health checks.  When a connection has not been used for longer
+than this interval, a ``PING`` is sent on it before the next command.
+If the ``PING`` fails with a ``ConnectionError`` or a ``TimeoutError``,
+the connection is closed and the error is raised; the health check
+is retried once on a new connection only when
+:setting:`redis_retry_on_timeout` is enabled.
 
 .. setting:: redis_backend_use_ssl
 
