@@ -2473,6 +2473,27 @@ class test_create_request_class(RequestCase):
         with pytest.raises(TaskRevokedError):
             job.execute_using_pool(self.pool)
 
+    def test_execute_using_pool__revoked_while_waiting_for_a_slot(self):
+        tid = uuid()
+        job = self.zRequest(id=tid, revoked_tasks=set())
+        pool = Mock(name='pool')
+        pool.signal_safe = False
+        callback = job._new_accept_callback(pool, tid)
+
+        job.revoked = Mock(return_value=True)
+        with pytest.raises(TaskRevokedError):
+            callback(1234, monotonic())
+
+        assert job.acknowledged
+        job.on_reject.assert_called()
+
+    def test_new_accept_callback__prefork_keeps_the_plain_callback(self):
+        job = self.zRequest(id=uuid())
+        pool = Mock(name='pool')
+        pool.signal_safe = True
+        callback = job._new_accept_callback(pool, job.id)
+        assert callback.__func__ is job.on_accepted.__func__
+
     def test_execute_using_pool(self):
         weakref_ref = Mock(name='weakref.ref')
         job = self.zRequest(id=uuid(), revoked_tasks=set(), ref=weakref_ref)

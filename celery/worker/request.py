@@ -345,6 +345,26 @@ class Request:
         # used similarly to reply_to
         return self._request_dict['correlation_id']
 
+    def _new_accept_callback(self, pool, task_id):
+        """Check for a revocation issued while the task waited in the pool.
+
+        Threads, eventlet and gevent execute a queued task as soon as a slot
+        frees up, long after ``execute_using_pool`` looked at the revocation
+        set. Re-check in ``accept_callback`` so a revocation that arrived
+        while the task was waiting still wins. The prefork pool does not need
+        this: it re-checks the revocation set whenever a job is written back.
+        """
+        if pool.signal_safe:
+            return self.on_accepted
+
+        def on_accepted(pid, time_accepted):
+            if self.revoked():
+                self.reject(requeue=False)
+                raise TaskRevokedError(task_id)
+            self.on_accepted(pid, time_accepted)
+
+        return on_accepted
+
     def execute_using_pool(self, pool: BasePool, **kwargs):
         """Used by the worker to send this task to the pool.
 
@@ -362,11 +382,12 @@ class Request:
 
         time_limit, soft_time_limit = self.time_limits
         trace = fast_trace_task if self._app.use_fast_trace_task else trace_task_ret
+        accept_callback = self._new_accept_callback(pool, task_id)
         result = pool.apply_async(
             trace,
             args=(self._type, task_id, self._request_dict, self._body,
                   self._content_type, self._content_encoding),
-            accept_callback=self.on_accepted,
+            accept_callback=accept_callback,
             timeout_callback=self.on_timeout,
             callback=self.on_success,
             error_callback=self.on_failure,
@@ -1006,11 +1027,12 @@ def create_request_cls(base, task, pool, hostname, eventer,
                 raise TaskRevokedError(task_id)
 
             time_limit, soft_time_limit = self.time_limits
+            accept_callback = self._new_accept_callback(pool, task_id)
             result = apply_async(
                 trace,
                 args=(self.type, task_id, self.request_dict, self.body,
                       self.content_type, self.content_encoding),
-                accept_callback=self.on_accepted,
+                accept_callback=accept_callback,
                 timeout_callback=self.on_timeout,
                 callback=self.on_success,
                 error_callback=self.on_failure,
