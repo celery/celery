@@ -169,7 +169,8 @@ class test_get_available_pool_names:
             'processes',
             'custom',
         )
-        with patch.dict(sys.modules, {'concurrent.futures': None}):
+        with patch.dict(sys.modules, {'concurrent.futures': None,
+                                      'concurrent.interpreters': None}):
             importlib.reload(concurrency)
             assert concurrency.get_available_pool_names() == expected_pool_names
 
@@ -183,6 +184,23 @@ class test_get_available_pool_names:
             'threads',
             'custom',
         )
-        with patch.dict(sys.modules, {'concurrent.futures': Mock()}):
+        with patch.dict(sys.modules, {'concurrent.futures': Mock(),
+                                      'concurrent.interpreters': None}):
+            importlib.reload(concurrency)
+            assert concurrency.get_available_pool_names() == expected_pool_names
+
+    def test_concurrent_interpreters__returns_subinterpreter_pool_name(self):
+        expected_pool_names = (
+            'prefork',
+            'eventlet',
+            'gevent',
+            'solo',
+            'processes',
+            'threads',
+            'subinterpreter',
+            'custom',
+        )
+        with patch.dict(sys.modules, {'concurrent.futures': Mock(),
+                                      'concurrent.interpreters': Mock()}):
             importlib.reload(concurrency)
             assert concurrency.get_available_pool_names() == expected_pool_names
