@@ -1,16 +1,18 @@
+import pickle
 from unittest.mock import ANY, Mock, PropertyMock, patch
 from uuid import uuid4
 
 import pytest
 from billiard.einfo import ExceptionInfo
-from kombu.exceptions import EncodeError
+from kombu.exceptions import EncodeError, OperationalError
 
 from celery import group, signals, states, uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
-                              log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
-                              trace_task, trace_task_ret, traceback_clear)
+                              log_policy_unexpected, report_internal_error, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task, trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
@@ -54,6 +56,138 @@ class TraceCase:
 
 
 class test_trace(TraceCase):
+    @pytest.mark.parametrize('group_as_link', [False, True])
+    def test_grouped_callbacks_publish_in_retry_context(self, group_as_link):
+        @self.app.task(shared=False)
+        def link(value, extra):
+            return value + extra
+
+        callbacks = [link.s(1), link.s(2)]
+        if group_as_link:
+            callbacks = [group(callbacks, app=self.app), link.s(3)]
+        contexts = []
+
+        def publish(*args, **kwargs):
+            contexts.append(_callback_publish_retry.get())
+
+        producer, acquire = self._producer_for_publish(publish)
+        with acquire:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'callbacks': callbacks}, eager=False,
+            )
+        assert result == 4
+        assert info is None
+        assert producer.publish.call_count == len(contexts)
+        assert contexts == [True] * (3 if group_as_link else 2)
+        assert _callback_publish_retry.get() is False
+
+    def _producer_for_publish(self, side_effect):
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = side_effect
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        return producer, patch.object(self.app, 'producer_or_acquire', acquire)
+
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @patch('celery.canvas.maybe_signature')
+    def test_refused_publish_retries_without_rerunning_body(
+        self, maybe_signature, dispatch, acks_late,
+    ):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2)
+        maybe_signature.return_value = sig
+        request = {dispatch: [sig], 'root_id': 'root'}
+        producer, acquire = self._producer_for_publish(
+            [OperationalError('refused'), None],
+        )
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run:
+            result, info, _ = self.trace(
+                self.add, (2, 2), {}, request=request, eager=False,
+            )
+        assert result == 4
+        assert info is None
+        assert producer.publish.call_count == 2
+        run.assert_called_once_with(2, 2)
+        assert self.add.backend.get_state('id-1') == states.SUCCESS
+
+    @pytest.mark.parametrize('acks_late', [False, True])
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    def test_refused_publish_exhaustion_is_a_task_failure(self, dispatch, acks_late):
+        self.app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+        self.add.acks_late = acks_late
+        task_id = uuid()
+
+        @self.app.task(shared=False)
+        def link(x, y):
+            return x + y
+
+        sig = link.s(2).set(task_id=uuid())
+        producer, acquire = self._producer_for_publish(OperationalError('refused'))
+        with acquire, patch.object(self.add, 'run', wraps=self.add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                self.add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        assert info.state == states.FAILURE
+        assert producer.publish.call_count == 3
+        run.assert_called_once_with(2, 2)
+        internal_error.assert_not_called()
+        assert self.add.backend.get_state(task_id) == states.FAILURE
+        if dispatch == 'chain':
+            assert self.add.backend.get_state(sig.id) == states.FAILURE
+
+    @pytest.mark.parametrize('dispatch', ['callbacks', 'chain'])
+    @pytest.mark.parametrize('error', [EncodeError, OperationalError])
+    def test_result_write_error_after_callbacks_preserves_error_handling(self, dispatch, error):
+        @self.app.task(shared=False, after_return=Mock())
+        def add(x, y):
+            return x + y
+
+        @self.app.task(shared=False)
+        def link(value):
+            return value
+
+        task_id, sig = uuid(), link.s()
+        with patch.object(sig, 'apply_async') as apply_async, \
+                patch.object(add.backend, 'mark_as_done', side_effect=error('store failed')), \
+                patch.object(add, 'run', wraps=add.run) as run, \
+                patch('celery.app.trace.signals.task_internal_error.send') as internal_error:
+            _, info, _ = self.trace(
+                add, (2, 2), {}, request={'id': task_id, dispatch: [sig]},
+                task_id=task_id, eager=False,
+            )
+        apply_async.assert_called_once()
+        run.assert_called_once_with(2, 2)
+        assert info.state == states.FAILURE
+        assert add.backend.get_state(task_id) == states.FAILURE
+        if error is OperationalError:
+            internal_error.assert_called_once()
+            add.after_return.assert_not_called()
+        else:
+            internal_error.assert_not_called()
+            add.after_return.assert_called_once_with(states.FAILURE, ANY, task_id, (2, 2), {}, None)
+
     def test_trace_successful(self):
         retval, info, _ = self.trace(self.add, (2, 2), {})
         assert info is None
@@ -589,6 +723,38 @@ class test_trace(TraceCase):
     def test_trace_exception_propagate(self):
         with pytest.raises(KeyError):
             self.trace(self.raises, (KeyError('foo'),), {}, propagate=True)
+
+    def test_report_internal_error_with_unpickleable_exception_type(self):
+        class LocalError(ValueError):
+            pass
+
+        try:
+            raise LocalError('internal error')
+        except LocalError as exc:
+            with pytest.warns(RuntimeWarning):
+                einfo = report_internal_error(self.add, exc)
+
+        restored = pickle.loads(pickle.dumps(einfo))
+
+        assert isinstance(restored, ExceptionInfo)
+        assert restored.internal is True
+        assert restored.type is Exception
+        assert isinstance(restored.exception, ValueError)
+        assert restored.exception.args == ('internal error',)
+        assert restored.traceback == einfo.traceback
+
+    def test_report_internal_error_with_pickleable_exception_type(self):
+        try:
+            raise ValueError('internal error')
+        except ValueError as exc:
+            with pytest.warns(RuntimeWarning):
+                einfo = report_internal_error(self.add, exc)
+
+        restored = pickle.loads(pickle.dumps(einfo))
+
+        assert restored.type is ValueError
+        assert isinstance(restored.exception, ValueError)
+        assert restored.exception.args == ('internal error',)
 
     @patch('celery.app.trace.signals.task_internal_error.send')
     @patch('celery.app.trace.build_tracer')
