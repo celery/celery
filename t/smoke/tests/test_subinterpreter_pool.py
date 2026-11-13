@@ -15,10 +15,11 @@ import pytest
 from pytest_celery import CeleryTestSetup, CeleryTestWorker, CeleryWorkerContainer, defaults
 from pytest_docker_tools import build, container, fxtr
 
+from celery import states
 from celery.canvas import chain, group
 from t.smoke import subinterpreter_tasks
 from t.smoke.conftest import SuiteOperations, WorkerKill
-from t.smoke.subinterpreter_tasks import add, current_interpreter_id, fail, long_running_task
+from t.smoke.subinterpreter_tasks import add, current_interpreter_id, fail, long_running_task, stoppable_task
 from t.smoke.workers.dev import SmokeWorkerContainer
 
 RESULT_TIMEOUT = 30
@@ -146,3 +147,51 @@ class test_subinterpreter_pool_shutdown(SuiteOperations):
         assert_container_exited(worker)
         assert res.get(RESULT_TIMEOUT)
         worker.assert_log_does_not_exist("Traceback", timeout=1)
+
+    def test_cold_shutdown_stops_stoppable_task(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        worker = celery_setup.worker
+        sig = stoppable_task.si(120).set(queue=queue)
+        sig.delay()
+        worker.assert_log_exists("Starting stoppable task")
+        self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+        worker.assert_log_exists("Stoppable task asked to stop")
+        assert_container_exited(worker)
+
+
+class test_subinterpreter_pool_stop:
+    def test_revoke_terminate_stops_stoppable_task(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        worker = celery_setup.worker
+        res = stoppable_task.si(120).set(queue=queue).delay()
+        worker.assert_log_exists("Starting stoppable task")
+        res.revoke(terminate=True)
+        worker.assert_log_exists("Stoppable task asked to stop")
+        worker.assert_log_exists(f"stoppable_task[{res.id}] ignored")
+        assert res.state == states.REVOKED
+
+    def test_soft_time_limit_stops_stoppable_task(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        worker = celery_setup.worker
+        res = stoppable_task.si(120).set(queue=queue, soft_time_limit=2).delay()
+        worker.assert_log_exists("Soft time limit (2s) exceeded")
+        worker.assert_log_exists(f"stoppable_task[{res.id}] ignored")
+
+
+class test_subinterpreter_pool_max_tasks_per_child:
+    @pytest.fixture
+    def default_worker_command(self, default_worker_container_cls: type[CeleryWorkerContainer]) -> list[str]:
+        return default_worker_container_cls.command(
+            "--pool=subinterpreter", "--concurrency=1", "--max-tasks-per-child=2",
+        )
+
+    def test_interpreter_replaced(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        ids = [
+            current_interpreter_id.si().set(queue=queue).delay().get(timeout=RESULT_TIMEOUT)
+            for _ in range(5)
+        ]
+        assert ids[0] == ids[1] != ids[2] == ids[3] != ids[4]
+        pool = get_pool_stats(celery_setup, celery_setup.worker)
+        assert pool["max-tasks-per-child"] == 2
+        assert pool["interpreters"] == 1

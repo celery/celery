@@ -14,7 +14,9 @@ Unreleased
 
 - New ``subinterpreter`` worker pool (``--pool=subinterpreter``, Python 3.14+)
   that runs tasks in parallel in isolated interpreters of the worker process.
-  Time limits and terminating running tasks are not supported, and the task
+  Running tasks cannot be interrupted: on revoke with ``terminate=True``, cold
+  shutdown or soft time limit they are asked to stop, which they see with
+  ``stop_requested()``, and hard time limits are not supported. The task
   modules can only use extension modules that support subinterpreters. See
   :ref:`concurrency-subinterpreter`.
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.

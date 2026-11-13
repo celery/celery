@@ -28,8 +28,8 @@ Overview of Concurrency Options
 - `threads`: Utilizes threading for concurrency, available if the
   `concurrent.futures` module is present.
 - `subinterpreter`: Runs tasks in parallel in isolated interpreters of the
-  same process (Python 3.14+). Time limits are not available, and extension
-  modules must support subinterpreters. See its detailed documentation page
+  same process (Python 3.14+). Running tasks cannot be interrupted, and
+  extension modules must support subinterpreters. See its detailed documentation page
   linked below.
 - `custom`: Enables specifying a custom worker pool implementation through
   environment variables.

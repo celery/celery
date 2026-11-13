@@ -5,18 +5,20 @@ each with its own GIL, driven by threads of the main interpreter.  Only the
 trace function and the message data cross into a subinterpreter: the
 callbacks run in the main interpreter, which owns the broker connection.
 
-A running subinterpreter cannot be interrupted, so time limits are not
-supported, and a task that is revoked with ``terminate=True`` or running at
-cold shutdown runs to completion.
+A running subinterpreter cannot be interrupted: hard time limits are not
+supported, and a task that is revoked with ``terminate=True``, running at
+cold shutdown or over its soft time limit is only asked to stop, see
+:func:`stop_requested`.
 """
 from __future__ import annotations
 
 import os
 import queue
 import sys
+import threading
 import time
 from concurrent import interpreters
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import TYPE_CHECKING, Any, Callable
 
 from billiard.einfo import ExceptionInfo
@@ -31,14 +33,18 @@ from celery.utils.log import get_logger
 from .base import BasePool
 from .thread import ApplyResult as _ThreadApplyResult
 
-__all__ = ('TaskPool', 'subinterpreter_initializer')
+__all__ = ('TaskPool', 'stop_requested', 'subinterpreter_initializer')
 
 if TYPE_CHECKING:
     from typing import TypedDict
 
     from celery import Celery
 
-    PoolInfo = TypedDict('PoolInfo', {'max-concurrency': int, 'interpreters': int})
+    PoolInfo = TypedDict('PoolInfo', {
+        'max-concurrency': int,
+        'max-tasks-per-child': int | str,
+        'interpreters': int,
+    })
 
     # `TargetFunction` should be a Protocol that represents fast_trace_task and
     # trace_task_ret.
@@ -77,22 +83,111 @@ def subinterpreter_initializer(app: Celery, hostname: str) -> None:
     signals.worker_process_init.send(sender=None)
 
 
-class ApplyResult(_ThreadApplyResult):
-    def terminate(self, signal: int | None = None) -> None:
-        # Only a job still waiting for an interpreter can be stopped.
-        self.f.cancel()
+def stop_requested() -> bool:
+    """Return whether the running task was asked to stop.
+
+    A running subinterpreter cannot be interrupted, so the pool asks the task
+    to stop instead: when it is revoked with ``terminate=True``, on cold
+    shutdown, or when its soft time limit is exceeded.  Long running tasks
+    can check this regularly and return early.
+
+    Always false outside of a subinterpreter pool.
+    """
+    return _stop_queue is not None and not _stop_queue.empty()
+
+
+#: In a pool subinterpreter, the queue the main interpreter writes to when
+#: the running task should stop.
+_stop_queue: interpreters.Queue | None = None
 
 
 def _setup_interpreter(
     sys_path: list[str],
+    stop_queue: interpreters.Queue,
     initializer: Callable[..., None] | None,
     initargs: tuple[Any, ...],
 ) -> None:
+    global _stop_queue
     # Subinterpreters do not inherit changes the main interpreter made to
     # sys.path (e.g. the current directory added by ``celery -A``).
     sys.path[:] = sys_path
+    _stop_queue = stop_queue
     if initializer is not None:
         initializer(*initargs)
+
+
+def _shutdown_interpreter() -> None:
+    signals.worker_process_shutdown.send(
+        sender=None, pid=os.getpid(), exitcode=0,
+    )
+
+
+class _Interpreter:
+    """A pool subinterpreter."""
+
+    def __init__(self, interp: interpreters.Interpreter,
+                 stop_queue: interpreters.Queue) -> None:
+        self.interp = interp
+        self.stop_queue = stop_queue
+        self.tasks = 0
+
+    def request_stop(self) -> None:
+        self.stop_queue.put(True)
+
+    def clear_stop(self) -> None:
+        while True:
+            try:
+                self.stop_queue.get_nowait()
+            except interpreters.QueueEmpty:
+                break
+
+    def close(self) -> None:
+        try:
+            self.interp.call(_shutdown_interpreter)
+            self.interp.close()
+        except interpreters.InterpreterError as exc:
+            # still running a task (terminate), cannot be interrupted.
+            logger.warning('Could not close subinterpreter %s: %s',
+                           self.interp.id, exc)
+
+
+class _Job:
+    """Tracks the interpreter running a job, to ask it to stop."""
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.interp: _Interpreter | None = None
+        self.stop = False
+
+    def start(self, interp: _Interpreter) -> None:
+        with self.lock:
+            interp.clear_stop()  # left over from a previous job
+            self.interp = interp
+            if self.stop:
+                interp.request_stop()
+
+    def done(self) -> None:
+        with self.lock:
+            self.interp = None
+
+    def request_stop(self) -> None:
+        with self.lock:
+            self.stop = True
+            if self.interp is not None:
+                self.interp.request_stop()
+
+
+class ApplyResult(_ThreadApplyResult):
+    def __init__(self, future: Future, job: _Job) -> None:
+        super().__init__(future)
+        self._job = job
+
+    def terminate(self, signal: int | None = None) -> None:
+        if not self.f.cancel():
+            logger.warning(
+                'The subinterpreter pool cannot terminate a running task, '
+                'asked it to stop: it does if it checks stop_requested().')
+            self._job.request_stop()
 
 
 class TaskPool(BasePool):
@@ -110,41 +205,69 @@ class TaskPool(BasePool):
         initargs = self.options.get('initargs')
         self.initializer = subinterpreter_initializer if initargs else None
         self.initargs = initargs or ()
+        self.max_tasks_per_child = self.options.get('maxtasksperchild')
         self.executor = ThreadPoolExecutor(
             max_workers=self.limit, thread_name_prefix='celery-subinterp')
-        self._interpreters: list[interpreters.Interpreter] = []
-        self._idle: queue.SimpleQueue[interpreters.Interpreter] = (
-            queue.SimpleQueue())
+        self._lock = threading.Lock()
+        self._interpreters: list[_Interpreter] = []
+        self._idle: queue.SimpleQueue[_Interpreter] = queue.SimpleQueue()
+        # Requests only keep a weak reference to their ApplyResult, which
+        # must stay alive until the job is done so they can terminate it.
+        self._results: set[ApplyResult] = set()
 
     def on_start(self) -> None:
-        if self.options.get('timeout') or self.options.get('soft_timeout'):
+        if self.options.get('timeout'):
             logger.warning(
-                'Time limits are not supported by the subinterpreter pool '
-                'and will be ignored.')
+                'Hard time limits are not supported by the subinterpreter '
+                'pool and will be ignored.')
         # Create the interpreters up front, in parallel, so that a task
         # module (or C extension) that cannot be loaded in a subinterpreter
         # fails the worker at startup and not on the first task.
-        try:
-            for interp in self.executor.map(
-                    lambda _: self._create_interpreter(), range(self.limit)):
-                self._interpreters.append(interp)
-                self._idle.put(interp)
-        except interpreters.ExecutionFailed:
-            logger.critical(
-                'Could not set up a subinterpreter, see the error below. If '
-                'an extension module does not support loading in a '
-                'subinterpreter, use another pool.')
-            raise
+        futures = [self.executor.submit(self._create_interpreter)
+                   for _ in range(self.limit)]
+        wait(futures)
+        created = [f.result() for f in futures if f.exception() is None]
+        errors = [f.exception() for f in futures if f.exception() is not None]
+        if errors:
+            for interp in created:
+                interp.close()
+            if isinstance(errors[0], interpreters.ExecutionFailed):
+                logger.critical(
+                    'Could not set up a subinterpreter, see the error below. '
+                    'If an extension module does not support loading in a '
+                    'subinterpreter, use another pool.')
+            raise errors[0]
+        with self._lock:
+            self._interpreters.extend(created)
+        for interp in created:
+            self._idle.put(interp)
 
-    def _create_interpreter(self) -> interpreters.Interpreter:
+    def _create_interpreter(self) -> _Interpreter:
         interp = interpreters.create()
+        stop_queue = interpreters.create_queue()
         try:
-            interp.call(_setup_interpreter, list(sys.path),
+            interp.call(_setup_interpreter, list(sys.path), stop_queue,
                         self.initializer, self.initargs)
         except BaseException:
             interp.close()
             raise
-        return interp
+        return _Interpreter(interp, stop_queue)
+
+    def _replace_interpreter(self, old: _Interpreter) -> _Interpreter:
+        try:
+            new = self._create_interpreter()
+        except Exception:
+            logger.exception('Could not replace subinterpreter %s, keeping it',
+                             old.interp.id)
+            old.tasks = 0
+            return old
+        with self._lock:
+            try:
+                self._interpreters[self._interpreters.index(old)] = new
+            except ValueError:  # the pool was stopped meanwhile.
+                new, old = old, new
+        old.close()
+        return new
 
     def on_stop(self) -> None:
         # Wait for running tasks; queued ones were never accepted (so never
@@ -158,20 +281,16 @@ class TaskPool(BasePool):
         self._close_interpreters()
 
     def _close_interpreters(self) -> None:
-        while self._interpreters:
-            interp = self._interpreters.pop()
-            try:
-                interp.close()
-            except interpreters.InterpreterError as exc:
-                # still running a task (terminate), cannot be interrupted.
-                logger.warning('Could not close subinterpreter %s: %s',
-                               interp.id, exc)
+        with self._lock:
+            interps, self._interpreters = self._interpreters, []
+        for interp in interps:
+            interp.close()
 
     def terminate_job(self, pid: int, signal: int | None = None) -> None:
-        # Called to revoke with terminate=True and at cold shutdown, which
-        # must not fail: the task is left to run to completion.
-        logger.warning('The subinterpreter pool cannot terminate a running '
-                       'task, it will run to completion.')
+        # Called to revoke with terminate=True and at cold shutdown, along
+        # with ApplyResult.terminate() which asks the task to stop: all jobs
+        # run in this process, the pid does not tell which one to stop.
+        pass
 
     def on_apply(
         self,
@@ -181,51 +300,92 @@ class TaskPool(BasePool):
         callback: Callable[..., Any] | None = None,
         accept_callback: Callable[..., Any] | None = None,
         error_callback: Callable[..., Any] | None = None,
+        soft_timeout: float | None = None,
         **_: Any
     ) -> ApplyResult:
-        f = self.executor.submit(self._run, target, args or (), kwargs or {},
-                                 callback, accept_callback, error_callback)
-        return ApplyResult(f)
+        job = _Job()
+        f = self.executor.submit(self._run, job, target, args or (),
+                                 kwargs or {}, callback, accept_callback,
+                                 error_callback, soft_timeout)
+        result = ApplyResult(f, job)
+        with self._lock:
+            self._results.add(result)
+        f.add_done_callback(lambda _: self._forget(result))
+        return result
 
-    def _run(
+    def _forget(self, result: ApplyResult) -> None:
+        with self._lock:
+            self._results.discard(result)
+
+    def _run(self, job: _Job, *args: Any) -> Any:
+        interp = self._idle.get()
+        try:
+            return self._run_in(interp, job, *args)
+        finally:
+            interp.tasks += 1
+            if (self.max_tasks_per_child and
+                    interp.tasks >= self.max_tasks_per_child):
+                interp = self._replace_interpreter(interp)
+            self._idle.put(interp)
+
+    def _run_in(
         self,
+        interp: _Interpreter,
+        job: _Job,
         target: TargetFunction,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
         callback: Callable[..., Any] | None,
         accept_callback: Callable[..., Any] | None,
         error_callback: Callable[..., Any] | None,
+        soft_timeout: float | None,
     ) -> Any:
-        interp = self._idle.get()
+        if accept_callback:
+            accept_callback(os.getpid(), time.monotonic())
+        timer = None
+        if soft_timeout:
+            timer = threading.Timer(soft_timeout, self._on_soft_timeout,
+                                    (job, soft_timeout))
+            timer.daemon = True
+        job.start(interp)
         try:
-            if accept_callback:
-                accept_callback(os.getpid(), time.monotonic())
+            if timer is not None:
+                timer.start()
+            ret = interp.interp.call(target, *args, **kwargs)
+        except Exception as exc:
+            # The trace functions report task errors in their return
+            # value, so this is a failure to run the task at all (e.g. an
+            # unregistered task or an unpicklable argument or result).
             try:
-                ret = interp.call(target, *args, **kwargs)
-            except Exception as exc:
-                # The trace functions report task errors in their return
-                # value, so this is a failure to run the task at all (e.g. an
-                # unregistered task or an unpicklable argument or result).
-                try:
-                    raise WorkerLostError(
-                        f'Could not run task in subinterpreter: {exc}',
-                    ) from exc
-                except WorkerLostError:
-                    einfo = ExceptionInfo()
-                if error_callback is None:
-                    raise
-                error_callback(einfo)
-                return None
+                raise WorkerLostError(
+                    f'Could not run task in subinterpreter: {exc}',
+                ) from exc
+            except WorkerLostError:
+                einfo = ExceptionInfo()
+            if error_callback is None:
+                raise
+            error_callback(einfo)
+            return None
         finally:
-            self._idle.put(interp)
+            if timer is not None:
+                timer.cancel()
+            job.done()
         if callback:
             callback(ret)
         return ret
+
+    @staticmethod
+    def _on_soft_timeout(job: _Job, soft_timeout: float) -> None:
+        logger.warning('Soft time limit (%ss) exceeded, asked the task to '
+                       'stop: it does if it checks stop_requested().',
+                       soft_timeout)
+        job.request_stop()
 
     def _get_info(self) -> PoolInfo:
         info = super()._get_info()
         info.update({
             'max-concurrency': self.limit,
+            'max-tasks-per-child': self.max_tasks_per_child or 'N/A',
             'interpreters': len(self._interpreters),
         })
         return info

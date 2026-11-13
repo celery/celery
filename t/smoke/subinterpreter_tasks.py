@@ -42,3 +42,25 @@ def long_running_task(seconds: float = 1) -> bool:
     logger.info("Finished long running task")
 
     return True
+
+
+@shared_task
+def stoppable_task(seconds: float) -> bool:
+    """Run up to ``seconds``, return early (ignored) if asked to stop."""
+    from time import monotonic
+
+    from celery import current_task
+    from celery.concurrency.subinterpreter import stop_requested
+    from celery.exceptions import Ignore
+    from celery.utils.log import get_task_logger
+
+    logger = get_task_logger(current_task.name)
+
+    logger.info("Starting stoppable task")
+    deadline = monotonic() + seconds
+    while monotonic() < deadline:
+        if stop_requested():
+            logger.info("Stoppable task asked to stop")
+            raise Ignore()
+        sleep(0.1)
+    return True

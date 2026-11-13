@@ -17,7 +17,8 @@ startup cost of threads.
 
 Each subinterpreter is set up once when the worker starts, like a ``prefork``
 child process started with ``spawn``: it imports the task modules, sets up
-logging and sends the :signal:`worker_process_init` signal.  Tasks then run
+logging and sends the :signal:`worker_process_init` signal (and
+:signal:`worker_process_shutdown` when it is closed).  Tasks then run
 in whichever subinterpreter is free, while acknowledging messages and
 reporting results is done by the worker's main interpreter.
 
@@ -61,17 +62,54 @@ Subinterpreters share the process but no Python objects: module-level state
 subinterpreter, as it is in each ``prefork`` child process.  Task arguments
 and return values are pickled to cross between interpreters.
 
-Time limits and terminating tasks
----------------------------------
+Stopping running tasks
+----------------------
 
-A running subinterpreter cannot be interrupted, so:
+A running subinterpreter cannot be interrupted, so the pool cannot stop a
+task by itself.  Instead, it *asks* the task to stop when:
 
-- :ref:`task time limits <worker-time-limits>` are not supported and are
-  ignored, with a warning at startup;
-- a task revoked with ``terminate=True`` runs to completion;
-- on :ref:`cold shutdown <worker-cold-shutdown>` the running tasks run to
-  completion before the worker exits, as on warm shutdown.  Tasks that did
-  not start yet are not run.
+- the task is revoked with ``terminate=True``;
+- the worker does a :ref:`cold shutdown <worker-cold-shutdown>`;
+- the task exceeds its soft time limit.
 
-:setting:`worker_max_tasks_per_child` and
-:setting:`worker_max_memory_per_child` are not supported either.
+A task sees the request with
+:func:`~celery.concurrency.subinterpreter.stop_requested`, and should check
+it regularly if it runs for long:
+
+.. code-block:: python
+
+    from celery.concurrency.subinterpreter import stop_requested
+    from celery.exceptions import Ignore
+
+    @app.task
+    def process(items):
+        for item in items:
+            if stop_requested():
+                raise Ignore()
+            handle(item)
+
+A task that does not check it runs to completion, and the worker waits for
+it before exiting, even on cold shutdown.
+
+What the task does when it stops is recorded as usual: returning normally
+records a success, even after the task was revoked, and raising an exception
+records a failure.  Raising :exc:`~celery.exceptions.Ignore` records nothing,
+so a revoked task stays ``REVOKED``.
+
+:func:`~celery.concurrency.subinterpreter.stop_requested` always returns
+false outside of the subinterpreter pool, but importing it needs
+Python 3.14.
+
+Hard :ref:`time limits <worker-time-limits>` are not supported, and are
+ignored with a warning at startup.
+
+Recycling subinterpreters
+-------------------------
+
+With :setting:`worker_max_tasks_per_child`, a subinterpreter is replaced by a
+new one after running that many tasks, which releases what the tasks leaked
+in it.  The :signal:`worker_process_shutdown` signal is sent in a
+subinterpreter before it is closed.
+
+:setting:`worker_max_memory_per_child` is not supported: memory is only
+measured for the whole process.
