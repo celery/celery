@@ -582,6 +582,7 @@ class State:
                 except KeyError:
                     task = tasks[uuid] = Task(uuid, cluster_state=self)
                     task_created = True
+                prev_worker, prev_name = task.worker, task.name
                 if is_client_event:
                     task.client = hostname
                 else:
@@ -611,11 +612,22 @@ class State:
                     self.task_count += 1
                 task.event(subject, timestamp, local_received, event)
                 task_name = task.name
+                # the indexes are WeakSets and WeakSet.add() allocates a new
+                # weakref even for an item it already holds, so only touch
+                # them when the name or the worker actually changed.
                 if task_name is not None:
                     add_type(task_name)
-                    if task_created:  # add to tasks_by_type index
+                    if task_name != prev_name:
                         get_task_by_type_set(task_name).add(task)
-                        get_task_by_worker_set(hostname).add(task)
+                if not is_client_event and task.worker is not prev_worker:
+                    # The worker is only known once a worker event arrives,
+                    # which isn't always the event that created the task.
+                    # The index follows the last worker event *processed*
+                    # (same as task.worker), not the one with the latest
+                    # clock: events from different workers aren't ordered.
+                    if prev_worker is not None:
+                        get_task_by_worker_set(prev_worker.hostname).discard(task)
+                    get_task_by_worker_set(hostname).add(task)
                 if task.parent_id:
                     try:
                         parent_task = self.tasks[task.parent_id]
@@ -695,7 +707,7 @@ class State:
         """
         return islice(
             ((uuid, task) for uuid, task in self.tasks_by_time(reverse=reverse)
-             if task.worker.hostname == hostname),
+             if task.worker is not None and task.worker.hostname == hostname),
             0, limit,
         )
 
