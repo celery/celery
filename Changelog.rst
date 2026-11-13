@@ -12,6 +12,11 @@ an overview of what's new in Celery 5.6.
 Unreleased
 ==========
 
+- New ``subinterpreter`` worker pool (``--pool=subinterpreter``, Python 3.14+)
+  that runs tasks in parallel in isolated interpreters of the worker process.
+  Time limits and terminating running tasks are not supported, and the task
+  modules can only use extension modules that support subinterpreters. See
+  :ref:`concurrency-subinterpreter`.
 - Fix ``%%`` in node and host format strings to produce a literal percent sign.
   Previously ``%%h``, ``%%n`` and ``%%d`` expanded the variable after an extra
   percent sign. Log and pid file paths passed through ``celery multi`` are formatted

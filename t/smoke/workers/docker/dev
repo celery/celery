@@ -1,4 +1,5 @@
-FROM python:3.13-bookworm
+ARG PYTHON_VERSION=3.13
+FROM python:${PYTHON_VERSION}-bookworm
 
 # Create a user to run the worker
 RUN adduser --disabled-password --gecos "" test_user

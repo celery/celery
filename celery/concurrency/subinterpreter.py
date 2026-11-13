@@ -5,8 +5,9 @@ each with its own GIL, driven by threads of the main interpreter.  Only the
 trace function and the message data cross into a subinterpreter: the
 callbacks run in the main interpreter, which owns the broker connection.
 
-A running subinterpreter cannot be interrupted, so time limits and
-terminating revoked tasks are not supported.
+A running subinterpreter cannot be interrupted, so time limits are not
+supported, and a task that is revoked with ``terminate=True`` or running at
+cold shutdown runs to completion.
 """
 from __future__ import annotations
 
@@ -28,7 +29,7 @@ from celery.app import trace
 from celery.utils.log import get_logger
 
 from .base import BasePool
-from .thread import ApplyResult
+from .thread import ApplyResult as _ThreadApplyResult
 
 __all__ = ('TaskPool', 'subinterpreter_initializer')
 
@@ -76,6 +77,12 @@ def subinterpreter_initializer(app: Celery, hostname: str) -> None:
     signals.worker_process_init.send(sender=None)
 
 
+class ApplyResult(_ThreadApplyResult):
+    def terminate(self, signal: int | None = None) -> None:
+        # Only a job still waiting for an interpreter can be stopped.
+        self.f.cancel()
+
+
 def _setup_interpreter(
     sys_path: list[str],
     initializer: Callable[..., None] | None,
@@ -117,10 +124,17 @@ class TaskPool(BasePool):
         # Create the interpreters up front, in parallel, so that a task
         # module (or C extension) that cannot be loaded in a subinterpreter
         # fails the worker at startup and not on the first task.
-        for interp in self.executor.map(
-                lambda _: self._create_interpreter(), range(self.limit)):
-            self._interpreters.append(interp)
-            self._idle.put(interp)
+        try:
+            for interp in self.executor.map(
+                    lambda _: self._create_interpreter(), range(self.limit)):
+                self._interpreters.append(interp)
+                self._idle.put(interp)
+        except interpreters.ExecutionFailed:
+            logger.critical(
+                'Could not set up a subinterpreter, see the error below. If '
+                'an extension module does not support loading in a '
+                'subinterpreter, use another pool.')
+            raise
 
     def _create_interpreter(self) -> interpreters.Interpreter:
         interp = interpreters.create()
@@ -154,8 +168,10 @@ class TaskPool(BasePool):
                                interp.id, exc)
 
     def terminate_job(self, pid: int, signal: int | None = None) -> None:
-        raise NotImplementedError(
-            'The subinterpreter pool cannot terminate a running task')
+        # Called to revoke with terminate=True and at cold shutdown, which
+        # must not fail: the task is left to run to completion.
+        logger.warning('The subinterpreter pool cannot terminate a running '
+                       'task, it will run to completion.')
 
     def on_apply(
         self,

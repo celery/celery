@@ -108,8 +108,10 @@ class test_subinterpreter_TaskPool:
         x.initializer = helpers.fail_setup
         before = len(interpreters.list_all())
         try:
-            with pytest.raises(interpreters.ExecutionFailed):
-                x.start()
+            with patch.object(subinterpreter.logger, 'critical') as critical:
+                with pytest.raises(interpreters.ExecutionFailed):
+                    x.start()
+            critical.assert_called_once()
             assert len(interpreters.list_all()) == before
         finally:
             x.stop()
@@ -135,9 +137,26 @@ class test_subinterpreter_TaskPool:
         finally:
             x.stop()
 
-    def test_terminate_job(self, pool):
-        with pytest.raises(NotImplementedError):
-            pool.terminate_job(os.getpid())
+    def test_terminate_job_warns(self, pool):
+        with patch.object(subinterpreter.logger, 'warning') as warning:
+            pool.terminate_job(os.getpid(), 15)
+        warning.assert_called_once()
+
+    def test_terminate_cancels_pending_job(self):
+        x = subinterpreter.TaskPool(limit=1)
+        x.start()
+        started = threading.Event()
+        try:
+            running = x.on_apply(time.sleep, (0.5,), {}, None,
+                                 lambda *_: started.set())
+            assert started.wait(timeout=10)
+            pending = x.on_apply(pow, (2, 2))
+            running.terminate(15)
+            pending.terminate(15)
+            assert running.get(timeout=10) is None
+            assert pending.f.cancelled()
+        finally:
+            x.stop()
 
     def test_on_stop(self):
         x = subinterpreter.TaskPool(limit=1)

@@ -27,6 +27,10 @@ Overview of Concurrency Options
 - `solo`: Executes tasks sequentially in the main thread.
 - `threads`: Utilizes threading for concurrency, available if the
   `concurrent.futures` module is present.
+- `subinterpreter`: Runs tasks in parallel in isolated interpreters of the
+  same process (Python 3.14+). Time limits are not available, and extension
+  modules must support subinterpreters. See its detailed documentation page
+  linked below.
 - `custom`: Enables specifying a custom worker pool implementation through
   environment variables.
 
@@ -43,6 +47,7 @@ Overview of Concurrency Options
 
     eventlet
     gevent
+    subinterpreter
 
 .. note::
     While alternative models like `eventlet` and `gevent` are available, they

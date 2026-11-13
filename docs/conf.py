@@ -47,6 +47,8 @@ globals().update(conf.build_config(
     autodoc_mock_imports=[
         'riak',
         'django',
+        # Python 3.14+, for celery.concurrency.subinterpreter
+        'concurrent.interpreters',
     ]
 ))
 
