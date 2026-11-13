@@ -2314,3 +2314,139 @@ class test_Gossip:
         drift = abs(int(worker.local_received) - int(worker.timestamp))
         assert drift <= HEARTBEAT_DRIFT_MAX
         warn_drift.assert_not_called()
+
+
+class test_Consumer_on_unknown_task(ConsumerTestCase):
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto2(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-id-proto2',
+            'task': 'unregistered.task',
+            'root_id': 'root-id-proto2',
+            'parent_id': 'parent-id-proto2',
+            'group': 'group-id-proto2',
+            'group_index': 2,
+        }
+        message.properties = {
+            'correlation_id': 'corr-id-1',
+            'reply_to': 'reply-queue-1',
+        }
+        message.delivery_info = {'routing_key': 'celery', 'is_eager': False}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'chord_sig': 'sig'},
+                'errbacks': [{'errback_sig': 'err'}],
+                'chain': [{'chain_sig': 'chain'}],
+                'callbacks': [{'callback_sig': 'cb'}],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto2'
+        assert exc.args[0] == 'unregistered.task'
+        assert request.id == 'task-id-proto2'
+        assert request.task_id == 'task-id-proto2'
+        assert request.name == 'unregistered.task'
+        assert request.root_id == 'root-id-proto2'
+        assert request.parent_id == 'parent-id-proto2'
+        assert request.group == 'group-id-proto2'
+        assert request.group_index == 2
+        assert request.chord == {'chord_sig': 'sig'}
+        assert request.errbacks == [{'errback_sig': 'err'}]
+        assert request.chain == [{'chain_sig': 'chain'}]
+        assert request.callbacks == [{'callback_sig': 'cb'}]
+        assert request.correlation_id == 'corr-id-1'
+        assert request.reply_to == 'reply-queue-1'
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto1(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {}
+        payload = {
+            'id': 'task-id-proto1',
+            'task': 'unregistered.proto1.task',
+            'root_id': 'root-id-proto1',
+            'parent_id': 'parent-id-proto1',
+            'group': 'group-id-proto1',
+            'group_index': 0,
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+            'chain': [{'chain_sig_p1': 'chain'}],
+            'callbacks': None,
+        }
+        message.payload = payload
+        message.properties = {'correlation_id': 'corr-p1', 'reply_to': 'reply-p1'}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.proto1.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto1'
+        assert exc.args[0] == 'unregistered.proto1.task'
+        assert request.id == 'task-id-proto1'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.chain == [{'chain_sig_p1': 'chain'}]
+        assert request.group == 'group-id-proto1'
+        assert request.group_index == 0
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_end_to_end_triggers_chord_and_chain_and_errbacks(self):
+        c = self.get_consumer()
+        backend = c.app.backend
+        backend.on_chord_part_return = Mock()
+        backend._fail_chain = Mock()
+        backend._call_task_errbacks = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-e2e',
+            'task': 'missing.task',
+            'group': 'chord-group-1',
+            'group_index': 0,
+        }
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'header': 'h'},
+                'errbacks': ['err_sig'],
+                'chain': ['next_task_sig'],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('missing.task'))
+
+        backend.on_chord_part_return.assert_called_once()
+        backend._fail_chain.assert_called_once()
+        backend._call_task_errbacks.assert_called_once()
+
+        # Check call arguments
+        req = backend.on_chord_part_return.call_args[0][0]
+        assert req.chord == {'header': 'h'}
+        assert req.group == 'chord-group-1'
+
+        chain_arg = backend._fail_chain.call_args[0][0]
+        assert chain_arg == ['next_task_sig']
+
+        errback_req = backend._call_task_errbacks.call_args[0][0]
+        assert errback_req.errbacks == ['err_sig']
+
