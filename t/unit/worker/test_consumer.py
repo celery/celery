@@ -2450,3 +2450,32 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         errback_req = backend._call_task_errbacks.call_args[0][0]
         assert errback_req.errbacks == ['err_sig']
 
+
+
+    def test_on_unknown_task_does_not_retry_lazy_payload_decode(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        class MalformedMessage:
+            headers = {
+                'id': 'malformed-task-id',
+                'task': 'unregistered.malformed',
+            }
+            properties = {}
+            delivery_info = {}
+
+            def decode(self):
+                raise ValueError('malformed message body')
+
+            @property
+            def payload(self):
+                raise ValueError('lazy payload decode must not be retried')
+
+            def reject_log_error(self, *args):
+                pass
+
+        message = MalformedMessage()
+        c.on_unknown_task(None, message, KeyError('unregistered.malformed'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        assert c.app.backend.mark_as_failure.call_args.args[0] == 'malformed-task-id'
