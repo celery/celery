@@ -332,6 +332,7 @@ class WorkController:
             self.signal_consumer_close()
             if not in_sighandler or self.pool.signal_safe:
                 self._shutdown(warm=False)
+            self._send_worker_shutdown()
 
     def _shutdown(self, warm=True):
         # if blueprint does not exist it means that we had an
