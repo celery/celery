@@ -763,12 +763,9 @@ class Consumer:
             group = message.headers.get('group')
             group_index = message.headers.get('group_index')
         except (KeyError, TypeError, AttributeError):  # proto1 or malformed headers
-            payload = getattr(message, 'payload', None)
-            if payload is None and hasattr(message, 'decode'):
-                try:
-                    payload = message.decode()
-                except Exception:
-                    payload = {}
+            # Protocol v1 passes its decoded payload as body. Do not access
+            # message.payload here: it is a lazy decode property and can raise.
+            payload = body
             id_ = payload.get('id') if isinstance(payload, dict) else None
             name = payload.get('task') if isinstance(payload, dict) else None
             root_id = payload.get('root_id') if isinstance(payload, dict) else None
@@ -781,9 +778,9 @@ class Consumer:
             try:
                 payload = message.decode()
             except Exception:
-                payload = getattr(message, 'payload', None)
-        elif payload is None:
-            payload = getattr(message, 'payload', None)
+                # Malformed bodies must not trigger a second lazy decode via
+                # message.payload; failure handling should still reject the task.
+                payload = None
 
         chord = None
         errbacks = None
