@@ -1852,6 +1852,39 @@ class test_Request(RequestCase):
             traceback=ANY,
         )
 
+    def test_hard_time_limit_failure_not_handled_twice(self, patching):
+        """The pool reports a hard time limit by first setting the job
+        result, which calls on_failure(), and then calling on_timeout()
+        for the same exception: the failure handling (backend store,
+        task_failure signal, task-failed event) must run only once.
+        """
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        original_mark = self.mytask.backend.mark_as_failure
+        try:
+            job = self.xRequest()
+            job.send_event = Mock(name='send_event')
+            mark_mock = Mock(name='mark_as_failure')
+            job.task.backend.mark_as_failure = mark_mock
+            try:
+                raise TimeLimitExceeded(30)
+            except TimeLimitExceeded:
+                job.on_failure(ExceptionInfo())
+            job.on_timeout(soft=False, timeout=30)
+        finally:
+            task_failure.disconnect(handler)
+            self.mytask.backend.mark_as_failure = original_mark
+
+        handler.assert_called_once()
+        mark_mock.assert_called_once()
+        failed_events = [
+            c for c in job.send_event.call_args_list
+            if c.args[0] == 'task-failed'
+        ]
+        assert len(failed_events) == 1
+
     def test_on_hard_timeout_calls_after_return(self, patching):
         """Hard timeout must invoke task.after_return when overridden."""
         patching('celery.worker.request.error')

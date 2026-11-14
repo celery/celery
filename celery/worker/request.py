@@ -74,6 +74,7 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
+    _time_limit_failure_handled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -547,65 +548,66 @@ class Request:
             # the cold shutdown process.
             if not state.should_terminate:
                 error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
-                exc = TimeLimitExceeded(timeout)
+                if not self._time_limit_failure_handled:
+                    exc = TimeLimitExceeded(timeout)
 
-                self.task.backend.mark_as_failure(
-                    self.id, exc, request=self._context,
-                    store_result=self.store_errors,
-                )
+                    self.task.backend.mark_as_failure(
+                        self.id, exc, request=self._context,
+                        store_result=self.store_errors,
+                    )
 
-                # Invoke the same failure hooks that a normal task failure
-                # triggers so that on_failure callbacks, errbacks, and
-                # the task_failure signal all fire for hard timeouts.
-                einfo = None
-                try:
+                    # Invoke the same failure hooks that a normal task failure
+                    # triggers so that on_failure callbacks, errbacks, and
+                    # the task_failure signal all fire for hard timeouts.
+                    einfo = None
                     try:
-                        raise exc
-                    except TimeLimitExceeded:
-                        einfo = ExceptionInfo()
+                        try:
+                            raise exc
+                        except TimeLimitExceeded:
+                            einfo = ExceptionInfo()
 
-                    self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
+                        self.task.on_failure(exc, self.id, self.args, self.kwargs, einfo)
 
-                    if task_has_custom(self.task, 'after_return'):
-                        self.task.after_return(
-                            states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                        if task_has_custom(self.task, 'after_return'):
+                            self.task.after_return(
+                                states.FAILURE, exc, self.id, self.args, self.kwargs, None,
+                            )
+
+                        signals.task_failure.send(
+                            sender=self.task,
+                            task_id=self.id,
+                            exception=exc,
+                            args=self.args,
+                            kwargs=self.kwargs,
+                            traceback=exc.__traceback__,
+                            einfo=einfo,
                         )
 
-                    signals.task_failure.send(
-                        sender=self.task,
-                        task_id=self.id,
-                        exception=exc,
-                        args=self.args,
-                        kwargs=self.kwargs,
-                        traceback=exc.__traceback__,
-                        einfo=einfo,
-                    )
-
-                    self.send_event(
-                        'task-failed',
-                        exception=safe_repr(get_pickled_exception(einfo.exception)),
-                        traceback=einfo.traceback,
-                    )
-                finally:
-                    # Break the exc → traceback → frame reference cycle
-                    # (this frame's own `exc` local points at exc, and
-                    # exc.__traceback__ points back at this frame) so the
-                    # on_timeout frame — and the Request/self it holds —
-                    # can be garbage-collected promptly.
-                    #
-                    # Note: a `traceback_clear(exc)` call previously lived
-                    # here too, but it is a guaranteed no-op in this
-                    # location: exc is raised and caught within this same
-                    # function, so the only frame in exc.__traceback__ is
-                    # this currently-executing frame, and CPython's
-                    # frame.clear() always raises "cannot clear an
-                    # executing frame" for a frame still on the call
-                    # stack. That RuntimeError was being silently
-                    # swallowed inside traceback_clear(), so the call
-                    # appeared to succeed while doing nothing.
-                    if einfo is not None:
-                        del einfo
-                    exc.__traceback__ = None
+                        self.send_event(
+                            'task-failed',
+                            exception=safe_repr(get_pickled_exception(einfo.exception)),
+                            traceback=einfo.traceback,
+                        )
+                    finally:
+                        # Break the exc → traceback → frame reference cycle
+                        # (this frame's own `exc` local points at exc, and
+                        # exc.__traceback__ points back at this frame) so the
+                        # on_timeout frame — and the Request/self it holds —
+                        # can be garbage-collected promptly.
+                        #
+                        # Note: a `traceback_clear(exc)` call previously lived
+                        # here too, but it is a guaranteed no-op in this
+                        # location: exc is raised and caught within this same
+                        # function, so the only frame in exc.__traceback__ is
+                        # this currently-executing frame, and CPython's
+                        # frame.clear() always raises "cannot clear an
+                        # executing frame" for a frame still on the call
+                        # stack. That RuntimeError was being silently
+                        # swallowed inside traceback_clear(), so the call
+                        # appeared to succeed while doing nothing.
+                        if einfo is not None:
+                            del einfo
+                        exc.__traceback__ = None
 
             if self.task.acks_late:
                 if self.task.acks_on_timeout:
@@ -793,6 +795,13 @@ class Request:
                                           einfo=exc_info)
             finally:
                 self.task.request_stack.pop()
+
+            if isinstance(exc, TimeLimitExceeded):
+                # A hard time limit makes the pool call on_timeout() for
+                # this same exception right after on_failure(); the failure
+                # handling above (backend store, errbacks, task_failure)
+                # must not run a second time there.
+                self._time_limit_failure_handled = True
 
         if send_failed_event:
             self.send_event(
