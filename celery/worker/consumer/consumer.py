@@ -759,15 +759,75 @@ class Consumer:
         try:
             id_, name = message.headers['id'], message.headers['task']
             root_id = message.headers.get('root_id')
-        except KeyError:  # proto1
-            payload = message.payload
-            id_, name = payload['id'], payload['task']
-            root_id = None
+            parent_id = message.headers.get('parent_id')
+            group = message.headers.get('group')
+            group_index = message.headers.get('group_index')
+        except (KeyError, TypeError, AttributeError):  # proto1 or malformed headers
+            # Protocol v1 passes its decoded payload as body. Do not access
+            # message.payload here: it is a lazy decode property and can raise.
+            payload = body
+            id_ = payload.get('id') if isinstance(payload, dict) else None
+            name = payload.get('task') if isinstance(payload, dict) else None
+            root_id = payload.get('root_id') if isinstance(payload, dict) else None
+            parent_id = payload.get('parent_id') if isinstance(payload, dict) else None
+            group = payload.get('group') or (payload.get('taskset') if isinstance(payload, dict) else None)
+            group_index = payload.get('group_index') if isinstance(payload, dict) else None
+
+        payload = body
+        if payload is None and hasattr(message, 'decode'):
+            try:
+                payload = message.decode()
+            except Exception:
+                # Malformed bodies must not trigger a second lazy decode via
+                # message.payload; failure handling should still reject the task.
+                payload = None
+
+        chord = None
+        errbacks = None
+        chain = None
+        callbacks = None
+
+        if isinstance(payload, (list, tuple)) and len(payload) >= 3 and isinstance(payload[2], dict):
+            embed = payload[2]
+            chord = embed.get('chord')
+            errbacks = embed.get('errbacks')
+            chain = embed.get('chain')
+            callbacks = embed.get('callbacks')
+        elif isinstance(payload, dict):
+            chord = payload.get('chord')
+            errbacks = payload.get('errbacks')
+            chain = payload.get('chain')
+            callbacks = payload.get('callbacks')
+            if group is None:
+                group = payload.get('group') or payload.get('taskset')
+            if group_index is None:
+                group_index = payload.get('group_index')
+
+        headers = getattr(message, 'headers', None) or {}
+        chord = chord if chord is not None else headers.get('chord')
+        errbacks = errbacks if errbacks is not None else headers.get('errbacks')
+        chain = chain if chain is not None else headers.get('chain')
+        callbacks = callbacks if callbacks is not None else headers.get('callbacks')
+        group = group if group is not None else headers.get('group')
+        group_index = group_index if group_index is not None else headers.get('group_index')
+
+        properties = getattr(message, 'properties', None) or {}
+        delivery_info = getattr(message, 'delivery_info', None) or {}
         request = Bunch(
-            name=name, chord=None, root_id=root_id,
-            correlation_id=message.properties.get('correlation_id'),
-            reply_to=message.properties.get('reply_to'),
-            errbacks=None,
+            id=id_,
+            task_id=id_,
+            name=name,
+            chord=chord,
+            chain=chain,
+            errbacks=errbacks,
+            callbacks=callbacks,
+            root_id=root_id,
+            parent_id=parent_id,
+            group=group,
+            group_index=group_index,
+            correlation_id=properties.get('correlation_id'),
+            reply_to=properties.get('reply_to'),
+            delivery_info=delivery_info,
         )
         message.reject_log_error(logger, self.connection_errors)
         self.app.backend.mark_as_failure(
@@ -823,7 +883,7 @@ class Consumer:
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
-                return on_unknown_task(None, message, exc)
+                return on_unknown_task(payload, message, exc)
             else:
                 try:
                     ack_log_error_promise = promise(
