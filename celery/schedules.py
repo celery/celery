@@ -285,12 +285,13 @@ class crontab_parser:
             (re.compile(self._range + self._steps), self._range_steps),
             (re.compile(self._range), self._expand_range),
             (re.compile(self._star + self._steps), self._star_steps),
-            (re.compile('^' + self._star + '$'), self._expand_star),
+            (re.compile(self._star), self._expand_star),
         )
 
     def parse(self, spec: str) -> set[int]:
         acc = set()
         for part in spec.split(','):
+            part = part.strip()
             if not part:
                 raise self.ParseException('empty part')
             acc |= set(self._parse_part(part))
@@ -298,7 +299,7 @@ class crontab_parser:
 
     def _parse_part(self, part: str) -> list[int]:
         for regex, handler in self.pats:
-            m = regex.match(part)
+            m = regex.fullmatch(part)
             if m:
                 return handler(m.groups())
         return self._expand_range((part,))
@@ -329,6 +330,9 @@ class crontab_parser:
     def _expand_number(self, s: str) -> int:
         if isinstance(s, str) and s[0] == '-':
             raise self.ParseException('negative numbers not supported')
+        if isinstance(s, str) and not re.fullmatch(r'\w+', s):
+            # weekday()/yearmonth() read only the first letters, so reject junk here.
+            raise ValueError(f'Invalid crontab value {s!r}.')
         try:
             i = int(s)
         except ValueError:
