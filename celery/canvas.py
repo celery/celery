@@ -491,7 +491,7 @@ class Signature(dict):
 
             super().__init__(
                 task=task_name, args=tuple(args or ()),
-                kwargs=kwargs or {},
+                kwargs=dict(kwargs or {}),
                 options=dict(options or {}, **ex),
                 subtask_type=subtask_type,
                 immutable=immutable,

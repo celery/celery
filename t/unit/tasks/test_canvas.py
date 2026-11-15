@@ -195,6 +195,13 @@ class test_Signature(CanvasCase):
         assert SIG.options == {'task_id': 'TASK_ID'}
         assert SIG.subtask_type == ''
 
+    def test_init_preserves_kwargs_when_caller_mutates_dict(self):
+        kwargs = {'y': 1}
+        sig = self.add.signature(args=(10,), kwargs=kwargs)
+        kwargs['y'] = 2
+
+        assert sig() == 11
+
     def test_call(self):
         x = Signature('foo', (1, 2), {'arg1': 33}, app=self.app)
         x.type = Mock(name='type')
