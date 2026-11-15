@@ -8,7 +8,7 @@ import pytest
 
 from celery import concurrency
 from celery.concurrency.base import BasePool, apply_target
-from celery.exceptions import WorkerShutdown, WorkerTerminate
+from celery.exceptions import TaskRevokedError, WorkerShutdown, WorkerTerminate
 
 
 class test_BasePool:
@@ -48,6 +48,15 @@ class test_BasePool:
             'target': (3, (8, 16)),
             'callback': (4, (42,)),
         }
+
+    def test_apply_target__revoked_before_the_body_runs(self):
+        target = Mock(name='target')
+        callback = Mock(name='callback')
+        accept = Mock(name='accept_callback')
+        accept.side_effect = TaskRevokedError('revoked while queued')
+        apply_target(target, callback=callback, accept_callback=accept)
+        target.assert_not_called()
+        callback.assert_not_called()
 
     def test_apply_target__propagate(self):
         target = Mock(name='target')

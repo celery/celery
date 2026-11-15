@@ -9,7 +9,9 @@ from billiard.einfo import ExceptionInfo
 from billiard.exceptions import WorkerLostError
 from kombu.utils.encoding import safe_repr
 
-from celery.exceptions import WorkerShutdown, WorkerTerminate, reraise
+from celery.exceptions import (
+    TaskRevokedError, WorkerShutdown, WorkerTerminate, reraise,
+)
 from celery.utils import timer2
 from celery.utils.log import get_logger
 from celery.utils.text import truncate
@@ -25,7 +27,14 @@ def apply_target(target, args=(), kwargs=None, callback=None,
     """Apply function within pool context."""
     kwargs = {} if not kwargs else kwargs
     if accept_callback:
-        accept_callback(pid or getpid(), monotonic())
+        try:
+            accept_callback(pid or getpid(), monotonic())
+        except TaskRevokedError:
+            # The task was revoked while it waited for a slot. The callback
+            # has already rejected and released it, so the body must not run;
+            # catching it here keeps a greenlet pool from logging a traceback
+            # for every discarded task.
+            return
     try:
         ret = target(*args, **kwargs)
     except propagate:
