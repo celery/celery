@@ -1134,7 +1134,8 @@ class SyncBackendMixin:
         """
         self._ensure_not_eager()
 
-        time_elapsed = 0.0
+        started = time.monotonic() if timeout is not None else None
+        time_slept = 0.0
 
         while 1:
             meta = self.get_task_meta(task_id)
@@ -1142,15 +1143,21 @@ class SyncBackendMixin:
                 return meta
             if on_interval:
                 on_interval()
-            if timeout is not None and time_elapsed >= timeout:
-                raise TimeoutError('The operation timed out.')
-            # avoid hammering the CPU checking status. Never sleep past the
-            # deadline: with the sleep first, timeout=0 blocked for a whole
-            # interval before giving up, and any timeout below interval
-            # overshot to interval.
-            nap = interval if timeout is None else min(interval, timeout - time_elapsed)
+            if timeout is not None:
+                # Count the time a slow backend and the callbacks spend, not
+                # only the sleeps: a degraded backend can otherwise push the
+                # wait far past the timeout the caller asked for.
+                time_elapsed = max(time_slept, time.monotonic() - started)
+                if time_elapsed >= timeout:
+                    raise TimeoutError('The operation timed out.')
+                # Never sleep past the deadline: with the sleep first,
+                # timeout=0 blocked for a whole interval before giving up, and
+                # any timeout below interval overshot to interval.
+                nap = min(interval, timeout - time_elapsed)
+            else:
+                nap = interval
             time.sleep(nap)
-            time_elapsed += nap
+            time_slept += nap
 
     def add_pending_result(self, result, weak=False):
         return result
@@ -1318,7 +1325,8 @@ class BaseKeyValueStoreBackend(Backend):
 
         ids.difference_update(cached_ids)
         iterations = 0
-        time_elapsed = 0.0
+        started = time.monotonic() if timeout is not None else None
+        time_slept = 0.0
         while ids:
             keys = list(ids)
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
@@ -1334,17 +1342,21 @@ class BaseKeyValueStoreBackend(Backend):
                 # nothing left to time out on. wait_for checks the same way,
                 # returning a ready result before it looks at the deadline.
                 break
-            if timeout is not None and time_elapsed >= timeout:
-                raise TimeoutError(f'Operation timed out ({timeout})')
+            if timeout is not None:
+                # The wall clock covers the time mget() and the callbacks
+                # spend, which counting sleeps alone would miss.
+                time_elapsed = max(time_slept, time.monotonic() - started)
+                if time_elapsed >= timeout:
+                    raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
-            # don't busy loop, and never sleep past the deadline: with the
-            # deadline counted in whole intervals, timeout=0 waited forever
-            # and any timeout below interval overshot to interval.
-            nap = interval if timeout is None else min(interval,
-                                                       timeout - time_elapsed)
+            if timeout is None:
+                nap = interval
+            else:
+                # don't busy loop, and never sleep past the deadline
+                nap = min(interval, timeout - time_elapsed)
             time.sleep(nap)
-            time_elapsed += nap
+            time_slept += nap
             iterations += 1
             if max_iterations and iterations >= max_iterations:
                 break

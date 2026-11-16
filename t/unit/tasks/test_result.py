@@ -372,6 +372,8 @@ class test_AsyncResult:
 
         pending_res = self.app.AsyncResult(uuid())
         with patch('celery.backends.base.time') as _time:
+            # the deadline is read from the wall clock, so keep it still
+            _time.monotonic.return_value = 0.0
             with pytest.raises(TimeoutError):
                 pending_res.get(timeout=0.001, interval=0.001)
             _time.sleep.assert_called_with(0.001)
@@ -379,6 +381,8 @@ class test_AsyncResult:
     def test_get_timeout_longer(self):
         res = self.app.AsyncResult(self.task4['id'])  # has RETRY state
         with patch('celery.backends.base.time') as _time:
+            # the deadline is read from the wall clock, so keep it still
+            _time.monotonic.return_value = 0.0
             with pytest.raises(TimeoutError):
                 res.get(timeout=1, interval=1)
             _time.sleep.assert_called_with(1)

@@ -1116,7 +1116,28 @@ class test_BaseBackend_dict:
         b._get_task_meta_for.return_value = {'status': states.PENDING}
         with pytest.raises(TimeoutError):
             b.wait_for(task_id='1', timeout=0.1, interval=0.5)
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=1e-3)
+
+    def test_wait_for__counts_time_spent_in_the_backend(self, monkeypatch):
+        """A slow backend must not stretch the wait past the timeout."""
+        now = [0.0]
+        monkeypatch.setattr('celery.backends.base.time.monotonic', lambda: now[0])
+        monkeypatch.setattr('celery.backends.base.time.sleep', lambda _: None)
+        b = BaseBackend(app=self.app)
+        polls = []
+
+        def get_meta(task_id):
+            polls.append(task_id)
+            now[0] += 0.6
+            return {'status': states.PENDING}
+
+        b._get_task_meta_for = get_meta
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=1.0, interval=0.5)
+        # The first sleep may succeed; the second poll has spent 1.2s, so the
+        # wait must stop there instead of burning another interval.
+        assert len(polls) == 2
 
     def test_get_children(self):
         b = BaseBackend(app=self.app)
@@ -1815,7 +1836,27 @@ class test_KeyValueStoreBackend:
         self.b._cache[tasks[1]] = {'status': 'PENDING'}
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=1e-3)
+
+    def test_get_many__counts_time_spent_in_the_backend(self, monkeypatch):
+        """A slow mget() must not stretch the wait past the timeout."""
+        now = [0.0]
+        monkeypatch.setattr('celery.backends.base.time.monotonic', lambda: now[0])
+        monkeypatch.setattr('celery.backends.base.time.sleep', lambda _: None)
+        tasks = [uuid() for _ in range(4)]
+        self.b._cache[tasks[1]] = {'status': 'PENDING'}
+        polls = []
+
+        def mget(keys):
+            polls.append(keys)
+            now[0] += 0.6
+            return [None for _ in keys]
+
+        self.b.mget = mget
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=1.0, interval=0.5))
+        assert len(polls) == 2
 
     def test_get_many__timeout_zero_returns_results_that_are_ready(self):
         """A timeout of 0 still gets to return work that is already done."""
@@ -1854,7 +1895,8 @@ class test_KeyValueStoreBackend:
         got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
 
         assert {id: state['result'] for id, state in got.items()} == ids
-        assert sleep.call_args_list == [call(0.5)]
+        assert len(sleep.call_args_list) == 1
+        assert sleep.call_args_list[0].args[0] == pytest.approx(0.5, abs=1e-3)
 
     def test_get_many_passes_ready_states(self):
         tasks_length = 10
