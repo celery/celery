@@ -24,6 +24,14 @@ except ImportError:  # pragma: no cover
     GetMultiOptions = None
 
 try:
+    from couchbase.options import ClusterOptions
+except ImportError:  # pragma: no cover
+    try:
+        from couchbase.cluster import ClusterOptions  # couchbase 3
+    except ImportError:
+        ClusterOptions = None
+
+try:
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     FMT_AUTO = None
@@ -93,7 +101,10 @@ class CouchbaseBackend(KeyValueStoreBackend):
             else:
                 uri = f"couchbase://{self.host}"
             if self.username and self.password:
-                opt = PasswordAuthenticator(self.username, self.password)
+                # Cluster() takes ClusterOptions: given the authenticator
+                # itself, couchbase 4 raises "Authenticator is mandatory".
+                opt = ClusterOptions(
+                    PasswordAuthenticator(self.username, self.password))
             else:
                 opt = None
 

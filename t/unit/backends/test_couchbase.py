@@ -69,6 +69,16 @@ class test_CouchbaseBackend:
             assert sentinel._connection == connection
             mock_Cluster.assert_not_called()
 
+    def test_get_connection_passes_cluster_options(self):
+        # couchbase 4 raises "Authenticator is mandatory" when Cluster() is
+        # given the authenticator itself instead of ClusterOptions.
+        from couchbase.options import ClusterOptions
+        self.backend.username, self.backend.password = 'johndoe', 'mysecret'
+        with patch.object(module, 'Cluster') as mock_Cluster:
+            self.backend._get_connection()
+        (uri, opt), _ = mock_Cluster.call_args
+        assert isinstance(opt, ClusterOptions)
+
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
