@@ -2831,10 +2831,9 @@ chord = _chord
 class workflow(Signature):
     tasks = getitem_property("kwargs.tasks", "Tasks in workflow.")
     output_idxs = getitem_property("kwargs.output_idxs", "Indexes into nodes for desired outputs.")
-    prepared = getitem_property("kwargs.prepared", "Boolean; workflow is prepared.")
     g = getitem_property("kwargs.g", "Tasks graph.")
 
-    def __init__(self, tasks=None, output_idxs=None, prepared=None, g=None, args=None, kwargs=None, app=None, **options):
+    def __init__(self, tasks=None, output_idxs=None, g=None, args=None, kwargs=None, app=None, **options):
 
         self.kwargs = {}
 
@@ -2843,7 +2842,6 @@ class workflow(Signature):
         self.outputs = None
         self.g = {int(k): v for k, v in g.items()} if g else {}
         self.output_idxs = output_idxs
-        self.prepared = prepared
         self.subtask_type = "workflow"
 
         super().__init__(
@@ -2946,7 +2944,6 @@ class workflow(Signature):
         for node in self.nodes:
             node.set(workflow_output_id=self.nodes[-1].id)
         self.tasks = self.nodes
-        self.prepared = True
         return self
 
     def apply_async(self, args=None, kwargs=None, outputs=None, **options):
