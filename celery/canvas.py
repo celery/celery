@@ -1759,6 +1759,25 @@ class chunks(Signature):
 _GROUP_ONLY_OPTIONS = frozenset({'task_id', 'group_id', 'group_index', 'chord'})
 
 
+def _give_options(tasks, options, app):
+    """Clone ``tasks`` with ``options``, going into nested groups.
+
+    group.apply_async() unrolls nested groups into their tasks, so their
+    tasks get the options too. A chain gets them as a whole, as it does there.
+    """
+    def give(task):
+        task = maybe_signature(task, app=app)
+        if isinstance(task, group):
+            task = task.clone()
+            task.tasks = _give_options(task.tasks, options, app)
+            return task
+        return task.clone(**options)
+
+    if isinstance(tasks, _regen):
+        return regen(give(t) for t in tasks)
+    return [give(t) for t in tasks]
+
+
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
@@ -1770,10 +1789,7 @@ def _maybe_group(tasks, app):
                    if k not in _GROUP_ONLY_OPTIONS}
         tasks = tasks.tasks
         if options:
-            if isinstance(tasks, _regen):
-                tasks = regen(t.clone(**options) for t in tasks)
-            else:
-                tasks = [t.clone(**options) for t in tasks]
+            tasks = _give_options(tasks, options, app)
     elif isinstance(tasks, _chain):
         tasks = tasks.tasks
     elif isinstance(tasks, abstract.CallableSignature):
