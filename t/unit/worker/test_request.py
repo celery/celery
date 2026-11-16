@@ -950,6 +950,71 @@ class test_Request(RequestCase):
         job.task.on_retry.assert_not_called()
         assert job._already_cancelled is True
 
+    def test_cancel__acknowledged_stores_failure_not_retry(self):
+        # #11079: an early-ack task is acknowledged in on_accepted() when
+        # it starts, so cancelling it (e.g. on cold shutdown) must not
+        # store RETRY -- the message has been acked, so it will never be
+        # redelivered or run again.
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=True)
+        pool.terminate_job.assert_called_with(job.worker_pid, signum)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        job.task.backend.mark_as_failure.assert_called_once()
+        failure_exc = job.task.backend.mark_as_failure.call_args[0][1]
+        assert isinstance(failure_exc, WorkerLostError)
+        assert job._already_cancelled is True
+
+    def test_cancel__unacknowledged_acks_late_stores_retry(self):
+        # An acks_late task that has not been acknowledged yet will be
+        # redelivered by the broker (e.g. when cancelled on connection
+        # loss), so RETRY is still the right state for it.
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job.task.acks_late = True
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        assert not job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.cancel(pool, signal='TERM', emit_retry=True)
+        job.task.backend.mark_as_retry.assert_called_once()
+        job.task.backend.mark_as_failure.assert_not_called()
+        job.task.on_retry.assert_called_once()
+        assert job._already_cancelled is True
+
+    def test_cancel__acknowledged_emit_retry_false_stores_nothing(self):
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.backend.mark_as_failure.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        assert job._already_cancelled is True
+
     def test_revoked_expires_expired(self):
         job = self.get_request(self.mytask.s(1, f='x').set(
             expires=datetime.now(timezone.utc) - timedelta(days=1)
