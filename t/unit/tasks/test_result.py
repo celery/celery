@@ -374,14 +374,18 @@ class test_AsyncResult:
         with patch('celery.backends.base.time') as _time:
             with pytest.raises(TimeoutError):
                 pending_res.get(timeout=0.001, interval=0.001)
-            _time.sleep.assert_called_with(0.001)
+            # The sleep is the remaining budget less the (tiny, real) time
+            # the poll itself took, so it lands just under the timeout.
+            _time.sleep.assert_called_with(pytest.approx(0.001, abs=0.0001))
 
     def test_get_timeout_longer(self):
         res = self.app.AsyncResult(self.task4['id'])  # has RETRY state
         with patch('celery.backends.base.time') as _time:
             with pytest.raises(TimeoutError):
                 res.get(timeout=1, interval=1)
-            _time.sleep.assert_called_with(1)
+            # The sleep is the remaining budget less the (tiny, real) time
+            # the poll itself took, so it lands just under the timeout.
+            _time.sleep.assert_called_with(pytest.approx(1, abs=0.01))
 
     def test_ready(self):
         oks = (self.app.AsyncResult(self.task1['id']),
