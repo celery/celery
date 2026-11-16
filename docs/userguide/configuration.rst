@@ -1120,9 +1120,6 @@ header task, is then never removed.
 
     For the moment this only works with the cache and Redis backends.
 
-    Memcached reads an expiry over 30 days as an absolute time, so keep this
-    setting at 30 days or less with the cache backend.
-
 .. setting:: result_failure_expires
 
 ``result_failure_expires``

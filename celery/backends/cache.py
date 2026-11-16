@@ -7,13 +7,10 @@ from kombu.utils.objects import cached_property
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import deprecated
 from celery.utils.functional import LRUCache
-from celery.utils.log import get_logger
 
 from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)
-
-logger = get_logger(__name__)
 
 # Memcached reads a longer expiry as an absolute Unix time.
 MAX_RELATIVE_EXPIRES = 30 * 24 * 60 * 60
@@ -31,11 +28,6 @@ def _memcached_expires(expires):
         return int(time.time()) + expires
     return expires
 
-
-W_CHORD_EXPIRES_TOO_LONG = """\
-result_chord_expires is over 30 days, which memcached reads as an absolute \
-time, so chord keys will expire at once.\
-"""
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires the 'pymemcache' library. \
@@ -235,9 +227,6 @@ class CacheBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(UNKNOWN_BACKEND.format(
                 self.backend, ', '.join(backends)))
         self._encode_prefixes()  # rencode the keyprefixes
-        if (self._chord_expires is not None
-                and self.chord_expires > MAX_RELATIVE_EXPIRES):
-            logger.warning(W_CHORD_EXPIRES_TOO_LONG)
 
     def get(self, key):
         return self.client.get(key)

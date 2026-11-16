@@ -165,18 +165,6 @@ class test_CacheBackend:
         assert expire.call_args_list == [
             call(tb.get_key_for_task(result.id), 100) for result in header]
 
-    def test_warns_on_chord_expires_over_30_days(self):
-        self.app.conf.result_chord_expires = timedelta(days=31)
-        with patch('celery.backends.cache.logger') as logger:
-            CacheBackend(backend='memory://', app=self.app)
-        logger.warning.assert_called_once()
-
-    def test_no_warning_on_chord_expires_within_30_days(self):
-        self.app.conf.result_chord_expires = timedelta(days=30)
-        with patch('celery.backends.cache.logger') as logger:
-            CacheBackend(backend='memory://', app=self.app)
-        logger.warning.assert_not_called()
-
     # Memcached reads an expiry over 30 days as an absolute Unix time, so a
     # longer one must be sent as the time it ends, or the key expires at once.
     @pytest.mark.parametrize('expires,expected', [
