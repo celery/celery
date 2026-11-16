@@ -820,8 +820,8 @@ class test_MongoBackend:
             id='midnight-spring-forward',
         ),
         pytest.param(
-            'America/Havana', datetime.datetime(2026, 11, 1, 0, 30, fold=1), 30,
-            datetime.datetime(2026, 11, 1, 5, 29, 30),
+            'America/Havana', datetime.datetime(2025, 11, 2, 0, 30, fold=1), 30,
+            datetime.datetime(2025, 11, 2, 5, 29, 30),
             id='repeated-midnight',
         ),
         pytest.param(
