@@ -41,6 +41,15 @@ except ImportError:
 __all__ = ('CouchbaseBackend',)
 
 
+def _result_value(result):
+    # couchbase 4's GetResult holds the document in ``value`` and has no
+    # ``content``, which couchbase 3 used.
+    try:
+        return result.value
+    except AttributeError:
+        return result.content
+
+
 class CouchbaseBackend(KeyValueStoreBackend):
     """Couchbase backend.
 
@@ -126,7 +135,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            return self.connection.get(key).content
+            return _result_value(self.connection.get(key))
         except DocumentNotFoundException:
             # A missing document means no (or expired) result, not an error:
             # the KV backend contract is to return None for absent keys.
@@ -156,7 +165,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
             keys, GetMultiOptions(return_exceptions=True))
         values = {key: None for key in keys}
         for key, res in result.results.items():
-            values[key] = res.content
+            values[key] = _result_value(res)
         for exc in result.exceptions.values():
             if not isinstance(exc, DocumentNotFoundException):
                 raise exc

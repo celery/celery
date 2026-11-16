@@ -24,8 +24,11 @@ from couchbase.exceptions import DocumentNotFoundException, TimeoutException  # 
 
 
 class FakeGetResult:
-    def __init__(self, content):
-        self.content = content
+    """Mirrors the real couchbase 4.x GetResult: the document is in
+    ``value``, and there is no ``content``."""
+
+    def __init__(self, value):
+        self.value = value
 
 
 class FakeMultiGetResult:
@@ -96,11 +99,17 @@ class test_CouchbaseBackend:
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
-        mocked_get = x._connection.get = Mock()
-        mocked_get.return_value.content = sentinel.retval
-        # should return None
+        x._connection.get = Mock(return_value=FakeGetResult(sentinel.retval))
         assert x.get('1f3fab') == sentinel.retval
         x._connection.get.assert_called_once_with('1f3fab')
+
+    def test_get_couchbase_3_result(self):
+        # couchbase 3's GetResult held the document in ``content``.
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.get = Mock(
+            return_value=Mock(spec=['content'], content=sentinel.retval))
+        assert x.get('1f3fab') == sentinel.retval
 
     def test_get_missing_document_returns_None(self):
         x = CouchbaseBackend(app=self.app)
