@@ -2982,7 +2982,7 @@ class workflow(Signature):
         if depends_on:
             self.g.setdefault(len(self.nodes) - 1, {})[None] = [
                 node_ids.index(dep_id)
-                for dep_id in set(id(parent_sig) for parent_sig in depends_on)
+                for dep_id in {id(parent_sig) for parent_sig in depends_on}
             ]
         if unpack_outputs:
             sig.set(unpack_outputs=True)
