@@ -253,7 +253,7 @@ class DelayedDelivery(bootsteps.StartStopStep):
         else:
             raise ValueError(f"broker_url must be a string or list, got {broker_urls!r}")
 
-        valid_urls = {url for url in brokers}
+        valid_urls = {*brokers}
 
         if not valid_urls:
             raise ValueError("No valid broker URLs found in configuration")
