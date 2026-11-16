@@ -96,7 +96,10 @@ class CouchbaseBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the Couchbase server."""
         if self._connection is None:
-            if self.host and self.port:
+            # A port in a couchbase:// connection string is the key-value
+            # port, so the HTTP port 8091, this backend's default, makes
+            # the connection time out: leave it to the SDK's default.
+            if self.host and self.port and self.port != 8091:
                 uri = f"couchbase://{self.host}:{self.port}"
             else:
                 uri = f"couchbase://{self.host}"

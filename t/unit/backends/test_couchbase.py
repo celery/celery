@@ -79,6 +79,19 @@ class test_CouchbaseBackend:
         (uri, opt), _ = mock_Cluster.call_args
         assert isinstance(opt, ClusterOptions)
 
+    @pytest.mark.parametrize('port,uri', [
+        (8091, 'couchbase://myhost'),
+        (11210, 'couchbase://myhost:11210'),
+        (None, 'couchbase://myhost'),
+    ])
+    def test_get_connection_uri(self, port, uri):
+        # 8091 is the HTTP port: in a couchbase:// connection string a port
+        # is the key-value port, and 8091 there makes the connection time out.
+        self.backend.host, self.backend.port = 'myhost', port
+        with patch.object(module, 'Cluster') as mock_Cluster:
+            self.backend._get_connection()
+        assert mock_Cluster.call_args.args[0] == uri
+
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
