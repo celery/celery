@@ -177,6 +177,44 @@ class test_CacheBackend:
             CacheBackend(backend='memory://', app=self.app)
         logger.warning.assert_not_called()
 
+    # Memcached reads an expiry over 30 days as an absolute Unix time, so a
+    # longer one must be sent as the time it ends, or the key expires at once.
+    @pytest.mark.parametrize('expires,expected', [
+        (0, 0),
+        (60, 60),
+        (timedelta(days=30), 30 * 86400),
+        (timedelta(days=31), 1_000_000 + 31 * 86400),
+    ])
+    def test_set_sends_memcached_expiry(self, expires, expected):
+        tb = CacheBackend(backend='memory://', expires=expires, app=self.app)
+        with patch('celery.backends.cache.time.time', return_value=1_000_000), \
+                patch.object(tb.client, 'set') as client_set:
+            tb.set('key', 'value')
+        client_set.assert_called_once_with('key', 'value', expected)
+
+    @pytest.mark.parametrize('value,expected', [
+        (None, 0),
+        (60, 60),
+        (31 * 86400, 1_000_000 + 31 * 86400),
+    ])
+    def test_expire_sends_memcached_expiry(self, value, expected):
+        tb = CacheBackend(backend='memory://', app=self.app)
+        with patch('celery.backends.cache.time.time', return_value=1_000_000), \
+                patch.object(tb.client, 'touch') as touch:
+            tb.expire('key', value)
+        touch.assert_called_once_with('key', expected)
+
+    def test_chord_key_sends_memcached_expiry(self):
+        self.app.conf.result_chord_expires = timedelta(days=31)
+        tb = CacheBackend(backend='memory://', app=self.app)
+        gid = uuid()
+        with patch('celery.backends.cache.time.time', return_value=1_000_000), \
+                patch.object(tb.client, 'set') as client_set, \
+                patch.object(tb, 'expire'):
+            tb.apply_chord((gid, []), None)
+        client_set.assert_any_call(
+            tb.get_key_for_chord(gid), 0, 1_000_000 + 31 * 86400)
+
     def test_mget(self):
         self.tb._set_with_state('foo', 1, states.SUCCESS)
         self.tb._set_with_state('bar', 2, states.SUCCESS)
