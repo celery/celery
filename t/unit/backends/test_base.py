@@ -391,6 +391,85 @@ class test_BaseBackend_interface:
         assert 'headers' not in called_kwargs
 
 
+class test_chord_unlock_claim:
+
+    def setup_method(self):
+        self.b = self.app.backend
+
+        @self.app.task(shared=False)
+        def callback(result):
+            pass
+
+        self.callback = callback
+
+    def test_first_claim_wins_and_blocks_second(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+        # A second run while the lease is fresh must not finish the
+        # chord itself.
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_dispatched_blocks_later_claims(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'dispatched'
+        assert token is None
+
+    def test_abandoned_claim_can_be_taken_over(self):
+        import time
+
+        from celery import states as _states
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            _states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'lost-worker'
+
+    def test_reset_clears_dispatched_claim(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        self.b.reset_chord_unlock_claim(gid)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+
+    def test_fallback_chord_unlock_resets_claim(self, unlock='celery.chord_unlock'):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        assert self.b.try_claim_chord_unlock(gid)[0] == 'dispatched'
+
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            gid, [self.app.AsyncResult(x) for x in range(3)])
+        self.b.fallback_chord_unlock(header_result, self.callback.s())
+        assert self.app.tasks[unlock].apply_async.call_count
+        # The new run launched by fallback_chord_unlock starts with
+        # a clean claim, so its chord_unlock can finish the chord.
+        assert self.b.try_claim_chord_unlock(gid)[0] == 'claimed'
+
+    def test_claim_fails_open_without_result_storage(self):
+        # BaseBackend cannot store results: the claim must not lose
+        # the chord body, so the caller is told it owns the claim.
+        b = BaseBackend(self.app)
+        status, token = b.try_claim_chord_unlock(uuid())
+        assert status == 'claimed'
+        assert token
+
+
 class test_exception_pickle:
     def test_BaseException(self):
         assert fnpe(Exception()) is None
