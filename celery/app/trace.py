@@ -802,9 +802,10 @@ def fast_trace_task(task, uuid, request, body, content_type,
 
 
 def report_internal_error(task, exc):
-    _type, _value, _tb = sys.exc_info()
+    _, _, _tb = sys.exc_info()
     try:
-        _value = task.backend.prepare_exception(exc, 'pickle')
+        _value = get_pickleable_exception(exc)
+        _type = get_pickleable_etype(type(exc))
         exc_info = ExceptionInfo((_type, _value, _tb), internal=True)
         warn(RuntimeWarning(
             'Exception raised outside body: {!r}:\n{}'.format(
