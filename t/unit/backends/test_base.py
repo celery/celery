@@ -699,8 +699,8 @@ class test_BaseBackend_dict:
         request = Mock(name='request')
         request.chord = None
         request.workflow = [
-            {"group": Mock(), "group_index": Mock(), "chord": Mock()},
-            {"group": Mock(), "group_index": Mock(), "chord": Mock()},
+            {"group": Mock(), "group_index": Mock(), "chord": Mock(), "parents": Mock()},
+            {"group": Mock(), "group_index": Mock(), "chord": Mock(), "parents": Mock()},
         ]
         b.on_chord_part_return = Mock()
         b.mark_as_done('id', 10, request=request)
@@ -711,12 +711,14 @@ class test_BaseBackend_dict:
         assert b.on_chord_part_return.call_args_list[0].args[0].chord == request.workflow[0]["chord"]
         assert b.on_chord_part_return.call_args_list[0].args[1] == states.SUCCESS
         assert b.on_chord_part_return.call_args_list[0].args[2] == 10
+        assert b.on_chord_part_return.call_args_list[0].kwargs["parents"] == request.workflow[0]["parents"]
 
         assert b.on_chord_part_return.call_args_list[1].args[0].group == request.workflow[1]["group"]
         assert b.on_chord_part_return.call_args_list[1].args[0].group_index == request.workflow[1]["group_index"]
         assert b.on_chord_part_return.call_args_list[1].args[0].chord == request.workflow[1]["chord"]
         assert b.on_chord_part_return.call_args_list[1].args[1] == states.SUCCESS
         assert b.on_chord_part_return.call_args_list[1].args[2] == 10
+        assert b.on_chord_part_return.call_args_list[1].kwargs["parents"] == request.workflow[1]["parents"]
 
     def test_mark_as_failure__bound_errback_eager(self):
         b = BaseBackend(app=self.app)
