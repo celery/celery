@@ -8,10 +8,10 @@
 import sys
 import time
 import warnings
-from time import monotonic
 from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
+from time import monotonic
 from uuid import UUID
 
 from billiard.einfo import ExceptionInfo
