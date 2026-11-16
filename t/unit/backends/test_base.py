@@ -1905,6 +1905,30 @@ class test_KeyValueStoreBackend:
             list(self.b.get_many(tasks, timeout=1, interval=0.2))
         assert time.monotonic() - started < 2.5
 
+    def test_get_many__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after ~1.2s, not after ~4s
+        of callbacks plus sleeps (#11111).
+        """
+        self.b._cache.clear()
+        tasks = [uuid() for _ in range(4)]
+
+        def slow_mget(keys):
+            return [None for _ in keys]
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        self.b.mget = slow_mget
+        started = time.monotonic()
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=1, interval=0.2,
+                                 on_interval=slow_interval))
+        assert time.monotonic() - started < 2.5
+
     def test_get_many_passes_ready_states(self):
         tasks_length = 10
         ready_states = frozenset({states.SUCCESS})

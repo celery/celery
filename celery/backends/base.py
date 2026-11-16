@@ -1351,6 +1351,8 @@ class BaseKeyValueStoreBackend(Backend):
                 started = monotonic()
                 on_interval()
                 time_elapsed += monotonic() - started
+            if timeout is not None and time_elapsed >= timeout:
+                raise TimeoutError(f'Operation timed out ({timeout})')
             # don't busy loop, and never sleep past the deadline: with the
             # deadline counted in whole intervals, timeout=0 waited forever
             # and any timeout below interval overshot to interval.

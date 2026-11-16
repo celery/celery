@@ -376,7 +376,10 @@ class test_AsyncResult:
                 pending_res.get(timeout=0.001, interval=0.001)
             # The sleep is the remaining budget less the (tiny, real) time
             # the poll itself took, so it lands just under the timeout.
-            _time.sleep.assert_called_with(pytest.approx(0.001, abs=0.0001))
+            # Assert the bound, not an absolute value: on a slow
+            # interpreter (PyPy) the poll alone can take over 0.1ms.
+            sleep_arg = _time.sleep.call_args[0][0]
+            assert 0 < sleep_arg < 0.001
 
     def test_get_timeout_longer(self):
         res = self.app.AsyncResult(self.task4['id'])  # has RETRY state
