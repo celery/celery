@@ -16,6 +16,7 @@ from celery.canvas import (Signature, _chain, _clear_chord_option, _fold_chain, 
                            maybe_signature, maybe_unroll_group, signature, xmap, xstarmap)
 from celery.exceptions import CPendingDeprecationWarning, Ignore, Reject
 from celery.result import AsyncResult, EagerResult, GroupResult, result_from_tuple
+from celery.utils.functional import _regen
 from t.canvas_helpers import ids_in_as_tuple
 
 SIG = Signature({
@@ -2138,6 +2139,33 @@ class test_group(CanvasCase):
     def test_maybe_group_sig(self):
         assert _maybe_group(self.add.s(2, 2), self.app) == [self.add.s(2, 2)]
 
+    def test_maybe_group_without_options_keeps_tasks(self):
+        g = group(self.add.s(2, 2), self.add.s(4, 4), app=self.app)
+        tasks = _maybe_group(g, self.app)
+        assert list(tasks) == [self.add.s(2, 2), self.add.s(4, 4)]
+        assert [t.options for t in tasks] == [{}, {}]
+
+    def test_maybe_group_gives_group_options_to_tasks(self):
+        s1, s2 = self.add.s(2, 2), self.add.s(4, 4).set(queue='own')
+        g = group(s1, s2, app=self.app).set(
+            countdown=15, queue='q', task_id='gid', group_id='outer',
+        )
+        tasks = _maybe_group(g, self.app)
+        assert [t.options for t in tasks] == [
+            {'countdown': 15, 'queue': 'q'},
+            {'countdown': 15, 'queue': 'q'},
+        ]
+        # The signatures in the group are left as they were.
+        assert s1.options == {}
+        assert s2.options == {'queue': 'own'}
+
+    def test_maybe_group_gives_group_options_to_lazy_tasks(self):
+        g = group((self.add.s(i, i) for i in range(3)), app=self.app)
+        g.set(countdown=15)
+        tasks = _maybe_group(g, self.app)
+        assert isinstance(tasks, _regen)
+        assert [t.options.get('countdown') for t in tasks] == [15, 15, 15]
+
     def test_apply(self):
         x = group([self.add.s(4, 4), self.add.s(8, 8)])
         res = x.apply()
@@ -2723,6 +2751,28 @@ class test_chord(CanvasCase):
                 assert apply_call.kwargs.get(key) == value
         # chord.unlock retries keep their own default countdown
         assert mock_apply_chord.call_args.kwargs.get("countdown") == 1
+
+    @pytest.mark.parametrize("make_canvas", [
+        lambda header, body: chord(header, body),
+        lambda header, body: header | body,
+    ], ids=["chord", "group | task"])
+    def test_header_group_options_reach_header_tasks(self, make_canvas):
+        header = group(self.add.s(1, 2), self.add.s(3, 4), app=self.app)
+        canvas = make_canvas(header.set(countdown=15, queue='q'), self.mul.s(2))
+        sent = []
+
+        def capture(sig, *args, **kwargs):
+            sent.append({**sig.options, **kwargs})
+            return Mock(id=sig.id)
+
+        with patch.object(self.app.backend, "apply_chord"), patch(
+            "celery.canvas.Signature.apply_async", autospec=True,
+            side_effect=capture,
+        ):
+            canvas.apply_async()
+        assert [(o.get('countdown'), o.get('queue')) for o in sent] == [
+            (15, 'q'), (15, 'q'),
+        ]
 
     def test_group_body_does_not_take_the_header_id(self):
         res = chord(

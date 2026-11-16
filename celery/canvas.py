@@ -1755,11 +1755,26 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
+# Options that belong to the group itself, not to the tasks in it.
+_GROUP_ONLY_OPTIONS = frozenset({'task_id', 'group_id', 'group_index', 'chord'})
+
+
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
 
-    if isinstance(tasks, (group, _chain)):
+    if isinstance(tasks, group):
+        # The group itself is dropped here, so give its execution options
+        # (countdown, queue, ...) to its tasks, as group.apply_async() would.
+        options = {k: v for k, v in tasks.options.items()
+                   if k not in _GROUP_ONLY_OPTIONS}
+        tasks = tasks.tasks
+        if options:
+            if isinstance(tasks, _regen):
+                tasks = regen(t.clone(**options) for t in tasks)
+            else:
+                tasks = [t.clone(**options) for t in tasks]
+    elif isinstance(tasks, _chain):
         tasks = tasks.tasks
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
