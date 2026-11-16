@@ -1,5 +1,7 @@
 """Couchbase result store backend."""
 
+from datetime import timedelta
+
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -134,8 +136,12 @@ class CouchbaseBackend(KeyValueStoreBackend):
         # Since 4.0.0 value is JSONType in couchbase lib, so parameter format isn't needed
         if FMT_AUTO is not None:
             self.connection.upsert(key, value, ttl=self.expires, format=FMT_AUTO)
+        elif self.expires:
+            # couchbase 4 has no ``ttl`` option: it raises AttributeError.
+            self.connection.upsert(
+                key, value, expiry=timedelta(seconds=self.expires))
         else:
-            self.connection.upsert(key, value, ttl=self.expires)
+            self.connection.upsert(key, value)
 
     def mget(self, keys):
         # ``get_multi`` returns a MultiGetResult, which is neither a mapping

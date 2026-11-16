@@ -196,18 +196,20 @@ class test_CouchbaseBackend:
         x = CouchbaseBackend(app=self.app)
         x.expires = None
         x._connection = MagicMock()
-        x._connection.set = MagicMock()
         # should return None
         assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
+        x._connection.upsert.assert_called_once_with(sentinel.key, sentinel.value)
 
     def test_set_expires(self):
         self.app.conf.couchbase_backend_settings = None
         x = CouchbaseBackend(app=self.app, expires=30)
         assert x.expires == 30
         x._connection = MagicMock()
-        x._connection.set = MagicMock()
         # should return None
         assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
+        # couchbase 4 has no ``ttl`` option: passing it raises AttributeError.
+        x._connection.upsert.assert_called_once_with(
+            sentinel.key, sentinel.value, expiry=timedelta(seconds=30))
 
     def test_delete(self):
         self.app.conf.couchbase_backend_settings = {}
