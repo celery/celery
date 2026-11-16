@@ -1141,6 +1141,44 @@ class test_BaseBackend_dict:
             b.wait_for(task_id='1', timeout=1, interval=0.2)
         assert time.monotonic() - started < 2.5
 
+    def test_wait_for__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after ~1.2s, not after ~4s
+        of callbacks plus sleeps (#11111).
+        """
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={'status': states.PENDING})
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=1, interval=0.2,
+                       on_interval=slow_interval)
+        assert time.monotonic() - started < 2.5
+
+    def test_wait_for__ready_on_final_poll_beats_deadline(self):
+        """A result that is ready on the poll crossing the deadline wins.
+
+        The single poll takes 0.6s with timeout=0.5, but it returns
+        SUCCESS, so wait_for returns the result instead of raising
+        TimeoutError: completed results take precedence over an expired
+        deadline.
+        """
+        b = BaseBackend(app=self.app)
+
+        def slow_ready_meta(*args, **kwargs):
+            time.sleep(0.6)
+            return {'status': states.SUCCESS, 'result': 42}
+
+        b._get_task_meta_for = Mock(side_effect=slow_ready_meta)
+        assert b.wait_for(task_id='1', timeout=0.5,
+                          interval=0.2)['result'] == 42
+
     def test_get_children(self):
         b = BaseBackend(app=self.app)
         b._get_task_meta_for = Mock()
