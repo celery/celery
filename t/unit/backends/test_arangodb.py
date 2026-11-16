@@ -224,19 +224,22 @@ class test_ArangoDbBackend:
         self.backend.cleanup()
         self.backend.db.AQLQuery.assert_not_called()
 
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = datetime.datetime(2026, 11, 17, 9, 0, tzinfo=datetime.timezone(
+            datetime.timedelta(hours=9)))
         self.backend.app.now = Mock(return_value=now)
         self.backend.expires = 86400
-        expected_checkpoint = (now - self.backend.expires_delta).isoformat()
         self.backend.cleanup()
-        self.backend.db.AQLQuery.assert_called_once_with(
-            """
-            FOR record IN @@collection
-                FILTER record.task.date_done < @checkpoint
-                REMOVE record IN @@collection
-            """,
-            bindVars={
-                "@collection": self.backend.collection,
-                "checkpoint": expected_checkpoint,
-            },
-        )
+        self.backend.db.AQLQuery.assert_called_once()
+        query = self.backend.db.AQLQuery.call_args.args[0]
+        # ``task`` holds the encoded result, a JSON string: on the string
+        # itself ``.date_done`` is null, which AQL sorts before any value,
+        # so filtering on it removed every result.
+        assert 'record.task.date_done' not in query
+        assert 'JSON_PARSE(record.task)' in query
+        assert 'DATE_TIMESTAMP(meta.date_done)' in query
+        assert 'done != null' in query
+        # An instant in milliseconds, not an ISO string with an offset.
+        assert self.backend.db.AQLQuery.call_args.kwargs['bindVars'] == {
+            "@collection": self.backend.collection,
+            "checkpoint": int((now - self.backend.expires_delta).timestamp() * 1000),
+        }
