@@ -3,6 +3,10 @@ from kombu.utils.uuid import uuid
 from celery.canvas import Signature, _chain, _chord, maybe_signature
 from celery.utils.objects import getitem_property
 
+__all__ = (
+    'workflow',
+)
+
 
 @Signature.register_type(name="workflow")
 class workflow(Signature):
