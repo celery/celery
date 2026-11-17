@@ -4074,6 +4074,11 @@ class test_chord:
 class test_workflow:
 
     def test_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(group([add.si(1, 1), add.si(2, 2)]))
         n2 = w.add_node(add.si(3, 3))
@@ -4083,6 +4088,11 @@ class test_workflow:
         assert w.apply_async(outputs=[n2, n1, n4, n3]).get(timeout=TIMEOUT) == [6, [2, 4], 12, 6]
 
     def test_chain_ending_with_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(chain(add.si(0, 0), group([add.si(1, 1), add.si(2, 2)])))
         n2 = w.add_node(add.si(3, 3))
@@ -4092,6 +4102,11 @@ class test_workflow:
         assert w.apply_async(outputs=[n2, n1, n4, n3]).get(timeout=TIMEOUT) == [6, [2, 4], 12, 6]
 
     def test_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(chain([add.si(1, 1), add.si(2, 2)]))
         n2 = w.add_node(chain([add.si(3, 3), add.si(4, 4)]))
@@ -4100,6 +4115,11 @@ class test_workflow:
         assert w.apply_async(outputs=n3).get(timeout=TIMEOUT) == 12
 
     def test_chord_of_workflows(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w1 = workflow()
         n1 = w1.add_node(add.s(1, 1))
         w2 = workflow()
@@ -4111,6 +4131,11 @@ class test_workflow:
         assert result == 6
 
     def test_chain_of_workflows(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w1 = workflow()
         n1 = w1.add_node(group([add.s(1, 1), add.s(2, 2)]))
         w2 = workflow()
@@ -4122,6 +4147,11 @@ class test_workflow:
         assert result == 6
 
     def test_workflow_in_chain(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(group([add.s(1), add.s(2)]))
         n2 = w.add_node(tsum.s(), inputs={"nums": n1})
@@ -4131,16 +4161,31 @@ class test_workflow:
         assert result == 10
 
     def test_node_replace_chord_of_chains(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         w.add_node(replace_with_chord_of_chains.s())
         result = w.apply_async(outputs=w.nodes).get(timeout=TIMEOUT)
         assert result == [[0, 2, 4, 6, 8]]
 
     def test_replace_with_group_of_workflows(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         result = replace_with_group_of_wf.s().delay().get(timeout=TIMEOUT)
         assert list(sorted(result)) == [[0, 0, 0], [2, 2, 4], [4, 4, 8], [6, 6, 12], [8, 8, 16]]
 
     def test_replace_with_chain_which_contains_a_group(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(replace_with_chain_which_contains_a_group.s())
         n2 = w.add_node(tsum.s(), inputs={"nums": n1})
@@ -4148,6 +4193,11 @@ class test_workflow:
         assert result == 8
 
     def test_outputs(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(group([add.si(1, 1), add.si(2, 2)]))
         n2 = w.add_node(add.si(3, 3))
@@ -4157,6 +4207,11 @@ class test_workflow:
         assert w.apply_async(outputs=[n2, n1, n4, n3]).get(timeout=TIMEOUT) == [6, [2, 4], 12, 6]
 
     def test_single_output(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(group([add.si(1, 1), add.si(2, 2)]))
         n2 = w.add_node(add.si(3, 3))
@@ -4166,6 +4221,11 @@ class test_workflow:
         assert w.apply_async(outputs=n1).get(timeout=TIMEOUT) == [2, 4]
 
     def test_single_output_list(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
         w = workflow()
         n1 = w.add_node(group([add.si(1, 1), add.si(2, 2)]))
         n2 = w.add_node(add.si(3, 3))
