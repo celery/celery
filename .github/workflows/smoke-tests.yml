@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/checkout@v7
       - name: Setup Docker Builder
-        uses: useblacksmith/setup-docker-builder@v2.2.0
+        uses: useblacksmith/setup-docker-builder@v2.3.0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v7
         with:
