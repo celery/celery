@@ -1950,25 +1950,38 @@ class test_BeatPidbox:
         # so without one a stop() during an outage waited out the full
         # join timeout and then warned that the thread would not die.
         pb, _ = self.get_pidbox()
-        pb.join_timeout = 0.3
+        # Generous, so that a slow runner doesn't fail the test.  The fake
+        # backoff below outlasts it, so a stop() that can't interrupt the
+        # backoff still times out and fails.
+        pb.join_timeout = 5
+        backing_off_started = Event()
+        backoff_over = Event()
 
         def backing_off(errback, max_retries, callback=None, **kwargs):
+            backing_off_started.set()
             # Tolerate a missing callback instead of raising TypeError,
             # so dropping it from _connect() shows up here as a thread
             # that will not stop rather than an unrelated crash.
-            for _ in range(200):
+            while not backoff_over.wait(timeout=0.01):
                 if callback is not None:
                     callback()      # kombu calls this once a second
-                sleep(0.01)
             raise ConnectionResetError('never got there')
 
-        with patch.object(self.app, 'connection_for_read') as cfr:
-            cfr.return_value.ensure_connection.side_effect = backing_off
-            with self._fanout(pb):
-                pb.start()
-                sleep(0.1)
-                with patch('celery.beat.warning') as warning:
-                    pb.stop()
+        try:
+            with patch.object(self.app, 'connection_for_read') as cfr:
+                cfr.return_value.ensure_connection.side_effect = backing_off
+                with self._fanout(pb):
+                    pb.start()
+                    # Stop during the backoff, not before the thread
+                    # gets there.
+                    assert backing_off_started.wait(timeout=10), \
+                        'never connected'
+                    with patch('celery.beat.warning') as warning:
+                        pb.stop()
+        finally:
+            # End the backoff, so a thread that didn't stop doesn't
+            # outlive the test.
+            backoff_over.set()
         assert pb.thread is None        # it really did stop
         warning.assert_not_called()     # so nothing to warn about
 

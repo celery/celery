@@ -6,7 +6,7 @@ from kombu.exceptions import OperationalError
 
 from celery import canvas, group, result, uuid
 from celery.canvas import Signature
-from celery.exceptions import ChordError, Retry
+from celery.exceptions import ChordError, MaxRetriesExceededError, Reject, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
 
 
@@ -114,9 +114,13 @@ class test_unlock_chord_task(ChordCase):
         GroupResult.return_value.ready.side_effect = KeyError('foo')
         unlock_chord = self.app.tasks['celery.chord_unlock']
 
-        with pytest.raises(KeyError):
-            unlock_chord('groupid', Mock(), result=[Mock()],
-                         GroupResult=GroupResult, result_from_tuple=Mock())
+        callback = Mock()
+        with patch.object(self.app.backend, 'chord_error_from_stack') as fail:
+            with pytest.raises(KeyError):
+                unlock_chord('groupid', callback, result=[Mock()],
+                             GroupResult=GroupResult, result_from_tuple=Mock())
+        fail.assert_called_once()
+        assert isinstance(fail.call_args[1]['exc'], ChordError)
 
     @pytest.mark.parametrize('error', [IOError, OperationalError])
     def test_callback_fails(self, error):
@@ -166,6 +170,56 @@ class test_unlock_chord_task(ChordCase):
                 assert producer.publish.call_count == 2
                 retry.assert_not_called()
                 fail.assert_not_called()
+
+    def test_retry_refused_fails_chord(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        def setup(callback):
+            self.app.tasks['celery.chord_unlock'].retry.side_effect = Reject(
+                OSError('refused'), requeue=False)
+
+        with pytest.raises(Reject):
+            with self._chord_context(NeverReady, setup):
+                pass
+        fail = self.app.backend.fail_from_current_stack
+        fail.assert_called()
+        assert fail.call_args[0][0] == 'callback_id'
+        assert isinstance(fail.call_args[1]['exc'], ChordError)
+
+    def test_retries_exhausted_fails_chord(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        def setup(callback):
+            self.app.tasks['celery.chord_unlock'].retry.side_effect = (
+                MaxRetriesExceededError())
+
+        with pytest.raises(MaxRetriesExceededError):
+            with self._chord_context(NeverReady, setup):
+                pass
+        fail = self.app.backend.fail_from_current_stack
+        fail.assert_called()
+        assert isinstance(fail.call_args[1]['exc'], ChordError)
+
+    def test_ready_error_then_retry_refused_fails_chord(self):
+        class ReadyRaises(TSR):
+            def ready(self):
+                raise KeyError('backend down')
+
+        def setup(callback):
+            self.app.tasks['celery.chord_unlock'].retry.side_effect = Reject(
+                OSError('refused'), requeue=False)
+
+        with pytest.raises(Reject):
+            with self._chord_context(ReadyRaises, setup):
+                pass
+        fail = self.app.backend.fail_from_current_stack
+        fail.assert_called()
+        exc = fail.call_args[1]['exc']
+        assert isinstance(exc, ChordError)
+        assert 'refused' in str(exc)
+        assert 'backend down' in str(exc)
 
     def test_unlock_ready_failed(self):
 
@@ -234,10 +288,11 @@ class test_unlock_chord_task(ChordCase):
             is_ready = False
 
         with self._chord_context(NeverReady, interval=10, max_retries=30) \
-                as (cb, retry, _):
+                as (cb, retry, fail):
             cb.type.apply_async.assert_not_called()
-            # did retry
+            # did retry, and didn't fail the chord
             retry.assert_called_with(countdown=10, max_retries=30)
+            fail.assert_not_called()
 
     def test_when_not_ready_preserves_exchange_type(self):
         class NeverReady(TSR):

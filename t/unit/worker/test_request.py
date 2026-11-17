@@ -476,13 +476,14 @@ class test_Request(RequestCase):
             req_logger, req.connection_errors, True)
         req.task.backend.mark_as_failure.assert_not_called()
 
-    def _worker_lost_request(self, retries=0):
+    def _worker_lost_request(self, retries=0, **options):
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
 
-        req = self.get_request(self.add.s(2, 2).set(retries=retries))
+        req = self.get_request(
+            self.add.s(2, 2).set(retries=retries, **options))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.retry_on_worker_lost = True
@@ -576,6 +577,39 @@ class test_Request(RequestCase):
         apply_async.assert_called_once()
         req.on_ack.assert_not_called()
         req.task.backend.mark_as_failure.assert_not_called()
+
+    @pytest.mark.parametrize('ignored_by', ['task', 'call'])
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_ignore_result(
+            self, ignored_by):
+        # Like Task.retry(), don't store RETRY for a result that is ignored:
+        # the retried run won't store anything, so RETRY would stay for good.
+        if ignored_by == 'task':
+            self.add.ignore_result = True
+            req, einfo = self._worker_lost_request()
+        else:
+            req, einfo = self._worker_lost_request(ignore_result=True)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_called_once()
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert any(
+            c.args and c.args[0] == 'task-retried'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_store_errors_even_if_ignored(self):
+        req, einfo = self._worker_lost_request(ignore_result=True)
+        req.task.store_errors_even_if_ignored = True
+
+        with patch('celery.canvas.Signature.apply_async'):
+            req.on_failure(einfo)
+
+        req.task.backend.mark_as_retry.assert_called_once()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
         try:
