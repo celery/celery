@@ -2450,8 +2450,6 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         errback_req = backend._call_task_errbacks.call_args[0][0]
         assert errback_req.errbacks == ['err_sig']
 
-
-
     def test_on_unknown_task_does_not_retry_lazy_payload_decode(self):
         c = self.get_consumer()
         c.app.backend.mark_as_failure = Mock()
