@@ -73,8 +73,9 @@ if TYPE_CHECKING:
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, workflow,  # noqa
-                               xmap, xstarmap)
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, workflow, xmap,  # noqa
+                               xstarmap)
+    from celery.workflow import workflow
     from celery.utils import uuid
 
 # Eventlet/gevent patching must happen before importing
@@ -159,8 +160,9 @@ old_module, new_module = local.recreate_module(  # pragma: no cover
         'celery.canvas': [
             'Signature', 'chain', 'chord', 'chunks', 'group',
             'signature', 'maybe_signature', 'subtask',
-            'workflow', 'xmap', 'xstarmap',
+            'xmap', 'xstarmap',
         ],
+        'celery.workflow': ['workflow'],
         'celery.utils': ['uuid'],
     },
     __package__='celery', __file__=__file__,
