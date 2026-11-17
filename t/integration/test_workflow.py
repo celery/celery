@@ -1,5 +1,6 @@
-from celery import chain, chord, group, workflow
 import pytest
+
+from celery import chain, chord, group, workflow
 
 from .tasks import (add, replace_with_chain_which_contains_a_group, replace_with_chord_of_chains,
                     replace_with_group_of_wf, tsum)
