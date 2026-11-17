@@ -133,6 +133,29 @@ class test_map(BuiltinsCase):
             self.app.tasks['celery.map'](maybe_ignore, [1, 2, 3])
         assert seen == [1, 2]
 
+    def test_run__ignored_item_without_exception_result_raises_ignore(self):
+        # Fallback in _apply_item_through_trace: the trace normally
+        # stores the Ignore exception as the result, but if an IGNORED
+        # item ever arrives with no exception attached, raise a fresh
+        # Ignore instead of carrying on with None.
+        from celery import states
+
+        task = Mock()
+        task.apply.return_value = Mock(state=states.IGNORED, result=None)
+        with pytest.raises(Ignore):
+            builtins._apply_item_through_trace(task, (1,))
+        task.apply.assert_called_once_with((1,))
+
+    def test_run__rejected_item_without_exception_result_raises_reject(self):
+        # Same fallback for REJECTED items.
+        from celery import states
+
+        task = Mock()
+        task.apply.return_value = Mock(state=states.REJECTED, result=None)
+        with pytest.raises(Reject):
+            builtins._apply_item_through_trace(task, (1,))
+        task.apply.assert_called_once_with((1,))
+
 
 class test_starmap(BuiltinsCase):
 
