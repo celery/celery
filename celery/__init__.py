@@ -73,8 +73,8 @@ if TYPE_CHECKING:
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, workflow,  # noqa
-                               xmap, xstarmap)
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, xmap,  # noqa
+                               xstarmap)
     from celery.utils import uuid
     from celery.workflow import workflow
 
