@@ -73,10 +73,10 @@ if TYPE_CHECKING:
     from celery.app.base import Celery
     from celery.app.task import Task
     from celery.app.utils import bugreport
-    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, workflow, xmap,  # noqa
-                               xstarmap)
-    from celery.workflow import workflow
+    from celery.canvas import (chain, chord, chunks, group, maybe_signature, signature, subtask, workflow,  # noqa
+                               xmap, xstarmap)
     from celery.utils import uuid
+    from celery.workflow import workflow
 
 # Eventlet/gevent patching must happen before importing
 # anything else, so these tools must be at top-level.
