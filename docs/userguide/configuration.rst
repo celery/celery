@@ -2669,7 +2669,9 @@ This is a dict supporting the following keys:
 
 * ``port``
 
-    The port the Couchbase server is listening to. Defaults to ``8091``.
+    The key-value port of the Couchbase server. Defaults to the SDK's,
+    ``11210``. ``8091``, the HTTP port and the previous default, is ignored,
+    since the SDK can't connect to it.
 
 * ``bucket``
 
