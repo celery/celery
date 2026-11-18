@@ -4,7 +4,11 @@ from time import sleep
 
 from pydantic import BaseModel
 
-from celery import Signature, Task, chain, chord, group, shared_task, workflow
+from celery import Signature, Task, chain, chord, group, shared_task
+try:
+    from celery import workflow
+except ImportError:
+    workflow = None
 from celery.canvas import signature
 from celery.exceptions import Reject, SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
