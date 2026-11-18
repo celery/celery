@@ -5,6 +5,7 @@ from time import sleep
 from pydantic import BaseModel
 
 from celery import Signature, Task, chain, chord, group, shared_task
+
 try:
     from celery import workflow
 except ImportError:
