@@ -438,7 +438,7 @@ Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
 ``task_id_generator``
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.7
+.. versionadded:: 5.8
 
 Default: :const:`None` (use :func:`kombu.utils.uuid.uuid`).
 
