@@ -1049,8 +1049,8 @@ class Celery:
         """
         parent = have_parent = None
         amqp = self.amqp
-        if task_id is None:
-            task_id_generator = self.conf.get("task_id_generator", uuid)
+        if not task_id:
+            task_id_generator = self.conf.task_id_generator or uuid
             try:
                 task_id = str(task_id_generator())
             except Exception as exc:

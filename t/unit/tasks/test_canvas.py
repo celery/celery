@@ -2118,6 +2118,7 @@ class test_chain(CanvasCase):
             c.freeze()
             task_ids = [t.options["task_id"] for t in c.tasks]
             assert len(set(task_ids)) == len(task_ids)
+            assert set(task_ids) <= {"chain-id", "task-id-1", "task-id-2"}
         finally:
             self.app.conf.task_id_generator = None
 
@@ -3841,6 +3842,92 @@ class test_chord(CanvasCase):
             assert mock_gen.call_count == 4
         finally:
             self.app.conf.task_id_generator = None
+
+
+class test_custom_task_id_canvas(CanvasCase):
+    @pytest.mark.parametrize('eager', [False, True])
+    @pytest.mark.parametrize('primitive', [
+        'signature', 'group', 'chain', 'chord', 'map', 'starmap', 'chunks', 'workflow',
+    ])
+    def test_workflows_use_the_configured_generator(self, primitive, eager):
+        generated = []
+
+        def generate():
+            value = f'custom-{len(generated)}'
+            generated.append(value)
+            return value
+
+        self.app.conf.task_id_generator = generate
+        self.app.conf.task_always_eager = eager
+        if primitive == 'signature':
+            workflow, expected = self.add.s(1, 2), 3
+        elif primitive == 'group':
+            workflow, expected = group(self.add.s(1, 2), self.add.s(3, 4)), [3, 7]
+        elif primitive == 'chain':
+            workflow, expected = chain(self.add.s(1, 2), self.mul.s(4)), 12
+        elif primitive == 'chord':
+            workflow, expected = chord([self.add.s(1, 2), self.add.s(3, 4)], self.xsum.s()), 10
+        elif primitive == 'map':
+            workflow, expected = self.xsum.map([[1, 2], [3, 4]]), [3, 7]
+        elif primitive == 'starmap':
+            workflow, expected = self.add.starmap([(1, 2), (3, 4)]), [3, 7]
+        elif primitive == 'chunks':
+            workflow, expected = self.add.chunks([(1, 2), (3, 4)], 1), [[3], [7]]
+        else:
+            workflow = chain(self.add.s(1, 2), group(self.mul.s(2), self.mul.s(3)), self.xsum.s())
+            expected = 15
+
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            result = workflow.apply_async()
+
+        assert result.id in generated
+        for sent in send.call_args_list:
+            for field in ('id', 'root_id', 'parent_id', 'group'):
+                value = sent.args[2].headers.get(field)
+                if value:
+                    assert value in generated
+        if eager:
+            assert result.get() == expected
+        else:
+            assert send.called
+
+    @pytest.mark.parametrize('primitive', ['signature', 'group', 'chain', 'chord'])
+    def test_freezing_again_preserves_ids_without_generating_more(self, primitive):
+        generator = Mock(side_effect=(f'custom-{index}' for index in range(20)))
+        self.app.conf.task_id_generator = generator
+        if primitive == 'signature':
+            workflow = self.add.s(1, 2)
+        elif primitive == 'group':
+            workflow = group(self.add.s(1, 2), self.add.s(3, 4))
+        elif primitive == 'chain':
+            workflow = chain(self.add.s(1, 2), self.mul.s(4))
+        else:
+            workflow = chord([self.add.s(1, 2), self.add.s(3, 4)], self.xsum.s())
+        first = workflow.freeze()
+        count = generator.call_count
+        second = workflow.freeze()
+        assert first.id == second.id
+        assert generator.call_count == count
+
+    def test_group_id_uses_the_app_of_its_bound_tasks(self):
+        self.app.conf.task_id_generator = Mock(return_value='bound-app-group')
+        with self.app.__class__('other-app', set_as_current=False) as other:
+            other.conf.task_id_generator = Mock(return_value='wrong-app-group')
+            workflow = group(self.add.s(1, 2))
+            assert workflow._app is None
+            with patch('celery.canvas.current_app', other):
+                _, group_id, _ = workflow._freeze_gid({})
+            assert group_id == 'bound-app-group'
+            self.app.conf.task_id_generator.assert_called_once_with()
+            other.conf.task_id_generator.assert_not_called()
+
+    def test_nested_group_keeps_its_own_id_and_parent_group(self):
+        self.app.conf.task_id_generator = Mock(side_effect=['inner-group', 'inner-task'])
+        workflow = group(self.add.s(1, 2), app=self.app)
+        result = workflow.freeze(group_id='parent-group')
+        assert result.id == 'inner-group'
+        assert workflow.options['group_id'] == 'parent-group'
+        assert result.id != workflow.options['group_id']
 
 
 class test_maybe_signature(CanvasCase):

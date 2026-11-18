@@ -2141,7 +2141,7 @@ class group(Signature):
             if k not in self._IMMUTABLE_OPTIONS or k not in self.options
         }}
         options['group_id'] = group_id = (
-            options.pop('task_id') if 'task_id' in options else _new_task_id(self._app or current_app))
+            options.pop('task_id') if 'task_id' in options else _new_task_id(self.app))
         return options, group_id, options.get('root_id')
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
@@ -2275,7 +2275,7 @@ class group(Signature):
         app = self._app
         if app is None:
             try:
-                app = self.tasks[0].app
+                app = maybe_signature(self.tasks[0]).app
             except LookupError:
                 pass
         return app if app is not None else current_app
@@ -2636,7 +2636,7 @@ class _chord(Signature):
             AsyncResult: The result of the body (with the result of the header in the parent of the body).
         """
         app = app or self._get_app(body)
-        group_id = header.options.get('task_id') or _new_task_id(self.app)
+        group_id = header.options.get('task_id') or _new_task_id(app)
         root_id = body.options.get('root_id')
         options = dict(self.options, **options)
         header_delay = dict(header_delay or {})

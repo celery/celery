@@ -2509,6 +2509,39 @@ class test_App:
         finally:
             self.app.conf.task_id_generator = None
 
+    @pytest.mark.parametrize('namespace,key', [
+        (None, 'task_id_generator'),
+        ('CELERY', 'CELERY_TASK_ID_GENERATOR'),
+        (None, 'CELERY_TASK_ID_GENERATOR'),
+        (None, 'id_generator'),
+    ])
+    def test_send_task_generator_configuration(self, namespace, key):
+        generator = Mock(return_value='configured-id')
+        with self.Celery(set_as_current=False, broker='memory://') as app:
+            app.config_from_object({key: generator}, namespace=namespace)
+            result = app.send_task('foo')
+        assert result.id == 'configured-id'
+        generator.assert_called_once_with()
+
+    def test_send_task_generator_preserves_explicit_id(self):
+        generator = Mock(side_effect=AssertionError('explicit ID must be retained'))
+        self.app.conf.task_id_generator = generator
+        assert self.app.send_task('foo', task_id='explicit-id').id == 'explicit-id'
+        generator.assert_not_called()
+
+    @pytest.mark.parametrize('empty_id', [None, '', 0])
+    def test_send_task_generator_replaces_empty_ids(self, empty_id):
+        generator = Mock(return_value='generated-id')
+        self.app.conf.task_id_generator = generator
+        assert self.app.send_task('foo', task_id=empty_id).id == 'generated-id'
+        generator.assert_called_once_with()
+
+    @pytest.mark.skipif(not hasattr(uuid, 'uuid7'), reason='uuid7 requires Python 3.14')
+    def test_send_task_with_uuid7_generator(self):
+        self.app.conf.task_id_generator = uuid.uuid7
+        result = self.app.send_task('foo')
+        assert uuid.UUID(result.id).version == 7
+
     def test_select_queues(self):
         self.app.amqp = Mock(name='amqp')
         self.app.select_queues({'foo', 'bar'})

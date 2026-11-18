@@ -438,13 +438,13 @@ Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
 ``task_id_generator``
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 5.5
+.. versionadded:: 5.7
 
-Default: :func:`kombu.utils.uuid.uuid`.
+Default: :const:`None` (use :func:`kombu.utils.uuid.uuid`).
 
-A callable that returns a unique string to use as a task ID. By default,
-Celery uses UUID4. Use this setting to replace task IDs with a custom
-format such as ULIDs, Snowflake IDs, or prefixed UUIDs.
+A callable whose result is converted to a string and used as a new task ID.
+When unset or :const:`None`, Celery uses Kombu's UUID generator. Use this
+setting for formats such as ULIDs, Snowflake IDs, or prefixed UUIDs.
 
 The callable must take no arguments and return a value that can be
 converted to a string.
@@ -459,8 +459,17 @@ converted to a string.
 
     app.conf.task_id_generator = ulid_generator
 
+On Python 3.14 and later, the standard library can generate UUIDv7 values:
+
+.. code-block:: python
+
+    from uuid import uuid7
+
+    app.conf.task_id_generator = uuid7
+
 If the callable raises an exception, Celery will fall back to the
 default UUID generator.
+Explicitly supplied task IDs are preserved, and retries reuse the original ID.
 
 .. note::
 
