@@ -24,8 +24,11 @@ from couchbase.exceptions import DocumentNotFoundException, TimeoutException  # 
 
 
 class FakeGetResult:
-    def __init__(self, content):
-        self.content = content
+    """Mirrors the real couchbase 4.x GetResult: the document is in
+    ``value``, and there is no ``content``."""
+
+    def __init__(self, value):
+        self.value = value
 
 
 class FakeMultiGetResult:
@@ -69,15 +72,44 @@ class test_CouchbaseBackend:
             assert sentinel._connection == connection
             mock_Cluster.assert_not_called()
 
+    def test_get_connection_passes_cluster_options(self):
+        # couchbase 4 raises "Authenticator is mandatory" when Cluster() is
+        # given the authenticator itself instead of ClusterOptions.
+        from couchbase.options import ClusterOptions
+        self.backend.username, self.backend.password = 'johndoe', 'mysecret'
+        with patch.object(module, 'Cluster') as mock_Cluster:
+            self.backend._get_connection()
+        (uri, opt), _ = mock_Cluster.call_args
+        assert isinstance(opt, ClusterOptions)
+
+    @pytest.mark.parametrize('port,uri', [
+        (8091, 'couchbase://myhost'),
+        (11210, 'couchbase://myhost:11210'),
+        (None, 'couchbase://myhost'),
+    ])
+    def test_get_connection_uri(self, port, uri):
+        # 8091 is the HTTP port: in a couchbase:// connection string a port
+        # is the key-value port, and 8091 there makes the connection time out.
+        self.backend.host, self.backend.port = 'myhost', port
+        with patch.object(module, 'Cluster') as mock_Cluster:
+            self.backend._get_connection()
+        assert mock_Cluster.call_args.args[0] == uri
+
     def test_get(self):
         self.app.conf.couchbase_backend_settings = {}
         x = CouchbaseBackend(app=self.app)
         x._connection = Mock()
-        mocked_get = x._connection.get = Mock()
-        mocked_get.return_value.content = sentinel.retval
-        # should return None
+        x._connection.get = Mock(return_value=FakeGetResult(sentinel.retval))
         assert x.get('1f3fab') == sentinel.retval
         x._connection.get.assert_called_once_with('1f3fab')
+
+    def test_get_couchbase_3_result(self):
+        # couchbase 3's GetResult held the document in ``content``.
+        x = CouchbaseBackend(app=self.app)
+        x._connection = Mock()
+        x._connection.get = Mock(
+            return_value=Mock(spec=['content'], content=sentinel.retval))
+        assert x.get('1f3fab') == sentinel.retval
 
     def test_get_missing_document_returns_None(self):
         x = CouchbaseBackend(app=self.app)
@@ -173,18 +205,20 @@ class test_CouchbaseBackend:
         x = CouchbaseBackend(app=self.app)
         x.expires = None
         x._connection = MagicMock()
-        x._connection.set = MagicMock()
         # should return None
         assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
+        x._connection.upsert.assert_called_once_with(sentinel.key, sentinel.value)
 
     def test_set_expires(self):
         self.app.conf.couchbase_backend_settings = None
         x = CouchbaseBackend(app=self.app, expires=30)
         assert x.expires == 30
         x._connection = MagicMock()
-        x._connection.set = MagicMock()
         # should return None
         assert x._set_with_state(sentinel.key, sentinel.value, states.SUCCESS) is None
+        # couchbase 4 has no ``ttl`` option: passing it raises AttributeError.
+        x._connection.upsert.assert_called_once_with(
+            sentinel.key, sentinel.value, expiry=timedelta(seconds=30))
 
     def test_delete(self):
         self.app.conf.couchbase_backend_settings = {}
