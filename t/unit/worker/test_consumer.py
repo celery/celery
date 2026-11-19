@@ -2526,4 +2526,29 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
 
         c.app.backend.mark_as_failure.assert_not_called()
         message.reject_log_error.assert_called_once()
+    def test_task_handler_passes_a_protocol_1_payload_on(self):
+        # Protocol 1 keeps chord and errback metadata in the decoded body.
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+        c.strategies = {}
+        payload = {
+            'id': 'task-id-proto1-handler',
+            'task': 'unregistered.proto1.task',
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+        }
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = {}
+        message.decode.return_value = payload
+        message.properties = {}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.create_task_handler()(message)
+
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+        assert request.id == 'task-id-proto1-handler'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.delivery_info == {'routing_key': 'celery'}
 
