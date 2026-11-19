@@ -891,6 +891,22 @@ The option can be set using the workers
 :option:`--max-tasks-per-child <celery worker --max-tasks-per-child>` argument
 or using the :setting:`worker_max_tasks_per_child` setting.
 
+When a child process is replaced because it reached this limit (or the
+:ref:`max memory per child <worker-max-memory-per-child>` limit), the worker
+logs a message at ``INFO`` level, for example:
+
+.. code-block:: text
+
+    [INFO/MainProcess] Child process pid:4242 recycled (max_tasks_per_child=100, max_memory_per_child=None), starting a replacement
+
+The ``starting a replacement`` suffix is left out when the worker is shutting
+down. If max memory per child was the reason, the child also logs a warning
+with its memory usage just before this line.
+
+With a low limit such as ``--max-tasks-per-child=1`` this line is logged once
+per task. To hide it, set the ``celery.concurrency.asynpool`` logger to
+``WARNING``.
+
 .. _worker-max-memory-per-child:
 
 Max memory per child setting
