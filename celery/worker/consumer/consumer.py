@@ -756,31 +756,40 @@ class Consumer:
               message.headers,
               message.delivery_info,
               exc_info=True)
-        try:
-            id_, name = message.headers['id'], message.headers['task']
-            root_id = message.headers.get('root_id')
-            parent_id = message.headers.get('parent_id')
-            group = message.headers.get('group')
-            group_index = message.headers.get('group_index')
-        except (KeyError, TypeError, AttributeError):  # proto1 or malformed headers
-            # Protocol v1 passes its decoded payload as body. Do not access
-            # message.payload here: it is a lazy decode property and can raise.
-            payload = body
-            id_ = payload.get('id') if isinstance(payload, dict) else None
-            name = payload.get('task') if isinstance(payload, dict) else None
-            root_id = payload.get('root_id') if isinstance(payload, dict) else None
-            parent_id = payload.get('parent_id') if isinstance(payload, dict) else None
-            group = payload.get('group') or (payload.get('taskset') if isinstance(payload, dict) else None)
-            group_index = payload.get('group_index') if isinstance(payload, dict) else None
-
+        headers = getattr(message, 'headers', None) or {}
         payload = body
-        if payload is None and hasattr(message, 'decode'):
-            try:
-                payload = message.decode()
-            except Exception:
-                # Malformed bodies must not trigger a second lazy decode via
-                # message.payload; failure handling should still reject the task.
-                payload = None
+
+        # Protocol v2 stores task metadata in headers. A task header without
+        # an id is malformed and must be rejected rather than killing the worker.
+        if isinstance(headers, dict) and 'task' in headers:
+            id_ = headers.get('id')
+            name = headers.get('task')
+            root_id = headers.get('root_id')
+            parent_id = headers.get('parent_id')
+            group = headers.get('group')
+            group_index = headers.get('group_index')
+        else:
+            # Protocol v1 passes its decoded payload as body. Decode only when
+            # the caller did not already provide it, and never access the lazy
+            # message.payload property after a decode failure.
+            if payload is None and hasattr(message, 'decode'):
+                try:
+                    payload = message.decode()
+                except Exception:
+                    payload = None
+
+            if isinstance(payload, dict):
+                id_ = payload.get('id')
+                name = payload.get('task')
+                root_id = payload.get('root_id')
+                parent_id = payload.get('parent_id')
+                group = payload.get('group') or payload.get('taskset')
+                group_index = payload.get('group_index')
+            else:
+                id_ = name = root_id = parent_id = group = group_index = None
+
+        if id_ is None:
+            return self.on_unknown_message(body, message)
 
         chord = None
         errbacks = None
@@ -803,7 +812,6 @@ class Consumer:
             if group_index is None:
                 group_index = payload.get('group_index')
 
-        headers = getattr(message, 'headers', None) or {}
         chord = chord if chord is not None else headers.get('chord')
         errbacks = errbacks if errbacks is not None else headers.get('errbacks')
         chain = chain if chain is not None else headers.get('chain')
