@@ -922,6 +922,11 @@ class Consumer:
         requests_to_cancel = tuple(filter(should_cancel, active_requests))
 
         if requests_to_cancel:
+            from celery.concurrency.thread import TaskPool as ThreadPool
+
+            if isinstance(self.pool, ThreadPool):
+                logger.warning('The threads pool cannot terminate running tasks. Waiting for them to finish.')
+                return
             for request in requests_to_cancel:
                 # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
                 # For non-acks_late tasks, emit RETRY signal as usual
