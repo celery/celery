@@ -246,17 +246,21 @@ class ResultConsumer(BaseResultConsumer):
             logger.warning(str(e))
         super().on_after_fork()
 
+    def _read_subscribed_metas(self):
+        """Deliver the stored meta of every subscribed task, if any."""
+        if self.subscribed_to:
+            metas = self.backend.client.mget(self.subscribed_to)
+            metas = [meta for meta in metas if meta]
+            for meta in metas:
+                self.on_state_change(self._decode_result(meta), None)
+
     def _reconnect_pubsub(self):
         with self._locked():
             self._pubsub = None
             self.backend.client.connection_pool.reset()
             # task state might have changed when the connection was down so we
             # retrieve meta for all subscribed tasks before going into pubsub mode
-            if self.subscribed_to:
-                metas = self.backend.client.mget(self.subscribed_to)
-                metas = [meta for meta in metas if meta]
-                for meta in metas:
-                    self.on_state_change(self._decode_result(meta), None)
+            self._read_subscribed_metas()
             self._pubsub = self.backend.client.pubsub(
                 ignore_subscribe_messages=True,
             )
@@ -269,6 +273,11 @@ class ResultConsumer(BaseResultConsumer):
             self._pending_unsubscribe.clear()
             if self.subscribed_to:
                 self._pubsub.subscribe(*self.subscribed_to)
+                # A result stored between the read above and this
+                # subscribe is never published to us -- its publish was
+                # missed -- so read the metas once more now that the
+                # subscription is live (#11089).
+                self._read_subscribed_metas()
             else:
                 # redis-py < 5.3.0 requires ``command_name`` as a positional
                 # argument to ``ConnectionPool.get_connection``. The argument was

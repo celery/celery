@@ -683,9 +683,34 @@ class test_RedisResultConsumer:
         consumer.start('initial')
         consumer.backend._set_with_state(b'celery-task-meta-initial', json.dumps(meta), states.SUCCESS)
         consumer._reconnect_pubsub()
-        consumer.backend.client.mget.assert_called_once()
+        # read once before subscribing and once more after (#11089)
+        assert consumer.backend.client.mget.call_count == 2
         consumer._pubsub.subscribe.assert_called_once()
         consumer._pubsub.connection.register_connect_callback.assert_not_called()
+
+    def test__reconnect_pubsub_reads_meta_stored_during_subscribe(self):
+        # A result stored after the pre-subscribe meta read but before
+        # the subscription is live is never published to this consumer;
+        # the reconnect must read the metas once more after subscribing
+        # or the waiter times out on a stored SUCCESS (#11089).
+        meta = {'task_id': 'initial', 'status': states.SUCCESS}
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        fresh = consumer.backend.client.pubsub()
+        consumer.backend.client.pubsub = Mock(return_value=fresh)
+
+        def subscribe(*args):
+            consumer.backend._set_with_state(
+                b'celery-task-meta-initial', json.dumps(meta),
+                states.SUCCESS)
+
+        fresh.subscribe = subscribe
+        consumer._reconnect_pubsub()
+        assert consumer.backend.client.mget.call_count == 2
+        # the stored SUCCESS was delivered, so the task left the wait set
+        assert consumer.subscribed_to == set()
+        fresh.unsubscribe.assert_called_once_with(
+            b'celery-task-meta-initial')
 
     def test__reconnect_pubsub_redis_py_below_5_3_compat(self):
         """Regression test for celery#10294.
