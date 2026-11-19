@@ -2481,6 +2481,7 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         c.app.backend.mark_as_failure = Mock()
 
         class MalformedMessage:
+            body = b'{'
             headers = {
                 'id': 'malformed-task-id',
                 'task': 'unregistered.malformed',
@@ -2503,3 +2504,26 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
 
         c.app.backend.mark_as_failure.assert_called_once()
         assert c.app.backend.mark_as_failure.call_args.args[0] == 'malformed-task-id'
+    @pytest.mark.parametrize(
+        'headers, payload',
+        [
+            ({'task': 'unregistered.missing_id'}, None),
+            ({}, {'task': 'unregistered.missing_id'}),
+        ],
+        ids=['protocol-v2-missing-id', 'protocol-v1-missing-id'],
+    )
+    def test_on_unknown_task_without_id_is_rejected(self, headers, payload):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = headers
+        message.properties = {}
+        message.delivery_info = {}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.missing_id'))
+
+        c.app.backend.mark_as_failure.assert_not_called()
+        message.reject_log_error.assert_called_once()
+
