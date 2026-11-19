@@ -570,7 +570,17 @@ class AsynPool(_pool.Pool):
     def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
         self._untrack_child_process(proc, hub)
+        self._maintain_until_reaped(hub, proc)
+
+    def _maintain_until_reaped(self, hub, proc, delay=0.01, waited=0.0):
+        # The sentinel can be readable before waitpid() is able to reap the
+        # child (Issue #9588), which left its slot empty until the
+        # maintain_pool timer.  Retry shortly instead, with backoff, and let
+        # the timer take over once the retries would wait as long as it does.
         self.maintain_pool()
+        if proc in self._pool and waited + delay <= self.timers[self.maintain_pool]:
+            hub.call_later(delay, self._maintain_until_reaped,
+                           hub, proc, delay * 2, waited + delay)
 
     def _track_child_process(self, proc, hub):
         """Helper method determines appropriate fd for process."""
