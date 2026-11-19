@@ -35,6 +35,7 @@ EXTENSIONS = (
     'pyro',
     'pytest',
     'redis',
+    'repl',
     's3',
     'slmq',
     'solar',
