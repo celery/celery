@@ -344,6 +344,12 @@ class ExeMockTaskPool(mp.TaskPool):
 @t.skip.if_win32
 class test_AsynPool:
 
+    @pytest.fixture(autouse=True)
+    def no_child_processes(self):
+        # AsynPool() forks its processes, which can outlive the test run.
+        with patch('billiard.pool.Pool._create_worker_process'):
+            yield
+
     def setup_method(self):
         pytest.importorskip('multiprocessing')
 
@@ -715,6 +721,26 @@ class test_AsynPool:
         pool.register_with_event_loop(hub)
         pool.register_with_event_loop(hub)
         hub.on_tick.add.assert_called_once()
+
+    def test_create_timelimit_handlers_keeps_trefs_on_reregister(self):
+        """Time limits armed before the pool registers with the event loop
+        again (e.g. after a broker reconnect) can still be cancelled when
+        the task finishes (#10888).
+        """
+        pool = Mock(spec=asynpool.AsynPool)
+        hub = Hub()
+        try:
+            asynpool.AsynPool._create_timelimit_handlers(pool, hub)
+            pool.on_timeout_set(Mock(_job='job-1'), None, 60)
+            tref = pool._tref_for_id['job-1']
+
+            asynpool.AsynPool._create_timelimit_handlers(pool, hub)
+            assert pool._tref_for_id['job-1'] is tref
+            pool.on_timeout_cancel(Mock(_job='job-1'))
+            assert tref.canceled
+            assert 'job-1' not in pool._tref_for_id
+        finally:
+            hub.close()
 
     @t.skip.if_pypy
     @patch('billiard.pool.Pool._create_worker_process')

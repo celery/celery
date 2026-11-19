@@ -434,11 +434,14 @@ and a countdown of 10 seconds like this:
     >>> add.signature((2, 2), countdown=10)
     tasks.add(2, 2)
 
-There's also a shortcut using star arguments:
+The ``.s()`` method is a shortcut that takes the task's arguments as star
+arguments, so it cannot take execution options: ``add.s(2, 2, countdown=10)``
+would pass ``countdown`` to the task. Set options on the resulting signature
+with ``.set()`` instead:
 
 .. code-block:: pycon
 
-    >>> add.s(2, 2)
+    >>> add.s(2, 2).set(countdown=10)
     tasks.add(2, 2)
 
 And there's that calling API again…

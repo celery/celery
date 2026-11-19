@@ -181,6 +181,36 @@ def _first_task_options(chain_):
     return {k: v for k, v in chain_.options.items() if k not in _CHAIN_RUN_OPTIONS}
 
 
+def _clear_chord_option(sig):
+    """Remove the chord callback from the terminal tasks of a signature."""
+    sig.options.pop('chord', None)
+    if isinstance(sig, group):
+        for task in sig.tasks:
+            _clear_chord_option(task)
+    elif isinstance(sig, _chain) and sig.tasks:
+        _clear_chord_option(sig.tasks[-1])
+    elif isinstance(sig, _chord) and sig.body is not None:
+        _clear_chord_option(sig.body)
+
+
+def _strip_chord_header_links(sig):
+    """Remove redundant header callbacks from an execution copy.
+
+    A pending chord already carries its body in kwargs. Freezing also puts
+    that body on every header task, multiplying JSON message sizes for
+    nested chords. run() restores these callbacks when the header is sent.
+    Keep public freeze() unchanged and only strip copies being dispatched.
+    """
+    if isinstance(sig, _chord):
+        _clear_chord_option(sig.tasks)
+        _strip_chord_header_links(sig.tasks)
+        if sig.body is not None:
+            _strip_chord_header_links(sig.body)
+    elif isinstance(sig, (group, _chain)):
+        for task in sig.tasks:
+            _strip_chord_header_links(task)
+
+
 def task_name_from(task):
     return getattr(task, 'name', task)
 
@@ -1499,6 +1529,9 @@ class _chain(Signature):
                 prev_res = node
         # Use the last task's actual ID, not the input parameter.
         self.id = results[0].id if results else last_task_id
+        if clone:
+            for task in tasks:
+                _strip_chord_header_links(task)
         return tasks, results
 
     def apply(self, args=None, kwargs=None, **options):
@@ -1506,15 +1539,39 @@ class _chain(Signature):
         kwargs = kwargs if kwargs else {}
         last, (fargs, fkwargs) = None, (args, kwargs)
         tasks = list(self.tasks)
+        # A chain-level link fires once, on the last executed task,
+        # mirroring _chain.run (which extends it onto the last prepared
+        # task only).  link_error stays per-task, as on the worker.
+        task_options = dict(self.options, **options)
+        link = task_options.pop('link', None)
+        # Empty groups are skipped below unless the chain consists of a
+        # single one, so the last executed task is the last non-empty
+        # task, defaulting to the final task.
+        last_index = max(
+            (index for index, task in enumerate(tasks)
+             if not _is_empty_group(task)),
+            default=len(tasks) - 1,
+        )
         for index, task in enumerate(tasks):
             if _is_empty_group(task) and (
                     index < len(tasks) - 1 or last is not None):
                 # Skip empty groups, mirroring _chain.prepare_steps:
                 # an empty group is a no-op, unless it is the only task.
                 continue
-            res = task.clone().apply(
+            clone = task.clone()
+            if link and index == last_index:
+                if isinstance(clone, _chord):
+                    # _chord.apply never reads the chord's own link option,
+                    # it only applies the body: put the link on the cloned
+                    # body's options.  (chord.link() would append to the
+                    # body's first task, mutating the caller's canvas when
+                    # the body is a group.)
+                    clone.body.extend_list_option('link', link)
+                else:
+                    clone.extend_list_option('link', link)
+            res = clone.apply(
                 (last.get(),) if last else fargs, fkwargs,
-                **dict(self.options, **options))
+                **task_options)
             res.parent, last, (fargs, fkwargs) = last, res, (None, None)
             if isinstance(res, EagerResult) and res.state in (IGNORED, REJECTED):
                 break
@@ -1620,10 +1677,15 @@ class _basemap(Signature):
         # need to evaluate generators
         args = args if args else ()
         kwargs = kwargs if kwargs else {}
+        # options stored on the signature (e.g. via .set(), .link() or freeze())
+        # are merged with the ones given to this call, as in Signature.apply_async
+        call_options = {k: v for k, v in opts.items() if v is not None}
+        _merged_args, _merged_kwargs, options = self._merge(options=call_options)
+        route_name = options.pop('route_name', None) or task_name_from(self.kwargs.get('task'))
         task, it = self._unpack_args(self.kwargs)
         return self.type.apply_async(
             (), {'task': task, 'it': list(it)},
-            route_name=task_name_from(self.kwargs.get('task')), **opts
+            route_name=route_name, **options
         )
 
 
@@ -1693,11 +1755,42 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
+# Options that belong to the group itself, not to the tasks in it.
+_GROUP_ONLY_OPTIONS = frozenset({'task_id', 'group_id', 'group_index', 'chord'})
+
+
+def _give_options(tasks, options, app):
+    """Clone ``tasks`` with ``options``, going into nested groups.
+
+    group.apply_async() unrolls nested groups into their tasks, so their
+    tasks get the options too. A chain gets them as a whole, as it does there.
+    """
+    def give(task):
+        task = maybe_signature(task, app=app)
+        if isinstance(task, group):
+            task = task.clone()
+            task.tasks = _give_options(task.tasks, options, app)
+            return task
+        return task.clone(**options)
+
+    if isinstance(tasks, _regen):
+        return regen(give(t) for t in tasks)
+    return [give(t) for t in tasks]
+
+
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
 
-    if isinstance(tasks, (group, _chain)):
+    if isinstance(tasks, group):
+        # The group itself is dropped here, so give its execution options
+        # (countdown, queue, ...) to its tasks, as group.apply_async() would.
+        options = {k: v for k, v in tasks.options.items()
+                   if k not in _GROUP_ONLY_OPTIONS}
+        tasks = tasks.tasks
+        if options:
+            tasks = _give_options(tasks, options, app)
+    elif isinstance(tasks, _chain):
         tasks = tasks.tasks
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
@@ -2410,16 +2503,29 @@ class _chord(Signature):
         for key in ('countdown', 'eta'):
             if options.get(key) is not None:
                 header_delay[key] = options.pop(key)
+        # Cloning with link= would replace the body's own callbacks: run()
+        # adds them to the body instead.
+        callbacks = {key: options.pop(key)
+                     for key in ('link', 'link_error') if key in options}
         body = body.clone(**self._body_options(options))
         app = self._get_app(body)
-        tasks = (self.tasks.clone() if isinstance(self.tasks, group)
-                 else group(self.tasks, app=app, task_id=self.options.get('task_id', uuid())))
+        tasks = self.tasks
+        if isinstance(tasks, group):
+            tasks = tasks.clone()
+        else:
+            # Freezing replaces mutable header lists in place. Copy the list
+            # without adding another layer of lookahead to lazy generators.
+            if isinstance(tasks, MutableSequence) and not isinstance(tasks, _regen):
+                tasks = tasks[:]
+            tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
+            # apply() does not use the options of the chord, unlike run()
+            body = self._add_body_callbacks(body, dict(self.options, **callbacks))
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
 
-        merged_options = dict(self.options, **options)
+        merged_options = dict(self.options, **options, **callbacks)
         # Keep countdown/eta off run()'s kwargs so they don't replace the unlock
         # retry interval; run() still sees .set() values via self.options.
         for key in ('countdown', 'eta'):
@@ -2486,6 +2592,44 @@ class _chord(Signature):
         """Options passed on to the body: the header task that fires the body is its parent."""
         return {k: v for k, v in options.items() if k != 'parent_id'}
 
+    @staticmethod
+    def _add_body_callbacks(body, options):
+        """Move ``link`` and ``link_error`` from ``options`` to the body.
+
+        ``link`` is linked to the body as :meth:`link` does. ``link_error``
+        is linked to each task of a group body, as :meth:`link_error` does,
+        so the tasks keep their own errbacks. If the group has its own
+        ``link_error``, which replaces theirs when it runs, it is added
+        there instead, with the group's own errbacks. Any other body gets
+        it in its own ``link_error`` option, where the chord's error
+        handling reads it when the header fails. Unlike :meth:`link_error`
+        with ``task_allow_error_cb_on_chord_header`` enabled, it is not
+        added to the header tasks, nor to the header of a chord that is a
+        task of a group body. Neither may reach the header: a group refuses
+        them.
+
+        Returns the body to use: a copy when there are callbacks to link.
+        """
+        callbacks = maybe_list(options.pop('link', None)) or []
+        errbacks = maybe_list(options.pop('link_error', None)) or []
+        if callbacks or errbacks:
+            # Linking changes the signatures in a group or chord, which
+            # clone() shares with the caller's.
+            body = _clone_with_members(body)
+        for callback in callbacks:
+            callback = _clone_with_members(maybe_signature(callback, app=body._app))
+            if isinstance(body, group) and not body.tasks:
+                body.append_to_list_option('link', callback)
+            else:
+                body.link(callback)
+        for errback in errbacks:
+            if isinstance(body, group):
+                _link_error_to_body_tasks(
+                    body, maybe_signature(errback, app=body._app))
+            else:
+                body.append_to_list_option('link_error', errback)
+        return body
+
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
             task_id=None, kwargs=None, header_delay=None, **options):
@@ -2523,6 +2667,7 @@ class _chord(Signature):
             options.pop(key, None)
         if options:
             options.pop('task_id', None)
+            body = self._add_body_callbacks(body, options)
             body.options.update(self._body_options(options))
 
         # Freezing a nested chain first would embed its whole remaining tail
@@ -2532,6 +2677,7 @@ class _chord(Signature):
             body._unroll_chords(app)
         body_task_id = task_id or uuid()
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
+        _strip_chord_header_links(body)
 
         # Chains should not be passed to the header tasks. See #3771
         options.pop('chain', None)
@@ -2540,6 +2686,8 @@ class _chord(Signature):
         options.pop('task_id', None)
 
         header.options['task_id'] = group_id
+        # Reattach the callback stripped by _strip_chord_header_links before
+        # publishing the header.
         header_result_args = header._freeze_group_tasks(group_id=group_id, chord=body, root_id=root_id)
 
         if header.tasks:
@@ -2723,6 +2871,44 @@ def signature(varies, *args, **kwargs):
 
 
 subtask = signature  # XXX compat
+
+
+def _clone_with_members(sig):
+    """Clone ``sig`` and the signatures in it that ``link()`` changes.
+
+    ``clone()`` keeps the tasks of a group, so linking a callback to the
+    clone would change the original group as well. ``link()`` goes on to
+    the tasks of a group and to the body of a chord.
+    """
+    sig = maybe_signature(sig, clone=True)
+    if isinstance(sig, group):
+        sig.tasks = [_clone_with_members(task) for task in sig.tasks]
+    elif isinstance(sig, _chord):
+        sig.body = _clone_with_members(sig.body)
+    return sig
+
+
+def _link_error_to_body_tasks(sig, errback, runs_as_group=True):
+    """Link ``errback`` to each task of ``sig``, the group body of a chord.
+
+    It goes on to the tasks of a group, as ``group.link_error()`` does, and
+    to the body of a chord but not to its header. A group that runs as one
+    and has its own ``link_error``, even an empty one, gets it there
+    instead, with its own errbacks: when the group runs, that option
+    replaces the errbacks of its tasks and is passed on to a chord in it,
+    which would otherwise call it twice. A group in a group is flattened,
+    dropping its options, first.
+    """
+    if isinstance(sig, group):
+        if runs_as_group and sig.options.get('link_error') is not None:
+            sig.append_to_list_option('link_error', errback.clone())
+        else:
+            for task in sig.tasks:
+                _link_error_to_body_tasks(task, errback, runs_as_group=False)
+    elif isinstance(sig, _chord):
+        _link_error_to_body_tasks(sig.body, errback)
+    else:
+        sig.link_error(errback.clone())
 
 
 def maybe_signature(d, app=None, clone=False):

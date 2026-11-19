@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 from google.cloud.exceptions import NotFound
+from kombu.exceptions import OperationalError
 
+from celery import uuid
+from celery.app.amqp import _callback_publish_retry
 from celery.backends.gcs import GCSBackend
 from celery.exceptions import ImproperlyConfigured
 
@@ -371,6 +374,7 @@ class test_GCSBackend:
     @patch.object(GCSBackend, '_delete_chord_key')
     @patch('celery.backends.gcs.allow_join_result')
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
+    @pytest.mark.parametrize('refused', [False, True])
     def test_on_chord_part_return(
         self,
         mock_firestore_ttl,
@@ -379,6 +383,7 @@ class test_GCSBackend:
         mock_restore_deps,
         mock_incr,
         mock_maybe_signature,
+        refused,
     ):
         request = MagicMock()
         request.group = 'group_id'
@@ -393,6 +398,18 @@ class test_GCSBackend:
             'result2',
         ]
         mock_maybe_signature.return_value = MagicMock()
+        mock_maybe_signature.return_value.id = 'callback-id'
+        if refused:
+            message = self.app.amqp.as_task_v2(uuid(), 'callback', create_sent_event=False)
+            producer = Mock(name='producer')
+            producer.connection.recoverable_connection_errors = ()
+            producer.publish.side_effect = [OperationalError('refused'), None]
+
+            def delay(ret):
+                assert _callback_publish_retry.get() is True
+                self.app.amqp.send_task_message(producer, 'callback', message)
+
+            mock_maybe_signature.return_value.delay.side_effect = delay
 
         b = GCSBackend(app=self.app)
         b.on_chord_part_return(request, state, result)
@@ -407,7 +424,8 @@ class test_GCSBackend:
             timeout=self.app.conf.result_chord_join_timeout,
             propagate=True,
         )
-        mock_maybe_signature.return_value.delay.assert_called_once_with(
+        assert mock_maybe_signature.return_value.delay.call_count == 1
+        assert mock_maybe_signature.return_value.delay.call_args == call(
             ['result1', 'result2']
         )
         mock_delete_chord_key.assert_called_once_with(group_key)

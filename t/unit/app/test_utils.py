@@ -34,6 +34,17 @@ class test_Settings:
             assert copied.task_always_eager is False
             assert app.conf.task_always_eager is True
 
+    @pytest.mark.parametrize('namespace, config', [
+        (None, {'task_always_eager': True}),
+        ('CELERY', {'CELERY_TASK_ALWAYS_EAGER': True}),
+        (None, {'CELERY_ALWAYS_EAGER': True}),
+    ])
+    def test_value_set_for(self, namespace, config):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object(config, namespace=namespace)
+            assert app.conf.value_set_for('task_always_eager')
+            assert not app.conf.value_set_for('task_eager_propagates')
+
     @pytest.mark.parametrize('copy_fun', [lambda settings: settings.copy(), copy])
     @pytest.mark.parametrize('cleared', [False, True])
     def test_copy_preserves_deprecated_settings(self, copy_fun, cleared):

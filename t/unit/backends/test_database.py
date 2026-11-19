@@ -398,6 +398,30 @@ class test_DatabaseBackend:
             self.app.conf.result_backend_always_retry = prev
             self.app.conf.result_backend_max_retries = prev_max_retries
 
+    def test_retry_settings_defaults(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    def test_retry_settings_set_to_none_use_the_defaults(self):
+        self.app.conf.result_backend_always_retry = None
+        self.app.conf.result_backend_max_retries = None
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert tb.always_retry is True
+        assert tb.max_retries == 3
+
+    @pytest.mark.parametrize('config', [
+        {'result_backend_always_retry': False, 'result_backend_max_retries': 0},
+        # The old setting names
+        {'CELERY_RESULT_BACKEND_ALWAYS_RETRY': False, 'CELERY_RESULT_BACKEND_MAX_RETRIES': 0},
+    ])
+    def test_retry_settings_from_config_object(self, config):
+        with self.Celery(set_as_current=False) as app:
+            app.config_from_object(config)
+            tb = DatabaseBackend(self.uri, app=app)
+            assert tb.always_retry is False
+            assert tb.max_retries == 0
+
     def test_missing_dburi_raises_ImproperlyConfigured(self):
         self.app.conf.database_url = None
         with pytest.raises(ImproperlyConfigured):
@@ -471,6 +495,96 @@ class test_DatabaseBackend:
         tb = DatabaseBackend(self.uri, app=self.app)
         assert tb.task_cls.__table__.name == 'foo'
         assert tb.taskset_cls.__table__.name == 'bar'
+
+    def test_table_name_config_names_indexes_after_tables(self):
+        self.app.conf.database_table_names = {
+            'task': 'foo',
+            'group': 'bar',
+        }
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_foo_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_bar_date_done'}
+
+    def test_long_table_names_keep_index_names_within_the_limit(self):
+        from sqlalchemy.dialects import postgresql
+        from sqlalchemy.schema import CreateIndex
+        self.app.conf.database_table_names = {
+            'task': 'x' * 51 + '_taskmeta',
+            'group': 'y' * 50 + '_groupmeta',
+        }
+        self.app.conf.database_create_tables_at_setup = False
+        tb = DatabaseBackend(self.uri, app=self.app)
+        for table in (tb.task_cls.__table__, tb.taskset_cls.__table__):
+            for index in table.indexes:
+                ddl = str(CreateIndex(index).compile(dialect=postgresql.dialect()))
+                name = ddl.split()[2]
+                assert len(name) <= 63, name
+
+    def test_renaming_indexes_leaves_multi_column_indexes_alone(self):
+        import sqlalchemy as sa
+
+        from celery.backends.database.models import _rename_indexes_with_table
+        table = sa.Table(
+            'results', sa.MetaData(),
+            sa.Column('date_done', sa.DateTime, index=True),
+            sa.Column('status', sa.String(50)),
+        )
+        # named as a single-column index on ``status`` would be
+        sa.Index('ix_results_status', table.c.status, table.c.date_done)
+        table.name = 'myapp_results'
+        _rename_indexes_with_table(table, 'results')
+        assert {i.name for i in table.indexes} == {
+            'ix_myapp_results_date_done', 'ix_results_status',
+        }
+
+    def test_renaming_indexes_leaves_an_explicitly_named_index_alone(self):
+        import sqlalchemy as sa
+
+        from celery.backends.database.models import _rename_indexes_with_table
+        table = sa.Table(
+            'results', sa.MetaData(),
+            sa.Column('date_done', sa.DateTime, index=True),
+            sa.Column('status', sa.String(50)),
+        )
+        sa.Index('my_status_index', table.c.status)
+        table.name = 'myapp_results'
+        _rename_indexes_with_table(table, 'results')
+        assert {i.name for i in table.indexes} == {
+            'ix_myapp_results_date_done', 'my_status_index',
+        }
+
+    def test_table_names_can_be_configured_again(self):
+        self.app.conf.database_table_names = {'task': 'foo', 'group': 'bar'}
+        DatabaseBackend(self.uri, app=self.app)
+        self.app.conf.database_table_names = {'task': 'baz'}
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_baz_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_celery_tasksetmeta_date_done'}
+
+    def test_default_table_names_keep_default_index_names(self):
+        # Existing databases already have these indexes; their names must not change.
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_celery_taskmeta_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_celery_tasksetmeta_date_done'}
+
+    def test_two_apps_with_their_own_table_names_share_a_database(self, tmp_path):
+        # Index names are unique per database on SQLite (per schema on
+        # PostgreSQL). With one shared name, SQLite skips the second app's
+        # index, and PostgreSQL fails to create the second app's tables.
+        from sqlalchemy import inspect
+        uri = f'sqlite:///{tmp_path / "shared.db"}'
+        for app_name in ('billing', 'reports'):
+            self.app.conf.database_table_names = {
+                'task': f'{app_name}_taskmeta',
+                'group': f'{app_name}_groupmeta',
+            }
+            tb = DatabaseBackend(uri, app=self.app)
+            tb.store_result(f'{app_name}-task', 42, states.SUCCESS)
+            assert tb.get_task_meta(f'{app_name}-task', cache=False)['status'] == states.SUCCESS
+        inspector = inspect(tb.session_manager.get_engine(tb.url))
+        for table in ('billing_taskmeta', 'billing_groupmeta', 'reports_taskmeta', 'reports_groupmeta'):
+            indexed = [i['column_names'] for i in inspector.get_indexes(table)]
+            assert ['date_done'] in indexed, f'{table} has no date_done index'
 
     def test_table_creation_at_setup_config(self):
         from sqlalchemy import inspect
@@ -793,6 +907,68 @@ class test_DatabaseBackend:
             assert isinstance(tb.get_result(tid3), KeyError)
             assert tb.get_traceback(tid3) == trace
 
+    @pytest.mark.parametrize('state, result', [
+        (states.STARTED, {'pid': 1}),
+        (states.FAILURE, KeyError('foo')),
+        (states.SUCCESS, 43),
+    ])
+    def test_store_result_after_success_is_ignored(self, state, result):
+        # e.g. the task runs again after its worker was lost before the ack
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_done(tid, 42)
+        tb.store_result(tid, result, state)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+
+    def test_store_result_before_success_is_saved(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid)
+        tb.mark_as_retry(tid, KeyError('foo'))
+        tb.mark_as_failure(tid, KeyError('foo'))
+        assert tb.get_task_meta(tid, cache=False)['status'] == states.FAILURE
+        tb.mark_as_done(tid, 42)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 42
+
+    def start_while_other_run_succeeds(self, tb, tid, on_locked_read):
+        # A second run starts just as the first one saves its SUCCESS
+        query_task = tb._query_task
+
+        def query_task_then_other_run_succeeds(session, task_id, for_update=False):
+            task = query_task(session, task_id, for_update=for_update)
+            if for_update == on_locked_read:
+                tb._query_task = query_task
+                tb.mark_as_done(task_id, 42)
+            return task
+
+        tb._query_task = query_task_then_other_run_succeeds
+        tb.mark_as_started(tid, pid=2)
+
+    def test_store_result_racing_a_success_keeps_it(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid, pid=1)
+        # The SUCCESS is saved before the second run locks the row
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=False)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert (meta['status'], meta['result']) == (states.SUCCESS, 42)
+
+    def test_store_result_racing_a_success_without_row_locks(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        tb.mark_as_started(tid, pid=1)
+        # SQLite has no row locks, so the SUCCESS can be saved even after the
+        # second run read the row. The row then has that run's state.
+        self.start_while_other_run_succeeds(tb, tid, on_locked_read=True)
+        meta = tb.get_task_meta(tid, cache=False)
+        assert (meta['status'], meta['result']) == (states.STARTED, {'pid': 2})
+        tb.mark_as_done(tid, 43)
+        assert tb.get_task_meta(tid, cache=False)['result'] == 43
+
     def test_forget(self):
         tb = DatabaseBackend(self.uri, backend='memory://', app=self.app)
         tid = uuid()
@@ -981,6 +1157,19 @@ class test_DatabaseBackend_result_extended():
         assert meta['name'] == 'mytask'
         assert meta['retries'] == 2
         assert meta['worker'] == "celery@worker_1"
+
+    def test_store_result_after_success_keeps_extended_fields(self):
+        tb = DatabaseBackend(self.uri, app=self.app)
+        tid = uuid()
+        request = Context(args=(1, 2), kwargs={'foo': 'bar'}, task='mytask',
+                          retries=0, hostname='celery@worker_1',
+                          delivery_info={'routing_key': 'celery'})
+        tb.store_result(tid, {'fizz': 'buzz'}, states.SUCCESS, request=request)
+        meta = tb.get_task_meta(tid, cache=False)
+        # The task runs again on another worker
+        request.update(hostname='celery@worker_2', retries=1)
+        tb.store_result(tid, {'pid': 2}, states.STARTED, request=request)
+        assert tb.get_task_meta(tid, cache=False) == meta
 
     @pytest.mark.parametrize(
         'result_serializer',

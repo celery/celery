@@ -624,7 +624,12 @@ class AsynPool(_pool.Pool):
     def _create_timelimit_handlers(self, hub):
         """Create handlers used to implement time limits."""
         call_later = hub.call_later
-        trefs = self._tref_for_id = WeakValueDictionary()
+        # Keep the existing mapping when registering again after a broker
+        # reconnect, so the time limits of tasks that are still running
+        # can still be cancelled when they finish.
+        trefs = getattr(self, '_tref_for_id', None)
+        if trefs is None:
+            trefs = self._tref_for_id = WeakValueDictionary()
 
         def on_timeout_set(R, soft, hard):
             if soft:
