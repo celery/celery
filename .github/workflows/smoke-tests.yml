@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/checkout@v7
       - name: Setup Docker Builder
-        uses: useblacksmith/setup-docker-builder@v2.2.0
+        uses: useblacksmith/setup-docker-builder@v2.3.0
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v7
         with:
@@ -54,7 +54,7 @@ jobs:
           cache-dependency-path: '**/setup.py'
 
       - name: Install tox
-        run: python -m pip install --upgrade pip tox tox-gh-actions
+        run: python -m pip install --upgrade pip 'tox<4.67.14' tox-gh-actions
 
       - name: Run tox for "${{ matrix.python-version }}-smoke${{ inputs.dev_requirements && '-dev' || '' }}-${{ inputs.test_path }}"
         env:

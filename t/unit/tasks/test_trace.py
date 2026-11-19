@@ -1,3 +1,4 @@
+import pickle
 from unittest.mock import ANY, Mock, PropertyMock, patch
 from uuid import uuid4
 
@@ -10,8 +11,8 @@ from celery.app.amqp import _callback_publish_retry
 from celery.app.task import Context
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, get_log_policy, get_task_name,
                               log_policy_expected, log_policy_ignore, log_policy_internal, log_policy_reject,
-                              log_policy_unexpected, reset_worker_optimizations, setup_worker_optimizations,
-                              trace_task, trace_task_ret, traceback_clear)
+                              log_policy_unexpected, report_internal_error, reset_worker_optimizations,
+                              setup_worker_optimizations, trace_task, trace_task_ret, traceback_clear)
 from celery.backends.base import BaseDictBackend
 from celery.backends.cache import CacheBackend
 from celery.exceptions import BackendGetMetaError, Ignore, Reject, Retry
@@ -722,6 +723,38 @@ class test_trace(TraceCase):
     def test_trace_exception_propagate(self):
         with pytest.raises(KeyError):
             self.trace(self.raises, (KeyError('foo'),), {}, propagate=True)
+
+    def test_report_internal_error_with_unpickleable_exception_type(self):
+        class LocalError(ValueError):
+            pass
+
+        try:
+            raise LocalError('internal error')
+        except LocalError as exc:
+            with pytest.warns(RuntimeWarning):
+                einfo = report_internal_error(self.add, exc)
+
+        restored = pickle.loads(pickle.dumps(einfo))
+
+        assert isinstance(restored, ExceptionInfo)
+        assert restored.internal is True
+        assert restored.type is Exception
+        assert isinstance(restored.exception, ValueError)
+        assert restored.exception.args == ('internal error',)
+        assert restored.traceback == einfo.traceback
+
+    def test_report_internal_error_with_pickleable_exception_type(self):
+        try:
+            raise ValueError('internal error')
+        except ValueError as exc:
+            with pytest.warns(RuntimeWarning):
+                einfo = report_internal_error(self.add, exc)
+
+        restored = pickle.loads(pickle.dumps(einfo))
+
+        assert restored.type is ValueError
+        assert isinstance(restored.exception, ValueError)
+        assert restored.exception.args == ('internal error',)
 
     @patch('celery.app.trace.signals.task_internal_error.send')
     @patch('celery.app.trace.build_tracer')
