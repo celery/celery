@@ -2106,6 +2106,26 @@ class test_chord:
         assert elapsed >= countdown * 0.9
         assert all(eta is not None for eta in header_etas)
 
+    def test_header_group_options_reach_header_tasks(self, manager):
+        """Options set on a chord's header group reach its tasks (#11113)."""
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as e:
+            raise pytest.skip(e.args[0])
+
+        countdown = 2
+        header = group(
+            return_request_eta.s(), return_request_eta.s()
+        ).set(countdown=countdown)
+        started = monotonic()
+        result = chord(header, identity.s()).apply_async()
+        header_etas = result.get(timeout=TIMEOUT)
+        elapsed = monotonic() - started
+
+        assert elapsed >= countdown * 0.9
+        assert len(header_etas) == 2
+        assert all(eta is not None for eta in header_etas)
+
     @pytest.mark.xfail(reason="async_results aren't performed in async way")
     def test_redis_subscribed_channels_leak(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
