@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG PYTHON_IMAGE=python:3.14-slim-bookworm
+ARG PYTHON_IMAGE=python:3.14-slim-trixie
 
 FROM ${PYTHON_IMAGE}
 
@@ -8,7 +8,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=off \
-    PIP_PREFER_BINARY=1
+    PIP_PREFER_BINARY=1 \
+    PIP_EXTRA_INDEX_URL=https://celery.github.io/celery-wheelhouse/repo/simple/
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG CELERY_USER=developer
@@ -18,17 +19,19 @@ RUN : "${CELERY_USER:?CELERY_USER build argument needs to be set and non-empty.}
 ENV HOME=/home/${CELERY_USER} \
     PATH="/home/${CELERY_USER}/.local/bin:${PATH}"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    curl \
-    git \
-    libcurl4-openssl-dev \
-    libev-dev \
-    libffi-dev \
-    libssl-dev \
-    pkg-config \
-    zlib1g-dev \
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        libcurl4-openssl-dev \
+        libev-dev \
+        libffi-dev \
+        libssl-dev \
+        pkg-config \
+        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/scripts/create-linux-user.sh /usr/local/bin/create-linux-user
