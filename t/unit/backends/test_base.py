@@ -1061,6 +1061,40 @@ class test_BaseBackend_dict:
         sigs = RecordingGroup.instances[0].sigs
         assert [s.task for s in sigs] == ['errb']
 
+    @pytest.mark.parametrize('link_error,called', [
+        ('single', ['errb']),
+        ('list', ['errb']),
+        ('two', ['errb', 'errb2']),
+        ('none', []),
+    ])
+    def test_chord_error_from_stack_errback_forms(self, link_error, called):
+        # link_error as one signature, a list, a list of two, or not set.
+        errb, errb2 = signature('errb'), signature('errb2')
+        options = {'task_id': 'body-id'}
+        if link_error != 'none':
+            options['link_error'] = {
+                'single': errb, 'list': [errb], 'two': [errb, errb2],
+            }[link_error]
+        callback = signature('body', options=options)
+        sent = []
+
+        class RecordingGroup:
+
+            def __init__(self, sigs, app=None):
+                sent.extend(sig.task for sig in sigs)
+
+            def apply_async(self, *args, **kwargs):
+                pass
+
+        with patch.object(self.b, 'store_result'), \
+                patch('celery.backends.base.group', RecordingGroup):
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        assert sent == called
+
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
