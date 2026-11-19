@@ -529,12 +529,37 @@ class test_DatabaseBackend:
             sa.Column('date_done', sa.DateTime, index=True),
             sa.Column('status', sa.String(50)),
         )
-        sa.Index('ix_status_date_done', table.c.status, table.c.date_done)
+        # named as a single-column index on ``status`` would be
+        sa.Index('ix_results_status', table.c.status, table.c.date_done)
         table.name = 'myapp_results'
-        _rename_indexes_with_table(table)
+        _rename_indexes_with_table(table, 'results')
         assert {i.name for i in table.indexes} == {
-            'ix_myapp_results_date_done', 'ix_status_date_done',
+            'ix_myapp_results_date_done', 'ix_results_status',
         }
+
+    def test_renaming_indexes_leaves_an_explicitly_named_index_alone(self):
+        import sqlalchemy as sa
+
+        from celery.backends.database.models import _rename_indexes_with_table
+        table = sa.Table(
+            'results', sa.MetaData(),
+            sa.Column('date_done', sa.DateTime, index=True),
+            sa.Column('status', sa.String(50)),
+        )
+        sa.Index('my_status_index', table.c.status)
+        table.name = 'myapp_results'
+        _rename_indexes_with_table(table, 'results')
+        assert {i.name for i in table.indexes} == {
+            'ix_myapp_results_date_done', 'my_status_index',
+        }
+
+    def test_table_names_can_be_configured_again(self):
+        self.app.conf.database_table_names = {'task': 'foo', 'group': 'bar'}
+        DatabaseBackend(self.uri, app=self.app)
+        self.app.conf.database_table_names = {'task': 'baz'}
+        tb = DatabaseBackend(self.uri, app=self.app)
+        assert {i.name for i in tb.task_cls.__table__.indexes} == {'ix_baz_date_done'}
+        assert {i.name for i in tb.taskset_cls.__table__.indexes} == {'ix_celery_tasksetmeta_date_done'}
 
     def test_default_table_names_keep_default_index_names(self):
         # Existing databases already have these indexes; their names must not change.
