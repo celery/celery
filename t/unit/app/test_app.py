@@ -14,7 +14,7 @@ from datetime import timezone as datetime_timezone
 from logging import LogRecord
 from pickle import dumps, loads
 from typing import Optional
-from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
+from unittest.mock import ANY, DEFAULT, MagicMock, Mock, call, patch
 
 import pytest
 from kombu import Exchange, Queue
@@ -1896,6 +1896,42 @@ class test_App:
     def test_start(self, mocked_celery):
         self.app.start()
         mocked_celery.main.assert_called()
+
+    @patch('celery.app.base.maybe_patch_concurrency')
+    @patch('celery.bin.celery.celery')
+    def test_start_patches_concurrency_before_running(self, mocked_celery,
+                                                      mocked_patch):
+        # Issue #8168: the eventlet/gevent monkey patches must be applied
+        # before the command runs, or the pool never executes tasks.
+        argv = ['worker', '-P', 'gevent']
+        manager = Mock()
+        manager.attach_mock(mocked_patch, 'patch')
+        manager.attach_mock(mocked_celery.main, 'main')
+
+        self.app.start(argv)
+
+        assert manager.mock_calls == [
+            call.patch(argv),
+            call.main(args=argv, standalone_mode=False),
+        ]
+
+    @patch('celery.app.base.maybe_patch_concurrency')
+    @patch('celery.bin.celery.celery')
+    def test_start_multi_does_not_patch_concurrency(self, mocked_celery,
+                                                    mocked_patch):
+        self.app.start(['multi', 'start', 'w1', '-P', 'gevent'])
+
+        mocked_patch.assert_not_called()
+        mocked_celery.main.assert_called()
+
+    @patch('celery.app.base.maybe_patch_concurrency')
+    @patch('celery.bin.celery.celery')
+    def test_worker_main_patches_concurrency(self, mocked_celery,
+                                             mocked_patch):
+        argv = ['worker', '--pool=gevent', '-c', '4']
+        self.app.worker_main(argv)
+
+        mocked_patch.assert_called_once_with(argv)
 
     @pytest.mark.parametrize('url,expected_fields', [
         ('pyamqp://', {
