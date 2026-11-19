@@ -17,6 +17,9 @@
 # platforms without wheels: no PyPy builds, no CPython 3.15 wheel, and the
 # Windows job only runs 3.14 which has no wheel either.
 couchbase>=3.0.0; platform_python_implementation != 'PyPy' and platform_system != 'Windows' and python_version < '3.15'
+# The Redis chord tests run the backend's Lua script with fakeredis, which
+# needs lupa to run Lua. lupa has no wheel for CPython 3.15 yet.
+fakeredis[lua]>=2.38.0; python_version < '3.15'
 -r extras/arangodb.txt
 -r extras/consul.txt
 -r extras/cosmosdbsql.txt

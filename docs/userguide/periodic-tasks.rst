@@ -356,6 +356,13 @@ Some examples:
 
 See :class:`celery.schedules.crontab` for more documentation.
 
+.. versionchanged:: 5.7
+
+    A crontab whose ``day_of_month`` never occurs in its ``month_of_year``
+    (e.g., ``crontab(0, 0, day_of_month='30', month_of_year='2')``) now raises
+    :exc:`ValueError` when created. Previously it was accepted, and made
+    :program:`celery beat` exit when it tried to calculate the next run.
+
 .. _beat-solar:
 
 Solar schedules
@@ -453,11 +460,19 @@ Possible event types are:
 All solar events are calculated using UTC, and are therefore
 unaffected by your timezone setting.
 
-In polar regions, the sun may not rise or set every day. The scheduler
+In polar regions, the sun may not rise or set every day, and at high
+latitudes some twilight events don't happen for weeks around the summer
+solstice (e.g., astronomical dawn in London or Berlin). The scheduler
 is able to handle these cases (i.e., a ``sunrise`` event won't run on a day
-when the sun doesn't rise). The one exception is ``solar_noon``, which is
+when the sun doesn't rise, and will next run on the first day it does).
+The one exception is ``solar_noon``, which is
 formally defined as the moment the sun transits the celestial meridian,
 and will occur every day even if the sun is below the horizon.
+
+.. versionchanged:: 5.7
+
+    Previously, a solar event that didn't happen on a given day raised
+    :exc:`TypeError` and made :program:`celery beat` exit.
 
 Twilight is defined as the period between dawn and sunrise; and between
 sunset and dusk. You can schedule an event according to "twilight"
@@ -659,6 +674,20 @@ Custom scheduler classes can be specified on the command-line (the
 The default scheduler is the :class:`celery.beat.PersistentScheduler`,
 that simply keeps track of the last run times in a local :mod:`shelve`
 database file.
+
+.. versionchanged:: 5.7
+
+    If an entry's ``is_due()`` raises an exception, :program:`celery beat`
+    now logs the error with its traceback and tries that entry again after
+    ``max_interval``, while the other entries keep running. Previously the
+    exception made :program:`celery beat` exit. This also applies to
+    custom schedulers and schedule classes, e.g. one whose ``is_due()``
+    reads from a database that is temporarily unavailable.
+
+    If the schedule database contains entries that can no longer be loaded
+    (e.g. a crontab for the 30th of February, which is now rejected), a
+    warning is logged and the stored entries are recreated from
+    :setting:`beat_schedule`. The last run times of all entries are lost.
 
 There's also the :pypi:`django-celery-beat` extension that stores the schedule
 in the Django database, and presents a convenient admin interface to manage

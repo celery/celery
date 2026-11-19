@@ -476,13 +476,14 @@ class test_Request(RequestCase):
             req_logger, req.connection_errors, True)
         req.task.backend.mark_as_failure.assert_not_called()
 
-    def _worker_lost_request(self, retries=0):
+    def _worker_lost_request(self, retries=0, **options):
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
 
-        req = self.get_request(self.add.s(2, 2).set(retries=retries))
+        req = self.get_request(
+            self.add.s(2, 2).set(retries=retries, **options))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.retry_on_worker_lost = True
@@ -576,6 +577,39 @@ class test_Request(RequestCase):
         apply_async.assert_called_once()
         req.on_ack.assert_not_called()
         req.task.backend.mark_as_failure.assert_not_called()
+
+    @pytest.mark.parametrize('ignored_by', ['task', 'call'])
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_ignore_result(
+            self, ignored_by):
+        # Like Task.retry(), don't store RETRY for a result that is ignored:
+        # the retried run won't store anything, so RETRY would stay for good.
+        if ignored_by == 'task':
+            self.add.ignore_result = True
+            req, einfo = self._worker_lost_request()
+        else:
+            req, einfo = self._worker_lost_request(ignore_result=True)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_called_once()
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert any(
+            c.args and c.args[0] == 'task-retried'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_store_errors_even_if_ignored(self):
+        req, einfo = self._worker_lost_request(ignore_result=True)
+        req.task.store_errors_even_if_ignored = True
+
+        with patch('celery.canvas.Signature.apply_async'):
+            req.on_failure(einfo)
+
+        req.task.backend.mark_as_retry.assert_called_once()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
         try:
@@ -987,6 +1021,109 @@ class test_Request(RequestCase):
             assert job._already_revoked
             assert job.acknowledged
 
+    def _stamp(self, job, stamps):
+        job._message.headers['stamps'] = stamps
+        job._message.headers['stamped_headers'] = list(stamps)
+        job._request_dict['stamps'] = stamps
+        job._request_dict['stamped_headers'] = list(stamps)
+
+    def test_revoked_by_second_stamped_header(self):
+        """Test that revocation works when a later stamped header matches.
+
+        Regression test for issue where the loop broke unconditionally after
+        checking the first header in revoked_stamps, even if it didn't match.
+        """
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'a': ['other'], 'b': ['y']})
+            with self.assert_signal_called(
+                    task_revoked, sender=job.task, request=job._context,
+                    terminated=False, expired=False, signum=None):
+                assert job.revoked()
+                assert job._already_revoked
+                assert job.acknowledged
+        finally:
+            revoked_stamps.clear()
+
+    def test_not_revoked_when_no_stamped_header_matches(self):
+        """Test that task is not revoked when no stamped header matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'a': ['other'], 'b': ['nope']})
+            assert not job.revoked()
+            assert not job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_later_list_valued_stamped_header(self):
+        """Test that revocation works when a later list-valued stamped header matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': ['y1', 'y2']})
+            revoked_stamps.update({'a': ['other'], 'b': ['y2']})
+            assert job.revoked()
+            assert job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_skips_unflagged_headers(self):
+        """Test that revocation works when only one header is flagged and it matches."""
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            self._stamp(job, {'a': 'x', 'b': 'y'})
+            revoked_stamps.update({'b': ['y']})
+            assert job.revoked()
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_handles_missing_stamp_value(self):
+        """Test that revocation handles missing stamped header values gracefully.
+
+        Regression test for case where a header is listed in stamped_headers
+        and flagged in revoked_stamps, but has no corresponding value in stamps.
+        This should not raise KeyError and should not revoke the task.
+        """
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+            # 'b' is in stamped_headers but not in stamps
+            job._message.headers['stamps'] = {'a': 'x'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+            job._request_dict['stamps'] = {'a': 'x'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+            revoked_stamps.update({'a': ['other'], 'b': ['y']})
+            # Should not raise KeyError
+            assert not job.revoked()
+            assert not job._already_revoked
+        finally:
+            revoked_stamps.clear()
+
+    def test_revoked_by_header_after_missing_stamp_value(self):
+        revoked_stamps.clear()
+        try:
+            job = self.xRequest()
+
+            job._message.headers['stamps'] = {'b': 'y'}
+            job._message.headers['stamped_headers'] = ['a', 'b']
+
+            job._request_dict['stamps'] = {'b': 'y'}
+            job._request_dict['stamped_headers'] = ['a', 'b']
+
+            revoked_stamps.update({
+                'a': ['x'],
+                'b': ['y'],
+            })
+
+            assert job.revoked()
+        finally:
+            revoked_stamps.clear()
+
     def test_execute_does_not_execute_revoked(self):
         job = self.xRequest()
         revoked.add(job.id)
@@ -1107,6 +1244,134 @@ class test_Request(RequestCase):
         job = self.xRequest()
         job.on_failure(exc_info)
         assert self.mytask.backend.get_status(job.id) == states.PENDING
+
+    def test_on_failure_WorkerLostError_after_success_was_stored(self):
+        errbacks = []
+
+        @self.app.task(shared=False)
+        def report_failure(request, exc, traceback):
+            errbacks.append(type(exc).__name__)
+
+        job = self.xRequest(errbacks=[report_failure.s()])
+        # The child stored the result, then died before handing it to the parent.
+        self.mytask.backend.mark_as_done(job.id, 1)
+        try:
+            raise WorkerLostError('Worker exited prematurely: exitcode 1.')
+        except WorkerLostError:
+            exc_info = ExceptionInfo()
+        job.on_failure(exc_info)
+
+        assert self.mytask.backend.get_status(job.id) == states.SUCCESS
+        assert errbacks == []
+
+    def test_on_failure_WorkerLostError_after_success_was_stored_acks_late(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.backend = Mock()
+        req.task.backend._ensure_retryable.return_value = {
+            'status': states.SUCCESS, 'result': 42
+        }
+        req.task.backend._get_task_meta_for.return_value = {
+            'status': states.SUCCESS, 'result': 42
+        }
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        req.on_failure(einfo)
+
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        succeeded = [
+            c for c in req.eventer.send.call_args_list
+            if c.args and c.args[0] == 'task-succeeded'
+        ]
+        assert succeeded
+        # Payload is saferepr'd like a normal success event, not the raw result.
+        assert succeeded[0].kwargs['result'] == '42'
+
+    def test_on_failure_WorkerLostError_after_success_skips_retry_on_worker_lost(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+        req.task.retry_on_worker_lost = True
+        req.task.max_retries = 3
+        req.task.backend = Mock()
+        # _success_was_stored calls backend._ensure_retryable(...) directly
+        # with max_retries=3 (no more get_task_meta), so mock that instead.
+        req.task.backend._ensure_retryable.return_value = {
+            'status': states.SUCCESS, 'result': 7
+        }
+        # The task-succeeded event block still reads _get_task_meta_for.
+        req.task.backend._get_task_meta_for.return_value = {
+            'status': states.SUCCESS, 'result': 7
+        }
+        req.task.backend.as_uri.return_value = 'redis://localhost'
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        req.on_ack.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_for_rpc_backend(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.as_uri.return_value = 'rpc://'
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_skips_lookup_when_ignore_result(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        # Request-level ignore_result (e.g. apply_async(ignore_result=True)),
+        # not only the task default.
+        req._ignore_result = True
+        req.task.ignore_result = False
+        req.task.backend = Mock()
+
+        req.on_failure(einfo)
+
+        req.task.backend.get_state.assert_not_called()
+        req.task.backend.mark_as_failure.assert_called_once()
+
+    def test_on_failure_WorkerLostError_backend_unavailable(self):
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.backend = Mock()
+        req.task.backend.get_state.side_effect = ConnectionError()
+
+        req.on_failure(einfo)
+
+        req.task.backend.mark_as_failure.assert_called_once()
 
     def test_on_failure_acks_late_reject_on_worker_lost_enabled(self):
         try:
@@ -1939,6 +2204,171 @@ class test_Request(RequestCase):
         group_index = 42
         job = self.xRequest(id=uuid(), group_index=group_index)
         assert job.group_index == group_index
+
+    # Tests for the blocking issue in PR #10752.
+    # These tests verify that `_success_was_stored` uses a bounded retry so
+    # that a down backend cannot block the worker's main process, and that
+    # the `task-succeeded` event block bypasses `_ensure_retryable` via
+    # `_get_task_meta_for`.
+    def _setup_blocking_backend(self, req):
+        """Configure req.task.backend to raise ConnectionError on every read.
+
+        Returns (read_calls, sleep_calls) so the test can assert on retries.
+        """
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 3
+        backend.base_sleep_between_retries_ms = 50
+        backend.max_sleep_between_retries_ms = 50
+        backend.url = 'cache+memory://'
+        backend._cache.clear()
+
+        read_calls = []
+        sleep_calls = []
+
+        def failing_meta(task_id):
+            read_calls.append(task_id)
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+        backend._sleep = lambda amount: sleep_calls.append(amount)
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+        return read_calls, sleep_calls
+
+    def test_repro_10957_event_block_does_not_retry_on_backend_down(self):
+        """
+        The `task-succeeded` event block must not go through `_ensure_retryable`.
+        Expected: 0 retries.
+        """
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 3
+        backend.base_sleep_between_retries_ms = 50
+        backend.max_sleep_between_retries_ms = 50
+        backend.url = 'cache+memory://'
+        backend._cache.clear()
+
+        sleep_calls = []
+
+        def failing_meta(task_id):
+            raise ConnectionError("backend down")
+
+        backend._get_task_meta_for = failing_meta
+        backend._sleep = lambda amount: sleep_calls.append(amount)
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo()
+
+        # Force `_success_was_stored` to return True so we enter the event block.
+        with patch.object(req, '_success_was_stored', return_value={'status': states.SUCCESS, 'result': '42'}):
+            req.on_failure(einfo, send_failed_event=False)
+
+        assert len(sleep_calls) == 0, (
+            f"Expected 0 retries in event block, got {len(sleep_calls)} sleeps."
+        )
+
+    def test_repro_10957_requeue_with_failing_backend(self):
+        """
+        With acks_late and reject_on_worker_lost, on_failure should requeue
+        the task without blocking on the backend write, using a bounded retry.
+        """
+        try:
+            raise WorkerLostError()
+        except WorkerLostError:
+            einfo = ExceptionInfo(internal=True)
+
+        req = self.get_request(self.add.s(2, 2))
+        req.task.acks_late = True
+        req.task.reject_on_worker_lost = True
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = float('inf')  # Default
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
+        backend._store_result = Mock(side_effect=ConnectionError("backend down"))
+
+        sleep_calls = [0]
+
+        def counting_sleep(amount):
+            sleep_calls[0] += 1
+            if sleep_calls[0] >= 10:
+                raise RuntimeError("Stop retrying!")
+
+        backend._sleep = counting_sleep
+
+        req.on_failure(einfo)
+
+        req.on_reject.assert_called_with(req_logger, req.connection_errors, True)
+        backend._store_result.assert_not_called()
+        # On main: reaches 10. On this branch: stops at 3.
+        assert sleep_calls[0] <= 3
+
+    def test_repro_10957_does_not_hang_on_inf_retries(self):
+        """
+        On main, _success_was_stored uses get_state() -> _ensure_retryable
+        with max_retries=inf, so it retries until _sleep raises (10 times).
+        On this branch, the retry is bounded to 3, so it returns False fast.
+        """
+        req = self.get_request(self.add.s(2, 2))
+        req._ignore_result = False
+
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = float('inf')
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
+
+        sleep_calls = [0]
+
+        def counting_sleep(amount):
+            sleep_calls[0] += 1
+            if sleep_calls[0] >= 10:
+                raise RuntimeError("Stop retrying!")
+
+        backend._sleep = counting_sleep
+
+        result = req._success_was_stored()
+        assert result is False
+        # On main: reaches 10 (RuntimeError). On this branch: stops at 3.
+        assert sleep_calls[0] <= 3
+
+    def test_success_was_stored_keeps_a_lower_max_retries(self):
+        req = self.get_request(self.add.s(2, 2))
+        backend = req.task.backend
+        backend.always_retry = True
+        backend.max_retries = 1
+        backend.exception_safe_to_retry = lambda exc: True
+        backend.on_backend_retryable_error = lambda exc: None
+        backend._get_task_meta_for = Mock(side_effect=ConnectionError("backend down"))
+        backend._sleep = Mock()
+
+        assert req._success_was_stored() is False
+        assert backend._sleep.call_count == 1
+
+    def test_on_failure_reads_the_backend_only_when_the_worker_is_lost(self):
+        req = self.get_request(self.add.s(2, 2))
+        req._success_was_stored = Mock(return_value=False)
+        try:
+            raise KeyError('boom')
+        except KeyError:
+            einfo = ExceptionInfo()
+
+        req.on_failure(einfo)
+
+        req._success_was_stored.assert_not_called()
 
 
 class test_create_request_class(RequestCase):

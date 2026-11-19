@@ -10,7 +10,7 @@ def test_on_blocking(patching):
     frame = Mock(name='frame')
     with pytest.raises(RuntimeError):
         debug._on_blocking(1, frame)
-        getframeinfo.assert_called_with(frame)
+    getframeinfo.assert_called_with(frame)
 
 
 def test_blockdetection(patching):
