@@ -1852,6 +1852,78 @@ class test_Request(RequestCase):
             traceback=ANY,
         )
 
+    def test_hard_time_limit_failure_not_handled_twice(self, patching):
+        """The pool reports a hard time limit by first setting the job
+        result, which calls on_failure(), and then calling on_timeout()
+        for the same exception: the failure handling (backend store,
+        task_failure signal, task-failed event) must run only once.
+        """
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        original_mark = self.mytask.backend.mark_as_failure
+        try:
+            job = self.xRequest()
+            job.send_event = Mock(name='send_event')
+            mark_mock = Mock(name='mark_as_failure')
+            job.task.backend.mark_as_failure = mark_mock
+            try:
+                raise TimeLimitExceeded(30)
+            except TimeLimitExceeded:
+                job.on_failure(ExceptionInfo())
+            job.on_timeout(soft=False, timeout=30)
+        finally:
+            task_failure.disconnect(handler)
+            self.mytask.backend.mark_as_failure = original_mark
+
+        handler.assert_called_once()
+        mark_mock.assert_called_once()
+        failed_events = [
+            c for c in job.send_event.call_args_list
+            if c.args[0] == 'task-failed'
+        ]
+        assert len(failed_events) == 1
+
+    def test_hard_time_limit_after_on_failure_still_calls_task_hooks(self, patching):
+        """Task.on_failure and after_return are only called from on_timeout(),
+        so they must still run when on_failure() already stored the failure.
+        """
+        patching('celery.worker.request.error')
+
+        on_failure_mock = Mock(name='on_failure')
+        after_return_mock = Mock(name='after_return')
+
+        class TaskWithHooks(self.app.Task):
+            name = 'test.task_with_hooks_after_on_failure'
+
+            def run(self):
+                pass
+
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                on_failure_mock(exc, task_id)
+
+            def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                after_return_mock(status, retval, task_id)
+
+        self.app.tasks.register(TaskWithHooks())
+
+        job = self.xRequest(name=TaskWithHooks.name)
+        job.send_event = Mock(name='send_event')
+        mark_mock = Mock(name='mark_as_failure')
+        job.task.backend.mark_as_failure = mark_mock
+        try:
+            raise TimeLimitExceeded(30)
+        except TimeLimitExceeded:
+            job.on_failure(ExceptionInfo())
+        job.on_timeout(soft=False, timeout=30)
+
+        mark_mock.assert_called_once()
+        on_failure_mock.assert_called_once()
+        assert isinstance(on_failure_mock.call_args[0][0], TimeLimitExceeded)
+        after_return_mock.assert_called_once()
+        assert after_return_mock.call_args[0][0] == 'FAILURE'
+
     def test_on_hard_timeout_calls_after_return(self, patching):
         """Hard timeout must invoke task.after_return when overridden."""
         patching('celery.worker.request.error')

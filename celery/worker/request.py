@@ -74,6 +74,7 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
+    _time_limit_failure_handled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
@@ -547,12 +548,18 @@ class Request:
             # the cold shutdown process.
             if not state.should_terminate:
                 error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                # on_failure() may already have stored the failure, run the
+                # errbacks and sent task_failure/task-failed for this same hard
+                # limit; only skip those here. Task.on_failure and after_return
+                # are not called from Request.on_failure, so they still run.
+                already_handled = self._time_limit_failure_handled
                 exc = TimeLimitExceeded(timeout)
 
-                self.task.backend.mark_as_failure(
-                    self.id, exc, request=self._context,
-                    store_result=self.store_errors,
-                )
+                if not already_handled:
+                    self.task.backend.mark_as_failure(
+                        self.id, exc, request=self._context,
+                        store_result=self.store_errors,
+                    )
 
                 # Invoke the same failure hooks that a normal task failure
                 # triggers so that on_failure callbacks, errbacks, and
@@ -571,21 +578,22 @@ class Request:
                             states.FAILURE, exc, self.id, self.args, self.kwargs, None,
                         )
 
-                    signals.task_failure.send(
-                        sender=self.task,
-                        task_id=self.id,
-                        exception=exc,
-                        args=self.args,
-                        kwargs=self.kwargs,
-                        traceback=exc.__traceback__,
-                        einfo=einfo,
-                    )
+                    if not already_handled:
+                        signals.task_failure.send(
+                            sender=self.task,
+                            task_id=self.id,
+                            exception=exc,
+                            args=self.args,
+                            kwargs=self.kwargs,
+                            traceback=exc.__traceback__,
+                            einfo=einfo,
+                        )
 
-                    self.send_event(
-                        'task-failed',
-                        exception=safe_repr(get_pickled_exception(einfo.exception)),
-                        traceback=einfo.traceback,
-                    )
+                        self.send_event(
+                            'task-failed',
+                            exception=safe_repr(get_pickled_exception(einfo.exception)),
+                            traceback=einfo.traceback,
+                        )
                 finally:
                     # Break the exc → traceback → frame reference cycle
                     # (this frame's own `exc` local points at exc, and
@@ -793,6 +801,13 @@ class Request:
                                           einfo=exc_info)
             finally:
                 self.task.request_stack.pop()
+
+            if isinstance(exc, TimeLimitExceeded):
+                # A hard time limit makes the pool call on_timeout() for
+                # this same exception right after on_failure(); the failure
+                # handling above (backend store, errbacks, task_failure)
+                # must not run a second time there.
+                self._time_limit_failure_handled = True
 
         if send_failed_event:
             self.send_event(
