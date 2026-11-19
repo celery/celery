@@ -18,6 +18,9 @@ on:
         type: string
         default: '["redis", "rabbitmq", "rabbitmq_redis"]'
 
+permissions:
+  contents: read
+
 jobs:
   testing-with:
     timeout-minutes: 240
@@ -28,40 +31,25 @@ jobs:
         python-version: ${{ fromJson(inputs.python_versions) }}
         toxenv: ${{ fromJson(inputs.tox_environments) }}
 
-    services:
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        env:
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-      rabbitmq:
-        image: rabbitmq:management
-        ports:
-          - 5672:5672
-          - 15672:15672
-        env:
-          RABBITMQ_DEFAULT_USER: guest
-          RABBITMQ_DEFAULT_PASS: guest
-
     steps:
       - name: Install apt packages
         run: |
           echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
           sudo apt-get update
-          sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
+          sudo apt-get install -y -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
 
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-          cache: 'pip'
-          cache-dependency-path: '**/setup.py'
-      - name: Install tox
-        run: python -m pip install --upgrade pip 'tox<4.67.14' tox-gh-actions
+          enable-cache: true
+          cache-dependency-glob: 'requirements/**/*.txt'
+
+      - name: Install tox with tox-uv, tox-gh, and tox-docker
+        run: uv tool install tox --with tox-uv --with tox-gh --with tox-docker
+
       - name: >
           Run tox for
           "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}-${{ inputs.test_path }}"
@@ -73,4 +61,4 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 0
           command: |
-            tox --verbose --verbose -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv
+            tox -vv -e "${{ matrix.python-version }}-integration-${{ matrix.toxenv }}" -- -vv
