@@ -36,17 +36,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.11', '3.12', '3.13', '3.14', '3.15', 'pypy-3.11']
-        os: ['blacksmith-4vcpu-ubuntu-2404', 'windows-latest']
-        exclude:
-          - python-version: '3.11'
-            os: 'windows-latest'
-          - python-version: '3.12'
-            os: 'windows-latest'
-          - python-version: '3.13'
-            os: 'windows-latest'
+        os: ['blacksmith-4vcpu-ubuntu-2604']
+        include:
           - python-version: '3.15'
-            os: 'windows-latest'
-          - python-version: 'pypy-3.11'
             os: 'windows-latest'
 
     steps:
@@ -95,7 +87,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   Discover-test-modules:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     outputs:
       integration: ${{ steps.discover.outputs.integration }}
       smoke: ${{ steps.discover.outputs.smoke }}
@@ -123,6 +115,7 @@ jobs:
     needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
+      fail-fast: false
       matrix:
         test_path: ${{ fromJson(needs.Discover-test-modules.outputs.integration) }}
     uses: ./.github/workflows/integration-tests.yml
@@ -133,6 +126,7 @@ jobs:
     needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
+      fail-fast: false
       matrix:
         test_path: ${{ fromJson(needs.Discover-test-modules.outputs.smoke) }}
     uses: ./.github/workflows/smoke-tests.yml
