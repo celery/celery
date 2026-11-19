@@ -1338,6 +1338,12 @@ class BaseKeyValueStoreBackend(Backend):
                 raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
                 on_interval()
+            iterations += 1
+            if max_iterations and iterations >= max_iterations:
+                # no further check follows this one, so sleeping would only
+                # delay the caller (e.g. ResultSet._iter_meta polls with
+                # max_iterations=1 and paid one full interval for it)
+                break
             # don't busy loop, and never sleep past the deadline: with the
             # deadline counted in whole intervals, timeout=0 waited forever
             # and any timeout below interval overshot to interval.
@@ -1345,9 +1351,6 @@ class BaseKeyValueStoreBackend(Backend):
                                                        timeout - time_elapsed)
             time.sleep(nap)
             time_elapsed += nap
-            iterations += 1
-            if max_iterations and iterations >= max_iterations:
-                break
 
     def _forget(self, task_id):
         self.delete(self.get_key_for_task(task_id))
