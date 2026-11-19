@@ -11,7 +11,7 @@ from celery.exceptions import ImproperlyConfigured
 from celery.platforms import pyimplementation
 from celery.utils.collections import ConfigurationView
 from celery.utils.imports import import_from_cwd, qualname, symbol_by_name
-from celery.utils.text import pretty
+from celery.utils.text import match_case, pretty
 
 from .defaults import _OLD_DEFAULTS, _OLD_SETTING_KEYS, _TO_NEW_KEY, _TO_OLD_KEY, DEFAULTS, SETTING_KEYS, find
 
@@ -273,9 +273,16 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
         # no settings, just use new format.
         info, left = _settings_info, is_in_old
 
+    deprecated = is_in_old
     if prefix:
         # always use new format if prefix is used.
         info, left = _settings_info, set()
+        # A namespaced new setting can have the same name as an old one:
+        # with namespace='CELERY', result_backend is CELERY_RESULT_BACKEND.
+        namespace = prefix.rstrip('_') + '_'
+        deprecated = is_in_old - {
+            match_case(namespace + key, namespace) for key in all_keys
+        }
 
     # only raise error for keys that the user didn't provide two keys
     # for (e.g., both ``result_expires`` and ``CELERY_TASK_RESULT_EXPIRES``).
@@ -293,7 +300,7 @@ def detect_settings(conf, preconf=None, ignore_keys=None, prefix=None,
     return Settings(
         preconf, [conf, defaults],
         (_old_key_to_new, _new_key_to_old),
-        deprecated_settings=is_in_old,
+        deprecated_settings=deprecated,
         prefix=prefix,
     )
 
