@@ -48,6 +48,7 @@ class Consumer(consumer.Consumer):
         from celery.concurrency.base import BasePool
         self.pool = BasePool(10)
         self.task_buckets = defaultdict(lambda: None)
+        self._limit_timers = {}
         self.hub = None
 
     def call_soon(self, p, *args, **kwargs):
