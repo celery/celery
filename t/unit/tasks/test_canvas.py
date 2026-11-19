@@ -541,6 +541,52 @@ class test_chunks(CanvasCase):
         isinstance(chunks_subclass.from_dict(d), chunks_subclass)
         isinstance(chunks_subclass.from_dict(d).clone(), chunks_subclass)
 
+    def test_apply_async_uses_signature_options(self):
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+        callback = self.add.s(1)
+        s.set(queue='q1', countdown=3)
+        s.link(callback)
+        s.freeze()
+        task_id = s.options['task_id']
+
+        s.group = Mock(name='group')
+        s.apply_async()
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert call_kwargs['queue'] == 'q1'
+        assert call_kwargs['countdown'] == 3
+        assert call_kwargs['task_id'] == task_id
+        assert call_kwargs['route_name'] == self.add.name
+
+    def test_apply_async_does_not_pass_link_to_group(self):
+        """A group cannot carry link/link_error; publishing must not fail."""
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+        s.link(self.add.s(1))
+        s.link_error(self.add.s(2))
+
+        s.group = Mock(name='group')
+        s.apply_async()
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert 'link' not in call_kwargs
+        assert 'link_error' not in call_kwargs
+
+    def test_apply_async_call_route_name_takes_precedence(self):
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+
+        s.group = Mock(name='group')
+        s.apply_async(route_name='custom-route')
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert call_kwargs['route_name'] == 'custom-route'
+
+    def test_apply_async_call_options_override_signature_options(self):
+        s = self.add.chunks(zip(range(100), range(100)), 10)
+        s.set(queue='q1', countdown=3)
+
+        s.group = Mock(name='group')
+        s.apply_async(queue='q2', countdown=None)
+        _, call_kwargs = s.group.return_value.apply_async.call_args
+        assert call_kwargs['queue'] == 'q2'
+        assert call_kwargs['countdown'] == 3
+
     def test_chunks(self):
         x = self.add.chunks(range(100), 10)
         assert dict(chunks.from_dict(dict(x), app=self.app)) == dict(x)
