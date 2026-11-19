@@ -4616,6 +4616,7 @@ class test_stamping_mechanism:
             with pytest.raises(ExpectedException):
                 canvas.apply_async().get(timeout=TIMEOUT)
 
+
 class test_unregistered_task:
     """An unregistered task fails like any other task without stalling canvas work."""
 
@@ -4663,4 +4664,3 @@ class test_unregistered_task:
         self.await_failure(res)
         await_redis_count(1, redis_key=expected_redis_key)
         redis_connection.delete(expected_redis_key)
-

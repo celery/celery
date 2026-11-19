@@ -2504,6 +2504,7 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
 
         c.app.backend.mark_as_failure.assert_called_once()
         assert c.app.backend.mark_as_failure.call_args.args[0] == 'malformed-task-id'
+
     @pytest.mark.parametrize(
         'headers, payload',
         [
@@ -2526,6 +2527,7 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
 
         c.app.backend.mark_as_failure.assert_not_called()
         message.reject_log_error.assert_called_once()
+
     def test_task_handler_passes_a_protocol_1_payload_on(self):
         # Protocol 1 keeps chord and errback metadata in the decoded body.
         c = self.get_consumer()

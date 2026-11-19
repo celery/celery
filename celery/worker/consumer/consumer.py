@@ -759,6 +759,14 @@ class Consumer:
         headers = getattr(message, 'headers', None) or {}
         payload = body
 
+        # Decode payload only when the caller did not already provide it,
+        # and never access the lazy message.payload property after a decode failure.
+        if payload is None and hasattr(message, 'decode'):
+            try:
+                payload = message.decode()
+            except Exception:
+                payload = None
+
         # Protocol v2 stores task metadata in headers. A task header without
         # an id is malformed and must be rejected rather than killing the worker.
         if isinstance(headers, dict) and 'task' in headers:
@@ -769,15 +777,6 @@ class Consumer:
             group = headers.get('group')
             group_index = headers.get('group_index')
         else:
-            # Protocol v1 passes its decoded payload as body. Decode only when
-            # the caller did not already provide it, and never access the lazy
-            # message.payload property after a decode failure.
-            if payload is None and hasattr(message, 'decode'):
-                try:
-                    payload = message.decode()
-                except Exception:
-                    payload = None
-
             if isinstance(payload, dict):
                 id_ = payload.get('id')
                 name = payload.get('task')
