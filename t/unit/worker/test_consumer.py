@@ -2553,4 +2553,3 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         assert request.chord == {'chord_sig_p1': 'sig'}
         assert request.errbacks == [{'errback_sig_p1': 'err'}]
         assert request.delivery_info == {'routing_key': 'celery'}
-
