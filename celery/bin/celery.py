@@ -1,7 +1,6 @@
 """Celery Command Line Interface."""
 import os
 import pathlib
-import sys
 import traceback
 from importlib.metadata import entry_points
 
@@ -43,13 +42,7 @@ Unable to load celery application.
 {0}""")
 
 
-if sys.version_info >= (3, 10):
-    _PLUGINS = entry_points(group='celery.commands')
-else:
-    try:
-        _PLUGINS = entry_points().get('celery.commands', [])
-    except AttributeError:
-        _PLUGINS = entry_points().select(group='celery.commands')
+_PLUGINS = entry_points(group='celery.commands')
 
 
 @with_plugins(_PLUGINS)
