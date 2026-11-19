@@ -1,12 +1,17 @@
 services:
-  celery311:
+  celery315:
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
-        PYTHON_IMAGE: python:3.11-slim-trixie
-    image: celery/celery:dev-py311
+        PYTHON_IMAGE: python:3.15-slim-trixie
+    image: celery/celery:dev-py315
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: &celery-environment
       TEST_BROKER: pyamqp://rabbit:5672
       TEST_BACKEND: redis://redis
@@ -15,6 +20,7 @@ services:
       REDIS_HOST: redis
       WORKER_LOGLEVEL: DEBUG
       UV_CACHE_DIR: /home/developer/.cache/uv
+      UV_LINK_MODE: copy
       UV_EXTRA_INDEX_URL: https://celery.github.io/celery-wheelhouse/repo/simple/
       UV_INDEX_STRATEGY: unsafe-best-match
       AZUREBLOCKBLOB_URL: azureblockblob://DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
@@ -23,19 +29,28 @@ services:
     volumes:
       - ../.:/home/developer/celery
     depends_on: &celery-depends-on
-      - rabbit
-      - redis
-      - dynamodb
-      - azurite
+      rabbit:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      dynamodb:
+        condition: service_healthy
+      azurite:
+        condition: service_healthy
 
-  celery312:
+  celery314:
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
-        PYTHON_IMAGE: python:3.12-slim-trixie
-    image: celery/celery:dev-py312
+        PYTHON_IMAGE: python:3.14-slim-trixie
+    image: celery/celery:dev-py314
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: *celery-environment
     tty: true
     volumes:
@@ -50,34 +65,49 @@ services:
         CELERY_USER: developer
         PYTHON_IMAGE: python:3.13-slim-trixie
     image: celery/celery:dev-py313
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: *celery-environment
     tty: true
     volumes:
       - ../.:/home/developer/celery
     depends_on: *celery-depends-on
 
-  celery314:
+  celery312:
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
-        PYTHON_IMAGE: python:3.14-slim-trixie
-    image: celery/celery:dev-py314
+        PYTHON_IMAGE: python:3.12-slim-trixie
+    image: celery/celery:dev-py312
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: *celery-environment
     tty: true
     volumes:
       - ../.:/home/developer/celery
     depends_on: *celery-depends-on
 
-  celery315:
+  celery311:
     build:
       context: ..
       dockerfile: docker/Dockerfile
       args:
         CELERY_USER: developer
-        PYTHON_IMAGE: python:3.15-slim-trixie
-    image: celery/celery:dev-py315
+        PYTHON_IMAGE: python:3.11-slim-trixie
+    image: celery/celery:dev-py311
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: *celery-environment
     tty: true
     volumes:
@@ -92,6 +122,11 @@ services:
         CELERY_USER: developer
         PYTHON_IMAGE: pypy:3.11-slim-trixie
     image: celery/celery:dev-pypy311
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment: *celery-environment
     tty: true
     volumes:
@@ -100,21 +135,62 @@ services:
 
   rabbit:
     image: rabbitmq:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   redis:
     image: redis:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   dynamodb:
     image: amazon/dynamodb-local:latest
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e 'const http=require(\"http\"); http.get(\"http://127.0.0.1:8000/\", r => process.exit(r.statusCode === 400 ? 0 : 1)).on(\"error\", () => process.exit(1));'"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e 'const http=require(\"http\"); http.get(\"http://127.0.0.1:10000/\", r => process.exit(r.statusCode < 500 ? 0 : 1)).on(\"error\", () => process.exit(1));'"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   docs:
     image: celery/docs
     build:
       context: ..
       dockerfile: docker/docs/Dockerfile
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     volumes:
       - ../docs:/docs:z
     ports:
