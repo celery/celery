@@ -1,25 +1,33 @@
 """Memcached and in-memory cache result backend."""
+import time
+
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.objects import cached_property
 
 from celery.exceptions import ImproperlyConfigured
 from celery.utils import deprecated
 from celery.utils.functional import LRUCache
-from celery.utils.log import get_logger
 
 from .base import KeyValueStoreBackend
 
 __all__ = ('CacheBackend',)
 
-logger = get_logger(__name__)
-
 # Memcached reads a longer expiry as an absolute Unix time.
 MAX_RELATIVE_EXPIRES = 30 * 24 * 60 * 60
 
-W_CHORD_EXPIRES_TOO_LONG = """\
-result_chord_expires is over 30 days, which memcached reads as an absolute \
-time, so chord keys will expire at once.\
-"""
+
+def _memcached_expires(expires):
+    """Return ``expires`` seconds as an expiry memcached reads correctly.
+
+    Memcached reads an expiry over 30 days as an absolute Unix time, so a
+    longer one is sent as the time it ends.  0 still means no expiry.
+    """
+    if not expires:
+        return 0
+    if expires > MAX_RELATIVE_EXPIRES:
+        return int(time.time()) + expires
+    return expires
+
 
 REQUIRES_BACKEND = """\
 The Memcached backend requires the 'pymemcache' library. \
@@ -219,9 +227,6 @@ class CacheBackend(KeyValueStoreBackend):
             raise ImproperlyConfigured(UNKNOWN_BACKEND.format(
                 self.backend, ', '.join(backends)))
         self._encode_prefixes()  # rencode the keyprefixes
-        if (self._chord_expires is not None
-                and self.chord_expires > MAX_RELATIVE_EXPIRES):
-            logger.warning(W_CHORD_EXPIRES_TOO_LONG)
 
     def get(self, key):
         return self.client.get(key)
@@ -230,14 +235,14 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.get_multi(keys)
 
     def set(self, key, value):
-        return self.client.set(key, value, self.expires or 0)
+        return self.client.set(key, value, _memcached_expires(self.expires))
 
     def delete(self, key):
         return self.client.delete(key)
 
     def _apply_chord_incr(self, header_result_args, body, **kwargs):
         chord_key = self.get_key_for_chord(header_result_args[0])
-        self.client.set(chord_key, 0, self.chord_expires or 0)
+        self.client.set(chord_key, 0, _memcached_expires(self.chord_expires))
         return super()._apply_chord_incr(
             header_result_args, body, **kwargs)
 
@@ -245,7 +250,7 @@ class CacheBackend(KeyValueStoreBackend):
         return self.client.incr(key, 1)
 
     def expire(self, key, value):
-        return self.client.touch(key, value or 0)
+        return self.client.touch(key, _memcached_expires(value))
 
     @cached_property
     def client(self):
