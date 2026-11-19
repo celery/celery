@@ -4,8 +4,8 @@ set -eu
 addgroup --gid 1000 "$CELERY_USER"
 
 adduser \
-    --system \
     --disabled-password \
+    --gecos "" \
     --uid 1000 \
     --gid 1000 \
     --home "/home/$CELERY_USER" \
