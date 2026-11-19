@@ -8,6 +8,8 @@ from celery import Celery, chord
 from t.integration.tasks import add
 from t.smoke.tasks import long_running_task, summarize_results
 
+PENDING_OPERATIONS_QUEUE = "pending_operations_queue"
+
 
 class test_control:
     def test_sanity(self, celery_setup: CeleryTestSetup):
@@ -59,6 +61,55 @@ class test_control:
             assert "redis://user:********@localhost:6379/0" in report
         finally:
             app.conf.result_backend = orig_backend
+
+
+class test_pending_operation_order:
+    @pytest.fixture
+    def default_worker_command(self, default_worker_container_cls):
+        return default_worker_container_cls.command(
+            "--pool=gevent",
+            "--concurrency=1",
+        )
+
+    def test_add_then_cancel_consumer_preserves_order(
+        self,
+        celery_setup: CeleryTestSetup,
+    ):
+        app = celery_setup.app
+        worker = celery_setup.worker
+        destination = [worker.hostname()]
+
+        replies = app.control.broadcast(
+            "schedule_add_then_cancel_consumer",
+            arguments={"queue": PENDING_OPERATIONS_QUEUE},
+            destination=destination,
+            reply=True,
+            timeout=RESULT_TIMEOUT,
+        )
+        assert replies == [
+            {worker.hostname(): {"scheduled": PENDING_OPERATIONS_QUEUE}}
+        ]
+
+        @retry(stop=stop_after_attempt(20), wait=wait_fixed(0.5), reraise=True)
+        def wait_until_pending_operations_are_drained() -> None:
+            replies = app.control.broadcast(
+                "pending_operations_count",
+                destination=destination,
+                reply=True,
+                timeout=RESULT_TIMEOUT,
+            )
+            assert replies == [{worker.hostname(): 0}]
+
+        wait_until_pending_operations_are_drained()
+
+        active_queues = app.control.inspect(
+            destination=destination,
+            timeout=RESULT_TIMEOUT,
+        ).active_queues()
+        assert active_queues is not None
+        assert PENDING_OPERATIONS_QUEUE not in {
+            queue["name"] for queue in active_queues[worker.hostname()]
+        }
 
 
 class test_revoke_chord_member:

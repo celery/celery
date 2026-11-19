@@ -41,6 +41,10 @@ class ManagerMixin:
         # type: (str, str) -> None
         print(f'{sep}{s}', file=self.stdout)
 
+    def warn(self, s):
+        # type: (str) -> None
+        self.stderr.write(s + '\n')
+
     def missing_results(self, r):
         # type: (Sequence[AsyncResult]) -> Sequence[str]
         return [res.id for res in r if res.id not in res.backend._cache]

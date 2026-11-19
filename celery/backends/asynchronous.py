@@ -8,7 +8,7 @@ from collections import deque
 from contextlib import contextmanager
 from queue import Empty
 from time import sleep
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 from kombu.utils.compat import detect_environment
 
@@ -30,6 +30,17 @@ __all__ = (
     'AsyncBackendMixin', 'BaseResultConsumer', 'Drainer',
     'register_drainer',
 )
+
+
+def _waiting_on(pending_results, task_id):
+    """Return every result object waiting on ``task_id``.
+
+    Several :class:`~celery.result.AsyncResult` objects can wait on the
+    same id, e.g. a group member and a poll of that member's id, so each
+    mapping holds the waiters for an id keyed by object identity.
+    """
+    return [result for mapping in pending_results
+            for result in list(mapping.get(task_id, {}).values())]
 
 
 class EventletAdaptedEvent:
@@ -272,10 +283,15 @@ class AsyncBackendMixin:
         result._maybe_set_cache(self._pending_messages.take(result.id))
 
     def _add_pending_result(self, task_id, result, weak=False):
+        # Every waiter is kept until its task is ready or forgotten (Issue
+        # #4925), so a get() that timed out keeps its result object alive
+        # until then: one object per call for a task that never finishes.
+        if any(r is result for r in _waiting_on(self._pending_results, task_id)):
+            return
         concrete, weak_ = self._pending_results
-        if task_id not in weak_ and result.id not in concrete:
-            (weak_ if weak else concrete)[task_id] = result
-            self.result_consumer.consume_from(task_id)
+        mapping, waiters = (weak_, WeakValueDictionary) if weak else (concrete, dict)
+        mapping.setdefault(task_id, waiters())[id(result)] = result
+        self.result_consumer.consume_from(task_id)
 
     def add_pending_results(self, results, weak=False):
         self.result_consumer.drainer.start()
@@ -283,13 +299,24 @@ class AsyncBackendMixin:
                 for result in results]
 
     def remove_pending_result(self, result):
-        self._remove_pending_result(result.id)
-        self.on_result_fulfilled(result)
+        # Another result object may still be waiting on this id (Issue #4925),
+        # only stop consuming once the last one is gone.
+        if not self._remove_pending_result(result):
+            self.on_result_fulfilled(result)
         return result
 
-    def _remove_pending_result(self, task_id):
+    def _remove_pending_result(self, result):
+        """Stop tracking ``result``, return the results still waiting on its id."""
         for mapping in self._pending_results:
-            mapping.pop(task_id, None)
+            waiters = mapping.get(result.id)
+            if waiters is None:
+                continue
+            if waiters.get(id(result)) is result:
+                waiters.pop(id(result), None)
+            # also when the cycle collector already cleared a weak waiter
+            if not waiters:
+                mapping.pop(result.id, None)
+        return _waiting_on(self._pending_results, result.id)
 
     def on_result_fulfilled(self, result):
         self.result_consumer.cancel_for(result.id)
@@ -418,26 +445,17 @@ class BaseResultConsumer:
     def on_out_of_band_result(self, message):
         self.on_state_change(message.payload, message)
 
-    def _get_pending_result(self, task_id):
-        for mapping in self._pending_results:
-            try:
-                return mapping[task_id]
-            except KeyError:
-                pass
-        raise KeyError(task_id)
-
     def on_state_change(self, meta, message):
         if self.on_message:
             self.on_message(meta)
         if meta['status'] in states.READY_STATES:
             task_id = meta['task_id']
-            try:
-                result = self._get_pending_result(task_id)
-            except KeyError:
+            results = _waiting_on(self._pending_results, task_id)
+            if not results:
                 # send to buffer in case we received this result
                 # before it was added to _pending_results.
                 self._pending_messages.put(task_id, meta)
-            else:
+            for result in results:
                 result._maybe_set_cache(meta)
                 buckets = self.buckets
                 try:

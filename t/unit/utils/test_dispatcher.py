@@ -2,6 +2,8 @@ import gc
 import sys
 import time
 
+import pytest
+
 from celery.utils.dispatch import Signal
 
 if sys.platform.startswith('java'):
@@ -78,6 +80,23 @@ class test_Signal:
         result = a_signal.send(sender=self, val='test')
         assert result == expected
         self._testIsClean(a_signal)
+
+    @pytest.mark.parametrize('disconnect', [False, True])
+    def test_dead_receiver_cleanup_preserves_list_identity(self, disconnect):
+        signal = Signal()
+        receivers = signal.receivers
+        receiver = Callable()
+        signal.connect(receiver, sender=self)
+        if disconnect:
+            signal.disconnect(receiver, sender=self)
+        del receiver
+        garbage_collect()
+
+        signal.connect(receiver_1_arg, sender=self, weak=False)
+
+        assert signal.receivers is receivers
+        assert len(receivers) == 1
+        assert signal.send(sender=self, val='test') == [(receiver_1_arg, 'test')]
 
     def test_multiple_registration(self):
         a = Callable()
@@ -181,6 +200,69 @@ class test_Signal:
         assert result == expected
         del a, result, expected
         garbage_collect()
+        self._testIsClean(a_signal)
+
+    def test_boundmethods_of_different_instances(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(b.a, sender=self)
+        try:
+            assert len(a_signal.receivers) == 2
+            result = a_signal.send(sender=self, val='test')
+            assert result == [(a.a, 'test'), (b.a, 'test')]
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+            a_signal.disconnect(b.a, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_disconnect_boundmethod_keeps_other_instance(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(b.a, sender=self)
+        try:
+            assert a_signal.disconnect(b.a, sender=self)
+            result = a_signal.send(sender=self, val='test')
+            assert result == [(a.a, 'test')]
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+            a_signal.disconnect(b.a, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_boundmethod_of_other_instance_survives_garbage_collection(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(b.a, sender=self)
+        try:
+            del a
+            garbage_collect()
+            result = a_signal.send(sender=self, val='test')
+            assert result == [(b.a, 'test')]
+        finally:
+            a_signal.disconnect(b.a, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_same_boundmethod_registered_once(self):
+        a = Callable()
+        a_signal.connect(a.a, sender=self)
+        a_signal.connect(a.a, sender=self)
+        try:
+            assert len(a_signal.receivers) == 1
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+        self._testIsClean(a_signal)
+
+    def test_retry_boundmethods_of_different_instances(self):
+        a, b = Callable(), Callable()
+        a_signal.connect(a.a, sender=self, retry=True)
+        a_signal.connect(b.a, sender=self, retry=True)
+        try:
+            result = a_signal.send(sender=self, val='test')
+            assert [response for _, response in result] == ['test', 'test']
+            assert a_signal.disconnect(a.a, sender=self)
+            assert len(a_signal.receivers) == 1
+        finally:
+            a_signal.disconnect(a.a, sender=self)
+            a_signal.disconnect(b.a, sender=self)
         self._testIsClean(a_signal)
 
     def test_disconnect_retryable_decorator(self):

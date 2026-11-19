@@ -238,6 +238,55 @@ we can no longer increase the prefetch count and fetch another task from the que
 In order to properly schedule ETA/Countdown tasks we automatically detect if quorum queues are used
 and in case they are, Celery automatically enables :ref:`Native Delayed Delivery <native-delayed-delivery>`.
 
+.. _quorum-queues-delivery-limit:
+
+Delivery Limit
+--------------
+
+Starting with RabbitMQ 4.0, quorum queues have a default delivery limit of 20.
+When a message is redelivered more times than that, RabbitMQ drops it, or
+dead-letters it if the queue has a `dead letter exchange`_.
+
+This affects :setting:`task_acks_late`. If a task keeps crashing its worker,
+the message goes back to the queue after each crash, and each return counts
+toward the limit. That happens when the pool process is killed and
+:setting:`task_reject_on_worker_lost` is enabled, or when the whole worker is
+killed, such as when its container runs out of memory. Once the limit is
+reached, the task is dropped. Its state stays ``PENDING`` (``STARTED`` with
+:setting:`task_track_started`). The worker logs each crash as
+``WorkerLostError``, but it doesn't log the drop.
+
+To keep control over this:
+
+- Change the limit with the ``x-delivery-limit`` queue argument when the queue
+  is declared:
+
+  .. code-block:: python
+
+      from kombu import Queue
+
+      app.conf.task_queues = [
+          Queue('celery', queue_arguments={
+              'x-queue-type': 'quorum',
+              'x-delivery-limit': 50,
+          }),
+      ]
+
+  RabbitMQ refuses to redeclare an existing queue with different arguments
+  (``PRECONDITION_FAILED - inequivalent arg``), so for a queue that already
+  exists, use a ``delivery-limit`` policy instead.
+- Configure a `dead letter exchange`_ so dropped tasks are kept instead of lost.
+- Use :setting:`task_retry_on_worker_lost` to cap how many times the task runs
+  again after a pool process is lost. The cap is the task's ``max_retries``
+  (3 by default). Each retry is published as a new message, so these retries
+  don't count toward the delivery limit. It doesn't cover the whole worker
+  being killed.
+
+See RabbitMQ's `poison message handling`_ docs for details.
+
+.. _`dead letter exchange`: https://www.rabbitmq.com/docs/dlx
+.. _`poison message handling`: https://www.rabbitmq.com/docs/quorum-queues#poison-message-handling
+
 .. _native-delayed-delivery:
 
 Native Delayed Delivery

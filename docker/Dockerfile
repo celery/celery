@@ -26,7 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     libev-dev \
     libffi-dev \
-    libmemcached-dev \
     libssl-dev \
     pkg-config \
     zlib1g-dev \
@@ -37,6 +36,9 @@ COPY docker/scripts/create-linux-user.sh /usr/local/bin/create-linux-user
 RUN chmod +x /usr/local/bin/create-linux-user \
     && /usr/local/bin/create-linux-user \
     && rm /usr/local/bin/create-linux-user
+
+# Let the developer user create folders inside .cache when installing packages.
+RUN install -d -o 1000 -g 1000 "${HOME}/.cache"
 
 WORKDIR ${HOME}
 

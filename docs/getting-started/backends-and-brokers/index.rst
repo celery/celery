@@ -22,6 +22,7 @@ Broker Instructions
     sqs
     kafka
     gcpubsub
+    pgmq
 
 .. _broker-overview:
 
@@ -98,6 +99,15 @@ SQS is a broker.
 If you already integrate tightly with AWS, and are familiar with SQS, it presents a great option as a broker. It is extremely scalable and completely managed, and manages task delegation similarly to RabbitMQ. It does lack some of the features of the RabbitMQ broker such as ``worker remote control commands``.
 
 :ref:`See documentation for details <broker-sqs>`
+
+PostgreSQL PGMQ
+---------------
+
+PGMQ is a broker that stores messages in PostgreSQL. You can use it alongside
+the SQLAlchemy result backend to store task messages and results in the same
+PostgreSQL service.
+
+:ref:`See documentation for details <broker-pgmq>`
 
 SQLAlchemy
 ----------

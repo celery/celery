@@ -97,4 +97,9 @@ class CouchBackend(KeyValueStoreBackend):
 
     def delete(self, key):
         key = bytes_to_str(key)
-        self.connection.delete(key)
+        try:
+            self.connection.delete(key)
+        except pycouchdb.exceptions.NotFound:
+            # deleting an already-expired, already-forgotten or never-stored
+            # result must keep forget() idempotent, like the other KV backends
+            pass

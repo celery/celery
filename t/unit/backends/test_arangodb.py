@@ -145,10 +145,24 @@ class test_ArangoDbBackend:
 
         assert self.backend.delete(sentinel.task_id) is None
         self.backend.db.AQLQuery.assert_called_once_with(
-            "REMOVE {_key: @key} IN @@collection",
+            "REMOVE {_key: @key} IN @@collection OPTIONS { ignoreErrors: true }",
             bindVars={
                 "@collection": self.backend.collection,
                 "key": sentinel.task_id,
+            },
+        )
+
+    def test_delete_uses_ignore_errors_for_missing_document(self):
+        self.backend._connection = MagicMock(spec=["__getitem__"])
+
+        # Verify that the AQL query includes ignoreErrors option
+        # which makes deleting a missing document a no-op
+        assert self.backend.delete(sentinel.missing_key) is None
+        self.backend.db.AQLQuery.assert_called_once_with(
+            "REMOVE {_key: @key} IN @@collection OPTIONS { ignoreErrors: true }",
+            bindVars={
+                "@collection": self.backend.collection,
+                "key": sentinel.missing_key,
             },
         )
 

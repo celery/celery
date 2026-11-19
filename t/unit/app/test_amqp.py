@@ -4,9 +4,10 @@ from unittest.mock import Mock, patch
 import pytest
 from kombu import Exchange, Queue
 
-from celery import uuid
+from celery import signals, uuid
 from celery.app.amqp import Queues, utf8dict
 from celery.utils.time import to_utc
+from t.unit.utils.test_dispatcher import garbage_collect
 
 
 class test_TaskConsumer:
@@ -337,6 +338,86 @@ class test_AMQP_proto1:
         self.app.amqp.utc = False
         self.app.amqp.as_task_v1(uuid(), 'foo', countdown=30, expires=40)
 
+    def test_accepts_expiration_string(self):
+        expires = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', expires=expires)
+        assert message.body['expires'] == expires
+
+    def test_accepts_eta_string(self):
+        eta = '2026-11-01T06:30:00+00:00'
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', eta=eta)
+        assert message.body['eta'] == eta
+
+    def test_countdown_across_spring_forward(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=self.app.timezone)
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, countdown=90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert message.body['eta'] == '2026-03-08T04:00:00-04:00'
+        eta = datetime.fromisoformat(message.body['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_expires_across_spring_forward(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=self.app.timezone)
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, expires=90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert message.body['expires'] == '2026-03-08T04:00:00-04:00'
+        expires = datetime.fromisoformat(message.body['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_countdown_across_fall_back(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, countdown=90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert message.body['eta'] == '2026-11-01T02:00:00-05:00'
+        eta = datetime.fromisoformat(message.body['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_expires_across_fall_back(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, expires=90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert message.body['expires'] == '2026-11-01T02:00:00-05:00'
+        expires = datetime.fromisoformat(message.body['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_countdown_from_second_occurrence_of_repeated_hour(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, countdown=15 * 60)
+
+        assert message.body['eta'] == '2026-11-01T01:45:00-05:00'
+        eta = datetime.fromisoformat(message.body['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=15)
+
+    def test_expires_from_second_occurrence_of_repeated_hour(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v1(uuid(), 'foo', now=now, expires=15 * 60)
+
+        assert message.body['expires'] == '2026-11-01T01:45:00-05:00'
+        expires = datetime.fromisoformat(message.body['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=15)
+
 
 class test_AMQP_Base:
     def setup_method(self):
@@ -499,6 +580,44 @@ class test_AMQP(test_AMQP_Base):
         assert event['routing_key'] == 'xyb'
         assert event['exchange'] == 'xyz'
 
+    def test_send_task_sent_event_uses_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message,
+            retry_policy={'interval_start': 1}, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 1,
+        }
+
+    def test_send_task_sent_event_uses_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        evd = Mock(name='evd')
+        self.app.amqp.send_task_message(
+            Mock(), 'foo', self.simple_message, event_dispatcher=evd,
+        )
+
+        assert evd.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
+    def test_send_task_sent_event_after_dispatcher_close(self):
+        self.app.conf.task_send_sent_event = True
+        dispatcher = self.app.amqp._event_dispatcher
+        dispatcher.close()
+        producer = Mock(name='producer')
+
+        self.app.amqp.send_task_message(producer, 'foo', self.simple_message)
+
+        assert producer.publish.call_count == 2
+        event_call = producer.publish.call_args_list[1]
+        assert event_call.args[0]['type'] == 'task-sent'
+        assert event_call.args[0]['uuid'] == self.simple_message.headers['id']
+        assert event_call.kwargs['routing_key'] == 'task.sent'
+        assert dispatcher.producer is None
+
     def test_send_task_message__with_delivery_mode(self):
         prod = Mock(name='producer')
         self.app.amqp.send_task_message(
@@ -527,6 +646,59 @@ class test_AMQP(test_AMQP_Base):
         mocked_receiver = ((Mock(), Mock()), Mock())
         with patch('celery.signals.task_sent.receivers', [mocked_receiver]):
             self.app.amqp.send_task_message(Mock(), 'foo', self.simple_message)
+
+    def test_before_task_publish_receives_merged_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+                retry_policy={'max_retries': 5},
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 5, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_receives_default_retry_policy(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        receiver = Mock()
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                Mock(), 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert receiver.call_args[1]['retry_policy'] == {
+            'max_retries': 3, 'interval_start': 0,
+        }
+
+    def test_before_task_publish_can_modify_retry_policy_without_changing_defaults(self):
+        self.app.conf.task_publish_retry_policy = {'max_retries': 3, 'interval_start': 0}
+        producer = Mock(name='producer')
+
+        def receiver(retry_policy, **kwargs):
+            retry_policy['max_retries'] = 7
+
+        signals.before_task_publish.connect(receiver)
+        try:
+            self.app.amqp.send_task_message(
+                producer, 'foo', self.simple_message_no_sent_event,
+            )
+        finally:
+            signals.before_task_publish.disconnect(receiver)
+
+        assert producer.publish.call_args[1]['retry_policy'] == {
+            'max_retries': 7, 'interval_start': 0,
+        }
+        assert self.app.conf.task_publish_retry_policy == {
+            'max_retries': 3, 'interval_start': 0,
+        }
 
     def test_routes(self):
         r1 = self.app.amqp.routes
@@ -623,6 +795,35 @@ class test_AMQP(test_AMQP_Base):
         assert q.queue_arguments == {"x-queue-type": "quorum"}
         assert q.exchange.type == "topic"
 
+    @pytest.mark.parametrize('signal', [
+        signals.before_task_publish,
+        signals.after_task_publish,
+        signals.task_sent,
+    ], ids=lambda signal: signal.name)
+    def test_send_publish_works_after_receivers_disconnect_and_connect(self, signal):
+        call_count = 0
+
+        def temporary_receiver(**kwargs):
+            pass
+
+        def receiver(**kwargs):
+            nonlocal call_count
+            call_count += 1
+
+        signal.connect(temporary_receiver)
+        try:
+            send_task_message = self.app.amqp.send_task_message
+            signal.disconnect(temporary_receiver)
+            del temporary_receiver
+            garbage_collect()
+
+            signal.connect(receiver)
+            send_task_message(Mock(), 'foo', self.simple_message_no_sent_event)
+        finally:
+            signal.disconnect(receiver)
+
+        assert call_count == 1
+
 
 class test_as_task_v2(test_AMQP_Base):
 
@@ -691,3 +892,73 @@ class test_as_task_v2(test_AMQP_Base):
         assert embed['callbacks'] == [utf8dict(t.s(1)), utf8dict(t.s(2))]
         assert embed['errbacks'] == [utf8dict(t.s(3)), utf8dict(t.s(4))]
         assert embed['chord'] == utf8dict(t.s(5))
+
+    def test_countdown_across_spring_forward(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=self.app.timezone)
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, countdown=90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert message.headers['eta'] == '2026-03-08T04:00:00-04:00'
+        eta = datetime.fromisoformat(message.headers['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_expires_across_spring_forward(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 3, 8, 1, 30, tzinfo=self.app.timezone)
+        assert now.isoformat() == '2026-03-08T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, expires=90 * 60)
+
+        # DST changes the UTC offset from -05:00 to -04:00.
+        assert message.headers['expires'] == '2026-03-08T04:00:00-04:00'
+        expires = datetime.fromisoformat(message.headers['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_countdown_across_fall_back(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, countdown=90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert message.headers['eta'] == '2026-11-01T02:00:00-05:00'
+        eta = datetime.fromisoformat(message.headers['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_expires_across_fall_back(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=0)
+        assert now.isoformat() == '2026-11-01T01:30:00-04:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, expires=90 * 60)
+
+        # DST changes the UTC offset from -04:00 to -05:00.
+        assert message.headers['expires'] == '2026-11-01T02:00:00-05:00'
+        expires = datetime.fromisoformat(message.headers['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=90)
+
+    def test_countdown_from_second_occurrence_of_repeated_hour(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, countdown=15 * 60)
+
+        assert message.headers['eta'] == '2026-11-01T01:45:00-05:00'
+        eta = datetime.fromisoformat(message.headers['eta'])
+        assert eta.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=15)
+
+    def test_expires_from_second_occurrence_of_repeated_hour(self):
+        self.app.conf.timezone = 'America/New_York'
+        now = datetime(2026, 11, 1, 1, 30, tzinfo=self.app.timezone, fold=1)
+        assert now.isoformat() == '2026-11-01T01:30:00-05:00'
+
+        message = self.app.amqp.as_task_v2(uuid(), 'foo', now=now, expires=15 * 60)
+
+        assert message.headers['expires'] == '2026-11-01T01:45:00-05:00'
+        expires = datetime.fromisoformat(message.headers['expires'])
+        assert expires.astimezone(timezone.utc) - now.astimezone(timezone.utc) == timedelta(minutes=15)

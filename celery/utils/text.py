@@ -22,7 +22,7 @@ Possible causes: Did you forget to escape the expand sign (use '%%{0!r}'),
 or did you escape and the value was expanded twice? (%%N -> %N -> %hostname)?
 """.strip()
 
-RE_FORMAT = re.compile(r'%(\w)')
+RE_FORMAT = re.compile(r'%([%\w])')
 
 
 def str_to_list(s: str) -> list[str]:
@@ -149,8 +149,11 @@ def remove_repeating_from_task(task_name: str, s: str) -> str:
     """
     # This is used by e.g. repr(chain), to remove repeating module names.
     #  - extract the module part of the task name
-    module = str(task_name).rpartition('.')[0] + '.'
-    return remove_repeating(module, s)
+    module = str(task_name).rpartition('.')[0]
+    if not module:
+        # Task name has no module part, there is nothing to shorten.
+        return s
+    return remove_repeating(module + '.', s)
 
 
 def remove_repeating(substr: str, s: str) -> str:
@@ -170,14 +173,22 @@ def remove_repeating(substr: str, s: str) -> str:
     """
     # find the first occurrence of substr in the string.
     index = s.find(substr)
-    if index >= 0:
-        return ''.join([
-            # leave the first occurrence of substr untouched.
-            s[:index + len(substr)],
-            # strip seen substr from the rest of the string.
-            s[index + len(substr):].replace(substr, ''),
-        ])
-    return s
+    if index < 0:
+        return s
+    # leave the first occurrence of substr untouched.
+    head, rest = s[:index + len(substr)], s[index + len(substr):]
+    if substr not in rest:
+        return s
+    # strip seen substr from the rest of the string, but only where it starts
+    # a name (so ``app.`` is not removed from ``webapp.`` or ``my-app.``).
+    parts = rest.split(substr)
+    out = [parts[0]]
+    for i, part in enumerate(parts[1:]):
+        # character just before this occurrence in ``rest`` (none for the first
+        # occurrence when ``rest`` starts with it).
+        before = parts[i][-1:] or (substr[-1:] if i else '')
+        out.append(substr + part if before.isalnum() or before in ('_', '.', '-') else part)
+    return head + ''.join(out)
 
 
 StringIO = io.StringIO

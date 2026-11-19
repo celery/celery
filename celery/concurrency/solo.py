@@ -17,7 +17,9 @@ class TaskPool(BasePool):
         super().__init__(*args, **kwargs)
         self.on_apply = apply_target
         self.limit = 1
-        signals.worker_process_init.send(sender=None)
+        # The worker passes (app, hostname) as initargs to every pool.
+        initargs = self.options.get('initargs') or (None, None)
+        signals.worker_process_init.send(sender=initargs[1])
 
     def _get_info(self):
         info = super()._get_info()

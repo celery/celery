@@ -5,13 +5,328 @@
 ================
 
 This document contains change notes for bugfix & new features
-in the main branch & 5.6.x series, please see :ref:`whatsnew-5.6` for
-an overview of what's new in Celery 5.6.
+in the main branch & 5.7.x series, please see :ref:`whatsnew-5.7` for
+an overview of what's new in Celery 5.7.0.
+
+
+.. _version-5.7.0:
+
+5.7.0
+======
+
+:release-date: 2026-11-05
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0 Stable Release is now available for testing and deploy to production.
+Please help us test this version and report any issues.
+
+
+What's Changed Since 5.7.0rc1
+==============================
+
+This section summarizes the changes made since the Celery 5.7.0rc1 pre-release.
+
+Canvas, Chains, Groups, and Chords
+----------------------------------
+
+* Run a replaced task's callbacks once when it is replaced with a chain (`:ghpull:`10927`).
+* Fix chord link and link-error options so they are passed to the body only (`:ghpull:`10778`).
+* Fix stamped header revocation (`:ghpull:`10884`).
+* Count each chord header task only once in the Redis backend (`:ghpull:`10919`).
+* Fix Redis chord claim cleanup ownership (`:ghpull:`10998`).
+* Fail the chord when ``chord_unlock`` retry is refused by the broker (`:ghpull:`10959`).
+
+Task Execution and Result Handling
+----------------------------------
+
+* Fix retry argument conflicts when switching calling conventions (`:ghpull:`10895`).
+* Pass values to backend hooks by position again (`:ghpull:`10918`).
+* Don't mark a task ``REVOKED`` while another worker is running it (`:ghpull:`10922`).
+* Keep the first ``SUCCESS`` in the database, MongoDB, and Cassandra backends (`:ghpull:`10920`, :ghpull:`10944`, :ghpull:`10945`).
+* Don't record ``FAILURE`` when ``on_success`` raises after ``SUCCESS`` was stored (`:ghpull:`10759`).
+* Don't fail a task whose ``SUCCESS`` was stored before the worker was lost (`:ghpull:`10752`).
+* Fix a worker hang in ``WorkerLostError`` when ``result_backend_always_retry=True`` (`:ghpull:`10960`).
+* Fix ``send_task()`` overriding ``ignore_result`` defaults (`:ghpull:`10953`).
+* Preserve ``ignore_result`` overrides across task retries (`:ghpull:`10958`).
+* Make ``Task.apply()`` respect the ``task.ignore_result`` default (`:ghpull:`11001`).
+* Don't store ``RETRY`` for an ignored result when retrying after a lost worker (`:ghpull:`11009`).
+* Track every ``AsyncResult`` waiting on a task ID (`:ghpull:`10956`).
+* Allow ``ResultSet.add()`` after the set's results are ready (`:ghpull:`10930`).
+* Use the documented retry defaults in the database backend (`:ghpull:`10921`).
+* Fix Manager warning output during retries (`:ghpull:`10948`).
+* Wait between retries when the broker refuses a callback publish (`:ghpull:`10975`).
+* Merge signature options in ``map`` and ``starmap`` ``apply_async()`` (`:ghpull:`10787`).
+* Stop gating task publishing signals on cached receiver lists (`:ghpull:`10791`).
+
+Worker Operations
+-----------------
+
+* Ensure worker shutdown state is set even if the shutdown handler's logging or signal dispatch raises (`:ghpull:`10738`).
+* Cover the second call of ``_ensure_after_fork`` in a test (`:ghpull:`10924`).
+* Cancel only per-connection timer entries on broker reconnect instead of clearing the worker timer (`:ghpull:`10901`).
+
+Celery Beat and Scheduling
+--------------------------
+
+* Keep Celery Beat running when a schedule entry fails, and reject impossible crontab dates (`:ghpull:`10896`).
+* Fix solar schedule timing across daylight-saving time changes (`:ghpull:`10915`).
+* Enhance timezone localization tests (`:ghpull:`10996`).
+* Use Cuba's 2025 fall-back in the midnight DST tests (`:ghpull:`11011`).
+
+Utilities and Data Structures
+-----------------------------
+
+* Don't expire or evict re-added ``LimitedSet`` items using their old timestamp (`:ghpull:`10758`).
+* Give entries copied by ``LimitedSet.update()`` this set's sequence numbers (`:ghpull:`10943`).
+* Keep the closing bracket when ``saferepr`` truncates the last element (`:ghpull:`10771`).
+* Fix ``MultiParser`` to honor its configured ``Node`` class (`:ghpull:`10938`).
+
+Application and Configuration
+-----------------------------
+
+* Raise a clear error when ``@shared_task`` is applied twice (`:ghpull:`10889`).
+
+Documentation and Developer Experience
+--------------------------------------
+
+* Fix an incorrect sentence in the user guide (`:ghpull:`10902`).
+* Document the quorum queue delivery limit (`:ghpull:`10926`).
+* Improve signature documentation (`:ghpull:`10978`).
+* Update the pull request template with AI-spamming guidelines (`:ghpull:`10979`).
+* Add guidance for AI agents in the Celery project (`:ghpull:`10999`).
+
+Dependencies and Packaging
+--------------------------
+
+* Update ``click-plugins`` requirement to ``>=1.1.1.2`` (`:ghpull:`10899`).
+* Update Django requirement to ``>=3.2.1`` (`:ghpull:`10816`).
+* Replace ``brotlipy`` with ``brotlicffi`` in the Brotli extra (`:ghpull:`10992`).
+* Update Brotli dependencies for PyPy and CPython (`:ghpull:`10994`).
+* Update Billiard and click-repl versions in requirements (`:ghpull:`11002`).
+* Update ``grpcio`` to ``1.85.1`` (`:ghpull:`11006`).
+* Update Kombu to ``5.7.0`` (`:ghpull:`11007`).
+
+Development Dependencies
+------------------------
+
+* Update GitHub CodeQL action to ``4.39.0`` and ``4.39.1`` (`:ghpull:`10900`, :ghpull:`10974`).
+* Update Pydantic to ``2.14.1`` (`:ghpull:`10903`).
+* Update tox to ``4.65.0`` (`:ghpull:`10935`).
+* Update mypy to ``2.4.0`` (`:ghpull:`10984`).
+* Update ``grpcio`` to ``1.84.1`` (`:ghpull:`10973`).
+* Update ``azure-storage-blob`` to ``12.31.1`` (`:ghpull:`11005`).
+* Update ``google-cloud-storage`` to ``3.17.1`` (`:ghpull:`11013`).
+* Update ``azure-identity`` to ``1.27.0`` (`:ghpull:`11020`).
+
+Testing
+-------
+
+* Assert exact task replacement nesting levels (`:ghpull:`10925`).
+* Run mock assertions inside ``pytest.raises`` (`:ghpull:`11004`).
+
+
+
+.. _version-5.7.0rc1:
+
+5.7.0rc1
+========
+
+:release-date: 2026-10-18
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0rc1 Release Candidate 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add ``result_failure_expires`` setting for Redis result backend chord keys (#10826)
+- Add ``task_retry_on_worker_lost`` setting to limit requeues after worker loss (#10843)
+- Accept Pydantic models when calling tasks with ``pydantic=True`` (#10844)
+
+Canvas
+~~~~~~
+
+- Keep eager group application from accessing the result backend (#10750)
+- Avoid geometric message growth in standalone chord bodies (#10824)
+- Fix empty group and empty chain handling in chains (#10834)
+- Build chains in a single pass instead of folding with ``|`` (#10840)
+- Fix duplicate nodes in a chain's ``as_tuple()`` after a group (#10829)
+- Fix errback arity classification with stored signature arguments (#10838)
+- Fix chain/group representations mangling task names and arguments (#10855)
+- Prevent nested groups from taking their parent group's ID (#10857)
+- Fire chain links only once, on the last task in eager chains (#10864)
+- Fix exponential message growth in chains of groups (#10873)
+
+Workers
+~~~~~~~
+
+- Fix prefork write generators raising ``StopIteration`` (PEP 479) (#10842)
+- Send the worker hostname as the ``worker_process_init`` signal sender (#10849)
+- Reset autoscale keepalive for immediate tasks (#10839)
+- Avoid calling ``setup_defaults`` twice when creating a worker (#10828)
+- Skip exited children in ``AsynPool._help_stuff_finish`` (#10861)
+- Pass preload options only to commands that accept them (#10837)
+- Fix worker expiration checks during DST fall back (#10868)
+- Add source replacement support to ``regen`` during cached iteration (#10823)
+
+Task Publishing and Execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Fix ``send_task`` ETA and expiration calculations across DST transitions (#10813)
+- Fix task execution after ETA conversion failure (#10876)
+- Copy only declared stamps into task execution options (#10853)
+
+Results
+~~~~~~~
+
+- Fix MongoDB result cleanup across DST transitions (#10852)
+- Add ``result_chord_expires`` for Redis chord keys (#10827)
+- Keep cache backend chords alive past ``result_expires`` (#10830)
+- Avoid calling ``get_state`` for plain chain failures (#10836)
+- Fix database backend cleanup timezone handling (#10866)
+
+Beat
+~~~~
+
+- Fix relative schedule rounding across DST transitions (#10818)
+
+Security
+~~~~~~~~
+
+- Redact Azure credentials in diagnostic output (#10822)
+
+Documentation
+~~~~~~~~~~~~~
+
+- Fix ``broker_use_ssl`` setting target being swallowed into the previous paragraph (#10847)
+- Fix unresolved mailing-list and IRC links in the contributing guide and introduction (#10848)
+- Fix stray RST markup in changelog entries (#10851)
+
+Dependencies
+~~~~~~~~~~~~
+
+- Update ``cryptography`` to 50.0.2 (#10815)
+- Update the minimum ``boto3`` requirement to 1.43.113 (#10820, #10869)
+- Update ``azure-storage-blob`` to 12.31.0 (#10825)
+- Update ``azure-identity`` to 1.26.0 (#10863)
+- Update ``tox`` to 4.64.9 (#10832)
+- Align the minimum ``pymemcache`` version with ``RetryingClient`` support and update it to 4.0.0 (#10831, #10859)
+- Update GitHub CodeQL Action to 4.38.3 (#10860)
+- Update Kombu to 5.7.0rc1 (#10882)
+
+Other
+~~~~~
+
+- Remove unused ``AQLQueryError`` import from the ArangoDB backend (#10878)
+- Fix invalid Bandit baseline JSON and validate it before commit (#10766)
+
+.. _version-5.7.0b1:
+
+5.7.0b1
+=======
+
+:release-date: 2026-10-06
+:release-by: Asif Saif Uddin
+
+Celery v5.7.0b1 Beta 1 is now available for testing.
+Please help us test this version and report any issues.
+
+
+Features
+~~~~~~~~
+
+- Add opt-in remote control (inspect ping) support to ``celery beat`` (#10422)
+- Add ``pymemcache`` result backend support (#9977)
+- Make ``--concurrency=auto`` aware of cgroup CPU limits (#10328)
+
+Results
+~~~~~~~
+
+- Fix Couchbase missing-document handling to raise instead of returning
+  ``None`` (#10680)
+- Preserve ``propagate`` when joining nested native results (#10689)
+- Keep ``forget()`` idempotent on Elasticsearch and CouchDB backends (#10697)
+- Keep ``forget()`` idempotent on Azure Blob Storage and CosmosDB (#10714)
+- Handle missing ArangoDB documents when deleting results (#10701)
+- Upsert CosmosDB results so later task states are stored correctly (#10746)
+- Publish the Cassandra session only once the connection is ready (#10657)
+- Avoid holding the Redis pubsub lock while waiting for messages (#10715)
+- Defer re-entrant ``cancel_for`` to avoid Redis pubsub deadlocks (#10716)
+- Preserve ``EagerResult.name`` when copying or pickling (#10773)
+- Raise ``TaskRevokedError`` from ``EagerResult.get()`` after ``revoke()`` (#10772)
+- Finish a half-read child result on prefork shutdown and acknowledge it
+  during the join (#10768)
+
+Canvas
+~~~~~~
+
+- Apply ``countdown`` and ``eta`` to chord headers (#10735)
+- Fail chords after a chord whose header failed (#10767)
+- Fix geometric message bloat in chains of implicit chords (#10743)
+- Resolve the app of a chain or chord through its tasks (#10749)
+- Avoid raising in ``chain.app`` when the first task's canvas contains a
+  dict (#10792)
+
+Workers
+~~~~~~~
+
+- Flush buffered events with ``hub.call_soon()`` (#10736)
+- Synchronize ``EventDispatcher`` shutdown with publishing (#10745)
+- Preserve pending operation order in the consumer (#10734)
+- Fix consumer reconnect prefetch reduction for green pools (#10804)
+- Fix Beat scheduler connection cleanup on shutdown (#10776)
+- Fix ``countdown``, expiration, and Beat intervals across DST transitions
+  (#10769)
+- Limit Django fixup signal handlers to its own app (#10731)
+- Tell apart signal receivers bound to different instances (#10699)
+
+Task Publishing
+~~~~~~~~~~~~~~~
+
+* Use the merged retry policy for `before_task_publish` and task-sent
+  events (#10708)
+* Avoid calling `isoformat()` on protocol v1 ETA and expiration strings
+  (#10720)
+
+Command Line
+~~~~~~~~~~~~
+
+- Apply index lists such as ``-c:1,2`` to named nodes in ``celery multi``
+  (#10661)
+- Expand ``~`` in ``--workdir`` for spawned workers (#10739)
+- Replace deprecated ``codecs.open`` in ``celery upgrade`` settings (#10706)
+- Fix escaped percent signs in node formatting (#10663)
+
+Utilities
+~~~~~~~~~
+
+- Fix ``BufferMap`` handling of ``bufmaxsize`` and total size accounting
+  (#10705)
+- Fix regeneration iteration when consumed elsewhere during the loop
+  (#10756)
+- Stop ``firstmethod()`` from swallowing ``AttributeError`` (#10774)
+- Handle ``AttributeError`` in ``iterate_file_descriptors_safely()`` after
+  connection loss (#10318)
+
+Docker
+~~~~~~
+
+- Fix cache directory ownership in Docker builds (#10707)
+
+Packaging
+~~~~~~~~~
+
+- Update the ``billiard`` dependency to 4.3.1 or later (#10802)
+- Update the Kombu dependency to 5.7.0b1 (#10809)
+- Remove version constraints for Redis requirements (#10810)
+
 
 
 .. _version-5.7.0a1:
 
-5.7.0b1
+5.7.0a1
 =======
 
 :release-date: 2026-09-22
@@ -1057,7 +1372,7 @@ What's Changed
 - Added Blacksmith.sh to the Sponsors section in the README (#9323)
 - Revert "Added Blacksmith.sh to the Sponsors section in the README" (#9324)
 - Added Blacksmith.sh to the Sponsors section in the README (#9325)
-- Added missing " |oc-sponsor-3|” in README (#9326)
+- Added missing ``|oc-sponsor-3|`` in README (#9326)
 - Use Blacksmith SVG logo (#9327)
 - Updated Blacksmith SVG logo (#9328)
 - Revert "Updated Blacksmith SVG logo" (#9329)
@@ -1884,7 +2199,7 @@ What's Changed
 - Added Blacksmith.sh to the Sponsors section in the README (#9323)
 - Revert "Added Blacksmith.sh to the Sponsors section in the README" (#9324)
 - Added Blacksmith.sh to the Sponsors section in the README (#9325)
-- Added missing " |oc-sponsor-3|” in README (#9326)
+- Added missing ``|oc-sponsor-3|`` in README (#9326)
 - Use Blacksmith SVG logo (#9327)
 - Updated Blacksmith SVG logo (#9328)
 - Revert "Updated Blacksmith SVG logo" (#9329)
@@ -2659,7 +2974,7 @@ The code changes are mostly fix for regressions. More details can be found below
 - Remove tox version limit (#8464)
 - Fixed AttributeError: 'str' object has no attribute (#8463)
 - Upgraded Kombu from 5.3.1 -> 5.3.2 (#8468)
-- Document need for CELERY_ prefix on CLI env vars (#8469)
+- Document need for ``CELERY_`` prefix on CLI env vars (#8469)
 - Use string value for CELERY_SKIP_CHECKS envvar (#8462)
 - Revert "store children with database backend" (#8475)
 - Revert "Fix eager tasks does not populate name field" (#8476)
