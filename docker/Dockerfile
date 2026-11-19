@@ -46,7 +46,6 @@ RUN chmod +x /usr/local/bin/create-linux-user \
     && /usr/local/bin/create-linux-user \
     && rm /usr/local/bin/create-linux-user
 
-# Let the developer user create folders inside .cache when installing packages.
 RUN install -d -o 1000 -g 1000 "${HOME}/.cache" "${HOME}/.cache/uv"
 
 WORKDIR ${HOME}
@@ -55,8 +54,6 @@ COPY --chown=1000:1000 requirements ${HOME}/requirements
 COPY --chown=1000:1000 docker/entrypoint /entrypoint
 
 RUN chmod gu+x /entrypoint
-
-USER ${CELERY_USER}
 
 RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/uv,uid=1000,gid=1000 \
     uv pip install --system --upgrade pip setuptools wheel
@@ -79,6 +76,8 @@ RUN --mount=type=cache,target=/home/${CELERY_USER}/.cache/uv,uid=1000,gid=1000 \
     uv pip install --system --no-deps --no-build-isolation -e ${HOME}/celery
 
 WORKDIR ${HOME}/celery
+
+USER ${CELERY_USER}
 
 RUN git config --global --add safe.directory ${HOME}/celery
 
