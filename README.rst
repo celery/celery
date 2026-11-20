@@ -243,7 +243,7 @@ It supports...
         - Cryptographic message signing.
 
 .. _`Eventlet`: https://eventlet.net/
-.. _`gevent`: https://gevent.org/
+.. _`gevent`: https://www.gevent.org/
 
 .. _RabbitMQ: https://rabbitmq.com
 .. _Redis: https://redis.io
