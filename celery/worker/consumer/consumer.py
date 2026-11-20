@@ -187,6 +187,7 @@ class Consumer:
             'celery.worker.consumer.events:Events',
             'celery.worker.consumer.gossip:Gossip',
             'celery.worker.consumer.heart:Heart',
+            'celery.worker.consumer.idle:IdleShutdown',
             'celery.worker.consumer.control:Control',
             'celery.worker.consumer.tasks:Tasks',
             'celery.worker.consumer.delayed_delivery:DelayedDelivery',
