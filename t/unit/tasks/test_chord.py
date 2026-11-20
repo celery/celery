@@ -540,17 +540,20 @@ class test_add_to_chord:
 
     def test_add_to_chord_eager_lazy(self):
         from celery import chord
-        add, added = self.add, []
+        add = self.add
 
         @self.app.task(shared=False, bind=True)
         def add_lazy(self):
-            added.append(self.add_to_chord(add.s(1, 1), lazy=True))
+            self.add_to_chord(add.s(1, 2), lazy=True)
             return 0
 
-        # The signature is returned for the caller to run, so the eager
-        # chord doesn't wait for it.
-        assert chord([add_lazy.s()], self.identity.s()).apply().get() == [0]
-        assert added == [add.s(1, 1)]
+        # The eager chord can't pass the result of the caller's own
+        # sig.delay() to the body, so lazy is refused instead.
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).apply().get()
+        self.app.conf.task_always_eager = True
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).delay().get()
 
     def test_add_to_chord_eager_keeps_request_headers(self):
         from celery import chord
