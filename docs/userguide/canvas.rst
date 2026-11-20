@@ -250,6 +250,13 @@ to ``apply_async``:
 The callback will only be applied if the task exited successfully,
 and it will be applied with the return value of the parent task as argument.
 
+.. versionchanged:: 5.7
+
+    If a pool child is lost after a task's callbacks have been published but
+    before the result is stored, the parent now records ``SUCCESS`` from a
+    short-lived marker instead of ``FAILURE``, so the error callback does not
+    run beside the link.
+
 As I mentioned earlier, any arguments you add to a signature,
 will be prepended to the arguments specified by the signature itself!
 

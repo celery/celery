@@ -589,13 +589,17 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 else:
                     callbacks_sent = False
                     try:
-                        # callback tasks must be applied before the result is
-                        # stored, so that result.children is populated.
-
-                        # groups are called inline and will store trail
-                        # separately, so need to call them separately
-                        # so that the trail's not added multiple times :(
-                        # (Issue #1936)
+                        # Callbacks must run before the result is stored so
+                        # result.children is populated (#1936). groups are
+                        # called inline and will store trail separately, so
+                        # need to call them separately so that the trail's
+                        # not added multiple times :(
+                        #
+                        # After publishing, mark that callbacks were sent so
+                        # Request.on_failure can store SUCCESS instead of
+                        # FAILURE if the pool child is lost before
+                        # mark_as_done (#10954). Main's publish-then-store
+                        # order is kept so a lost child never drops a link.
                         _dispatch_callbacks_and_chain(
                             retval, task.request.callbacks,
                             task_request.chain,
@@ -603,9 +607,16 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                             priority=task_priority,
                         )
                         callbacks_sent = True
+                        if ((task_request.callbacks or task_request.chain)
+                                and not task_request.ignore_result):
+                            task.backend.mark_callbacks_dispatched(
+                                uuid, retval, task_request,
+                            )
                         task.backend.mark_as_done(
                             uuid, retval, task_request, publish_result,
                         )
+                        if (task_request.callbacks or task_request.chain):
+                            task.backend.clear_callbacks_dispatched(uuid)
                     except (EncodeError, OperationalError) as exc:
                         if callbacks_sent and isinstance(exc, OperationalError):
                             raise

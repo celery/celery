@@ -21,6 +21,7 @@ from celery.concurrency.base import BasePool
 from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError,
                                Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
+from celery.result import result_from_tuple
 from celery.utils.functional import maybe, maybe_list, noop
 from celery.utils.log import get_logger
 from celery.utils.nodenames import gethostname
@@ -735,6 +736,12 @@ class Request:
             )
             return
 
+        if is_worker_lost and self._promote_callbacks_dispatched():
+            # Links/chain were published, then the child died before
+            # mark_as_done (#10954). Store SUCCESS from the marker and skip
+            # errbacks so the app does not see both outcomes.
+            return
+
         max_retries_exceeded = False
         if is_worker_lost and self.task.retry_on_worker_lost:
             max_retries = self.task.max_retries
@@ -882,6 +889,75 @@ class Request:
         except Exception:  # pylint: disable=broad-except
             # No backend, or it can't be reached: keep the failure handling.
             return False
+
+    def _promote_callbacks_dispatched(self):
+        """Store SUCCESS from the callbacks-sent marker (#10954).
+
+        Returns True when the marker was found and failure handling should
+        stop (errbacks skipped, message acked when acks_late).
+
+        Lookup is a single attempt (no ``_ensure_retryable`` loop).
+        ``_success_was_stored`` already bounded-retried the backend, and a
+        second unbounded retry would hang the worker on a down backend
+        (#10957).
+        """
+        if self.ignore_result:
+            return False
+        backend = self.task.backend
+        as_uri = getattr(backend, 'as_uri', None)
+        if callable(as_uri) and as_uri() == 'rpc://':
+            return False
+        key_fn = getattr(backend, 'callbacks_dispatched_key', None)
+        get_meta = getattr(backend, '_get_task_meta_for', None)
+        if not callable(key_fn) or not callable(get_meta):
+            return False
+        try:
+            meta = get_meta(key_fn(self.id))
+        except Exception:  # pylint: disable=broad-except
+            return False
+        # Real backends return a meta dict. Ignore other values so Mock
+        # backends in unit tests do not look like a found marker.
+        if not isinstance(meta, dict) or meta.get('status') != states.SUCCESS:
+            return False
+
+        result = meta.get('result')
+        children_tuples = meta.get('children') or []
+        # Rebuild request.children so mark_as_done persists the trail (#1936).
+        context = self._context
+        if children_tuples and not getattr(context, 'children', None):
+            try:
+                context.children.extend(
+                    result_from_tuple(c, app=self.task.app)
+                    for c in children_tuples
+                )
+            except Exception:  # pylint: disable=broad-except
+                warn('Task %s[%s] could not restore children from marker',
+                     self.name, self.id, exc_info=True)
+
+        warn('Task %s[%s] published callbacks before the worker was lost; '
+             'storing SUCCESS from marker',
+             self.name, self.id)
+        try:
+            backend.mark_as_done(
+                self.id, result, request=context, store_result=True,
+            )
+            clear = getattr(backend, 'clear_callbacks_dispatched', None)
+            if callable(clear):
+                clear(self.id)
+        except Exception:  # pylint: disable=broad-except
+            # Could not promote: fall through to normal WorkerLost failure.
+            error('Task %s[%s] failed to store SUCCESS from callbacks marker',
+                  self.name, self.id, exc_info=True)
+            return False
+
+        if self.task.acks_late:
+            self.acknowledge()
+        self.send_event(
+            'task-succeeded',
+            result=saferepr(result, self.task.resultrepr_maxsize),
+            runtime=None,
+        )
+        return True
 
     def _worker_lost_info(self, exc):
         if isinstance(exc, SystemExit):
