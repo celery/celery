@@ -1972,6 +1972,15 @@ class test_KeyValueStoreBackend:
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
 
+    def test_chord_part_return_counted_too_many_times(self):
+        # Backends that can't record parts complete the chord only when the
+        # counter reaches its size.
+        with self._chord_part_context(self.b) as (task, deps, _):
+            self.b.incr.return_value = 11
+            task.request.id = 'task-id'
+            self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
+            deps.join_native.assert_not_called()
+
     def test_chord_part_return_propagate_default(self):
         with self._chord_part_context(self.b) as (task, deps, _):
             self.b.on_chord_part_return(task.request, 'SUCCESS', 10)
