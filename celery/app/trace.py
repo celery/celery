@@ -18,9 +18,8 @@ from kombu.utils.encoding import safe_repr, safe_str
 
 from celery import current_app, group, signals, states
 from celery._state import _task_stack
-from celery.app.task import Context
+from celery.app.task import Context, get_actual_ignore_result
 from celery.app.task import Task as BaseTask
-from celery.app.task import get_actual_ignore_result
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger

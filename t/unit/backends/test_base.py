@@ -20,10 +20,9 @@ from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordErro
 from celery.result import GroupResult, result_from_tuple
 from celery.utils import serialization
 from celery.utils.functional import pass1
-from celery.utils.serialization import UnpickleableExceptionWrapper
+from celery.utils.serialization import UnpickleableExceptionWrapper, subclass_exception
 from celery.utils.serialization import find_pickleable_exception as fnpe
 from celery.utils.serialization import get_pickleable_exception as gpe
-from celery.utils.serialization import subclass_exception
 
 
 class wrapobject:
