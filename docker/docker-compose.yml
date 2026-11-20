@@ -22,6 +22,7 @@ services:
     depends_on: &celery-depends-on
       - rabbit
       - redis
+      - redis-cluster
       - dynamodb
       - azurite
 
@@ -86,6 +87,21 @@ services:
 
   redis:
     image: redis:latest
+
+  # A single-node Redis Cluster for the redis_cluster integration tests:
+  #   TEST_BACKEND=redis://redis-cluster:7000/0 TEST_BACKEND_CLUSTER=1
+  redis-cluster:
+    image: redis:latest
+    entrypoint: ["/bin/sh", "/redis-cluster/entrypoint.sh"]
+    environment:
+      REDIS_CLUSTER_PORT: 7000
+    volumes:
+      - ./redis-cluster:/redis-cluster:ro
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 7000 cluster info | grep -q '^cluster_state:ok'"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
 
   dynamodb:
     image: amazon/dynamodb-local:latest
