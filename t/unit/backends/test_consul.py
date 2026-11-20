@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -32,10 +32,28 @@ class test_ConsulBackend:
         self.backend.one_client.kv.put.return_value = True
         assert self.backend.set('Key', 'Value') is True
 
+    def test_set_reuses_and_renews_session(self):
+        self.backend.one_client = Mock(name='c.client')
+        self.backend.one_client.session.create.return_value = 'session-id'
+        self.backend.one_client.kv.put.return_value = True
+
+        assert self.backend.set('Key', 'Value') is True
+        assert self.backend.set('Key', 'Updated value') is True
+
+        self.backend.one_client.session.create.assert_called_once_with(
+            name='Key', behavior='delete', ttl=self.backend.expires
+        )
+        self.backend.one_client.session.renew.assert_called_once_with('session-id')
+        assert self.backend.one_client.kv.put.call_args_list == [
+            call(key='Key', value='Value', acquire='session-id'),
+            call(key='Key', value='Updated value', acquire='session-id'),
+        ]
+
     def test_delete(self):
         self.backend.one_client = Mock(name='c.client')
         self.backend.one_client.kv.delete.return_value = True
         assert self.backend.delete('Key') is True
+        assert 'Key' not in self.backend._sessions
 
     def test_index_bytes_key(self):
         key = 'test-consul-2'

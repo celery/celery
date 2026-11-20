@@ -46,6 +46,7 @@ class ConsulBackend(KeyValueStoreBackend):
         # also convenient for mocking in the unit tests.
         #
         self.one_client = None
+        self._sessions = {}
         self._init_from_params(**parse_url(self.url))
 
     def _init_from_params(self, hostname, port, virtual_host, **params):
@@ -95,17 +96,31 @@ class ConsulBackend(KeyValueStoreBackend):
         If the session expires it will remove the key so that results
         can auto expire from the K/V store
         """
-        session_name = bytes_to_str(key)
-
         key = self._key_to_consul_key(key)
+        session_name = key
 
-        logger.debug('Trying to create Consul session %s with TTL %d',
-                     session_name, self.expires)
         client = self.client()
-        session_id = client.session.create(name=session_name,
-                                           behavior='delete',
-                                           ttl=self.expires)
-        logger.debug('Created Consul session %s', session_id)
+        session_id = self._sessions.get(session_name)
+        if session_id is None:
+            logger.debug('Trying to create Consul session %s with TTL %d',
+                         session_name, self.expires)
+            session_id = client.session.create(name=session_name,
+                                               behavior='delete',
+                                               ttl=self.expires)
+            self._sessions[session_name] = session_id
+            logger.debug('Created Consul session %s', session_id)
+        else:
+            try:
+                client.session.renew(session_id)
+            except consul.NotFound:
+                # The session may have expired between writes. Recreate it so
+                # the key can be acquired again instead of silently dropping
+                # the result.
+                logger.debug('Consul session %s expired, recreating it', session_id)
+                session_id = client.session.create(name=session_name,
+                                                   behavior='delete',
+                                                   ttl=self.expires)
+                self._sessions[session_name] = session_id
 
         logger.debug('Writing key %s to Consul', key)
         return client.kv.put(key=key, value=value, acquire=session_id)
@@ -113,4 +128,7 @@ class ConsulBackend(KeyValueStoreBackend):
     def delete(self, key):
         key = self._key_to_consul_key(key)
         logger.debug('Removing key %s from Consul', key)
-        return self.client().kv.delete(key)
+        try:
+            return self.client().kv.delete(key)
+        finally:
+            self._sessions.pop(key, None)
