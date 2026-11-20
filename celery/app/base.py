@@ -1049,7 +1049,13 @@ class Celery:
         """
         parent = have_parent = None
         amqp = self.amqp
-        task_id = task_id or uuid()
+        if not task_id:
+            task_id_generator = self.conf.task_id_generator or uuid
+            try:
+                task_id = str(task_id_generator())
+            except Exception as exc:
+                logger.warning(f"Custom task_id_generator failed, falling back to UUID: {type(exc).__name__}")
+                task_id = uuid()
         producer = producer or publisher  # XXX compat
         router = router or amqp.router
         conf = self.conf

@@ -480,8 +480,8 @@ class Backend:
         # Generate an ID if missing so the error can be stored.
         callback_id = callback.id
         if not callback_id:
-            from kombu.utils.uuid import uuid
-            callback_id = callback.options['task_id'] = uuid()
+            from celery.canvas import _new_task_id
+            callback_id = callback.options['task_id'] = _new_task_id(app)
 
         # We have to make a fake request since either the callback failed or
         # we're pretending it did since we don't have information about the

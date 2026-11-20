@@ -269,6 +269,16 @@ def _merge_dictionaries(d1, d2, aggregate_duplicates=True):
             d1[key] = value
 
 
+def _new_task_id(app=None):
+    try:
+        generator = getattr(app.conf, 'task_id_generator', None)
+        if generator:
+            return str(generator())
+    except Exception:
+        pass
+    return uuid()
+
+
 class StampingVisitor(metaclass=ABCMeta):
     """Stamping API.  A class that provides a stamping API possibility for
     canvas primitives. If you want to implement stamping behavior for
@@ -665,7 +675,7 @@ class Signature(dict):
             tid = opts['task_id']
         except KeyError:
             # otherwise, use the _id sent to this function, falling back on a generated UUID
-            tid = opts['task_id'] = _id or uuid()
+            tid = opts['task_id'] = _id or _new_task_id(self.app)
         if root_id:
             opts['root_id'] = root_id
         if parent_id:
@@ -952,7 +962,7 @@ class Signature(dict):
     def election(self):
         type = self.type
         app = type.app
-        tid = self.options.get('task_id') or uuid()
+        tid = self.options.get('task_id') or _new_task_id(self.app)
 
         with app.producer_or_acquire(None) as producer:
             props = type.backend.on_task_call(producer, tid)
@@ -2162,7 +2172,7 @@ class group(Signature):
             if k not in self._IMMUTABLE_OPTIONS or k not in self.options
         }}
         options['group_id'] = group_id = (
-            options.pop('task_id', uuid()))
+            options.pop('task_id') if 'task_id' in options else _new_task_id(self.app))
         return options, group_id, options.get('root_id')
 
     def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
@@ -2182,7 +2192,7 @@ class group(Signature):
         try:
             gid = opts['task_id']
         except KeyError:
-            gid = opts['task_id'] = uuid()
+            gid = opts['task_id'] = _new_task_id(self.app)
         if group_id:
             opts['group_id'] = group_id
         if chord:
@@ -2296,7 +2306,7 @@ class group(Signature):
         app = self._app
         if app is None:
             try:
-                app = self.tasks[0].app
+                app = maybe_signature(self.tasks[0]).app
             except LookupError:
                 pass
         return app if app is not None else current_app
@@ -2517,7 +2527,7 @@ class _chord(Signature):
             # without adding another layer of lookahead to lazy generators.
             if isinstance(tasks, MutableSequence) and not isinstance(tasks, _regen):
                 tasks = tasks[:]
-            tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
+            tasks = group(tasks, app=app, task_id=self.options.get('task_id') or _new_task_id(app))
         if app.conf.task_always_eager:
             # apply() does not use the options of the chord, unlike run()
             body = self._add_body_callbacks(body, dict(self.options, **callbacks))
@@ -2657,7 +2667,7 @@ class _chord(Signature):
             AsyncResult: The result of the body (with the result of the header in the parent of the body).
         """
         app = app or self._get_app(body)
-        group_id = header.options.get('task_id') or uuid()
+        group_id = header.options.get('task_id') or _new_task_id(app)
         root_id = body.options.get('root_id')
         options = dict(self.options, **options)
         header_delay = dict(header_delay or {})
@@ -2675,7 +2685,7 @@ class _chord(Signature):
         # apply_async has already cloned the body; public freeze stays in place.
         if isinstance(body, _chain):
             body._unroll_chords(app)
-        body_task_id = task_id or uuid()
+        body_task_id = task_id or _new_task_id(app)
         bodyres = body.freeze(body_task_id, group_id=group_id, root_id=root_id)
         _strip_chord_header_links(body)
 
