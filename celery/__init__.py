@@ -32,8 +32,6 @@ __homepage__ = 'https://docs.celeryq.dev/'
 __docformat__ = 'restructuredtext'
 __keywords__ = 'task job queue distributed messaging actor'
 
-# -eof meta-
-
 __all__ = (
     'Celery', 'bugreport', 'shared_task', 'Task',
     'current_app', 'current_task', 'maybe_signature',
