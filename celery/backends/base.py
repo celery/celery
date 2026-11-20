@@ -9,6 +9,7 @@ import sys
 import time
 import warnings
 from collections import deque, namedtuple
+from contextvars import ContextVar
 from datetime import timedelta
 from functools import partial
 from uuid import UUID
@@ -56,6 +57,18 @@ EXCEPTION_ABLE_CODECS = frozenset({'pickle'})
 COMPRESSED_PAYLOAD_MAGIC = b'\x00celery-compressed\x00'
 
 logger = get_logger(__name__)
+
+#: How long :meth:`Backend.store_result` keeps retrying an error that is safe
+#: to retry: a ``(timeout, not_after)`` tuple, where ``not_after`` is a
+#: :func:`time.monotonic` time it must give up by, or :const:`None` to raise at
+#: once. The worker sets it while it stores a task's state (see
+#: :func:`celery.app.trace.build_tracer`), so stores made from the worker's
+#: main process, or from the task body, still fail fast.
+store_retry = ContextVar('store_retry', default=None)
+
+#: The longest sleep between tries while :data:`store_retry` is set, so a
+#: store goes through soon after the backend is back.
+STORE_RETRY_MAX_SLEEP = 1.0
 
 MESSAGE_BUFFER_MAX = 8192
 
@@ -824,40 +837,53 @@ class Backend:
     def _sleep(self, amount):
         time.sleep(amount)
 
-    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, max_retries=None, **kwargs):
-        """Helper to execute a function with the backend's retry policy."""
+    def _ensure_retryable(self, func, *args, fallback_exc=None, fallback_msg=None, max_retries=None,
+                          deadline=None, **kwargs):
+        """Helper to execute a function with the backend's retry policy.
+
+        Errors that are safe to retry are retried up to ``max_retries`` times
+        with :setting:`result_backend_always_retry`, and, if ``deadline`` (a
+        :func:`time.monotonic` time) is given, until that time too.
+        """
         retries = 0
         limit = self.max_retries if max_retries is None else max_retries
         while True:
             try:
                 return func(*args, **kwargs)
             except Exception as exc:
-                if self.always_retry and self.exception_safe_to_retry(exc):
-                    if retries < limit:
-                        retries += 1
-                        logger.warning(
-                            'Failed operation %s. Retrying %s more times.',
-                            getattr(func, '__name__', repr(func)), limit - retries,
-                            exc_info=True)
-                        try:
-                            self.on_backend_retryable_error(exc)
-                        except Exception:
-                            logger.exception(
-                                "on_backend_retryable_error hook failed; continuing retry loop",
-                            )
-
-                        # get_exponential_backoff_interval computes integers
-                        # and time.sleep accept floats for sub second sleep
-                        sleep_amount = get_exponential_backoff_interval(
-                            self.base_sleep_between_retries_ms, retries,
-                            self.max_sleep_between_retries_ms, True) / 1000
-                        self._sleep(sleep_amount)
-                    else:
-                        if fallback_exc:
-                            raise_with_context(fallback_exc(fallback_msg))
-                        raise
-                else:
+                if not self.exception_safe_to_retry(exc):
                     raise
+                by_count = self.always_retry and retries < limit
+                remaining = None if deadline is None else deadline - time.monotonic()
+                if not by_count and not (remaining and remaining > 0):
+                    if self.always_retry and fallback_exc:
+                        raise_with_context(fallback_exc(fallback_msg))
+                    raise
+                retries += 1
+                name = getattr(func, '__name__', repr(func))
+                if deadline is None:
+                    logger.warning(
+                        'Failed operation %s. Retrying %s more times.',
+                        name, limit - retries, exc_info=True)
+                try:
+                    self.on_backend_retryable_error(exc)
+                except Exception:
+                    logger.exception(
+                        "on_backend_retryable_error hook failed; continuing retry loop",
+                    )
+
+                # get_exponential_backoff_interval computes integers
+                # and time.sleep accept floats for sub second sleep
+                sleep_amount = get_exponential_backoff_interval(
+                    self.base_sleep_between_retries_ms, retries,
+                    self.max_sleep_between_retries_ms, True) / 1000
+                if deadline is not None:
+                    if remaining > 0:
+                        sleep_amount = min(sleep_amount, STORE_RETRY_MAX_SLEEP, remaining)
+                    logger.warning(
+                        'Failed operation %s: %r. Retrying in %.2fs.',
+                        name, exc, sleep_amount)
+                self._sleep(sleep_amount)
 
     def store_result(self, task_id, result, state,
                      traceback=None, request=None, **kwargs):
@@ -868,6 +894,14 @@ class Backend:
         """
         result = self.encode_result(result, state)
 
+        deadline = None
+        retry = store_retry.get()
+        if retry is not None:
+            timeout, not_after = retry
+            deadline = time.monotonic() + timeout
+            if not_after is not None:
+                deadline = min(deadline, not_after)
+
         # Pass the values by position, as 5.6 did: backends outside Celery,
         # such as django-celery-results, name these parameters differently.
         self._ensure_retryable(
@@ -876,6 +910,7 @@ class Backend:
             fallback_exc=partial(BackendStoreError, task_id=task_id, state=state),
             fallback_msg="failed to store result on the backend",
             request=request,
+            deadline=deadline,
             **kwargs
         )
         return result
@@ -926,6 +961,16 @@ class Backend:
         to define which exceptions are safe.
         """
         return False
+
+    def store_error_safe_to_retry(self, exc):
+        """Check if a failed :meth:`store_result` is safe to retry.
+
+        True if the error, or the error that a :exc:`BackendStoreError`
+        was raised from, is safe to retry.
+        """
+        if isinstance(exc, BackendStoreError) and exc.__cause__ is not None:
+            exc = exc.__cause__
+        return self.exception_safe_to_retry(exc)
 
     def on_backend_retryable_error(self, exc):
         """Hook called before retrying a recoverable backend exception."""

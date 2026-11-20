@@ -933,6 +933,45 @@ Default: 10000
 This specifies the maximum sleep time between two backend operation retry.
 
 
+.. setting:: result_backend_store_retry_timeout
+
+``result_backend_store_retry_timeout``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.8
+
+Default: 20.0 seconds.
+
+How long a pool process keeps trying to store a task's state when the result
+backend is unreachable. This covers storing ``STARTED``, the result and the
+failure. Only errors that the backend reports as safe to retry, such as a lost
+connection, are retried. Between tries the process sleeps with the backoff of
+:setting:`result_backend_always_retry`, for at most a second, so the state is
+stored soon after the backend is back.
+
+This lets a task get through a short backend outage without being lost and
+without losing its result. With :setting:`task_track_started` and
+:setting:`task_acks_late`, a task that still can't store ``STARTED`` when the
+time is up goes back to the queue, and runs once the backend is back.
+
+While it waits, the pool process doesn't run other tasks. A task that can't
+store its result waits again to store its failure, so up to twice this long.
+The wait stops a second before the task's soft time limit, or its time limit
+if it has no soft one, so the task can still be requeued.
+
+Stores made from the task body, such as
+:meth:`Task.update_state() <celery.app.task.Task.update_state>`, stores made
+from the worker's main process, such as after a pool process is lost, and
+reads by clients don't wait. Set to ``0`` or :const:`None` to turn the wait
+off. A task that can't store ``STARTED`` then goes back to the queue at once,
+and keeps coming back, with a warning each time, until the backend is back.
+
+On a RabbitMQ quorum queue every requeue counts as a delivery, and the queue
+drops a message after its delivery limit, 20 by default. That limit bounds the
+outage a task survives, to about 20 times this timeout, or to about 20
+deliveries with the wait off.
+
+
 .. setting:: result_backend_base_sleep_between_retries_ms
 
 ``result_backend_base_sleep_between_retries_ms``
