@@ -591,7 +591,7 @@ class State:
                         worker = workers[hostname] = Worker(hostname)
                     task.worker = worker
                     if worker is not None and local_received:
-                        worker.event(None, local_received, timestamp)
+                        worker.event(None, timestamp, local_received)
 
                 origin = hostname if is_client_event else worker.id
 
