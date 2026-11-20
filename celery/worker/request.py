@@ -463,6 +463,36 @@ class Request:
                 self.id, exc, request=self._context,
                 store_result=self.store_errors,
             )
+            # Like the other terminal-FAILURE paths in this file (the
+            # worker-lost branch of on_failure(), Reject(requeue=False),
+            # the hard time-limit path), fire the task_failure signal
+            # so that alerting (Sentry and similar) sees the failure.
+            # The RETRY branch this replaces fired on_retry/task_retry
+            # instead, but those do not apply here: the message is
+            # already acknowledged, so this task will never run again.
+            einfo = None
+            try:
+                try:
+                    raise exc
+                except WorkerLostError:
+                    einfo = ExceptionInfo()
+                # Temporarily add the context to the request stack so
+                # that the task_failure handlers can access it.
+                self.task.request_stack.push(self._context)
+                try:
+                    signals.task_failure.send(
+                        sender=self.task, task_id=self.id, exception=exc,
+                        args=self.args, kwargs=self.kwargs,
+                        traceback=einfo.traceback, einfo=einfo,
+                    )
+                finally:
+                    self.task.request_stack.pop()
+            finally:
+                # Break the exc -> traceback -> frame reference cycle
+                # so this frame can be garbage-collected promptly.
+                if einfo is not None:
+                    del einfo
+                exc.__traceback__ = None
             self._already_cancelled = True
             return
 

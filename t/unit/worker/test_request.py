@@ -966,13 +966,42 @@ class test_Request(RequestCase):
         assert job.acknowledged
         job.time_start = monotonic()
         job.worker_pid = 314
-        job.cancel(pool, signal='TERM', emit_retry=True)
+        failure_handler = Mock(name='task_failure_handler')
+        retry_handler = Mock(name='task_retry_handler')
+        captured_request = []
+
+        def on_failure(sender, **kwargs):
+            captured_request.append(sender.request)
+            return failure_handler(sender=sender, **kwargs)
+
+        task_failure.connect(on_failure, sender=job.task, weak=False)
+        task_retry.connect(retry_handler, sender=job.task, weak=False)
+        try:
+            job.cancel(pool, signal='TERM', emit_retry=True)
+        finally:
+            task_failure.disconnect(on_failure, sender=job.task)
+            task_retry.disconnect(retry_handler, sender=job.task)
         pool.terminate_job.assert_called_with(job.worker_pid, signum)
         job.task.backend.mark_as_retry.assert_not_called()
         job.task.on_retry.assert_not_called()
         job.task.backend.mark_as_failure.assert_called_once()
         failure_exc = job.task.backend.mark_as_failure.call_args[0][1]
         assert isinstance(failure_exc, WorkerLostError)
+        # The terminal FAILURE must fire task_failure, like the
+        # worker-lost branch of on_failure() does, so that alerting
+        # (Sentry and similar) sees the cancelled task.  task_retry
+        # must not fire: the message is already acknowledged, so this
+        # task will never run again.
+        failure_handler.assert_called_once()
+        kwargs = failure_handler.call_args[1]
+        assert kwargs['task_id'] == job.id
+        assert isinstance(kwargs['exception'], WorkerLostError)
+        assert kwargs['args'] == job.args
+        assert kwargs['kwargs'] == job.kwargs
+        assert kwargs['traceback'] is not None
+        assert kwargs['einfo'] is not None
+        assert captured_request == [job._context]
+        retry_handler.assert_not_called()
         assert job._already_cancelled is True
 
     def test_cancel__unacknowledged_acks_late_stores_retry(self):
