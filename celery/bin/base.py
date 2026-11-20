@@ -62,9 +62,7 @@ class CLIContext:
     def secho(self, message=None, **kwargs):
         if self.no_color:
             kwargs['color'] = False
-            click.echo(message, **kwargs)
-        else:
-            click.secho(message, **kwargs)
+        click.secho(message, **kwargs)
 
     def echo(self, message=None, **kwargs):
         if self.no_color:
@@ -77,9 +75,7 @@ class CLIContext:
         kwargs['err'] = True
         if self.no_color:
             kwargs['color'] = False
-            click.echo(message, **kwargs)
-        else:
-            click.secho(message, **kwargs)
+        click.secho(message, **kwargs)
 
     def pretty(self, n):
         if isinstance(n, list):
