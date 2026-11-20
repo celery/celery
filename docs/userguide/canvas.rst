@@ -1057,6 +1057,56 @@ Enabling this flag will cause the chord header to invoke the errback for the bod
     in the group calls those of its body, and a chain those linked to the
     chain itself.
 
+.. _canvas-replacing-tasks:
+
+Replacing a task with a workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A bound task can use :meth:`~@Task.replace` to replace itself with another
+signature at runtime.  This is useful when the input determines the shape of
+the workflow, such as splitting a variable-length collection into parallel
+tasks and reducing their results afterwards.
+
+For example, this task replaces itself with a group followed by a callback:
+
+.. code-block:: python
+
+    from celery import group
+
+
+    @app.task
+    def add_one(value):
+        return value + 1
+
+
+    @app.task
+    def total(values):
+        return sum(values)
+
+
+    @app.task(bind=True)
+    def add_and_total(self, values):
+        workflow = group(add_one.s(value) for value in values) | total.s()
+        return self.replace(workflow)
+
+The replacement inherits the task ID and Celery links the callbacks,
+errbacks, and any remaining tasks in the original chain to the replacement.
+As a result, callers can continue to track the original result while workers
+execute the dynamically created workflow.
+
+The replacement above is a chord, so it requires a result backend that
+supports chords (see :ref:`chord-important-notes`).  Replacing a task with a
+bare group also creates a chord, and the original result becomes the list of
+results returned by that group.
+
+Pass an unevaluated signature to ``replace``; do not call ``delay`` or
+``apply_async`` on it first.  Always return ``self.replace(...)``.  In a
+worker, ``replace`` raises :exc:`~celery.exceptions.Ignore` to end the task,
+so nothing after it runs.  When the task runs eagerly, ``replace`` returns the
+replacement's result instead, and returning it makes that the task's result.
+As with other canvas workflows, avoid waiting for the replacement result
+inside the task.
+
 .. _chord-important-notes:
 
 Important Notes
