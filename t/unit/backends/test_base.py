@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import re
+import time
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 from uuid import UUID
@@ -1116,7 +1117,67 @@ class test_BaseBackend_dict:
         b._get_task_meta_for.return_value = {'status': states.PENDING}
         with pytest.raises(TimeoutError):
             b.wait_for(task_id='1', timeout=0.1, interval=0.5)
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        # The sleep is the remaining budget less the (tiny, real) time the
+        # poll itself took, so it lands just under the timeout.
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=0.01)
+
+    def test_wait_for__slow_backend_counts_towards_timeout(self):
+        """A slow get_task_meta must count against the timeout, not just sleeps.
+
+        Each poll takes 0.5s with timeout=1 and interval=0.2: the second
+        poll pushes the elapsed time past the deadline, so the wait must
+        raise after ~1.2s, not after ~4s of polls plus sleeps (#11111).
+        """
+        b = BaseBackend(app=self.app)
+
+        def slow_meta(*args, **kwargs):
+            time.sleep(0.5)
+            return {'status': states.PENDING}
+
+        b._get_task_meta_for = Mock(side_effect=slow_meta)
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=1, interval=0.2)
+        assert time.monotonic() - started < 2.5
+
+    def test_wait_for__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after ~1.2s, not after ~4s
+        of callbacks plus sleeps (#11111).
+        """
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={'status': states.PENDING})
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        started = time.monotonic()
+        with pytest.raises(TimeoutError):
+            b.wait_for(task_id='1', timeout=1, interval=0.2,
+                       on_interval=slow_interval)
+        assert time.monotonic() - started < 2.5
+
+    def test_wait_for__ready_on_final_poll_beats_deadline(self):
+        """A result that is ready on the poll crossing the deadline wins.
+
+        The single poll takes 0.6s with timeout=0.5, but it returns
+        SUCCESS, so wait_for returns the result instead of raising
+        TimeoutError: completed results take precedence over an expired
+        deadline.
+        """
+        b = BaseBackend(app=self.app)
+
+        def slow_ready_meta(*args, **kwargs):
+            time.sleep(0.6)
+            return {'status': states.SUCCESS, 'result': 42}
+
+        b._get_task_meta_for = Mock(side_effect=slow_ready_meta)
+        assert b.wait_for(task_id='1', timeout=0.5,
+                          interval=0.2)['result'] == 42
 
     def test_get_children(self):
         b = BaseBackend(app=self.app)
@@ -1815,7 +1876,10 @@ class test_KeyValueStoreBackend:
         self.b._cache[tasks[1]] = {'status': 'PENDING'}
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        # The sleep is the remaining budget less the (tiny, real) time the
+        # poll itself took, so it lands just under the timeout.
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=0.01)
 
     def test_get_many__timeout_zero_returns_results_that_are_ready(self):
         """A timeout of 0 still gets to return work that is already done."""
@@ -1854,7 +1918,54 @@ class test_KeyValueStoreBackend:
         got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
 
         assert {id: state['result'] for id, state in got.items()} == ids
-        assert sleep.call_args_list == [call(0.5)]
+        # One sleep of (almost) the full interval: the poll itself took a
+        # tiny amount of real time, which now counts against the budget.
+        assert len(sleep.call_args_list) == 1
+        assert sleep.call_args_list[0].args[0] == pytest.approx(0.5, abs=0.01)
+
+    def test_get_many__slow_backend_counts_towards_timeout(self):
+        """A slow mget must count against the timeout, not just sleeps.
+
+        Each poll takes 0.5s with timeout=1 and interval=0.2: the second
+        poll pushes the elapsed time past the deadline, so the wait must
+        raise after ~1.2s, not after ~4s of polls plus sleeps (#11111).
+        """
+        self.b._cache.clear()
+        tasks = [uuid() for _ in range(4)]
+
+        def slow_mget(keys):
+            time.sleep(0.5)
+            return [None for _ in keys]
+
+        self.b.mget = slow_mget
+        started = time.monotonic()
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=1, interval=0.2))
+        assert time.monotonic() - started < 2.5
+
+    def test_get_many__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after ~1.2s, not after ~4s
+        of callbacks plus sleeps (#11111).
+        """
+        self.b._cache.clear()
+        tasks = [uuid() for _ in range(4)]
+
+        def slow_mget(keys):
+            return [None for _ in keys]
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        self.b.mget = slow_mget
+        started = time.monotonic()
+        with pytest.raises(self.b.TimeoutError):
+            list(self.b.get_many(tasks, timeout=1, interval=0.2,
+                                 on_interval=slow_interval))
+        assert time.monotonic() - started < 2.5
 
     def test_get_many_passes_ready_states(self):
         tasks_length = 10

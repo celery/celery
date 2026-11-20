@@ -11,6 +11,7 @@ import warnings
 from collections import deque, namedtuple
 from datetime import timedelta
 from functools import partial
+from time import monotonic
 from uuid import UUID
 
 from billiard.einfo import ExceptionInfo
@@ -1137,11 +1138,16 @@ class SyncBackendMixin:
         time_elapsed = 0.0
 
         while 1:
+            started = monotonic()
             meta = self.get_task_meta(task_id)
             if meta['status'] in states.READY_STATES:
                 return meta
             if on_interval:
                 on_interval()
+            # Count the poll itself (backend request + callback) against
+            # the deadline, not just the sleep between polls, so a slow
+            # backend cannot push the wait past the timeout.
+            time_elapsed += monotonic() - started
             if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError('The operation timed out.')
             # avoid hammering the CPU checking status. Never sleep past the
@@ -1321,10 +1327,15 @@ class BaseKeyValueStoreBackend(Backend):
         time_elapsed = 0.0
         while ids:
             keys = list(ids)
+            started = monotonic()
             r = self._mget_to_results(self.mget([self.get_key_for_task(k)
                                                  for k in keys]), keys, READY_STATES)
             cache.update(r)
             ids.difference_update({bytes_to_str(v) for v in r})
+            # Count the backend request against the deadline, not just the
+            # sleep between polls, so a slow backend cannot push the wait
+            # past the timeout.
+            time_elapsed += monotonic() - started
             for key, value in r.items():
                 if on_message is not None:
                     on_message(value)
@@ -1337,7 +1348,11 @@ class BaseKeyValueStoreBackend(Backend):
             if timeout is not None and time_elapsed >= timeout:
                 raise TimeoutError(f'Operation timed out ({timeout})')
             if on_interval:
+                started = monotonic()
                 on_interval()
+                time_elapsed += monotonic() - started
+            if timeout is not None and time_elapsed >= timeout:
+                raise TimeoutError(f'Operation timed out ({timeout})')
             # don't busy loop, and never sleep past the deadline: with the
             # deadline counted in whole intervals, timeout=0 waited forever
             # and any timeout below interval overshot to interval.
