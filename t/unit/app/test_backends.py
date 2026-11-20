@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 import celery.contrib.testing.worker as contrib_embed_worker
+from celery import Celery
 from celery.app import backends
 from celery.backends.cache import CacheBackend
 from celery.exceptions import ImproperlyConfigured
@@ -82,6 +83,76 @@ def embed_worker(app,
             "Consider raising `shutdown_timeout` if your tasks take longer "
             "to execute."
         )
+
+
+class OverrideBackend(CacheBackend):
+    pass
+
+
+class test_override_backends:
+    backend_url = 'cache+memory://'
+    overrides = {'cache': f'{__name__}:OverrideBackend'}
+
+    def test_config_object(self):
+        class Config:
+            result_backend = self.backend_url
+            override_backends = self.overrides
+
+        with Celery(set_as_current=False) as app:
+            app.config_from_object(Config)
+            assert isinstance(app.backend, OverrideBackend)
+
+    @pytest.mark.parametrize('force', [False, True])
+    def test_namespaced_config_object(self, force):
+        class Config:
+            CELERY_RESULT_BACKEND = self.backend_url
+            CELERY_OVERRIDE_BACKENDS = self.overrides
+
+        with Celery(set_as_current=False) as app:
+            app.config_from_object(Config, namespace='CELERY', force=force)
+            assert isinstance(app.backend, OverrideBackend)
+
+    def test_app_namespace(self):
+        class Config:
+            CELERY_RESULT_BACKEND = self.backend_url
+            CELERY_OVERRIDE_BACKENDS = self.overrides
+
+        with Celery(set_as_current=False, namespace='CELERY') as app:
+            app.config_from_object(Config)
+            assert isinstance(app.backend, OverrideBackend)
+
+    def test_conf_update(self):
+        with Celery(set_as_current=False) as app:
+            app.conf.update(
+                result_backend=self.backend_url,
+                override_backends=self.overrides,
+            )
+            assert isinstance(app.backend, OverrideBackend)
+
+    def test_conf_attribute(self):
+        with Celery(set_as_current=False) as app:
+            app.conf.result_backend = self.backend_url
+            app.conf.override_backends = self.overrides
+            assert isinstance(app.backend, OverrideBackend)
+
+    def test_app_argument(self):
+        with Celery(
+            set_as_current=False,
+            backend=self.backend_url,
+            override_backends=self.overrides,
+        ) as app:
+            assert isinstance(app.backend, OverrideBackend)
+
+    def test_not_configured_keeps_builtin_backend(self):
+        with Celery(set_as_current=False) as app:
+            app.conf.result_backend = self.backend_url
+            assert type(app.backend) is CacheBackend
+
+    def test_not_configured_keeps_loader_override(self):
+        with Celery(set_as_current=False) as app:
+            app.loader.override_backends = self.overrides
+            app.conf.result_backend = self.backend_url
+            assert isinstance(app.backend, OverrideBackend)
 
 
 class test_backends:
