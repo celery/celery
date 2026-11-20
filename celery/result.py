@@ -12,7 +12,8 @@ from kombu.utils.objects import cached_property
 from vine import Thenable, barrier, promise
 
 from . import current_app, states
-from ._state import _set_task_join_will_block, task_join_will_block
+from ._state import _set_task_join_will_block  # noqa: F401  re-exported for celery.contrib.testing.worker
+from ._state import _override_task_join_will_block, task_join_will_block
 from .app import app_or_default
 from .exceptions import ImproperlyConfigured, IncompleteStream, TaskRevokedError, TimeoutError
 from .utils.graph import DependencyGraph, GraphFormatter
@@ -41,22 +42,14 @@ def assert_will_not_block():
 
 @contextmanager
 def allow_join_result():
-    reset_value = task_join_will_block()
-    _set_task_join_will_block(False)
-    try:
+    with _override_task_join_will_block(False):
         yield
-    finally:
-        _set_task_join_will_block(reset_value)
 
 
 @contextmanager
 def denied_join_result():
-    reset_value = task_join_will_block()
-    _set_task_join_will_block(True)
-    try:
+    with _override_task_join_will_block(True):
         yield
-    finally:
-        _set_task_join_will_block(reset_value)
 
 
 class ResultBase:
