@@ -497,6 +497,73 @@ class test_add_to_chord:
             return self.add_to_chord(sig, lazy)
         self.adds = adds
 
+        @self.app.task(shared=False, bind=True)
+        def add_to_all(self, nums, val):
+            for num in nums:
+                self.add_to_chord(add.s(num, val))
+            return 0
+        self.add_to_all = add_to_all
+
+        @self.app.task(shared=False)
+        def identity(x):
+            return x
+        self.identity = identity
+
+    def test_add_to_chord_eager(self):
+        # Issue #4071
+        from celery import chord
+        self.app.conf.task_always_eager = True
+        c = chord(
+            [self.add_to_all.s([1, 2], 4), self.add.si(10, 10)],
+            self.identity.s(),
+        )
+        assert c.delay().get() == [0, 20, 5, 6]
+
+    def test_add_to_chord_eager_apply_skips_result_backend(self):
+        from celery import chord
+        c = chord([self.add_to_all.s([1, 2], 4)], self.identity.s())
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = c.apply()
+        assert res.get() == [0, 5, 6]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_add_to_chord_eager_not_in_header(self):
+        from celery import chord
+        with pytest.raises(ValueError):
+            self.add_to_all.apply(([1], 4), throw=True)
+        c = chord([self.add.si(1, 1)], self.add_to_all.s(4))
+        with pytest.raises(ValueError):
+            c.apply().get()
+
+    def test_add_to_chord_eager_lazy(self):
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True)
+        def add_lazy(self):
+            self.add_to_chord(add.s(1, 2), lazy=True)
+            return 0
+
+        # The eager chord can't pass the result of the caller's own
+        # sig.delay() to the body, so lazy is refused instead.
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).apply().get()
+        self.app.conf.task_always_eager = True
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).delay().get()
+
+    def test_add_to_chord_eager_keeps_request_headers(self):
+        from celery import chord
+
+        @self.app.task(shared=False, bind=True)
+        def headers(self):
+            return self.request.headers
+
+        assert chord([headers.s()], self.identity.s()).apply().get() == [None]
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_add_to_chord(self):
         sig = self.add.s(2, 2)

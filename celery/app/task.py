@@ -99,6 +99,7 @@ class Context:
     """Task request variables (Task.request)."""
 
     _children = None   # see property
+    _eager_chord_added = None   # see Task.add_to_chord
     _protected = 0
     args = None
     callbacks = None
@@ -1030,6 +1031,8 @@ class Task:
             request['stamps'] = {
                 header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
             }
+        if '_eager_chord_added' in options:
+            request['_eager_chord_added'] = options['_eager_chord_added']
 
         tb = None
         tracer = build_tracer(
@@ -1199,13 +1202,35 @@ class Task:
 
         .. versionadded:: 4.0
 
-        Currently only supported by the Redis result backend.
+        Currently only supported by the Redis result backend, and by
+        chords run eagerly (:setting:`task_always_eager` or ``chord.apply()``),
+        where the signature is applied at once and its result is passed to
+        the chord body after the results of the header.  ``lazy`` isn't
+        supported in eager chords.
 
         Arguments:
             sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
+
+        Raises:
+            ValueError: If the current task isn't a member of any chord.
+            NotImplementedError: If ``lazy`` is enabled in a chord that
+                runs eagerly.
         """
+        added = self.request._eager_chord_added
+        if added is not None:
+            # An eager chord has no result backend to count on: it runs
+            # the signature here and keeps its result for the body.
+            if lazy:
+                # The result of a later sig.delay() can't reach the body,
+                # so refuse rather than silently leave it out.
+                raise NotImplementedError(
+                    'add_to_chord(lazy=True) is not supported in a chord '
+                    'that runs eagerly')
+            result = sig.apply()
+            added.append(result)
+            return result
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
         sig.set(
