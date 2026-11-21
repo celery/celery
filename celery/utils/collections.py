@@ -1,4 +1,6 @@
 """Custom maps, sets, sequences, and other data structures."""
+import functools
+import threading
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
@@ -34,6 +36,19 @@ __all__ = (
 REPR_LIMITED_SET = """\
 <{name}({size}): maxlen={0.maxlen}, expires={0.expires}, minlen={0.minlen}>\
 """
+
+
+def _synchronized(method):
+    """Run a ``LimitedSet`` method while holding the instance lock.
+
+    The lock is a re-entrant lock: the guarded methods call each other
+    (e.g. :meth:`LimitedSet.add` calls :meth:`LimitedSet.purge`).
+    """
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapper
 
 
 def force_mapping(m):
@@ -516,6 +531,11 @@ class LimitedSet:
         4000
         >>>> 57000 in s  # even this item is gone now
         False
+
+    The set is safe to use from multiple threads: the mutating
+    methods are guarded by a re-entrant lock (see :func:`_synchronized`),
+    so e.g. ``purge`` can no longer read ``self._heap[0]`` while
+    another thread pops the heap empty (issue #11141).
     """
 
     max_heap_percent_overload = 15
@@ -530,6 +550,10 @@ class LimitedSet:
         # Orders the items inserted within the clock resolution and keeps
         # the heap from ever comparing the items themselves.
         self._seq = count()
+        # Guards the compound heap/data operations in the mutating
+        # methods: without it, e.g. purge() can read ``self._heap[0]``
+        # while another thread pops the heap empty (issue #11141).
+        self._lock = threading.RLock()
 
         if data:
             # import items from data
@@ -552,12 +576,14 @@ class LimitedSet:
         if self._heap_overload >= self.max_heap_percent_overload:
             self._refresh_heap()
 
+    @_synchronized
     def clear(self):
         # type: () -> None
         """Clear all data, start from scratch again."""
         self._data.clear()
         self._heap[:] = []
 
+    @_synchronized
     def add(self, item, now=None):
         # type: (Any, float) -> None
         """Add a new item, or reset the expiry time of an existing item.
@@ -577,6 +603,7 @@ class LimitedSet:
         if self.maxlen and len(self._data) >= self.maxlen:
             self.purge()
 
+    @_synchronized
     def update(self, other):
         # type: (Iterable) -> None
         """Update this set from other LimitedSet, dict or iterable."""
@@ -619,6 +646,7 @@ class LimitedSet:
             for obj in other:
                 self.add(obj)
 
+    @_synchronized
     def discard(self, item):
         # type: (Any) -> None
         # mark an existing item as removed.  If KeyError is not found, pass.
@@ -626,6 +654,7 @@ class LimitedSet:
         self._maybe_refresh_heap()
     pop_value = discard
 
+    @_synchronized
     def purge(self, now=None):
         # type: (float) -> None
         """Check oldest items and remove them if needed.
@@ -651,6 +680,7 @@ class LimitedSet:
                     break  # oldest item hasn't expired yet
                 self.pop()
 
+    @_synchronized
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
         while self._heap:
@@ -666,6 +696,7 @@ class LimitedSet:
         # still hold an outdated entry for an item that was re-added since.
         return self._data.get(entry[2]) is entry
 
+    @_synchronized
     def as_dict(self):
         # type: () -> Dict
         """Whole set as serializable dictionary.
@@ -696,7 +727,10 @@ class LimitedSet:
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, _, i in sorted(self._data.values()))
+        # Materialize under the lock: iterating the live dict while
+        # another thread mutates it would raise RuntimeError.
+        with self._lock:
+            return iter([i for _, _, i in sorted(self._data.values())])
 
     def __len__(self):
         # type: () -> int
