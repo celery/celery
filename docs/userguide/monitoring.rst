@@ -357,7 +357,7 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
-.. versionchanged:: 5.8
+.. versionchanged:: 5.7.1
     :program:`celery events -d` runs dump mode again: the ``-d`` short
     option was previously declared for both ``--dump`` and ``--detach``, so
     click >= 8.5 resolved ``-d`` to ``--detach`` and the documented dump
