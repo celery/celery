@@ -247,6 +247,53 @@ class test_regen:
             next(iter_g)
         assert getattr(g, "_regen__done") is False
 
+    def test_getitem_after_mid_iteration_error(self):
+        class ExplodingList:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                yield from self.items
+                raise AssertionError("Iterator errored")
+
+        g = regen(ExplodingList([1, 2, 3]))
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g[5]
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+        # Indexing again must re-raise the recorded error instead of pulling
+        # from the repeatable base once more, which would duplicate the
+        # cached elements in __lookahead_consume() (#6794).
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g[5]
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+
+    def test_data_after_mid_iteration_error(self):
+        class ExplodingList:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                yield from self.items
+                raise AssertionError("Iterator errored")
+
+        g = regen(ExplodingList([1, 2, 3]))
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g.data
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+        # Accessing .data again must re-raise the recorded error instead of
+        # extending the cache a second time, which used to duplicate every
+        # element (#6794).
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g.data
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+
+    def test_data_concretises_without_error(self):
+        g = regen(x for x in [1, 2, 3])
+        assert g.data == [1, 2, 3]
+        assert getattr(g, "_regen__done") is True
+        # The cache is already complete, so a second access is a no-op.
+        assert g.data == [1, 2, 3]
+
     def test_length_hint_passthrough(self, g):
         assert g.__length_hint__() == 10
 
