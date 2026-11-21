@@ -1,5 +1,6 @@
 import gc
 import logging
+import sys
 import weakref
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -57,6 +58,9 @@ class test_proto1_to_proto2:
         assert headers == dict(self.body, group='123')
         assert decoded
         assert not utc
+
+
+IS_PYPY = hasattr(sys, 'pypy_version_info')
 
 
 class test_default_strategy_proto2:
@@ -290,6 +294,7 @@ class test_default_strategy_proto2:
         assert seen_entry_when_scheduled
         assert seen_entry_when_scheduled[0] is not None
 
+    @pytest.mark.skipif(IS_PYPY, reason='PyPy has no reference counting')
     @pytest.mark.parametrize('limit', [None, '1/m'])
     def test_eta_request_freed_without_gc_after_timer_fires(self, limit):
         # Regression test for #11139: the request must not be part of a
