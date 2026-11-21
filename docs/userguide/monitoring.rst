@@ -357,6 +357,14 @@ and it includes a tool to dump events to :file:`stdout`:
 
     $ celery -A proj events --dump
 
+.. versionchanged:: 5.8
+    :program:`celery events -d` runs dump mode again: the ``-d`` short
+    option was previously declared for both ``--dump`` and ``--detach``, so
+    click >= 8.5 resolved ``-d`` to ``--detach`` and the documented dump
+    mode was unreachable from its short option. The short option for
+    detaching a snapshot camera is now ``-D``, matching
+    :program:`celery worker`.
+
 For a complete list of options use :option:`!--help`:
 
 .. code-block:: console
