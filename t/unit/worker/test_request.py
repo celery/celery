@@ -21,6 +21,7 @@ from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevo
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.utils.time import maybe_make_aware
 from celery.worker import request as module
+from celery.worker import state as worker_state
 from celery.worker import strategy
 from celery.worker.request import Request, create_request_cls
 from celery.worker.request import logger as req_logger
@@ -1199,6 +1200,23 @@ class test_Request(RequestCase):
                 job.on_success((1, ExceptionInfo(), 0.01))
             else:
                 assert False
+
+    def test_on_success_SystemExit_cleans_up_active_state(self):
+        job = self.xRequest()
+        job.time_start = 1
+        worker_state.task_accepted(job)
+        assert job in worker_state.active_requests
+        with pytest.raises(SystemExit):
+            try:
+                raise SystemExit()
+            except SystemExit:
+                job.on_success((1, ExceptionInfo(), 0.01))
+            else:
+                assert False
+        # The exception propagates and takes the request out of circulation,
+        # so it must not stay in the worker's active state forever (#9318).
+        assert job not in worker_state.active_requests
+        assert job.id not in worker_state.requests
 
     def test_on_success_eventer(self):
         job = self.xRequest()

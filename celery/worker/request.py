@@ -621,6 +621,10 @@ class Request:
             if isinstance(exc, ExceptionWithTraceback):
                 exc = exc.exc
             if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                # The exception is about to propagate and take the worker
+                # down: drop the request from the worker state first, or it
+                # would stay in active_requests forever (#9318).
+                task_ready(self)
                 raise exc
             return self.on_failure(retval, return_ok=True)
         task_ready(self, successful=True)
