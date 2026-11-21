@@ -1,8 +1,12 @@
+import gc
 import logging
+import weakref
 from contextlib import contextmanager
+from types import SimpleNamespace
 from unittest.mock import ANY, Mock, patch
 
 import pytest
+from kombu.asynchronous.timer import Entry
 from kombu.utils.limits import TokenBucket
 
 from celery import Task, signals
@@ -285,6 +289,42 @@ class test_default_strategy_proto2:
 
         assert seen_entry_when_scheduled
         assert seen_entry_when_scheduled[0] is not None
+
+    @pytest.mark.parametrize('limit', [None, '1/m'])
+    def test_eta_request_freed_without_gc_after_timer_fires(self, limit):
+        # Regression test for #11139: the request must not be part of a
+        # reference cycle (request -> timer entry -> args -> request), or it
+        # stays alive with its message body until a full GC run.
+        pending = []
+
+        def call_at(eta, fun, args=(), kwargs=None, priority=0):
+            entry = Entry(fun, args, kwargs)
+            pending.append(entry)  # the timer's queue owns the entry
+            return entry
+
+        gc.collect()
+        gc.disable()
+        try:
+            # Receivers left connected by other tests may hold the request,
+            # and a Mock would record it, so use a recording-free stand-in.
+            with patch('celery.worker.strategy.signals.task_received',
+                       new=SimpleNamespace(send=lambda **kwargs: None)), \
+                    self._context(self.add.s(2, 2).set(countdown=10),
+                                  limit=limit) as C:
+                C.consumer.timer.call_at.side_effect = call_at
+                C()
+                req = pending[0].args[0]
+                assert req._eta_timer_entry() is pending[0]
+                ref = weakref.ref(req)
+                # The timer fires and drops the entry, the task finishes.
+                pending.clear()
+                state.task_ready(req)
+                # The mock consumer records the call args, which hold req.
+                C.consumer.reset_mock()
+                del req
+                assert ref() is None
+        finally:
+            gc.enable()
 
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:
