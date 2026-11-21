@@ -1,5 +1,6 @@
 """Task execution strategy (optimization)."""
 import logging
+import weakref
 
 from kombu.asynchronous.timer import to_timestamp
 
@@ -197,8 +198,14 @@ def default(task, app, consumer,
 
         if eta and bucket:
             consumer.qos.increment_eventually()
-            req._eta_timer_entry = call_at(
-                eta, limit_post_eta, (req, bucket, 1), priority=6)
+            # Store only a weak reference to the timer entry: the entry's
+            # args hold the request, so a strong reference here would make
+            # a request <-> entry cycle that reference counting can't free
+            # once the entry has fired (#11139). The timer queue keeps the
+            # entry alive until it fires or is cancelled.
+            req._eta_timer_entry = weakref.ref(
+                call_at(eta, limit_post_eta, (req, bucket, 1), priority=6)
+            )
             # Only make the request visible to on_close()/query_task() once
             # its timer entry is attached, so a concurrent on_close() (e.g.
             # celery.utils.timer2.Timer runs on its own thread for
@@ -209,8 +216,11 @@ def default(task, app, consumer,
 
         if eta:
             consumer.qos.increment_eventually()
-            req._eta_timer_entry = call_at(
-                eta, apply_eta_task, (req,), priority=6)
+            # See above: keep only a weak reference to the timer entry so
+            # the request can be freed once the entry has fired (#11139).
+            req._eta_timer_entry = weakref.ref(
+                call_at(eta, apply_eta_task, (req,), priority=6)
+            )
             task_scheduled(req)
             return task_message_handler
         if bucket:

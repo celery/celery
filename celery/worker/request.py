@@ -78,10 +78,15 @@ class Request:
     _apply_result = None
     _tzlocal = None
 
-    #: Timer entry for this request's pending ETA/countdown callback, set by
-    #: :mod:`celery.worker.strategy` when the request is scheduled so that
+    #: Weak reference to the timer entry for this request's pending
+    #: ETA/countdown callback, set by :mod:`celery.worker.strategy` when
+    #: the request is scheduled so that
     #: :meth:`celery.worker.consumer.Consumer.on_close` can cancel it on
-    #: connection loss.  ``None`` for requests without an ETA.
+    #: connection loss. A weak reference (rather than the entry itself)
+    #: because the entry's args hold the request: a strong reference here
+    #: would make a request <-> entry cycle that reference counting can't
+    #: free once the entry has fired (#11139). ``None`` for requests
+    #: without an ETA, or once the entry has fired or been cancelled.
     _eta_timer_entry = None
 
     if not IS_PYPY:  # pragma: no cover

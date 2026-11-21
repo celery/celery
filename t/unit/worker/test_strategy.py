@@ -1,5 +1,8 @@
+import gc
 import logging
+import weakref
 from contextlib import contextmanager
+from time import monotonic, sleep
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -285,6 +288,90 @@ class test_default_strategy_proto2:
 
         assert seen_entry_when_scheduled
         assert seen_entry_when_scheduled[0] is not None
+
+    def test_eta_task_timer_entry_is_weak_reference(self):
+        # #11139: the request must hold only a weak reference to its
+        # timer entry, so no request <-> entry cycle is created.
+        with self._context(self.add.s(2, 2).set(countdown=10)) as C:
+            C()
+            req = C.get_request()
+            ref = req._eta_timer_entry
+            assert isinstance(ref, weakref.ref)
+            assert ref() is C.consumer.timer.call_at.return_value
+
+    def test_rate_limited_eta_task_timer_entry_is_weak_reference(self):
+        # #11139: same as above for the rate-limited ETA branch, whose
+        # entry args also hold the request.
+        task = self.add.s(2, 2).set(countdown=10)
+        with self._context(task, rate_limits=True, limit='1/m') as C:
+            C()
+            req = C.get_request()
+            ref = req._eta_timer_entry
+            assert isinstance(ref, weakref.ref)
+            assert ref() is C.consumer.timer.call_at.return_value
+
+    def test_eta_task_request_freed_after_timer_fires(self):
+        # Regression test for #11139: the timer entry's args hold the
+        # request, so storing the entry strongly on the request makes a
+        # request <-> entry cycle that reference counting can't free once
+        # the entry has fired. With the cyclic GC disabled, the request
+        # must still be freed after the timer fires and task_ready().
+        from celery.utils.timer2 import Timer
+
+        timer = Timer()
+        try:
+            gc.disable()
+            try:
+                # The strategy sends signals.task_received, whose
+                # receivers include a Mock left connected by
+                # test_signal_task_received that would retain the request
+                # in its call args. Silence the signal here: delivery is
+                # covered by that test, and this one is about the timer.
+                # (The patch mock itself records the send, so reset it
+                # below along with the consumer mock.)
+                with patch.object(
+                    signals.task_received, 'send',
+                ) as send_mock:
+                    with self._context(
+                        self.add.s(2, 2).set(countdown=0.1)
+                    ) as C:
+                        C.consumer.timer.call_at.side_effect = timer.call_at
+                        C()
+                        assert C.was_scheduled()
+                        req = next(iter(state.requests.values()))
+                        req_ref = weakref.ref(req)
+                        # Wait for the timer thread to fire the entry.
+                        deadline = monotonic() + 5
+                        while not C.consumer.apply_eta_task.called:
+                            if monotonic() > deadline:
+                                raise AssertionError(
+                                    'timer entry did not fire')
+                            sleep(0.01)
+                        state.task_ready(req)
+                        # Drop every strong reference the strategy and
+                        # the test kept: the mocks recorded the request
+                        # in their call args (the parent mock's
+                        # mock_calls included).
+                        C.consumer.reset_mock()
+                        send_mock.reset_mock()
+                        del req
+                        # The timer's scheduler iterator keeps the most
+                        # recently fired entry alive until the next one
+                        # is popped, so fire a second no-op entry to
+                        # release it.
+                        fired = []
+                        timer.call_after(0, lambda: fired.append(True), ())
+                        deadline = monotonic() + 5
+                        while not fired:
+                            if monotonic() > deadline:
+                                raise AssertionError(
+                                    'dummy timer entry did not fire')
+                            sleep(0.01)
+                        assert req_ref() is None
+            finally:
+                gc.enable()
+        finally:
+            timer.stop()
 
     def test_eta_task_utc_disabled(self):
         with self._context(self.add.s(2, 2).set(countdown=10), utc=False) as C:
