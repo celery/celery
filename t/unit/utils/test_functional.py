@@ -236,18 +236,16 @@ class test_regen:
             assert e == next(iter_g)
         with pytest.raises(AssertionError, match="Iterator errored"):
             next(iter_g)
-        # The following checks are for the known "misbehaviour"
         assert getattr(g, "_regen__done") is False
-        # If the `regen()` instance doesn't think it's done then it'll dupe the
-        # elements from the underlying iterator if it can be reused
+        # Re-iterating replays the cached elements and re-raises the same
+        # error: a repeatable base must not be pulled from again (#6794),
+        # which used to duplicate every element it had already yielded.
         iter_g = iter(g)
-        for e in original_list * 2:
+        for e in original_list:
             assert next(iter_g) == e
-        with pytest.raises(StopIteration):
+        with pytest.raises(AssertionError, match="Iterator errored"):
             next(iter_g)
-        assert getattr(g, "_regen__done") is True
-        # Finally we xfail this test to keep track of it
-        raise pytest.xfail(reason="#6794")
+        assert getattr(g, "_regen__done") is False
 
     def test_length_hint_passthrough(self, g):
         assert g.__length_hint__() == 10
