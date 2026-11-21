@@ -1,4 +1,6 @@
 import pickle
+import threading
+import time
 from collections.abc import Mapping
 from copy import copy
 from itertools import count
@@ -340,6 +342,39 @@ class test_LimitedSet:
         assert s.minlen == len(s)
         assert len(s._heap) <= s.maxlen * (
             100. + s.max_heap_percent_overload) / 100
+
+    def test_purge_is_thread_safe(self):
+        # Regression test for #11141: purge() used to read self._heap[0]
+        # without a lock, so a concurrent pop() emptying the heap raised
+        # IndexError out of purge (or out of add, which calls purge).
+        s = LimitedSet(maxlen=50, expires=0.05, minlen=0)
+        stop = threading.Event()
+        errors = []
+
+        def adder():
+            i = 0
+            while not stop.is_set():
+                s.add(f'k{i}')
+                i += 1
+
+        def purger():
+            while not stop.is_set():
+                try:
+                    s.purge()
+                    if s._data:
+                        s.pop()
+                except IndexError as exc:
+                    errors.append(exc)
+                    return
+
+        threads = [threading.Thread(target=adder) for _ in range(2)]
+        threads += [threading.Thread(target=purger) for _ in range(2)]
+        [t.start() for t in threads]
+        time.sleep(3)
+        stop.set()
+        [t.join(10) for t in threads]
+        assert not errors
+
 
     def test_add_orders_items_within_the_clock_resolution(self):
         s = LimitedSet(maxlen=10)
