@@ -203,9 +203,32 @@ class _regen(UserList, list):
         self.__it = it
         self.__consumed = []
         self.__done = False
+        self.__error = None
 
     def __reduce__(self):
         return list, (self.data,)
+
+    def __pull(self, it):
+        """Pull the next item from ``it``, recording the iterator's state.
+
+        Exhaustion sets ``__done``.  A non-StopIteration exception is
+        remembered (#6794) so that later iterations replay the cached
+        elements and re-raise it, instead of pulling from a repeatable
+        iterable again and yielding duplicated elements.
+        """
+        try:
+            item = next(it)
+        except StopIteration:
+            self.__done = True
+            raise
+        except Exception as exc:
+            self.__error = exc
+            raise
+        return item
+
+    def __raise_if_errored(self):
+        if self.__error is not None:
+            raise self.__error
 
     def map(self, func):
         self.__consumed = [func(el) for el in self.__consumed]
@@ -216,9 +239,10 @@ class _regen(UserList, list):
 
     def __lookahead_consume(self, limit=None):
         if not self.__done and (limit is None or limit > 0):
+            self.__raise_if_errored()
             it = iter(self.__it)
             try:
-                now = next(it)
+                now = self.__pull(it)
             except StopIteration:
                 return
             self.__consumed.append(now)
@@ -226,10 +250,9 @@ class _regen(UserList, list):
             # underlying iterator gets exhausted
             while not self.__done:
                 try:
-                    next_ = next(it)
+                    next_ = self.__pull(it)
                     self.__consumed.append(next_)
                 except StopIteration:
-                    self.__done = True
                     break
                 finally:
                     yield now
@@ -256,15 +279,16 @@ class _regen(UserList, list):
             if index >= len(self.__consumed):
                 if self.__done:
                     return
+                if self.__error is not None:
+                    raise self.__error
                 if it is None:
                     # map() may replace the source while we replay cached items.
                     it = iter(self.__it)
                     # __iter__() may itself consume and populate our cache.
                     continue
                 try:
-                    self.__consumed.append(next(it))
+                    self.__consumed.append(self.__pull(it))
                 except StopIteration:
-                    self.__done = True
                     return
                 pulling = True
             if (not pulling or self.__done or
@@ -274,9 +298,9 @@ class _regen(UserList, list):
                 # Maintain a single look-ahead to ensure we set `__done` when
                 # the underlying iterator gets exhausted
                 try:
-                    self.__consumed.append(next(it))
+                    self.__consumed.append(self.__pull(it))
                 except StopIteration:
-                    self.__done = True
+                    pass
                 finally:
                     yield self.__consumed[index]
             index += 1
@@ -313,7 +337,12 @@ class _regen(UserList, list):
     @property
     def data(self):
         if not self.__done:
-            self.__consumed.extend(self.__it)
+            self.__raise_if_errored()
+            try:
+                self.__consumed.extend(self.__it)
+            except Exception as exc:
+                self.__error = exc
+                raise
             self.__done = True
         return self.__consumed
 
