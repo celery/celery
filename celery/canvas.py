@@ -634,7 +634,7 @@ class Signature(dict):
 
     partial = clone
 
-    def freeze(self, _id=None, group_id=None, chord=None,
+    def freeze(self, _id=None, group_id=None, chord=None, workflow=None,
                root_id=None, parent_id=None, group_index=None):
         """Finalize the signature by adding a concrete task id.
 
@@ -677,6 +677,8 @@ class Signature(dict):
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
+        if workflow:
+            opts['workflow'] = workflow
         if group_index is not None:
             opts['group_index'] = group_index
         # pylint: disable=too-many-function-args
@@ -1238,7 +1240,7 @@ class _chain(Signature):
         return self.run(args, kwargs, app=app, **(
             dict(self.options, **options) if options else self.options))
 
-    def run(self, args=None, kwargs=None, group_id=None, chord=None,
+    def run(self, args=None, kwargs=None, group_id=None, chord=None, workflow=None,
             task_id=None, link=None, link_error=None, publisher=None,
             producer=None, root_id=None, parent_id=None, app=None,
             group_index=None, **options):
@@ -1262,7 +1264,7 @@ class _chain(Signature):
         # Unpack nested chains/groups/chords
         tasks, results_from_prepare = self.prepare_steps(
             args, kwargs, self.tasks, root_id, parent_id, link_error, app,
-            task_id, group_id, chord, group_index=group_index,
+            task_id, group_id, chord, workflow, group_index=group_index,
         )
 
         # For a chain of single task, execute the task directly and return the result for that task
@@ -1286,13 +1288,13 @@ class _chain(Signature):
 
     # in order for a chain to be frozen, each of the members of the chain individually needs to be frozen
     # TODO figure out why we are always cloning before freeze
-    def freeze(self, _id=None, group_id=None, chord=None,
+    def freeze(self, _id=None, group_id=None, chord=None, workflow=None,
                root_id=None, parent_id=None, group_index=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
         _, results = self._frozen = self.prepare_steps(
             self.args, self.kwargs, self.tasks, root_id, parent_id, None,
-            self.app, _id, group_id, chord, clone=False,
+            self.app, _id, group_id, chord, workflow, clone=False,
             group_index=group_index,
         )
         return results[0]
@@ -1312,7 +1314,7 @@ class _chain(Signature):
 
     def prepare_steps(self, args, kwargs, tasks,
                       root_id=None, parent_id=None, link_error=None, app=None,
-                      last_task_id=None, group_id=None, chord_body=None,
+                      last_task_id=None, group_id=None, chord_body=None, workflow=None,
                       clone=True, from_dict=Signature.from_dict,
                       group_index=None):
         """Prepare the chain for execution.
@@ -1488,7 +1490,7 @@ class _chain(Signature):
                 # chord callback for the last task.
                 res = task.freeze(
                     last_task_id,
-                    root_id=root_id, group_id=group_id, chord=chord_body,
+                    root_id=root_id, group_id=group_id, chord=chord_body, workflow=workflow,
                     group_index=group_index,
                 )
             else:
@@ -2165,7 +2167,7 @@ class group(Signature):
             options.pop('task_id', uuid()))
         return options, group_id, options.get('root_id')
 
-    def _freeze_group_tasks(self, _id=None, group_id=None, chord=None,
+    def _freeze_group_tasks(self, _id=None, group_id=None, chord=None, workflow=None,
                             root_id=None, parent_id=None, group_index=None):
         """Freeze the tasks in the group.
 
@@ -2187,6 +2189,8 @@ class group(Signature):
             opts['group_id'] = group_id
         if chord:
             opts['chord'] = chord
+        if workflow:
+            opts['workflow'] = workflow
         if group_index is not None:
             opts['group_index'] = group_index
         root_id = opts.setdefault('root_id', root_id)
@@ -2216,11 +2220,11 @@ class group(Signature):
                 self.tasks = new_tasks
         return gid, results
 
-    def freeze(self, _id=None, group_id=None, chord=None,
+    def freeze(self, _id=None, group_id=None, chord=None, workflow=None,
                root_id=None, parent_id=None, group_index=None):
         return self.app.GroupResult(*self._freeze_group_tasks(
             _id=_id, group_id=group_id,
-            chord=chord, root_id=root_id, parent_id=parent_id, group_index=group_index
+            chord=chord, workflow=workflow, root_id=root_id, parent_id=parent_id, group_index=group_index
         ))
 
     _freeze = freeze
@@ -2426,7 +2430,7 @@ class _chord(Signature):
         else:
             return super().__or__(other)
 
-    def freeze(self, _id=None, group_id=None, chord=None,
+    def freeze(self, _id=None, group_id=None, chord=None, workflow=None,
                root_id=None, parent_id=None, group_index=None):
         # pylint: disable=redefined-outer-name
         #   XXX chord is also a class in outer scope.
@@ -2441,7 +2445,7 @@ class _chord(Signature):
         body_result = None
         if self.body is not None:
             body_result = self.body.freeze(
-                _id, root_id=root_id, chord=chord, group_id=group_id,
+                _id, root_id=root_id, chord=chord, workflow=workflow, group_id=group_id,
                 group_index=group_index)
             # we need to link the body result back to the group result,
             # but the body may actually be a chain,
@@ -2683,6 +2687,7 @@ class _chord(Signature):
         options.pop('chain', None)
         # Neither should chords, for deeply nested chords to work
         options.pop('chord', None)
+        options.pop('workflow', None)
         options.pop('task_id', None)
 
         header.options['task_id'] = group_id

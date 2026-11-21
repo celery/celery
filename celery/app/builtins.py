@@ -28,8 +28,13 @@ def add_accumulate_task(app):
     """Task used by Task.replace when replacing task with group."""
     @app.task(bind=True, name='celery.accumulate', shared=False, lazy=False)
     def accumulate(self, *args, **kwargs):
-        index = kwargs.get('index')
-        return args[index] if index is not None else args
+        index = kwargs.get('index', None)
+        if index is not None:
+            return args[index]
+        kwarg = kwargs.get('kwarg', None)
+        if kwarg is not None:
+            return kwargs[kwarg]
+        return args
     return accumulate
 
 

@@ -105,6 +105,7 @@ class Context:
     called_directly = True
     chain = None
     chord = None
+    workflow = None
     correlation_id = None
     delivery_info = None
     errbacks = None
@@ -710,6 +711,17 @@ class Task:
         if self.soft_time_limit and self.time_limit and self.soft_time_limit > self.time_limit:
             raise ValueError('soft_time_limit must be less than or equal to time_limit')
 
+        if "kwarg_mapping" in options:
+            kwargs.update(
+                {
+                    kwarg: args[0][idx] if isinstance(idx, int) else [args[0][lidx] for lidx in idx]
+                    for kwarg, idx in options["kwarg_mapping"].items()
+                }
+            )
+            args = args[1:]
+        elif self.request.workflow and options.get("unpack_outputs", False):
+            args = args[0] if args else ()
+
         if self.typing:
             try:
                 check_arguments = self.__header__
@@ -1144,6 +1156,11 @@ class Task:
             raise ImproperlyConfigured(
                 "A signature replacing a task must not be part of a chord"
             )
+        workflow = self.request.workflow
+        if 'workflow' in sig.options:
+            raise ImproperlyConfigured(
+                "A signature replacing a task must not be part of a workflow"
+            )
         if isinstance(sig, _chain) and not getattr(sig, "tasks", True):
             raise ImproperlyConfigured("Cannot replace with an empty chain")
 
@@ -1173,6 +1190,7 @@ class Task:
         replaced_task_nesting = self.request.get('replaced_task_nesting', 0) + 1
         sig.set(
             chord=chord,
+            workflow=workflow,
             group_id=self.request.group,
             group_index=self.request.group_index,
             root_id=self.request.root_id,

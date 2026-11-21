@@ -1421,6 +1421,7 @@ class test_tasks(TasksCase):
         sig1.freeze.assert_called_once_with(self.mytask.request.id)
         sig1.set.assert_called_once_with(replaced_task_nesting=1,
                                          chord=ANY,
+                                         workflow=ANY,
                                          group_id=ANY,
                                          group_index=ANY,
                                          root_id=ANY)

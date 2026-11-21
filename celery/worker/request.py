@@ -956,6 +956,13 @@ class Request:
         return embed.get('chord')
 
     @cached_property
+    def workflow(self):
+        # pylint: disable=unpacking-non-sequence
+        #    payload is a property, so pylint doesn't think it's a tuple.
+        _, _, embed = self._payload
+        return embed.get('workflow')
+
+    @cached_property
     def errbacks(self):
         # used by backend.mark_as_failure when failure is reported
         # by parent process
