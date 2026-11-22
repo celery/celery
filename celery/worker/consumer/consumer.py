@@ -603,7 +603,8 @@ class Consumer:
         # drop our copies since the broker may redeliver these tasks to
         # another worker on reconnect.
         for r in tuple(scheduled_requests):
-            entry = r._eta_timer_entry
+            ref = r._eta_timer_entry
+            entry = ref() if ref is not None else None
             if entry is not None and self.timer is not None:
                 try:
                     self.timer.cancel(entry)
