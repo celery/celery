@@ -1212,7 +1212,7 @@ class Task:
             sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
-
+.. versionchanged:: 5.7
         Raises:
             ValueError: If the current task isn't a member of any chord.
             NotImplementedError: If ``lazy`` is enabled in a chord that
