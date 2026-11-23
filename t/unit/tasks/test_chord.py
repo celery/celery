@@ -250,6 +250,32 @@ class test_unlock_chord_task(ChordCase):
                 cb.type.apply_async.assert_called_once()
                 assert not retry.call_count
 
+    def test_unlock_retry_refused_when_another_worker_finishes(self):
+        # The copy that finds another worker's fresh claim retries;
+        # if the retry itself cannot be scheduled, the chord is left
+        # to that worker instead of being failed or dispatched twice.
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        status, _token = self.app.backend.try_claim_chord_unlock(group_id)
+        assert status == 'claimed'
+        callback.apply_async = Mock()
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        with patch_unlock_retry(self.app) as (unlock, retry):
+            retry.side_effect = RuntimeError('broker down')
+            unlock_chord(
+                group_id, callback.s(), interval=10, max_retries=30,
+                result=[], GroupResult=AlwaysReady,
+            )
+        retry.assert_called_with(countdown=10, max_retries=30)
+        callback.apply_async.assert_not_called()
+
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')
         GroupResult.return_value.ready.side_effect = KeyError('foo')

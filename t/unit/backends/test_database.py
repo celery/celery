@@ -1164,6 +1164,83 @@ class test_DatabaseBackend_chord_unlock_claim:
         status, token = self.b.try_claim_chord_unlock(gid)
         assert status == 'claimed'
 
+    def test_vanished_row_is_reinserted(self):
+        # The claim row disappears (a new chord run reset it) between
+        # the lost insert and the locked read: the insert is tried
+        # once more and wins.
+        import time
+
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'other-copy', 'claimed_at': time.time()},
+            states.STARTED,
+        )
+        orig_query_task = self.b._query_task
+
+        def query_after_reset(session, task_id, for_update=False):
+            session.query(self.b.task_cls).filter_by(
+                task_id=task_id).delete()
+            session.flush()
+            return orig_query_task(session, task_id,
+                                   for_update=for_update)
+
+        with patch.object(self.b, '_query_task', query_after_reset):
+            status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+        assert token != 'other-copy'
+
+    def test_vanished_row_lost_again_to_a_copy(self):
+        # The row is gone when read under the lock, but a copy inserts
+        # it again before our second insert: we must not claim too.
+        import time
+
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'other-copy', 'claimed_at': time.time()},
+            states.STARTED,
+        )
+        with patch.object(self.b, '_query_task', return_value=[]):
+            status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_claim_failure_fails_open_on_unexpected_error(self):
+        # An unexpected storage error must not lose the chord body.
+        with patch.object(
+                self.b, '_update_result',
+                side_effect=RuntimeError('boom')):
+            status, token = self.b.try_claim_chord_unlock(uuid())
+        assert status == 'claimed'
+        assert token
+
+    def test_decide_with_malformed_claimed_at_is_treated_as_abandoned(self):
+        # A stored lease whose claimed_at cannot be parsed must not
+        # block the chord forever: it is treated as abandoned.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'lost-worker', 'claimed_at': 'not-a-time'},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'lost-worker'
+
+    def test_decide_with_non_dict_payload_is_treated_as_abandoned(self):
+        # Same for a stored lease that is not a dict at all.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            'not-a-dict',
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+
 
 @skip.if_pypy
 class test_DatabaseBackend_result_extended():

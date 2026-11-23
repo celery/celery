@@ -356,9 +356,11 @@ class DatabaseBackend(BaseBackend):
                 # Lost the insert race (or the row pre-existed): decide
                 # on the stored row under a lock.
                 task = self._query_task(session, claim_id, for_update=True)
-                if task is None:
+                if not task:
                     # The row vanished (reset) between the insert and
-                    # the read: try the insert once more.
+                    # the read: try the insert once more.  (_query_task
+                    # returns [] -- not None -- when the row is missing,
+                    # like everywhere else in this file.)
                     task = self.task_cls(claim_id)
                     self._update_result(
                         task,

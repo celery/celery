@@ -484,6 +484,67 @@ class test_chord_unlock_claim:
         assert status == 'claimed'
         assert token
 
+    def test_malformed_lease_claimed_at_is_treated_as_abandoned(self):
+        # A stored lease whose claimed_at cannot be parsed must not
+        # block the chord forever: it is treated as abandoned.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'other-copy', 'claimed_at': 'not-a-time'},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'other-copy'
+
+    def test_non_dict_lease_payload_is_treated_as_abandoned(self):
+        # Same for a stored lease that is not a dict at all.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            'not-a-dict',
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+
+    def test_claim_store_failure_fails_open(self):
+        # If the lease cannot be stored, the chord must still be
+        # finished rather than lost.
+        with patch.object(
+                self.b, 'store_result',
+                side_effect=RuntimeError('backend down')):
+            status, token = self.b.try_claim_chord_unlock(uuid())
+        assert status == 'claimed'
+        assert token
+
+    def test_claim_sees_dispatched_on_second_read(self):
+        # Another copy finishes the chord between our lease write and
+        # our re-read: we must not finish it as well.
+        calls = []
+
+        def get_meta(task_id, cache=True):
+            calls.append(task_id)
+            if len(calls) == 1:
+                return {'status': states.PENDING, 'result': None}
+            return {'status': states.SUCCESS,
+                    'result': {'token': 'other-copy'}}
+
+        with patch.object(self.b, 'get_task_meta', side_effect=get_meta):
+            status, token = self.b.try_claim_chord_unlock(uuid())
+        assert status == 'dispatched'
+        assert token is None
+        assert len(calls) == 2
+
+    def test_mark_dispatched_store_failure_is_silent(self):
+        # A failed marker write must not raise: the lease is left
+        # behind and expires, as documented.
+        with patch.object(
+                self.b, 'store_result',
+                side_effect=RuntimeError('backend down')):
+            assert self.b.mark_chord_unlock_dispatched(uuid()) is None
+
 
 class test_exception_pickle:
     def test_BaseException(self):
