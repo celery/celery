@@ -145,7 +145,7 @@ class test_Timer:
                 try:
                     barrier.wait(timeout=5)
                     timer.ensure_started()
-                except Exception as exc:  # noqa: BLE001 - record any race error
+                except Exception as exc:  # - record any race error
                     errors.append(repr(exc))
 
             threads = [threading.Thread(target=worker) for _ in range(8)]
