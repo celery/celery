@@ -108,10 +108,14 @@ class Timer(threading.Thread):
             self.running = False
 
     def ensure_started(self) -> None:
-        if not self.running and not self.is_alive():
-            if self.on_start:
-                self.on_start(self)
-            self.start()
+        # Guard the check-then-start with the existing mutex: without it two
+        # threads first touching the shared timer can both pass the guard and
+        # call Thread.start() twice (RuntimeError / double run loop).
+        with self.mutex:
+            if not self.running and not self.is_alive():
+                if self.on_start:
+                    self.on_start(self)
+                self.start()
 
     def _do_enter(self, meth: str, *args: Any, **kwargs: Any) -> Entry:
         self.ensure_started()

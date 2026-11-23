@@ -124,3 +124,36 @@ class test_Timer:
         tref = Mock()
         t.cancel(tref)
         tref.cancel.assert_called_with()
+
+
+    def test_ensure_started_concurrent_first_use(self):
+        """Concurrent first use must start the timer thread once (GH #11151).
+
+        Before the fix both callers could pass the unguarded
+        ``if not self.running and not self.is_alive()`` check and each call
+        ``Thread.start()``, raising ``RuntimeError`` (and potentially booting
+        two ``run()`` loops over one schedule).
+        """
+        import threading
+
+        for _ in range(20):
+            timer = timer2.Timer(max_interval=0.01)
+            barrier = threading.Barrier(8)
+            errors = []
+
+            def worker():
+                try:
+                    barrier.wait(timeout=5)
+                    timer.ensure_started()
+                except Exception as exc:  # noqa: BLE001 - record any race error
+                    errors.append(repr(exc))
+
+            threads = [threading.Thread(target=worker) for _ in range(8)]
+            try:
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join(timeout=5)
+                assert not errors, f"concurrent ensure_started raised: {errors[:3]}"
+            finally:
+                timer.stop()
