@@ -1094,6 +1094,78 @@ class test_DatabaseBackend:
 
 
 @skip.if_pypy
+class test_DatabaseBackend_chord_unlock_claim:
+
+    @pytest.fixture(autouse=True)
+    def remmove_db(self):
+        yield
+        if os.path.exists(DB_PATH):
+            os.remove(DB_PATH)
+
+    def setup_method(self):
+        self.uri = 'sqlite:///' + DB_PATH
+        self.app.conf.result_serializer = 'pickle'
+        self.b = DatabaseBackend(self.uri, app=self.app)
+
+    def test_first_claim_wins_and_blocks_second(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+        # A second run while the lease is fresh must not finish the
+        # chord itself.
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_dispatched_blocks_later_claims(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'dispatched'
+        assert token is None
+
+    def test_lost_insert_race_sees_existing_claim(self):
+        # The claim row already exists (a copy inserted it first, so
+        # our insert hits the unique task_id): we must not claim too.
+        import time
+
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'other-copy', 'claimed_at': time.time()},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_abandoned_claim_can_be_taken_over(self):
+        import time
+
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'lost-worker'
+
+    def test_reset_clears_dispatched_claim(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        self.b.reset_chord_unlock_claim(gid)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+
+
+@skip.if_pypy
 class test_DatabaseBackend_result_extended():
     def setup_method(self):
         self.uri = 'sqlite:///' + DB_PATH

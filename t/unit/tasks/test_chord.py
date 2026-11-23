@@ -147,6 +147,23 @@ class test_unlock_chord_task(ChordCase):
             cb.type.apply_async.assert_not_called()
             fail_current.assert_called_once()
 
+    def test_unlock_ready_failed_stores_the_failure_on_the_body(self):
+        # The other tests replace fail_from_current_stack with a mock.
+        # This one runs the real method, which needs an exception being
+        # handled when chord_error_from_stack() calls it.
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        def setup(callback):
+            del self.app.backend.fail_from_current_stack
+
+        with self._chord_context(Failed, setup) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            meta = self.app.backend.get_task_meta(cb.id)
+            assert meta['status'] == 'FAILURE'
+            assert isinstance(meta['result'], ChordError)
+
     def test_unlock_not_ready_does_not_claim(self):
         class NeverReady(TSR):
             is_ready = False
@@ -220,6 +237,18 @@ class test_unlock_chord_task(ChordCase):
             result=[], GroupResult=AlwaysReady,
         )
         assert len(applied) == 1
+
+    def test_unlock_dispatches_body_when_the_claim_raises(self):
+        # A backend that cannot answer the claim must not lose the body.
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with patch.object(self.app.backend, 'try_claim_chord_unlock',
+                          side_effect=RuntimeError('backend down')):
+            with self._chord_context(AlwaysReady) as (cb, retry, _):
+                cb.type.apply_async.assert_called_once()
+                assert not retry.call_count
 
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')

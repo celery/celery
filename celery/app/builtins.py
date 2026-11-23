@@ -167,7 +167,16 @@ def add_unlock_chord_task(app):
 
         try:
             if join_error is not None:
-                app.backend.chord_error_from_stack(callback=callback, exc=join_error)
+                try:
+                    raise join_error
+                except Exception:  # pylint: disable=broad-except
+                    # chord_error_from_stack() ends in
+                    # fail_from_current_stack(), which reads
+                    # sys.exc_info(): it must run inside an except
+                    # block handling this error, or the traceback is
+                    # None and it crashes before the body's failure
+                    # is stored.
+                    app.backend.chord_error_from_stack(callback=callback, exc=join_error)
             else:
                 try:
                     app.amqp._retry_publish(callback.delay, ret)

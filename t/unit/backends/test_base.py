@@ -413,6 +413,21 @@ class test_chord_unlock_claim:
         assert status == 'in_progress'
         assert token is None
 
+    def test_claim_lost_to_a_copy_that_wrote_after_ours(self):
+        # Another copy stores its claim between our write and our
+        # re-read: we must not finish the chord as well.
+        gid = uuid()
+        store_result = self.b.store_result
+
+        def store_then_be_overwritten(task_id, result, state, **kwargs):
+            store_result(task_id, result, state, **kwargs)
+            store_result(task_id, dict(result, token='other-copy'), state)
+
+        with patch.object(self.b, 'store_result', store_then_be_overwritten):
+            status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
     def test_dispatched_blocks_later_claims(self):
         gid = uuid()
         status, token = self.b.try_claim_chord_unlock(gid)

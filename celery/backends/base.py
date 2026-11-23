@@ -1026,6 +1026,13 @@ class Backend:
     #: the chord body.  The lease only has to cover publishing the
     #: body (or failing the chord), which happens right after the
     #: claim is taken; joining the header happens before it.
+    #: The trade-off is deliberate: a worker killed while it holds
+    #: the claim delays the body by up to the lease, where the body
+    #: used to be dispatched again almost immediately.
+    #: Each chord also leaves one more stored result,
+    #: ``chord-unlock-claim-<group_id>``, until results expire, so
+    #: anyone counting or cleaning the result table sees one extra
+    #: row (or file) per chord.
     chord_unlock_claim_lease = 60.0
 
     def _chord_unlock_claim_id(self, group_id):
@@ -1075,7 +1082,9 @@ class Backend:
         first run stored its claim -- and the token re-read after
         taking over an abandoned lease narrows the remaining race
         to copies whose claim writes interleave before either
-        re-reads.
+        re-reads.  Backends that can decide the claim in one step
+        override this: the database backend inserts the claim row
+        against the unique ``task_id``, so exactly one copy wins.
         """
         from kombu.utils.uuid import uuid
 

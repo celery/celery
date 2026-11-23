@@ -1,6 +1,7 @@
 """SQLAlchemy result store backend."""
 import logging
 import pickle
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -17,7 +18,8 @@ from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
 try:
-    from sqlalchemy.exc import DatabaseError, InterfaceError, InvalidRequestError
+    from sqlalchemy.exc import (DatabaseError, IntegrityError,
+                                InterfaceError, InvalidRequestError)
     from sqlalchemy.orm import defer
     from sqlalchemy.orm.attributes import flag_modified
     from sqlalchemy.orm.exc import StaleDataError
@@ -310,6 +312,105 @@ class DatabaseBackend(BaseBackend):
             return session.query(self.task_cls).filter(
                 self.task_cls.task_id == task_id
             ).first() is not None
+
+    def try_claim_chord_unlock(self, group_id):
+        """Claim the right to finish the chord waiting on ``group_id``.
+
+        Atomic version of :meth:`BaseBackend.try_claim_chord_unlock`:
+        ``task_id`` is unique in the task table, so inserting the claim
+        row decides the winner in a single step -- two copies claiming
+        at the same moment cannot both succeed.  Taking over an
+        abandoned lease is decided under a row lock on the claim row,
+        which is the same compare-and-set on the token the generic
+        implementation does with a re-read.  The generic read-then-write
+        implementation stays the fallback for backends without a unique
+        key to insert against.
+
+        Returns the same ``(status, token)`` pair as the base method.
+        A storage failure fails open to ``('claimed', token)``, so the
+        body is never lost because the claim could not be stored.
+        """
+        from kombu.utils.uuid import uuid
+
+        token = uuid()
+        claim_id = self._chord_unlock_claim_id(group_id)
+        session = self.ResultSession()
+        with session_cleanup(session):
+            try:
+                task = self.task_cls(claim_id)
+                self._update_result(
+                    task,
+                    {'token': token, 'claimed_at': time.time()},
+                    states.STARTED,
+                )
+                session.add(task)
+                try:
+                    session.flush()
+                except IntegrityError:
+                    # Another copy inserted the claim row first: the
+                    # unique task_id decides the winner in one step.
+                    session.rollback()
+                    task = None
+                if task is not None:
+                    session.commit()
+                    return 'claimed', token
+                # Lost the insert race (or the row pre-existed): decide
+                # on the stored row under a lock.
+                task = self._query_task(session, claim_id, for_update=True)
+                if task is None:
+                    # The row vanished (reset) between the insert and
+                    # the read: try the insert once more.
+                    task = self.task_cls(claim_id)
+                    self._update_result(
+                        task,
+                        {'token': token, 'claimed_at': time.time()},
+                        states.STARTED,
+                    )
+                    session.add(task)
+                    try:
+                        session.flush()
+                    except IntegrityError:
+                        session.rollback()
+                        return 'in_progress', None
+                    session.commit()
+                    return 'claimed', token
+                return self._decide_chord_unlock_claim(session, task, token)
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(
+                    'Chord %r: could not claim the chord_unlock dispatch; '
+                    'finishing the chord without a claim', group_id,
+                    exc_info=True,
+                )
+                return 'claimed', token
+
+    def _decide_chord_unlock_claim(self, session, task, token):
+        """Decide a claim against the stored claim row, locked for update.
+
+        The caller must hold the row lock (``SELECT ... FOR UPDATE``),
+        so the lease check and the takeover below are atomic against
+        another copy deciding on the same row.
+        """
+        if task.status == states.SUCCESS:
+            return 'dispatched', None
+        payload = self._decode_stored_result(task.result)
+        claimed_at = payload.get('claimed_at', 0) if isinstance(payload, dict) else 0
+        try:
+            claimed_at = float(claimed_at)
+        except (TypeError, ValueError):
+            claimed_at = 0.0
+        if time.time() - claimed_at < self.chord_unlock_claim_lease:
+            return 'in_progress', None
+        # The lease was abandoned: take it over by replacing the token
+        # while holding the row lock, so no other copy can take it at
+        # the same moment.
+        self._update_result(
+            task,
+            {'token': token, 'claimed_at': time.time()},
+            states.STARTED,
+        )
+        flag_modified(task, 'status')
+        session.commit()
+        return 'claimed', token
 
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""
