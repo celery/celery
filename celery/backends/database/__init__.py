@@ -18,8 +18,7 @@ from .models import Task, TaskExtended, TaskSet
 from .session import SessionManager
 
 try:
-    from sqlalchemy.exc import (DatabaseError, IntegrityError,
-                                InterfaceError, InvalidRequestError)
+    from sqlalchemy.exc import DatabaseError, IntegrityError, InterfaceError, InvalidRequestError
     from sqlalchemy.orm import defer
     from sqlalchemy.orm.attributes import flag_modified
     from sqlalchemy.orm.exc import StaleDataError
