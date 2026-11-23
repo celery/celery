@@ -2559,3 +2559,32 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         assert request.chord == {'chord_sig_p1': 'sig'}
         assert request.errbacks == [{'errback_sig_p1': 'err'}]
         assert request.delivery_info == {'routing_key': 'celery'}
+
+    @pytest.mark.parametrize(
+        'field, value',
+        [
+            ('chain', ['not-a-signature']),
+            ('chain', 'not-a-signature'),
+            ('chord', 'not-a-signature'),
+            ('errbacks', 5),
+            ('group', 5),
+            ('group', {'unexpected': 'mapping'}),
+        ],
+    )
+    def test_on_unknown_task_survives_malformed_canvas_fields(self, field, value):
+        c = self.get_consumer()
+        embed = {'callbacks': None, 'errbacks': None, 'chain': None, 'chord': None}
+        embed[field] = value
+        message = Mock(name='message')
+        message.body = b'[]'
+        message.headers = {'id': 'task-id-bad-fields', 'task': 'unregistered.task'}
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = [[], {}, embed]
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        # Rejection happens before result-backend propagation; malformed
+        # canvas metadata must never escape the consumer callback.
+        message.reject_log_error.assert_called_once()
+
