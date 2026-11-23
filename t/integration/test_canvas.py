@@ -4642,3 +4642,52 @@ class test_stamping_mechanism:
         with subtests.test(msg="Expect canvas to fail"):
             with pytest.raises(ExpectedException):
                 canvas.apply_async().get(timeout=TIMEOUT)
+
+
+class test_unregistered_task:
+    """An unregistered task fails like any other task without stalling canvas work."""
+
+    MISSING = 't.integration.tasks.not_registered_anywhere'
+
+    def missing(self, manager, *args):
+        return signature(self.MISSING, args=args, app=manager.app)
+
+    def await_failure(self, result, timeout=TIMEOUT):
+        # Do not use result.get(): it can raise for a failed parent while
+        # this result is still pending.
+        deadline = monotonic() + timeout
+        while result.state != states.FAILURE:
+            assert monotonic() < deadline, (
+                f'{result.id} is {result.state}, expected FAILURE')
+            sleep(0.1)
+
+    def test_chain_fails_after_an_unregistered_task(self, manager):
+        res = chain(self.missing(manager), identity.s()).delay()
+        self.await_failure(res.parent)
+        self.await_failure(res)
+
+    def test_chord_fails_when_a_header_task_is_unregistered(self, manager):
+        try:
+            manager.app.backend.ensure_chords_allowed()
+        except NotImplementedError as exc:
+            raise pytest.skip(exc.args[0])
+        res = chord([identity.si(1), self.missing(manager)], identity.s()).delay()
+        self.await_failure(res)
+
+    @pytest.mark.parametrize(
+        'errback_task', [errback_old_style, errback_new_style],
+    )
+    def test_errback_is_called_for_an_unregistered_task(
+            self, errback_task, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+        redis_connection = get_redis_connection()
+        sig = self.missing(manager)
+        sig.link_error(errback_task.s())
+        expected_redis_key = sig.freeze().id
+        redis_connection.delete(expected_redis_key)
+
+        res = sig.delay()
+        self.await_failure(res)
+        await_redis_count(1, redis_key=expected_redis_key)
+        redis_connection.delete(expected_redis_key)
