@@ -1,6 +1,7 @@
 import errno
 import logging
 import socket
+import weakref
 from collections import deque
 from time import monotonic
 from types import SimpleNamespace
@@ -38,7 +39,10 @@ class FakeOnCloseRequest:
     def __init__(self, id, entry=None):
         self.id = id
         self.name = 'test.task'
-        self._eta_timer_entry = entry
+        # The real Request holds only a weak reference to its timer entry
+        # (the entry's args hold the request); the test keeps the strong one.
+        self.entry = entry
+        self._eta_timer_entry = None if entry is None else weakref.ref(entry)
 
 
 @pytest.fixture
@@ -795,9 +799,8 @@ class test_Consumer(ConsumerTestCase):
 
         Consumer.on_close(consumer)
 
-        consumer.timer.cancel.assert_called_once_with(
-            scheduled._eta_timer_entry)
-        scheduled._eta_timer_entry.cancel.assert_not_called()
+        consumer.timer.cancel.assert_called_once_with(scheduled.entry)
+        scheduled.entry.cancel.assert_not_called()
 
     def test_on_close_logs_and_continues_if_timer_cancel_raises(self, on_close_ctx):
         """A failing cancellation must not abort the rest of the cleanup."""
@@ -937,7 +940,10 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
         # acks_late acknowledged tasks should NOT be cancelled
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        # Non-acks_late tasks should be cancelled normally (with RETRY)
+        # Non-acks_late tasks are cancelled with emit_retry=True; the
+        # request itself stores FAILURE instead of RETRY for them since
+        # their message was already acknowledged (#11079, see
+        # test_request.py::test_cancel__acknowledged_stores_failure_not_retry)
         mock_request_acks_early.cancel.assert_called_once_with(c.pool, emit_retry=True)
 
         active_requests.clear()
@@ -1974,6 +1980,32 @@ class test_ConnectionStep:
         step.close_connection(c)  # must not raise
 
         assert c.connection is None
+
+    # ------------------------------------------------------------------
+    # info() - consumed by `inspect stats`
+    # ------------------------------------------------------------------
+
+    def test_info_represents_unserializable_values_as_repr(self):
+        """info() JSON-represents values the reply serializer cannot encode.
+
+        broker_transport_options entries such as a redis-py Retry object made
+        kombu's dumps() raise EncodeError, so `inspect stats` got no reply
+        and the worker dropped its pidbox (#11056).
+        """
+        step, c = self._get_step_and_consumer()
+        unserializable = object()
+        conn = Mock(name='conn')
+        conn.info.return_value = {
+            'hostname': 'localhost',
+            'transport_options': {'retry': unserializable},
+        }
+        c.connection = conn
+
+        result = step.info(c)
+
+        assert result['broker']['hostname'] == 'localhost'
+        assert result['broker']['transport_options']['retry'] == \
+            repr(unserializable)
 
     def test_close_connection_is_safe_when_none(self):
         """close_connection() does not crash when c.connection is None."""

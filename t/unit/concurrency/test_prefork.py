@@ -344,6 +344,12 @@ class ExeMockTaskPool(mp.TaskPool):
 @t.skip.if_win32
 class test_AsynPool:
 
+    @pytest.fixture(autouse=True)
+    def no_child_processes(self):
+        # AsynPool() forks its processes, which can outlive the test run.
+        with patch('billiard.pool.Pool._create_worker_process'):
+            yield
+
     def setup_method(self):
         pytest.importorskip('multiprocessing')
 
