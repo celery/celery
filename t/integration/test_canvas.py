@@ -2062,6 +2062,33 @@ class test_chord:
         result = c()
         assert result.get() == inputs
 
+    @pytest.mark.parametrize(
+        "errback_task", [errback_old_style, errback_new_style, ],
+    )
+    def test_errback_given_as_one_signature_called_by_chord(
+        self, errback_task, manager, subtests
+    ):
+        # link_error set to a single signature, not a list (#10906).
+        if not manager.app.conf.result_backend.startswith("redis"):
+            raise pytest.skip("Requires redis result backend.")
+        redis_connection = get_redis_connection()
+
+        for msg, body in (
+            ("a simple body", identity.s()),
+            ("a chain body", chain(identity.s(), identity.s())),
+        ):
+            body.set(link_error=errback_task.s())
+            chord_sig = chord((fail.s(),), body)
+            expected_redis_key = chord_sig.body.freeze().id
+            redis_connection.delete(expected_redis_key)
+            with subtests.test(msg=f"Error propagates with {msg}"):
+                res = chord_sig.delay()
+                with pytest.raises(ExpectedException):
+                    res.get(timeout=TIMEOUT)
+            with subtests.test(msg=f"Errback is called once with {msg}"):
+                await_redis_count(1, redis_key=expected_redis_key)
+            redis_connection.delete(expected_redis_key)
+
     def test_reapplying_frozen_chord_dispatches_body_again(self, manager):
         """A frozen chord reuses its group id, but each apply is a new run."""
         if not manager.app.conf.result_backend.startswith('redis'):
