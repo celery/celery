@@ -251,6 +251,7 @@ class test_complex_workflow:
         res.forget()
         assert all(len(mapping) == 0 for mapping in res.backend._pending_results)
 
+
 class test_unregistered_task:
     """A worker without a task during a rolling deploy must keep processing work."""
 
@@ -275,4 +276,3 @@ class test_unregistered_task:
         # The same worker must still be able to execute a registered task.
         after = identity.si("still up").apply_async(queue=queue)
         assert after.get(timeout=RESULT_TIMEOUT) == "still up"
-
