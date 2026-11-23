@@ -2587,4 +2587,3 @@ class test_Consumer_on_unknown_task(ConsumerTestCase):
         # Rejection happens before result-backend propagation; malformed
         # canvas metadata must never escape the consumer callback.
         message.reject_log_error.assert_called_once()
-
