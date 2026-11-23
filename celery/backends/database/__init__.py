@@ -319,11 +319,12 @@ class DatabaseBackend(BaseBackend):
         ``task_id`` is unique in the task table, so inserting the claim
         row decides the winner in a single step -- two copies claiming
         at the same moment cannot both succeed.  Taking over an
-        abandoned lease is decided under a row lock on the claim row,
-        which is the same compare-and-set on the token the generic
-        implementation does with a re-read.  The generic read-then-write
-        implementation stays the fallback for backends without a unique
-        key to insert against.
+        abandoned lease is decided with a conditional ``UPDATE`` on
+        the stored lease, which is atomic on every database -- the
+        row lock (``SELECT ... FOR UPDATE``) SQLite ignores is not
+        relied on.  The generic read-then-write implementation stays
+        the fallback for backends without a unique key to insert
+        against.
 
         Returns the same ``(status, token)`` pair as the base method.
         A storage failure fails open to ``('claimed', token)``, so the
@@ -387,9 +388,11 @@ class DatabaseBackend(BaseBackend):
     def _decide_chord_unlock_claim(self, session, task, token):
         """Decide a claim against the stored claim row, locked for update.
 
-        The caller must hold the row lock (``SELECT ... FOR UPDATE``),
-        so the lease check and the takeover below are atomic against
-        another copy deciding on the same row.
+        The caller reads the row under a row lock (``SELECT ... FOR
+        UPDATE``) where the database supports it, but the takeover
+        below does not rely on the lock: it is a conditional
+        ``UPDATE`` on the stored lease, so only one copy can replace
+        it -- also on databases without row locks (SQLite).
         """
         if task.status == states.SUCCESS:
             return 'dispatched', None
@@ -401,17 +404,22 @@ class DatabaseBackend(BaseBackend):
             claimed_at = 0.0
         if time.time() - claimed_at < self.chord_unlock_claim_lease:
             return 'in_progress', None
-        # The lease was abandoned: take it over by replacing the token
-        # while holding the row lock, so no other copy can take it at
-        # the same moment.
-        self._update_result(
-            task,
-            {'token': token, 'claimed_at': time.time()},
-            states.STARTED,
-        )
-        flag_modified(task, 'status')
+        # The lease was abandoned: take it over with a conditional
+        # UPDATE on the stored lease, so no other copy can take it at
+        # the same moment -- even where the row lock above is ignored.
+        taken = session.query(self.task_cls).filter(
+            self.task_cls.id == task.id,
+            self.task_cls.status == states.STARTED,
+            self.task_cls.result == task.result,
+        ).update({
+            'result': ensure_bytes(self.encode(
+                {'token': token, 'claimed_at': time.time()})),
+            'date_done': datetime.now(timezone.utc),
+        }, synchronize_session=False)
         session.commit()
-        return 'claimed', token
+        if taken == 1:
+            return 'claimed', token
+        return 'in_progress', None
 
     def _save_group(self, group_id, result):
         """Store the result of an executed group."""

@@ -1155,6 +1155,23 @@ class test_DatabaseBackend_chord_unlock_claim:
         assert status == 'claimed'
         assert token != 'lost-worker'
 
+    def test_takeover_stores_the_new_claim(self):
+        # After a takeover the claim row must hold the new token and a
+        # fresh lease, so the next copy waits instead of taking it too.
+        import time
+
+        gid = uuid()
+        claim_id = self.b._chord_unlock_claim_id(gid)
+        self.b.store_result(
+            claim_id,
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert self.b.get_task_meta(claim_id, cache=False)['result']['token'] == token
+        assert self.b.try_claim_chord_unlock(gid) == ('in_progress', None)
+
     def test_reset_clears_dispatched_claim(self):
         gid = uuid()
         status, token = self.b.try_claim_chord_unlock(gid)
