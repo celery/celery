@@ -451,6 +451,55 @@ class Request:
         task_ready(self)
         self.send_event('task-cancelled')
 
+        if emit_retry and self.acknowledged:
+            # The message has already been acknowledged (the default
+            # early-ack case: on_accepted() acks when the task starts),
+            # so the broker will not redeliver it and nothing will run
+            # this task again.  Storing RETRY would claim otherwise and
+            # leave a caller waiting on the result until its timeout,
+            # so store a terminal FAILURE instead, as the worker-lost
+            # path does (#11079).  Unacknowledged requests keep the
+            # RETRY behaviour below: their message is redelivered, so
+            # the task really will run again (e.g. acks_late tasks
+            # cancelled on connection loss).
+            exc = WorkerLostError('cancelled by Celery')
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self._context,
+                store_result=self.store_errors,
+            )
+            # Like the other terminal-FAILURE paths in this file (the
+            # worker-lost branch of on_failure(), Reject(requeue=False),
+            # the hard time-limit path), fire the task_failure signal
+            # so that alerting (Sentry and similar) sees the failure.
+            # The RETRY branch this replaces fired on_retry/task_retry
+            # instead, but those do not apply here: the message is
+            # already acknowledged, so this task will never run again.
+            einfo = None
+            try:
+                try:
+                    raise exc
+                except WorkerLostError:
+                    einfo = ExceptionInfo()
+                # Temporarily add the context to the request stack so
+                # that the task_failure handlers can access it.
+                self.task.request_stack.push(self._context)
+                try:
+                    signals.task_failure.send(
+                        sender=self.task, task_id=self.id, exception=exc,
+                        args=self.args, kwargs=self.kwargs,
+                        traceback=einfo.traceback, einfo=einfo,
+                    )
+                finally:
+                    self.task.request_stack.pop()
+            finally:
+                # Break the exc -> traceback -> frame reference cycle
+                # so this frame can be garbage-collected promptly.
+                if einfo is not None:
+                    del einfo
+                exc.__traceback__ = None
+            self._already_cancelled = True
+            return
+
         if emit_retry:
             reason = 'cancelled by Celery'
             exc = Retry(message=reason)
