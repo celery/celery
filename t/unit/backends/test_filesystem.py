@@ -193,3 +193,22 @@ class test_FilesystemBackend:
             tb.get_key_for_task(tid) in filenames
             for tid in today_task_ids
         )
+
+    @pytest.mark.parametrize('timezone', ['UTC', 'Asia/Tokyo', 'America/New_York'])
+    def test_cleanup_uses_unix_time_whatever_the_timezone(self, timezone):
+        # st_mtime is a Unix timestamp. Measuring "now" from midnight in the
+        # app's timezone instead shifted the cutoff by that zone's offset:
+        # east of UTC fresh results were deleted, west of it old ones kept.
+        self.app.conf.timezone = timezone
+        tb = FilesystemBackend(app=self.app, url=self.url)
+        fresh, old = uuid(), uuid()
+        tb.mark_as_done(fresh, 42)
+        tb.mark_as_done(old, 42)
+        path = os.path.join(tb.path, tb.get_key_for_task(old))
+        two_hours_ago = time.time() - 2 * 3600
+        os.utime(path, (two_hours_ago, two_hours_ago))
+        with patch.object(tb, 'expires', 3600):
+            tb.cleanup()
+        filenames = set(os.listdir(tb.path))
+        assert tb.get_key_for_task(fresh) in filenames
+        assert tb.get_key_for_task(old) not in filenames
