@@ -375,7 +375,6 @@ class test_LimitedSet:
         [t.join(10) for t in threads]
         assert not errors
 
-
     def test_add_orders_items_within_the_clock_resolution(self):
         s = LimitedSet(maxlen=10)
         s.add('b', now=1.0)
