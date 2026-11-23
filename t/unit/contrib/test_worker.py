@@ -26,6 +26,12 @@ class test_worker:
 
         self.error_task = error_task
 
+        @self.app.task
+        def exit_task():
+            raise SystemExit(3)
+
+        self.exit_task = exit_task
+
         self.app.config_from_object({
             'worker_hijack_root_logger': False,
         })
@@ -48,6 +54,29 @@ class test_worker:
             with start_worker(app=self.app, loglevel=0):
                 result = self.error_task.apply_async()
                 result.get(timeout=5)
+
+    @pytest.mark.parametrize('pool', ['solo', 'threads'])
+    def test_SystemExit_task_leaves_no_active_request(self, pool):
+        """A task raising SystemExit must not stay in the worker state (#9318)."""
+        from celery.exceptions import WorkerLostError
+
+        with start_worker(app=self.app, pool=pool, concurrency=1,
+                          loglevel=0, perform_ping_check=False) as worker:
+            try:
+                result = self.exit_task.apply_async()
+                with pytest.raises(WorkerLostError):
+                    result.get(timeout=10)
+
+                assert not worker.state.active_requests
+                assert not worker.state.requests
+                # The worker must still be able to run tasks afterwards.
+                assert self.add.s(1, 2).apply_async().get(timeout=10) == 3
+            finally:
+                # start_worker joins the worker thread but does not stop the
+                # pool; without this the executor thread outlives the test.
+                worker.pool.stop()
+                for request in list(worker.state.active_requests):
+                    worker.state.task_ready(request)
 
     def test_start_worker_with_hostname_config(self):
         """Make sure a custom hostname can be supplied to the TestWorkController"""
