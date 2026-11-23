@@ -925,7 +925,11 @@ class Consumer:
         if requests_to_cancel:
             for request in requests_to_cancel:
                 # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
-                # For non-acks_late tasks, emit RETRY signal as usual
+                # For non-acks_late tasks, ask for the cancellation to be
+                # announced as usual; Request._announce_cancelled() stores
+                # FAILURE instead of RETRY for them, because an early-ack
+                # message has already been acknowledged and will not be
+                # redelivered or run again (#11079).
                 emit_retry = not request.task.acks_late
                 request.cancel(self.pool, emit_retry=emit_retry)
 
