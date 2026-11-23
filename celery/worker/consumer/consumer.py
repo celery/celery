@@ -838,9 +838,17 @@ class Consumer:
             delivery_info=delivery_info,
         )
         message.reject_log_error(logger, self.connection_errors)
-        self.app.backend.mark_as_failure(
-            id_, NotRegistered(name), request=request,
-        )
+        try:
+            self.app.backend.mark_as_failure(
+                id_, NotRegistered(name), request=request,
+            )
+        except Exception:  # pylint: disable=broad-except
+            # The message is already rejected. Malformed canvas metadata must
+            # not let a backend exception terminate the consumer process.
+            logger.exception(
+                'Could not store the failure of unknown task %r (%s)',
+                name, id_,
+            )
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
