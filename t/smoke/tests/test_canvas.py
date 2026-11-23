@@ -1,4 +1,5 @@
 import uuid
+from time import monotonic, sleep
 
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup
@@ -249,3 +250,29 @@ class test_complex_workflow:
         assert not all(len(mapping) == 0 for mapping in res.backend._pending_results)
         res.forget()
         assert all(len(mapping) == 0 for mapping in res.backend._pending_results)
+
+class test_unregistered_task:
+    """A worker without a task during a rolling deploy must keep processing work."""
+
+    def test_chain_fails_and_the_worker_keeps_working(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        missing = signature(
+            "t.smoke.tasks.not_deployed_yet",
+            app=celery_setup.app,
+            queue=queue,
+        )
+        result = chain(missing, identity.s().set(queue=queue)).apply_async()
+
+        # Observe the chain result state directly: result.get() may raise for
+        # the failed parent while the downstream result is still pending.
+        deadline = monotonic() + RESULT_TIMEOUT
+        while result.state != "FAILURE":
+            assert monotonic() < deadline, (
+                f"the last task is {result.state}, expected FAILURE"
+            )
+            sleep(0.5)
+
+        # The same worker must still be able to execute a registered task.
+        after = identity.si("still up").apply_async(queue=queue)
+        assert after.get(timeout=RESULT_TIMEOUT) == "still up"
+
