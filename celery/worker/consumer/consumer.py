@@ -603,7 +603,8 @@ class Consumer:
         # drop our copies since the broker may redeliver these tasks to
         # another worker on reconnect.
         for r in tuple(scheduled_requests):
-            entry = r._eta_timer_entry
+            ref = r._eta_timer_entry
+            entry = ref() if ref is not None else None
             if entry is not None and self.timer is not None:
                 try:
                     self.timer.cancel(entry)
@@ -991,7 +992,11 @@ class Consumer:
         if requests_to_cancel:
             for request in requests_to_cancel:
                 # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
-                # For non-acks_late tasks, emit RETRY signal as usual
+                # For non-acks_late tasks, ask for the cancellation to be
+                # announced as usual; Request._announce_cancelled() stores
+                # FAILURE instead of RETRY for them, because an early-ack
+                # message has already been acknowledged and will not be
+                # redelivered or run again (#11079).
                 emit_retry = not request.task.acks_late
                 request.cancel(self.pool, emit_retry=emit_retry)
 
