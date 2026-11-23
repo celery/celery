@@ -940,7 +940,10 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
         # acks_late acknowledged tasks should NOT be cancelled
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        # Non-acks_late tasks should be cancelled normally (with RETRY)
+        # Non-acks_late tasks are cancelled with emit_retry=True; the
+        # request itself stores FAILURE instead of RETRY for them since
+        # their message was already acknowledged (#11079, see
+        # test_request.py::test_cancel__acknowledged_stores_failure_not_retry)
         mock_request_acks_early.cancel.assert_called_once_with(c.pool, emit_retry=True)
 
         active_requests.clear()
