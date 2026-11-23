@@ -1004,6 +1004,30 @@ class test_Request(RequestCase):
         retry_handler.assert_not_called()
         assert job._already_cancelled is True
 
+    def test_cancel__acknowledged_failure_info_setup_raises(self):
+        # #11079: if building the failure info raises while announcing
+        # a cancelled acknowledged task, the FAILURE is already stored
+        # and the error propagates; the cleanup must not raise again.
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        with patch.object(
+                module, 'ExceptionInfo',
+                side_effect=RuntimeError('einfo failed')):
+            with pytest.raises(RuntimeError, match='einfo failed'):
+                job.cancel(pool, signal='TERM', emit_retry=True)
+        job.task.backend.mark_as_failure.assert_called_once()
+        failure_exc = job.task.backend.mark_as_failure.call_args[0][1]
+        assert isinstance(failure_exc, WorkerLostError)
+        assert failure_exc.__traceback__ is None
+
     def test_cancel__unacknowledged_acks_late_stores_retry(self):
         # An acks_late task that has not been acknowledged yet will be
         # redelivered by the broker (e.g. when cancelled on connection
