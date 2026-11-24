@@ -1,6 +1,7 @@
 import errno
 import logging
 import socket
+import weakref
 from collections import deque
 from time import monotonic
 from types import SimpleNamespace
@@ -39,7 +40,10 @@ class FakeOnCloseRequest:
     def __init__(self, id, entry=None):
         self.id = id
         self.name = 'test.task'
-        self._eta_timer_entry = entry
+        # The real Request holds only a weak reference to its timer entry
+        # (the entry's args hold the request); the test keeps the strong one.
+        self.entry = entry
+        self._eta_timer_entry = None if entry is None else weakref.ref(entry)
 
 
 @pytest.fixture
@@ -920,9 +924,8 @@ class test_Consumer(ConsumerTestCase):
 
         Consumer.on_close(consumer)
 
-        consumer.timer.cancel.assert_called_once_with(
-            scheduled._eta_timer_entry)
-        scheduled._eta_timer_entry.cancel.assert_not_called()
+        consumer.timer.cancel.assert_called_once_with(scheduled.entry)
+        scheduled.entry.cancel.assert_not_called()
 
     def test_on_close_logs_and_continues_if_timer_cancel_raises(self, on_close_ctx):
         """A failing cancellation must not abort the rest of the cleanup."""
@@ -1088,7 +1091,10 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
         # acks_late acknowledged tasks should NOT be cancelled
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        # Non-acks_late tasks should be cancelled normally (with RETRY)
+        # Non-acks_late tasks are cancelled with emit_retry=True; the
+        # request itself stores FAILURE instead of RETRY for them since
+        # their message was already acknowledged (#11079, see
+        # test_request.py::test_cancel__acknowledged_stores_failure_not_retry)
         mock_request_acks_early.cancel.assert_called_once_with(c.pool, emit_retry=True)
 
         active_requests.clear()
@@ -2127,6 +2133,32 @@ class test_ConnectionStep:
 
         assert c.connection is None
 
+    # ------------------------------------------------------------------
+    # info() - consumed by `inspect stats`
+    # ------------------------------------------------------------------
+
+    def test_info_represents_unserializable_values_as_repr(self):
+        """info() JSON-represents values the reply serializer cannot encode.
+
+        broker_transport_options entries such as a redis-py Retry object made
+        kombu's dumps() raise EncodeError, so `inspect stats` got no reply
+        and the worker dropped its pidbox (#11056).
+        """
+        step, c = self._get_step_and_consumer()
+        unserializable = object()
+        conn = Mock(name='conn')
+        conn.info.return_value = {
+            'hostname': 'localhost',
+            'transport_options': {'retry': unserializable},
+        }
+        c.connection = conn
+
+        result = step.info(c)
+
+        assert result['broker']['hostname'] == 'localhost'
+        assert result['broker']['transport_options']['retry'] == \
+            repr(unserializable)
+
     def test_close_connection_is_safe_when_none(self):
         """close_connection() does not crash when c.connection is None."""
         step, c = self._get_step_and_consumer()
@@ -2466,3 +2498,244 @@ class test_Gossip:
         drift = abs(int(worker.local_received) - int(worker.timestamp))
         assert drift <= HEARTBEAT_DRIFT_MAX
         warn_drift.assert_not_called()
+
+
+class test_Consumer_on_unknown_task(ConsumerTestCase):
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto2(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-id-proto2',
+            'task': 'unregistered.task',
+            'root_id': 'root-id-proto2',
+            'parent_id': 'parent-id-proto2',
+            'group': 'group-id-proto2',
+            'group_index': 2,
+        }
+        message.properties = {
+            'correlation_id': 'corr-id-1',
+            'reply_to': 'reply-queue-1',
+        }
+        message.delivery_info = {'routing_key': 'celery', 'is_eager': False}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'chord_sig': 'sig'},
+                'errbacks': [{'errback_sig': 'err'}],
+                'chain': [{'chain_sig': 'chain'}],
+                'callbacks': [{'callback_sig': 'cb'}],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto2'
+        assert exc.args[0] == 'unregistered.task'
+        assert request.id == 'task-id-proto2'
+        assert request.task_id == 'task-id-proto2'
+        assert request.name == 'unregistered.task'
+        assert request.root_id == 'root-id-proto2'
+        assert request.parent_id == 'parent-id-proto2'
+        assert request.group == 'group-id-proto2'
+        assert request.group_index == 2
+        assert request.chord == {'chord_sig': 'sig'}
+        assert request.errbacks == [{'errback_sig': 'err'}]
+        assert request.chain == [{'chain_sig': 'chain'}]
+        assert request.callbacks == [{'callback_sig': 'cb'}]
+        assert request.correlation_id == 'corr-id-1'
+        assert request.reply_to == 'reply-queue-1'
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto1(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {}
+        payload = {
+            'id': 'task-id-proto1',
+            'task': 'unregistered.proto1.task',
+            'root_id': 'root-id-proto1',
+            'parent_id': 'parent-id-proto1',
+            'group': 'group-id-proto1',
+            'group_index': 0,
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+            'chain': [{'chain_sig_p1': 'chain'}],
+            'callbacks': None,
+        }
+        message.payload = payload
+        message.properties = {'correlation_id': 'corr-p1', 'reply_to': 'reply-p1'}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.proto1.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto1'
+        assert exc.args[0] == 'unregistered.proto1.task'
+        assert request.id == 'task-id-proto1'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.chain == [{'chain_sig_p1': 'chain'}]
+        assert request.group == 'group-id-proto1'
+        assert request.group_index == 0
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_end_to_end_triggers_chord_and_chain_and_errbacks(self):
+        c = self.get_consumer()
+        backend = c.app.backend
+        backend.on_chord_part_return = Mock()
+        backend._fail_chain = Mock()
+        backend._call_task_errbacks = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-e2e',
+            'task': 'missing.task',
+            'group': 'chord-group-1',
+            'group_index': 0,
+        }
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'header': 'h'},
+                'errbacks': ['err_sig'],
+                'chain': ['next_task_sig'],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('missing.task'))
+
+        backend.on_chord_part_return.assert_called_once()
+        backend._fail_chain.assert_called_once()
+        backend._call_task_errbacks.assert_called_once()
+
+        # Check call arguments
+        req = backend.on_chord_part_return.call_args[0][0]
+        assert req.chord == {'header': 'h'}
+        assert req.group == 'chord-group-1'
+
+        chain_arg = backend._fail_chain.call_args[0][0]
+        assert chain_arg == ['next_task_sig']
+
+        errback_req = backend._call_task_errbacks.call_args[0][0]
+        assert errback_req.errbacks == ['err_sig']
+
+    def test_on_unknown_task_does_not_retry_lazy_payload_decode(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        class MalformedMessage:
+            body = b'{'
+            headers = {
+                'id': 'malformed-task-id',
+                'task': 'unregistered.malformed',
+            }
+            properties = {}
+            delivery_info = {}
+
+            def decode(self):
+                raise ValueError('malformed message body')
+
+            @property
+            def payload(self):
+                raise ValueError('lazy payload decode must not be retried')
+
+            def reject_log_error(self, *args):
+                pass
+
+        message = MalformedMessage()
+        c.on_unknown_task(None, message, KeyError('unregistered.malformed'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        assert c.app.backend.mark_as_failure.call_args.args[0] == 'malformed-task-id'
+
+    @pytest.mark.parametrize(
+        'headers, payload',
+        [
+            ({'task': 'unregistered.missing_id'}, None),
+            ({}, {'task': 'unregistered.missing_id'}),
+        ],
+        ids=['protocol-v2-missing-id', 'protocol-v1-missing-id'],
+    )
+    def test_on_unknown_task_without_id_is_rejected(self, headers, payload):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = headers
+        message.properties = {}
+        message.delivery_info = {}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.missing_id'))
+
+        c.app.backend.mark_as_failure.assert_not_called()
+        message.reject_log_error.assert_called_once()
+
+    def test_task_handler_passes_a_protocol_1_payload_on(self):
+        # Protocol 1 keeps chord and errback metadata in the decoded body.
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+        c.strategies = {}
+        payload = {
+            'id': 'task-id-proto1-handler',
+            'task': 'unregistered.proto1.task',
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+        }
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = {}
+        message.decode.return_value = payload
+        message.properties = {}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.create_task_handler()(message)
+
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+        assert request.id == 'task-id-proto1-handler'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.delivery_info == {'routing_key': 'celery'}
+
+    @pytest.mark.parametrize(
+        'field, value',
+        [
+            ('chain', ['not-a-signature']),
+            ('chain', 'not-a-signature'),
+            ('chord', 'not-a-signature'),
+            ('errbacks', 5),
+            ('group', 5),
+            ('group', {'unexpected': 'mapping'}),
+        ],
+    )
+    def test_on_unknown_task_survives_malformed_canvas_fields(self, field, value):
+        c = self.get_consumer()
+        embed = {'callbacks': None, 'errbacks': None, 'chain': None, 'chord': None}
+        embed[field] = value
+        message = Mock(name='message')
+        message.body = b'[]'
+        message.headers = {'id': 'task-id-bad-fields', 'task': 'unregistered.task'}
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = [[], {}, embed]
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        # Rejection happens before result-backend propagation; malformed
+        # canvas metadata must never escape the consumer callback.
+        message.reject_log_error.assert_called_once()

@@ -58,7 +58,7 @@ def _run_evtop(app):
               '--camera',
               cls=CeleryOption,
               help_group='Snapshot')
-@click.option('-d',
+@click.option('-D',
               '--detach',
               cls=CeleryOption,
               is_flag=True,
