@@ -204,6 +204,7 @@ class _regen(UserList, list):
         self.__consumed = []
         self.__done = False
         self.__error = None
+        self.__error_tb = None
 
     def __reduce__(self):
         return list, (self.data,)
@@ -223,12 +224,15 @@ class _regen(UserList, list):
             raise
         except Exception as exc:
             self.__error = exc
+            self.__error_tb = exc.__traceback__
             raise
         return item
 
     def __raise_if_errored(self):
         if self.__error is not None:
-            raise self.__error
+            # Restore the recorded traceback so replays don't keep appending
+            # frames to the same exception (#6794).
+            raise self.__error.with_traceback(self.__error_tb)
 
     def map(self, func):
         self.__consumed = [func(el) for el in self.__consumed]
@@ -279,8 +283,7 @@ class _regen(UserList, list):
             if index >= len(self.__consumed):
                 if self.__done:
                     return
-                if self.__error is not None:
-                    raise self.__error
+                self.__raise_if_errored()
                 if it is None:
                     # map() may replace the source while we replay cached items.
                     it = iter(self.__it)
@@ -342,6 +345,7 @@ class _regen(UserList, list):
                 self.__consumed.extend(self.__it)
             except Exception as exc:
                 self.__error = exc
+                self.__error_tb = exc.__traceback__
                 raise
             self.__done = True
         return self.__consumed

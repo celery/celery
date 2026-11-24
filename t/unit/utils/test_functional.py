@@ -1,5 +1,6 @@
 import collections
 import sys
+import traceback
 
 import pytest
 from kombu.utils.functional import lazy
@@ -246,6 +247,20 @@ class test_regen:
         with pytest.raises(AssertionError, match="Iterator errored"):
             next(iter_g)
         assert getattr(g, "_regen__done") is False
+
+    def test_replayed_error_traceback_does_not_grow(self):
+        def gen():
+            yield 1
+            raise ValueError('boom')
+
+        g = regen(gen())
+        lengths = []
+        for _ in range(3):
+            with pytest.raises(ValueError, match='boom') as exc_info:
+                list(g)
+            lengths.append(len(traceback.extract_tb(exc_info.value.__traceback__)))
+
+        assert lengths[1] == lengths[2]
 
     def test_getitem_after_mid_iteration_error(self):
         class ExplodingList:
