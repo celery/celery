@@ -28,11 +28,14 @@ class FakeCassandraTable:
 
     def __init__(self):
         self.rows = {}
+        self.created = False
 
     def __call__(self, statement, parameters=None):
         if parameters is None:
             # DDL, CREATE TABLE for instance, carries no parameters
+            self.created = True
             return Mock(name='ddl-result')
+        assert self.created, 'the result table does not exist yet'
         if len(parameters) > 1:
             task_id, status, result, date_done, traceback, children = \
                 parameters
@@ -40,6 +43,10 @@ class FakeCassandraTable:
                 status, result, date_done, traceback, children)
             return Mock(name='write-result')
         task_id, = parameters
+        query = getattr(statement, 'query', None)
+        if isinstance(query, str) and query.lstrip().startswith('DELETE'):
+            self.rows.pop(task_id, None)
+            return Mock(name='delete-result')
         return Mock(one=Mock(return_value=self.rows.get(task_id)))
 
 
@@ -169,7 +176,178 @@ class test_CassandraBackend:
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
+        session.execute.return_value.one.return_value = None
         x._store_result('task_id', 'result', states.SUCCESS)
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state, result', [
+        (states.STARTED, None),
+        (states.FAILURE, ValueError('second run failed')),
+        (states.SUCCESS, 'second result'),
+    ])
+    def test_store_result_after_success_is_ignored(
+            self, module, monkeypatch, state, result):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        first.store_result('task_id', 'first result', states.SUCCESS)
+        original_meta = first._get_task_meta_for('task_id')
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', result, state, traceback='later traceback')
+
+        assert second._get_task_meta_for('task_id') == original_meta
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state', [
+        states.PENDING, states.STARTED, states.RETRY, states.FAILURE,
+    ])
+    def test_store_result_before_success_can_be_updated(
+            self, module, monkeypatch, state):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        x = mod.CassandraBackend(app=self.app)
+        x._session = Mock(execute=FakeCassandraTable())
+        result = ValueError('first run failed') if state in states.EXCEPTION_STATES else None
+        x.store_result('task_id', result, state)
+        x.store_result('task_id', 'successful result', states.SUCCESS)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 'successful result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('state', [
+        states.STARTED, states.FAILURE, states.SUCCESS,
+    ])
+    @pytest.mark.parametrize('column', [1, 3, 4], ids=[
+        'result', 'traceback', 'children',
+    ])
+    def test_store_result_does_not_decode_existing_payload(
+            self, module, monkeypatch, state, column):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        self.app.conf.result_serializer = 'json'
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        result = ValueError('first run failed') if state == states.FAILURE else 'first result'
+        first.store_result('task_id', result, state)
+
+        # A later worker may not be able to decode an older worker's payload.
+        row = list(table.rows['task_id'])
+        row[column] = b'not valid json'
+        original_row = table.rows['task_id'] = tuple(row)
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', 'successful result', states.SUCCESS)
+
+        if state == states.SUCCESS:
+            assert table.rows['task_id'] == original_row
+        else:
+            meta = second._get_task_meta_for('task_id')
+            assert meta['status'] == states.SUCCESS
+            assert meta['result'] == 'successful result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('read_session', [False, True])
+    def test_store_result_creates_table_before_read(
+            self, module, monkeypatch, read_session):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+
+        table = FakeCassandraTable()
+        session = mod.cassandra.cluster.Cluster.return_value.connect.return_value
+        session.execute = table
+        x = mod.CassandraBackend(app=self.app)
+        if read_session:
+            x._get_connection()
+        assert not table.created
+
+        x.store_result('task_id', 'first result', states.SUCCESS)
+
+        meta = x._get_task_meta_for('task_id')
+        assert meta['status'] == states.SUCCESS
+        assert meta['result'] == 'first result'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    def test_forget_allows_task_id_reuse(self, module, monkeypatch):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+
+        table = FakeCassandraTable()
+        first = mod.CassandraBackend(app=self.app)
+        first._session = Mock(execute=table)
+        first.store_result('task_id', None, states.STARTED)
+        first.store_result('task_id', 'monday', states.SUCCESS)
+        first.store_result('other_task_id', 'untouched', states.SUCCESS)
+
+        result = self.app.AsyncResult('task_id', backend=first)
+        assert result.result == 'monday'
+        assert first.get_result('task_id') == 'monday'
+        result.forget()
+
+        assert 'task_id' not in table.rows
+        assert first.get_state('task_id') == states.PENDING
+        assert result.state == states.PENDING
+
+        second = mod.CassandraBackend(app=self.app)
+        second._session = Mock(execute=table)
+        second.store_result('task_id', None, states.STARTED)
+        assert second.get_state('task_id') == states.STARTED
+        second.store_result('task_id', 'tuesday', states.SUCCESS)
+
+        assert result.result == 'tuesday'
+        assert second.get_result('task_id') == 'tuesday'
+        assert second.get_result('other_task_id') == 'untouched'
+
+    @pytest.mark.patched_module(*CASSANDRA_MODULES)
+    @pytest.mark.parametrize('read_session', [False, True])
+    def test_forget_creates_table_and_uses_write_consistency(
+            self, module, monkeypatch, read_session):
+        from celery.backends import cassandra as mod
+        monkeypatch.setattr(mod, 'cassandra', Mock())
+        mod.cassandra.query.SimpleStatement = lambda query: Bunch(query=query)
+        mod.cassandra.ConsistencyLevel = Bunch(ONE=1, ALL=5, LOCAL_QUORUM=4)
+        self.app.conf.update(
+            cassandra_table='custom_results',
+            cassandra_read_consistency='ONE',
+            cassandra_write_consistency='ALL',
+        )
+
+        table = FakeCassandraTable()
+        session = mod.cassandra.cluster.Cluster.return_value.connect.return_value
+        session.execute = Mock(side_effect=table)
+        backend = mod.CassandraBackend(app=self.app)
+        if read_session:
+            backend._get_connection()
+        assert not table.created
+
+        # Forgetting an unknown task, including repeated calls, is harmless.
+        task_id = "missing'task"
+        backend.forget(task_id)
+        backend.forget(task_id)
+
+        assert table.created
+        calls = session.execute.call_args_list
+        assert [call.args[0].query.split()[0] for call in calls] == [
+            'CREATE', 'DELETE', 'DELETE',
+        ]
+        for call in calls[1:]:
+            statement, parameters = call.args
+            # Omitting date_done deletes every row in the task's partition.
+            assert statement.query.strip() == (
+                'DELETE FROM custom_results WHERE task_id=%s')
+            assert statement.consistency_level == 5
+            assert parameters == (task_id,)
 
     @pytest.mark.patched_module(*CASSANDRA_MODULES)
     def test_store_result_compressed(self, module, monkeypatch):
@@ -183,6 +361,7 @@ class test_CassandraBackend:
         x = mod.CassandraBackend(app=self.app)
         session = x._session = Mock()
         session.execute = Mock()
+        session.execute.return_value.one.return_value = None
         x._store_result('task_id', 'result', states.SUCCESS)
 
         params = session.execute.call_args[0][1]
@@ -461,6 +640,7 @@ class test_CassandraBackend:
                     other_thread_started.wait(5)
                     other_thread.append(t)
                 executed.append(statement.query.split()[0])
+                return Mock(one=Mock(return_value=None))
 
         class DummyCluster:
             def __init__(self, *args, **kwargs):
@@ -477,7 +657,7 @@ class test_CassandraBackend:
         x._get_connection(write=True)
         other_thread[0].join(5)
         assert not other_thread[0].is_alive()
-        assert executed == ['CREATE', 'INSERT']
+        assert executed == ['CREATE', 'SELECT', 'INSERT']
 
     def test_table_is_created_for_a_write_through_a_read_session(self, monkeypatch):
         # A read opens the session without creating the table, so the first
@@ -507,11 +687,11 @@ class test_CassandraBackend:
         assert executed == ['SELECT']
 
         x._store_result('task_id', 'result', states.SUCCESS)
-        assert executed == ['SELECT', 'CREATE', 'INSERT']
+        assert executed == ['SELECT', 'CREATE', 'SELECT', 'INSERT']
 
         # ...and only the first write pays for it.
         x._store_result('task_id', 'result', states.SUCCESS)
-        assert executed == ['SELECT', 'CREATE', 'INSERT', 'INSERT']
+        assert executed == ['SELECT', 'CREATE', 'SELECT', 'INSERT', 'SELECT', 'INSERT']
 
     def test_auth_provider(self, monkeypatch):
         # Ensure valid auth_provider works properly, and invalid one raises

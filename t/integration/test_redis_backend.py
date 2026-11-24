@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from celery import states, uuid
+from celery.app.task import Context
 from celery.result import AsyncResult, GroupResult
 from t.integration.conftest import get_active_redis_channels
 from t.integration.tasks import identity
@@ -237,7 +238,7 @@ def test_chord_expires(app):
     header = GroupResult(group_id, [GroupResult(uuid(), [AsyncResult(uuid())])])
     request = SimpleNamespace(id=uuid(), group=group_id, group_index=0, chord=None)
     keys = [backend.get_key_for_group(group_id, suffix)
-            for suffix in ('', '.j', '.s')]
+            for suffix in ('', '.j', '.s', '.d')]
     try:
         backend.apply_chord((group_id, header.results), None)
         backend.set_chord_size(group_id, 2)
@@ -249,3 +250,57 @@ def test_chord_expires(app):
         assert GroupResult.restore(group_id, backend=backend) == header
     finally:
         backend.client.delete(*keys)
+
+
+@pytest.mark.parametrize('ordered', (True, False))
+def test_chord_part_return_records_each_header_task_once(
+    app, celery_session_worker, ordered,
+):
+    # A chord header task that is executed twice (e.g. redelivered after its
+    # worker was lost with acks_late) must only be recorded once, even when
+    # it returned a different value: the chord body must neither run before
+    # the other header tasks finished nor receive a result twice.
+    url = app.conf.result_backend
+    if not url.startswith('redis'):
+        pytest.skip('Requires redis result backend.')
+
+    app.conf.result_backend_transport_options = dict(
+        result_chord_ordered=ordered,
+    )
+    backend = app.backend
+    client = backend.client
+    gid = uuid()
+    body = identity.s()
+    body_id = body.freeze().id
+    keys = [backend.get_key_for_group(gid, suffix)
+            for suffix in ('.j', '.t', '.s', '.d')]
+    jkey = keys[0]
+    count = client.zcard if ordered else client.llen
+    header_ids = [uuid() for _ in range(3)]
+
+    def part_return(index, result):
+        request = Context(id=header_ids[index], group=gid,
+                          group_index=index, chord=body)
+        backend.on_chord_part_return(request, states.SUCCESS, result)
+
+    backend.set_chord_size(gid, 3)
+    try:
+        part_return(0, 1)
+        part_return(0, 42)
+        assert count(jkey) == 1
+
+        # A worker running an older version records its part without the
+        # dedupe set, which must not stall the chord.
+        encoded = backend.encode([1, header_ids[1], states.SUCCESS, 2])
+        if ordered:
+            client.zadd(jkey, {encoded: 1})
+        else:
+            client.rpush(jkey, encoded)
+        assert count(jkey) == 2
+
+        part_return(2, 3)
+        assert app.AsyncResult(body_id).get(timeout=10) == [1, 2, 3]
+        assert client.exists(*keys) == 0
+    finally:
+        client.delete(*keys)
+        backend.forget(body_id)

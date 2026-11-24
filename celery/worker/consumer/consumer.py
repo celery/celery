@@ -159,6 +159,14 @@ class Consumer:
     #: as sending heartbeats.
     timer = None
 
+    #: Entries on the event loop timer before the consumer last started
+    #: connecting to the broker.
+    timer_entries_before_start = None
+
+    #: Entries the event loop registered on its timer for the current
+    #: connection, or :const:`None` if it has not registered them yet.
+    timer_entries_registered = None
+
     restart_count = -1  # first start is the same as a restart
 
     #: This flag will be turned off after the first failed
@@ -387,6 +395,13 @@ class Consumer:
                 recoverable_errors = (self.connection_errors + self.channel_errors)
             else:
                 recoverable_errors = self.connection_errors
+            if self.hub is not None:
+                # Entries added to the timer from here on, by connecting
+                # and starting the event loop, belong to this connection
+                # (see :func:`celery.worker.loops.asynloop`).
+                self.timer_entries_before_start = loops._timer_entries(
+                    self.hub.timer)
+                self.timer_entries_registered = None
             try:
                 blueprint.start(self)
             except recoverable_errors as exc:
@@ -413,7 +428,30 @@ class Consumer:
                     else:
                         self.on_connection_error_before_connected(exc)
                     self.on_close()
+                    self._cancel_connection_timer_entries()
                     blueprint.restart(self)
+
+    def _cancel_connection_timer_entries(self):
+        """Cancel the timer entries registered for the failed connection.
+
+        :func:`~celery.worker.loops.asynloop` records the entries it
+        registered for the connection.  If the connection failed before
+        that, e.g. in a bootstep that runs after the transport connected,
+        every entry added since the consumer started connecting belongs to
+        it: the event loop was not running, so nothing else added entries
+        in the meantime.  Without this, those entries would be part of the
+        next attempt's snapshot and never be cancelled.
+
+        Cancelling an entry twice is harmless, so this also runs after
+        :func:`~celery.worker.loops.asynloop` cancelled its own entries.
+        """
+        if self.hub is None or self.timer_entries_before_start is None:
+            return
+        entries = self.timer_entries_registered
+        if entries is None:
+            entries = (loops._timer_entries(self.hub.timer) -
+                       self.timer_entries_before_start)
+        loops._cancel_timer_entries(self.hub.timer, entries)
 
     def _get_connection_retry_type(self, is_connection_loss_on_startup):
         return ('broker_connection_retry_on_startup'
@@ -426,7 +464,11 @@ class Consumer:
               'Trying to reconnect...')
 
     def on_connection_error_after_connected(self, exc):
-        warn(CONNECTION_RETRY, exc_info=True)
+        # Keep the exception in the warning so default-level logs still say
+        # what went wrong, but leave the traceback for debug logging where
+        # application log handlers will not capture it.
+        warn('%s (%r)', CONNECTION_RETRY, exc)
+        debug('Connection error: %r', exc, exc_info=exc)
         # Bound the sockets that are already open before cleanup reads from
         # them; collect()'s socket_timeout only applies to new sockets.
         bound_open_broker_sockets(self.connection, COLLECT_SOCKET_TIMEOUT)
@@ -555,12 +597,14 @@ class Consumer:
         # entries (through self.timer.cancel(), not entry.cancel()
         # directly, since e.g. the Eventlet timer relies on that to catch
         # GreenletExit) so the callback can't fire after we've torn down
-        # this connection (the synloop error path doesn't clear the timer
-        # the way asynloop's hub.reset()/hub.timer.clear() does), then drop
-        # our copies since the broker may redeliver these tasks to another
-        # worker on reconnect.
+        # this connection (neither event loop cancels them: synloop's error
+        # path cancels nothing, and asynloop's only cancels the entries it
+        # registered for the connection, which doesn't include these), then
+        # drop our copies since the broker may redeliver these tasks to
+        # another worker on reconnect.
         for r in tuple(scheduled_requests):
-            entry = r._eta_timer_entry
+            ref = r._eta_timer_entry
+            entry = ref() if ref is not None else None
             if entry is not None and self.timer is not None:
                 try:
                     self.timer.cancel(entry)
@@ -713,23 +757,98 @@ class Consumer:
               message.headers,
               message.delivery_info,
               exc_info=True)
-        try:
-            id_, name = message.headers['id'], message.headers['task']
-            root_id = message.headers.get('root_id')
-        except KeyError:  # proto1
-            payload = message.payload
-            id_, name = payload['id'], payload['task']
-            root_id = None
+        headers = getattr(message, 'headers', None) or {}
+        payload = body
+
+        # Decode payload only when the caller did not already provide it,
+        # and never access the lazy message.payload property after a decode failure.
+        if payload is None and hasattr(message, 'decode'):
+            try:
+                payload = message.decode()
+            except Exception:
+                payload = None
+
+        # Protocol v2 stores task metadata in headers. A task header without
+        # an id is malformed and must be rejected rather than killing the worker.
+        if isinstance(headers, dict) and 'task' in headers:
+            id_ = headers.get('id')
+            name = headers.get('task')
+            root_id = headers.get('root_id')
+            parent_id = headers.get('parent_id')
+            group = headers.get('group')
+            group_index = headers.get('group_index')
+        else:
+            if isinstance(payload, dict):
+                id_ = payload.get('id')
+                name = payload.get('task')
+                root_id = payload.get('root_id')
+                parent_id = payload.get('parent_id')
+                group = payload.get('group') or payload.get('taskset')
+                group_index = payload.get('group_index')
+            else:
+                id_ = name = root_id = parent_id = group = group_index = None
+
+        if id_ is None:
+            return self.on_unknown_message(body, message)
+
+        chord = None
+        errbacks = None
+        chain = None
+        callbacks = None
+
+        if isinstance(payload, (list, tuple)) and len(payload) >= 3 and isinstance(payload[2], dict):
+            embed = payload[2]
+            chord = embed.get('chord')
+            errbacks = embed.get('errbacks')
+            chain = embed.get('chain')
+            callbacks = embed.get('callbacks')
+        elif isinstance(payload, dict):
+            chord = payload.get('chord')
+            errbacks = payload.get('errbacks')
+            chain = payload.get('chain')
+            callbacks = payload.get('callbacks')
+            if group is None:
+                group = payload.get('group') or payload.get('taskset')
+            if group_index is None:
+                group_index = payload.get('group_index')
+
+        chord = chord if chord is not None else headers.get('chord')
+        errbacks = errbacks if errbacks is not None else headers.get('errbacks')
+        chain = chain if chain is not None else headers.get('chain')
+        callbacks = callbacks if callbacks is not None else headers.get('callbacks')
+        group = group if group is not None else headers.get('group')
+        group_index = group_index if group_index is not None else headers.get('group_index')
+
+        properties = getattr(message, 'properties', None) or {}
+        delivery_info = getattr(message, 'delivery_info', None) or {}
         request = Bunch(
-            name=name, chord=None, root_id=root_id,
-            correlation_id=message.properties.get('correlation_id'),
-            reply_to=message.properties.get('reply_to'),
-            errbacks=None,
+            id=id_,
+            task_id=id_,
+            name=name,
+            chord=chord,
+            chain=chain,
+            errbacks=errbacks,
+            callbacks=callbacks,
+            root_id=root_id,
+            parent_id=parent_id,
+            group=group,
+            group_index=group_index,
+            correlation_id=properties.get('correlation_id'),
+            reply_to=properties.get('reply_to'),
+            delivery_info=delivery_info,
         )
         message.reject_log_error(logger, self.connection_errors)
-        self.app.backend.mark_as_failure(
-            id_, NotRegistered(name), request=request,
-        )
+        try:
+            self.app.backend.mark_as_failure(
+                id_, NotRegistered(name), request=request,
+            )
+        except Exception:  # pylint: disable=broad-except
+            # The message is already rejected. Malformed canvas metadata must
+            # not let a backend exception terminate the consumer process.
+            logger.exception(
+                'Could not store the failure of unknown task %r (%s)',
+                name, id_,
+            )
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
@@ -780,7 +899,7 @@ class Consumer:
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
-                return on_unknown_task(None, message, exc)
+                return on_unknown_task(payload, message, exc)
             else:
                 try:
                     ack_log_error_promise = promise(
@@ -881,7 +1000,11 @@ class Consumer:
         if requests_to_cancel:
             for request in requests_to_cancel:
                 # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
-                # For non-acks_late tasks, emit RETRY signal as usual
+                # For non-acks_late tasks, ask for the cancellation to be
+                # announced as usual; Request._announce_cancelled() stores
+                # FAILURE instead of RETRY for them, because an early-ack
+                # message has already been acknowledged and will not be
+                # redelivered or run again (#11079).
                 emit_retry = not request.task.acks_late
                 request.cancel(self.pool, emit_retry=emit_retry)
 

@@ -14,8 +14,8 @@ from celery import Celery
 from . import current_app
 from .exceptions import ImproperlyConfigured
 from .utils.collections import AttributeDict
-from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining, timezone,
-                         weekday, yearmonth)
+from .utils.time import (ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, remaining,
+                         subtract_datetimes, timezone, weekday, yearmonth)
 
 __all__ = (
     'ParseException', 'schedule', 'crontab', 'crontab_parser',
@@ -907,8 +907,7 @@ class solar(BaseSchedule):
         next_utc = self._next_event(self.ephem.Date(last_run_at_utc))
         next = self.maybe_make_aware(next_utc.datetime())
         now = self.maybe_make_aware(self.now())
-        delta = next - now
-        return delta
+        return subtract_datetimes(next, now)
 
     def is_due(self, last_run_at: datetime) -> tuple[bool, datetime]:
         """Return tuple of ``(is_due, next_time_to_run)``.

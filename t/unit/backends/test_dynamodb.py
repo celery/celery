@@ -2,13 +2,60 @@ from decimal import Decimal
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 
 import pytest
+from kombu.exceptions import OperationalError
+from moto import mock_aws
 
-from celery import states, uuid
+from celery import Celery, states, uuid
+from celery.app.task import Context
 from celery.backends import dynamodb as module
 from celery.backends.dynamodb import DynamoDBBackend
 from celery.exceptions import ImproperlyConfigured
 
 pytest.importorskip('boto3')
+
+
+def test_chord_publish_retry_does_not_increment_dynamodb_again():
+    with mock_aws(), Celery('chord-retry', backend='dynamodb://@us-east-1',
+                            set_as_current=False) as app:
+        app.conf.task_publish_retry_policy = {
+            'max_retries': 2, 'interval_start': 0, 'interval_step': 0, 'interval_max': 0,
+        }
+
+        @app.task(name='chord_retry.body', shared=False)
+        def body(value):
+            return value
+
+        app.finalize()
+        backend = app.backend
+        group_id = uuid()
+        header = app.AsyncResult(uuid())
+        backend.store_result(header.id, 4, states.SUCCESS)
+        app.GroupResult(group_id, [header]).save(backend=backend)
+        key = backend.get_key_for_chord(group_id)
+        backend.client.put_item(**backend._prepare_init_count_request(str(key)))
+        producer = Mock(name='producer')
+        producer.connection.recoverable_connection_errors = ()
+        producer.publish.side_effect = [OperationalError('refused'), None]
+        callback = body.s()
+        request = Context(group=group_id, chord={'chord_size': 1})
+        from contextlib import contextmanager
+
+        @contextmanager
+        def reraise_as_library_errors():
+            yield
+
+        acquire = Mock(name='producer_or_acquire')
+        acquire.return_value.__enter__ = Mock(return_value=producer)
+        acquire.return_value.__exit__ = Mock(return_value=False)
+        producer.connection._reraise_as_library_errors = reraise_as_library_errors
+        with patch('celery.backends.base.maybe_signature', return_value=callback), \
+                patch.object(app, 'producer_or_acquire', acquire), \
+                patch.object(backend, 'incr', wraps=backend.incr) as incr:
+            backend.on_chord_part_return(request, states.SUCCESS, 4)
+        assert incr.call_count == 1
+        assert producer.publish.call_count == 2
+        assert 'Item' not in backend.client.get_item(**backend._prepare_get_request(str(key)))
+        assert header.state == states.SUCCESS
 
 
 class test_DynamoDBBackend:
@@ -148,6 +195,84 @@ class test_DynamoDBBackend:
         mock_create_table.assert_called_once_with(
             **self.backend._get_table_schema()
         )
+
+    def test_get_or_create_table_create_race(self):
+        # Another pool process is creating the table: create_table raises
+        # ResourceInUseException, which must be waited out, not propagated
+        # (the task that produced the result would be stored as FAILURE).
+        from botocore.exceptions import ClientError
+
+        self.backend._client = MagicMock()
+        not_found = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceNotFoundException'
+                }
+            },
+            'DescribeTable'
+        )
+        in_use = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceInUseException'
+                }
+            },
+            'CreateTable'
+        )
+        table_description = {
+            'Table': {
+                'TableStatus': 'ACTIVE'
+            }
+        }
+        mock_describe_table = self.backend._client.describe_table = \
+            MagicMock()
+        mock_describe_table.side_effect = [not_found, table_description]
+        mock_create_table = self.backend._client.create_table = MagicMock()
+        mock_create_table.side_effect = in_use
+        self.backend._wait_for_table_status = MagicMock()
+
+        assert self.backend._get_or_create_table() == table_description
+        mock_create_table.assert_called_once_with(
+            **self.backend._get_table_schema()
+        )
+        self.backend._wait_for_table_status.assert_called_once_with(
+            'ACTIVE'
+        )
+        assert mock_describe_table.call_count == 2
+
+    def test_get_or_create_table_create_other_error(self):
+        # A create failure for any other reason still propagates.
+        from botocore.exceptions import ClientError
+
+        self.backend._client = MagicMock()
+        not_found = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceNotFoundException'
+                }
+            },
+            'DescribeTable'
+        )
+        other = ClientError(
+            {
+                'Error': {
+                    'Code': 'ValidationException'
+                }
+            },
+            'CreateTable'
+        )
+        mock_describe_table = self.backend._client.describe_table = \
+            MagicMock()
+        mock_describe_table.side_effect = not_found
+        mock_create_table = self.backend._client.create_table = MagicMock()
+        mock_create_table.side_effect = other
+        self.backend._wait_for_table_status = MagicMock()
+
+        with pytest.raises(ClientError) as exc_info:
+            self.backend._get_or_create_table()
+        assert exc_info.value.response['Error']['Code'] == \
+            'ValidationException'
+        self.backend._wait_for_table_status.assert_not_called()
 
     def test_get_or_create_table_already_exists(self):
         self.backend._client = MagicMock()

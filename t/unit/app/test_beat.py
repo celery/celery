@@ -15,7 +15,7 @@ import pytest
 
 from celery import __version__, beat, uuid
 from celery.beat import BeatLazyFunc, event_t
-from celery.schedules import crontab, schedule
+from celery.schedules import crontab, schedule, solar
 from celery.utils.objects import Bunch
 
 if sys.version_info >= (3, 9):
@@ -483,6 +483,50 @@ class test_Scheduler:
         # ensure those 0.2 seconds on now_ts don't get dropped
         expected_time = now_ts + 0.5 - 0.010
         assert scheduler._heap[0].time == expected_time
+
+    @pytest.mark.parametrize('now,last_run_at,after_sunrise', [
+        pytest.param(
+            datetime.fromisoformat('2026-03-08T01:30:00-05:00'),
+            datetime.fromisoformat('2026-03-07T03:00:00-05:00'),
+            datetime.fromisoformat('2026-03-08T03:08:00-04:00'),
+            id='spring-forward',
+        ),
+        pytest.param(
+            datetime.fromisoformat('2026-11-01T01:45:00-04:00'),
+            datetime.fromisoformat('2026-10-31T03:00:00-04:00'),
+            datetime.fromisoformat('2026-11-01T01:41:00-05:00'),
+            id='fall-back',
+        ),
+    ])
+    def test_tick_solar_across_dst(self, now, last_run_at, after_sunrise):
+        pytest.importorskip('ephem')
+        tz = self.app.timezone = ZoneInfo('America/New_York')
+        now_utc = now.astimezone(timezone.utc)
+        s = solar('sunrise', 0, -15, app=self.app, nowfun=lambda: now_utc.astimezone(tz))
+        scheduler = mScheduler(app=self.app, lazy=True)
+        entry = scheduler.add(
+            name='sunrise', task='t.fake.task', schedule=s,
+            last_run_at=last_run_at,
+        )
+
+        delays = []
+        for _ in range(5):
+            delays.append(scheduler.tick())
+            now_utc += timedelta(seconds=1)
+
+        assert scheduler.sent == []
+        assert all(delay > 0 for delay in delays)
+
+        now_utc = after_sunrise.astimezone(timezone.utc)
+        scheduler.tick()
+        assert [sent['name'] for sent in scheduler.sent] == ['t.fake.task']
+        reserved = scheduler.schedule[entry.name]
+        assert reserved.total_run_count == 1
+        assert reserved.last_run_at.astimezone(timezone.utc) == now_utc
+
+        now_utc += timedelta(seconds=1)
+        assert scheduler.tick() > 0
+        assert len(scheduler.sent) == 1
 
     def test_tick_daily_relative_spring_forward(self, monkeypatch):
         self.app.conf.timezone = 'America/New_York'
@@ -1906,25 +1950,38 @@ class test_BeatPidbox:
         # so without one a stop() during an outage waited out the full
         # join timeout and then warned that the thread would not die.
         pb, _ = self.get_pidbox()
-        pb.join_timeout = 0.3
+        # Generous, so that a slow runner doesn't fail the test.  The fake
+        # backoff below outlasts it, so a stop() that can't interrupt the
+        # backoff still times out and fails.
+        pb.join_timeout = 5
+        backing_off_started = Event()
+        backoff_over = Event()
 
         def backing_off(errback, max_retries, callback=None, **kwargs):
+            backing_off_started.set()
             # Tolerate a missing callback instead of raising TypeError,
             # so dropping it from _connect() shows up here as a thread
             # that will not stop rather than an unrelated crash.
-            for _ in range(200):
+            while not backoff_over.wait(timeout=0.01):
                 if callback is not None:
                     callback()      # kombu calls this once a second
-                sleep(0.01)
             raise ConnectionResetError('never got there')
 
-        with patch.object(self.app, 'connection_for_read') as cfr:
-            cfr.return_value.ensure_connection.side_effect = backing_off
-            with self._fanout(pb):
-                pb.start()
-                sleep(0.1)
-                with patch('celery.beat.warning') as warning:
-                    pb.stop()
+        try:
+            with patch.object(self.app, 'connection_for_read') as cfr:
+                cfr.return_value.ensure_connection.side_effect = backing_off
+                with self._fanout(pb):
+                    pb.start()
+                    # Stop during the backoff, not before the thread
+                    # gets there.
+                    assert backing_off_started.wait(timeout=10), \
+                        'never connected'
+                    with patch('celery.beat.warning') as warning:
+                        pb.stop()
+        finally:
+            # End the backoff, so a thread that didn't stop doesn't
+            # outlive the test.
+            backoff_over.set()
         assert pb.thread is None        # it really did stop
         warning.assert_not_called()     # so nothing to warn about
 

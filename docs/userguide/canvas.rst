@@ -1037,6 +1037,26 @@ This behavior can be manipulated to allow error handling of the chord header
 using the :setting:`task_allow_error_cb_on_chord_header` flag.
 Enabling this flag will cause the chord header to invoke the errback for the body (default behavior) *and* any task in the chord's header that fails.
 
+.. versionchanged:: 5.7
+
+    You can also pass ``link`` and ``link_error`` to ``chord.apply_async()``.
+    ``link`` is linked to the body the same way ``chord.link()`` links it.
+    ``link_error`` is added to the body's options or, when the body is a
+    group, to each of its tasks, the same way ``chord.link_error()`` links
+    it, so the tasks keep their own errbacks. If the group has its own
+    ``link_error``, which replaces those of its tasks when it runs, it's
+    added there instead, and runs wherever the group's own errbacks run.
+    The :setting:`task_allow_error_cb_on_chord_header` setting doesn't
+    apply to ``link_error``, so an errback passed this way isn't added to
+    the header tasks. Previously, passing them raised :exc:`TypeError`.
+
+    When a header task fails and the body is a group, each task of the
+    group now calls its own errbacks as well as those of the group, each
+    errback once, so an errback linked with ``chord.link_error()`` or
+    passed as ``link_error`` runs once for each task of the group. A chord
+    in the group calls those of its body, and a chain those linked to the
+    chain itself.
+
 .. _chord-important-notes:
 
 Important Notes

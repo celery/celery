@@ -662,6 +662,13 @@ has been executed, not *right before* (the default behavior).
 
     FAQ: :ref:`faq-acks_late-vs-retry`.
 
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
+
 .. setting:: task_acks_on_failure_or_timeout
 
 ``task_acks_on_failure_or_timeout``
@@ -731,6 +738,13 @@ worker.
     Enabling this can cause message loops; make sure you know
     what you're doing. See :setting:`task_retry_on_worker_lost` for a way
     to limit how many times a task is sent again.
+
+.. note::
+
+    On RabbitMQ 4.0 and later, quorum queues drop a message (or dead-letter
+    it) after 20 redeliveries by default. A task that keeps crashing its
+    worker can disappear this way, and the worker won't log the drop.
+    See :ref:`quorum-queues-delivery-limit` for details.
 
 .. setting:: task_retry_on_worker_lost
 
@@ -902,7 +916,7 @@ Default: :const:`False`
     setting to :const:`True` by default to preserve backward compatibility
     with the automatic retry behavior that was previously provided by an
     internal ``@retry`` decorator. Other backends continue to default to
-    :const:`False`.
+    :const:`False`. Setting it to :const:`None` also gives :const:`True`.
 
 If enabled, the backend will try to retry on the event of recoverable
 exceptions instead of propagating the exception.
@@ -942,6 +956,7 @@ Default: Inf
     setting to ``3`` by default to preserve backward compatibility with the
     behavior previously provided by an internal ``@retry`` decorator.
     Other backends continue to default to :const:`Inf` (unlimited retries).
+    Setting it to :const:`None` also gives ``3``.
 
 This is the maximum number of retries in case of recoverable exceptions.
 
@@ -1394,6 +1409,13 @@ you to customize the table names:
         'task': 'myapp_taskmeta',
         'group': 'myapp_groupmeta',
     }
+
+.. versionchanged:: 5.7
+
+    The ``date_done`` indexes are named after the configured tables
+    (``ix_myapp_taskmeta_date_done`` above), so apps with different table
+    names can share a database or schema. Tables created before this change
+    keep their existing index.
 
 .. note::
 
@@ -1961,6 +1983,17 @@ Default: None.
 
 The read consistency used. Values can be ``ONE``, ``TWO``, ``THREE``, ``QUORUM``, ``ALL``,
 ``LOCAL_QUORUM``, ``EACH_QUORUM``, ``LOCAL_ONE``.
+
+.. versionchanged:: 5.7
+
+    Workers also use this level when they store a result: each write
+    attempt first reads the newest row of the task and skips the write
+    if that row is ``SUCCESS``. This adds one read per attempted write.
+    A level stricter than :setting:`cassandra_write_consistency` can
+    make writes fail while nodes are down, and a weaker one, such as
+    ``ONE``, can miss a ``SUCCESS`` stored on another replica.
+    The read and the write are separate steps. Two runs of the same
+    task that overlap can still both write.
 
 .. setting:: cassandra_write_consistency
 
@@ -2607,7 +2640,9 @@ This is a dict supporting the following keys:
 
 * ``port``
 
-    The port the Couchbase server is listening to. Defaults to ``8091``.
+    The key-value port of the Couchbase server. Defaults to the SDK's,
+    ``11210``. ``8091``, the HTTP port and the previous default, is ignored,
+    since the SDK can't connect to it.
 
 * ``bucket``
 
