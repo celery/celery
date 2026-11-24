@@ -37,17 +37,39 @@ class Timer(_timer.Timer):
     """Eventlet Timer."""
 
     def __init__(self, *args, **kwargs):
-        from eventlet.greenthread import spawn_after
+        from eventlet import hubs
+        from eventlet.greenthread import GreenThread
         from greenlet import GreenletExit
+
+        class _GreenThread(GreenThread):
+            def cancel(self, *throw_args):
+                # Repeating timers spawn a new greenthread per tick,
+                # so cancel the entry, not just this greenthread.
+                self.entry.cancel()
+                return super().cancel(*throw_args)
+
         super().__init__(*args, **kwargs)
 
         self.GreenletExit = GreenletExit
-        self._spawn_after = spawn_after
+        self._GreenThread = _GreenThread
+        self._get_hub = hubs.get_hub
         self._queue = set()
+
+    def _spawn_after(self, secs, func, *args):
+        # Same as eventlet.greenthread.spawn_after(), using _GreenThread.
+        hub = self._get_hub()
+        g = self._GreenThread(hub.greenlet)
+        hub.schedule_call_global(secs, g.switch, func, args, {})
+        return g
+
+    @staticmethod
+    def _apply_entry(entry):
+        if not entry.canceled:
+            entry()
 
     def _enter(self, eta, priority, entry, **kwargs):
         secs = max(eta - monotonic(), 0)
-        g = self._spawn_after(secs, entry)
+        g = self._spawn_after(secs, self._apply_entry, entry)
         self._queue.add(g)
         g.link(self._entry_exit, entry)
         g.entry = entry
