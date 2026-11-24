@@ -3179,6 +3179,20 @@ class test_chord(CanvasCase):
         for header_call in header_apply.call_args_list:
             assert key not in header_call.kwargs
 
+    def test_link_error_option_keeps_generator_header_lazy(self):
+        def header():
+            yield self.add.si(1, 1)
+            yield self.add.si(2, 2)
+            assert header_apply.called
+            yield self.add.si(3, 3)
+
+        workflow = chord(header(), self.xsum.s())
+        with patch.object(self.app.backend, 'apply_chord'), \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            workflow.apply_async(link_error=self.div.si(2))
+
+        assert header_apply.call_count == 3
+
     def _body_to_run(self, x, eager, **options):
         """Apply the chord ``x`` and return the body it was going to run."""
         if eager:

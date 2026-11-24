@@ -162,6 +162,16 @@ def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **ext
     })
 
 
+def _chord_error_errbacks(callback):
+    """Return errbacks for a chord whose callback could not be dispatched."""
+    # A single signature is a dict, so normalize it before iterating (#10906).
+    errbacks = list(maybe_list(callback.options.get('link_error')) or [])
+    for errback in callback.options.get('_chord_header_errbacks', ()):
+        if errback not in errbacks:
+            errbacks.append(errback)
+    return errbacks
+
+
 def _result_errbacks(sig, app):
     """Return the id of the result of ``sig`` and the errbacks linked to it.
 
@@ -490,9 +500,7 @@ class Backend:
         # what really went wrong, but at least we call them!
         fake_request = _create_fake_task_request(
             task_id=callback.options.get("task_id"),
-            # link_error may hold a single signature instead of a list:
-            # iterating it would call its keys as tasks (#10906).
-            errbacks=maybe_list(callback.options.get("link_error")) or [],
+            errbacks=_chord_error_errbacks(callback),
             **callback
         )
         try:
@@ -532,7 +540,7 @@ class Backend:
 
                 # Each task calls its own errbacks, which chord.link_error()
                 # links there, and those of the group, each one once.
-                group_errbacks = maybe_list(group_callback.options.get("link_error")) or []
+                group_errbacks = _chord_error_errbacks(group_callback)
                 task_errbacks = dict(
                     _result_errbacks(task, self.app)
                     for task in group_callback.tasks

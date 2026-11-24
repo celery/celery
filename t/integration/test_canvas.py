@@ -3980,6 +3980,22 @@ class test_chord:
         await_redis_count(2, redis_key=result.id)
         get_redis_connection().delete(result.id)
 
+    def test_link_error_option_runs_once_on_nested_chord_body_failure(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_echo.si('failed', redis_key=redis_key)
+        inner = chord([identity.si(1), identity.si(2)], fail.si())
+        workflow = chord([inner, identity.si(3)], identity.s())
+        try:
+            result = workflow.apply_async(link_error=errback)
+            with pytest.raises(ChordError):
+                result.get(timeout=TIMEOUT, follow_parents=False)
+            await_redis_echo('failed', redis_key=redis_key)
+        finally:
+            get_redis_connection().delete(redis_key)
+
     def test_link_option_on_group_body_runs_once(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):
             raise pytest.skip('Requires redis result backend.')
