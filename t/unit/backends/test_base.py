@@ -1027,6 +1027,74 @@ class test_BaseBackend_dict:
         stored = {call_[0][0]: type(call_[0][1]) for call_ in store_result.call_args_list}
         assert stored == {'body-id': KeyError, 'after-id': KeyError}
 
+    def test_chord_error_from_stack_calls_a_single_signature_errback(self):
+        # link_error given as ONE signature (.set(link_error=eb.s())):
+        # the errback must run once -- iterating the signature dict
+        # would publish one bogus task per key instead (#10906).
+        errback = {'task': 'errb', 'args': [], 'kwargs': {}, 'options': {},
+                   'subtask_type': None, 'chord_size': None,
+                   'immutable': False}
+        callback = signature({'task': 'body', 'args': [], 'kwargs': {},
+                              'options': {'task_id': 'body-id',
+                                          'link_error': errback},
+                              'subtask_type': None, 'chord_size': None,
+                              'immutable': False})
+
+        class RecordingGroup:
+            instances = []
+
+            def __init__(self, sigs, app=None):
+                self.sigs = sigs
+                RecordingGroup.instances.append(self)
+
+            def apply_async(self, *args, **kwargs):
+                pass
+
+        with patch.object(self.b, 'store_result'), \
+                patch('celery.backends.base.group', RecordingGroup):
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        assert len(RecordingGroup.instances) == 1
+        sigs = RecordingGroup.instances[0].sigs
+        assert [s.task for s in sigs] == ['errb']
+
+    @pytest.mark.parametrize('link_error,called', [
+        ('single', ['errb']),
+        ('list', ['errb']),
+        ('two', ['errb', 'errb2']),
+        ('none', []),
+    ])
+    def test_chord_error_from_stack_errback_forms(self, link_error, called):
+        # link_error as one signature, a list, a list of two, or not set.
+        errb, errb2 = signature('errb'), signature('errb2')
+        options = {'task_id': 'body-id'}
+        if link_error != 'none':
+            options['link_error'] = {
+                'single': errb, 'list': [errb], 'two': [errb, errb2],
+            }[link_error]
+        callback = signature('body', options=options)
+        sent = []
+
+        class RecordingGroup:
+
+            def __init__(self, sigs, app=None):
+                sent.extend(sig.task for sig in sigs)
+
+            def apply_async(self, *args, **kwargs):
+                pass
+
+        with patch.object(self.b, 'store_result'), \
+                patch('celery.backends.base.group', RecordingGroup):
+            try:
+                raise ValueError('header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+
+        assert sent == called
+
     def test_exception_to_python_when_None(self):
         b = BaseBackend(app=self.app)
         assert b.exception_to_python(None) is None
@@ -1832,6 +1900,33 @@ class test_KeyValueStoreBackend:
 
         assert {id: state['result'] for id, state in got.items()} == ids
         sleep.assert_not_called()
+
+    def test_get_many__max_iterations_skips_final_sleep(self):
+        """A poll capped by max_iterations must not sleep after its last check.
+
+        ResultSet._iter_meta polls with max_iterations=1, so the sleep at
+        the end of that single iteration delayed every join by one
+        interval without any further check to justify it (#11042).
+        """
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        for task in tasks:
+            self.b._cache[task] = {'status': 'PENDING'}
+        assert not list(self.b.get_many(tasks, interval=0.5, max_iterations=1))
+        sleep.assert_not_called()
+
+    def test_get_many__max_iterations_2_sleeps_once(self):
+        """N checks sleep N-1 times: no nap after the last one.
+
+        Pins the general rule so an off-by-one cannot sneak back in if the
+        iteration counter moves again (#11042).
+        """
+        sleep = self.patching('time.sleep')
+        tasks = [uuid() for _ in range(4)]
+        for task in tasks:
+            self.b._cache[task] = {'status': 'PENDING'}
+        assert not list(self.b.get_many(tasks, interval=0.5, max_iterations=2))
+        assert sleep.call_count == 1
 
     def test_get_many__ids_completing_on_the_deadline_is_not_a_timeout(self):
         """Satisfying the last id as the budget runs out is a success."""
