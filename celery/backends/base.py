@@ -503,7 +503,9 @@ class Backend:
         # what really went wrong, but at least we call them!
         fake_request = _create_fake_task_request(
             task_id=callback.options.get("task_id"),
-            errbacks=callback.options.get("link_error", []),
+            # link_error may hold a single signature instead of a list:
+            # iterating it would call its keys as tasks (#10906).
+            errbacks=maybe_list(callback.options.get("link_error")) or [],
             **callback
         )
         try:
