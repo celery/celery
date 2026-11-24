@@ -1196,7 +1196,12 @@ class _chain(Signature):
         # Clone chain's tasks assigning signatures from link_error
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
-        for sig in maybe_list(self.options.get('link')) or []:
+        links = maybe_list(self.options.get('link')) or []
+        if links and not tasks:
+            raise ValueError(
+                'Cannot compose an empty chain with a success callback: '
+                'there is no task to attach the callback to.')
+        for sig in links:
             tasks[-1].link(sig)
         for sig in maybe_list(self.options.get('link_error')) or []:
             for task in tasks:

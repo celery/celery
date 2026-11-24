@@ -1545,6 +1545,27 @@ class test_chain(CanvasCase):
 
         assert x.apply().get() == 3
 
+    @pytest.mark.parametrize('compose', [
+        pytest.param(lambda first, empty: first | empty, id='task_or_chain'),
+        pytest.param(lambda first, empty: chain(first) | empty,
+                     id='chain_or_chain'),
+        pytest.param(lambda first, empty: empty | first, id='chain_or_task'),
+    ])
+    def test_compose_empty_chain_with_success_callback(self, compose):
+        empty = chain()
+        empty.link(self.add.s(1))
+
+        with pytest.raises(ValueError, match='empty chain.*success callback'):
+            compose(self.add.s(1, 1), empty)
+
+    def test_compose_empty_chain_with_error_callback(self):
+        empty = chain()
+        empty.link_error(self.add.s(1))
+
+        c = self.add.s(1, 1) | empty
+
+        assert c.tasks == (self.add.s(1, 1),)
+
     @pytest.mark.usefixtures('depends_on_current_app')
     def test_chain_single_child_result(self):
         child_sig = self.add.si(1, 1)
