@@ -80,5 +80,22 @@ chain, group, and chord seem to work.
 Limitations
 ===========
 
-Currently, using Kafka as a broker means that only one worker can be used.
-See https://github.com/celery/kombu/issues/1785.
+With classic Kafka consumer groups, each partition is assigned to at most one
+worker in the group. The number of workers actively consuming a Celery queue
+therefore cannot exceed the number of partitions in its Kafka topic. Workers
+without an assigned partition remain idle.
+
+Kombu creates topics with one partition by default. To use multiple workers,
+create the topic with at least one partition per worker, or set the
+``num_partitions`` transport option when Kombu creates the topic:
+
+.. code-block:: python
+
+    broker_transport_options.update({
+        "num_partitions": 4,
+    })
+
+The ``num_partitions`` option is only used when Kombu creates a topic. For an
+existing topic, increase the number of partitions using Kafka's administration
+tools. Note that Kafka only guarantees message ordering within a partition, not
+across the whole topic.
