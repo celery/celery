@@ -3418,7 +3418,8 @@ class test_chord:
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
 
-    def test_nested_chord_header_link_error(self, manager, subtests):
+    @pytest.mark.parametrize('how', ['method', 'option'])
+    def test_nested_chord_header_link_error(self, how, manager, subtests):
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
@@ -3453,8 +3454,11 @@ class test_chord:
             ),
             body_sig,
         )
-        chord_outer.link_error(errback_sig)
-        chord_outer.delay()
+        if how == 'option':
+            chord_outer.apply_async(link_error=errback_sig)
+        else:
+            chord_outer.link_error(errback_sig)
+            chord_outer.delay()
 
         with subtests.test(msg="Confirm the body was not executed"):
             with pytest.raises(TimeoutError):
