@@ -1,7 +1,6 @@
 """File-system result store backend."""
 import locale
 import os
-from datetime import datetime
 
 from kombu.utils.encoding import ensure_bytes
 
@@ -102,9 +101,9 @@ class FilesystemBackend(KeyValueStoreBackend):
         """Delete expired meta-data."""
         if not self.expires:
             return
-        epoch = datetime(1970, 1, 1, tzinfo=self.app.timezone)
-        now_ts = (self.app.now() - epoch).total_seconds()
-        cutoff_ts = now_ts - self.expires
+        # st_mtime is a Unix timestamp, so compare it with one: the Unix
+        # epoch is midnight UTC, not midnight in the app's timezone.
+        cutoff_ts = self.app.now().timestamp() - self.expires
         for filename in os.listdir(self.path):
             for prefix in (self.task_keyprefix, self.group_keyprefix,
                            self.chord_keyprefix):
