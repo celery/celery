@@ -237,6 +237,41 @@ def test_events_evtop_shows_friendly_error_when_broker_unreachable(cli_runner: C
     assert 'Traceback' not in res.output
 
 
+def test_events_dash_d_runs_dump_mode(cli_runner: CliRunner):
+    """``-d`` is the short form of ``--dump`` and must reach dump mode.
+
+    Both the ``--dump`` and the ``--detach`` options declared the ``-d``
+    short flag, so with click >= 8.5 ``-d`` resolves to ``--detach`` and the
+    documented dump mode is unreachable from the short flag.
+    """
+    with patch('celery.bin.events._run_evdump',
+               side_effect=OperationalError('connection failed')) as evdump, \
+         patch('celery.bin.events._run_evtop',
+               side_effect=OperationalError('connection failed')):
+        res = cli_runner.invoke(
+            celery,
+            [*_GLOBAL_OPTIONS, 'events', '-d'],
+            catch_exceptions=False,
+        )
+    evdump.assert_called_once()  # '-d' must enter dump mode, not detach/evtop
+    assert res.exit_code == EX_UNAVAILABLE, (res, res.output)
+    assert 'Error: Could not connect to the message broker.' in res.output
+    assert 'Reason: connection failed' in res.output
+
+
+def test_events_short_options_are_unique(cli_runner: CliRunner):
+    """The ``events`` command must not declare the same short flag twice."""
+    res = cli_runner.invoke(
+        celery,
+        [*_GLOBAL_OPTIONS, 'events', '--help'],
+        catch_exceptions=False,
+    )
+    assert res.exit_code == 0, (res, res.output)
+    assert '-d, --dump' in res.output
+    assert '-D, --detach' in res.output
+    assert '-d, --detach' not in res.output
+
+
 def test_control_with_preload_option(isolated_cli_runner: CliRunner):
     res = isolated_cli_runner.invoke(
         celery,
