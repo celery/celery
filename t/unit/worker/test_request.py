@@ -2042,6 +2042,37 @@ class test_Request(RequestCase):
         after_return_mock.assert_called_once()
         assert after_return_mock.call_args[0][0] == 'FAILURE'
 
+    def test_hard_time_limit_requeued_by_on_failure_is_handled_by_on_timeout(self, patching):
+        """With acks_late and acks_on_timeout off, on_failure()
+        requeues the message and stores nothing, so on_timeout() must not
+        skip its own failure handling.
+        """
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        original_mark = self.mytask.backend.mark_as_failure
+        self.mytask.acks_late = True
+        self.mytask.acks_on_timeout = False
+        try:
+            job = self.xRequest()
+            job.send_event = Mock(name='send_event')
+            mark_mock = Mock(name='mark_as_failure')
+            job.task.backend.mark_as_failure = mark_mock
+            try:
+                raise TimeLimitExceeded(30)
+            except TimeLimitExceeded:
+                job.on_failure(ExceptionInfo())
+            mark_mock.assert_not_called()
+            handler.assert_not_called()
+            job.on_timeout(soft=False, timeout=30)
+        finally:
+            task_failure.disconnect(handler)
+            self.mytask.backend.mark_as_failure = original_mark
+
+        mark_mock.assert_called_once()
+        handler.assert_called_once()
+
     def test_on_hard_timeout_calls_after_return(self, patching):
         """Hard timeout must invoke task.after_return when overridden."""
         patching('celery.worker.request.error')
