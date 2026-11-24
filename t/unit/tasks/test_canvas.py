@@ -3734,20 +3734,22 @@ class test_chord(CanvasCase):
             outer = c.tasks[-1]
         nested, = (task for task in getattr(outer.tasks, 'tasks', outer.tasks)
                    if isinstance(task, chord))
-        return nested
+        return outer, nested
 
     @pytest.mark.parametrize('how', ['unfrozen', 'frozen', 'chain'])
     def test_link_error_on_nested_chord(self, how):
         self.app.conf.task_allow_error_cb_on_chord_header = False
         err = signature('err')
-        nested = self._nested_chord_link_error(err, how)
-        assert nested.body.options['link_error'] == [err]
+        outer, nested = self._nested_chord_link_error(err, how)
+        assert outer.body.options['link_error'] == [err]
+        assert not nested.body.options.get('link_error')
 
     @pytest.mark.parametrize('how', ['unfrozen', 'frozen', 'chain'])
     def test_link_error_on_nested_chord_with_header_errbacks(self, how):
         self.app.conf.task_allow_error_cb_on_chord_header = True
         err = signature('err')
-        nested = self._nested_chord_link_error(err, how)
+        outer, nested = self._nested_chord_link_error(err, how)
+        assert outer.body.options['link_error'] == [err]
         # Linked once through the header, not a second time as a nested chord
         assert nested.body.options['link_error'] == [err.clone(immutable=True)]
 

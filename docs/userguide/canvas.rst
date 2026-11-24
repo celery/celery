@@ -1046,11 +1046,9 @@ Enabling this flag will cause the chord header to invoke the errback for the bod
     it, so the tasks keep their own errbacks. If the group has its own
     ``link_error``, which replaces those of its tasks when it runs, it's
     added there instead, and runs wherever the group's own errbacks run.
-    Chords nested in the header also receive the errback for failures that
-    prevent their own body from being dispatched. For failures of ordinary
-    outer header tasks, the outer body handles the errback regardless of
-    :setting:`task_allow_error_cb_on_chord_header`. Before 5.7, passing
-    these options raised :exc:`TypeError`.
+    The :setting:`task_allow_error_cb_on_chord_header` setting doesn't
+    apply to ``link_error``, so an errback passed this way isn't added to
+    the header tasks. Previously, passing them raised :exc:`TypeError`.
 
     When a header task fails and the body is a group, each task of the
     group now calls its own errbacks as well as those of the group, each

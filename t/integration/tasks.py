@@ -79,6 +79,12 @@ def write_to_file_and_return_int(file_name, i):
     return i
 
 
+@shared_task
+def write_errback_to_file(request, exc, traceback, file_name):
+    with open(file_name, mode='a') as file_handle:
+        file_handle.write(f'{request.id}\n')
+
+
 @shared_task(typing=False)
 def add_not_typed(x, y):
     """Add two numbers, but don't check arguments"""

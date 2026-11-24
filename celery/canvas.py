@@ -2091,8 +2091,7 @@ class group(Signature):
 
     def _apply_tasks(self, tasks, producer=None, app=None, p=None,
                      add_to_parent=None, chord=None,
-                     args=None, kwargs=None, group_index=None,
-                     _chord_header_errbacks=(), **options):
+                     args=None, kwargs=None, group_index=None, **options):
         """Run all the tasks in the group.
 
         This is used by :meth:`apply_async` to run all the tasks in the group
@@ -2131,8 +2130,6 @@ class group(Signature):
                 # end up messing up chord counts and there are all sorts of
                 # awful race conditions to think about. We'll hope it's not!
                 sig, res, group_id = current_task
-                if _chord_header_errbacks and isinstance(sig, _chord):
-                    sig.extend_list_option('_chord_header_errbacks', _chord_header_errbacks)
                 chord_obj = chord if chord is not None else sig.options.get("chord")
                 # We need to check the chord size of each contributing task so
                 # that when we get to the final one, we can correctly set the
@@ -2523,7 +2520,7 @@ class _chord(Signature):
             tasks = group(tasks, app=app, task_id=self.options.get('task_id') or uuid())
         if app.conf.task_always_eager:
             # apply() does not use the options of the chord, unlike run()
-            body, _ = self._add_body_callbacks(body, dict(self.options, **callbacks))
+            body = self._add_body_callbacks(body, dict(self.options, **callbacks))
             with allow_join_result():
                 return self.apply(args, kwargs,
                                   body=body, task_id=task_id, **options)
@@ -2605,12 +2602,16 @@ class _chord(Signature):
         ``link_error``, which replaces theirs when it runs, it is added
         there instead, with the group's own errbacks. Any other body gets
         it in its own ``link_error`` option, where the chord's error
-        handling reads it when the header fails.
+        handling reads it when the header fails. Unlike :meth:`link_error`
+        with ``task_allow_error_cb_on_chord_header`` enabled, it is not
+        added to the header tasks, nor to the header of a chord that is a
+        task of a group body. Neither may reach the header: a group refuses
+        them.
 
-        Returns the body and the errbacks passed in ``options``.
+        Returns the body to use: a copy when there are callbacks to link.
         """
         callbacks = maybe_list(options.pop('link', None)) or []
-        errbacks = list(maybe_list(options.pop('link_error', None)) or [])
+        errbacks = maybe_list(options.pop('link_error', None)) or []
         if callbacks or errbacks:
             # Linking changes the signatures in a group or chord, which
             # clone() shares with the caller's.
@@ -2627,7 +2628,7 @@ class _chord(Signature):
                     body, maybe_signature(errback, app=body._app))
             else:
                 body.append_to_list_option('link_error', errback)
-        return body, errbacks
+        return body
 
     def run(self, header, body, partial_args, app=None, interval=None,
             countdown=1, max_retries=None, eager=False,
@@ -2664,14 +2665,10 @@ class _chord(Signature):
             if key not in header_delay and options.get(key) is not None:
                 header_delay[key] = options[key]
             options.pop(key, None)
-        options.pop('task_id', None)
-        header_errbacks = options.pop('_chord_header_errbacks', [])
-        body, errbacks = self._add_body_callbacks(body, options)
-        body.options.update(self._body_options(options))
-        # The backend uses these if the body cannot be dispatched. If the
-        # body runs and fails, it already reports the failure to the outer chord.
-        for errback in header_errbacks:
-            body.append_to_list_option('_chord_header_errbacks', errback)
+        if options:
+            options.pop('task_id', None)
+            body = self._add_body_callbacks(body, options)
+            body.options.update(self._body_options(options))
 
         # Freezing a nested chain first would embed its whole remaining tail
         # in every inner chord header, before prepare_steps can split it.
@@ -2705,8 +2702,6 @@ class _chord(Signature):
             # When both countdown and eta are set, both are forwarded; the
             # task layer prefers countdown, same as a single task.
             header_apply_options.update(header_delay)
-            if header_errbacks or errbacks:
-                header_apply_options['_chord_header_errbacks'] = [*header_errbacks, *errbacks]
             header_result = header.apply_async(
                 partial_args, kwargs, task_id=group_id, **header_apply_options)
         # The execution of a chord body is normally triggered by its header's
@@ -2776,15 +2771,6 @@ class _chord(Signature):
                 CPendingDeprecationWarning,
                 stacklevel=2,
             )
-
-            # Edge case for nested chords in the header. With the setting
-            # enabled they were linked above already. freeze() wraps the
-            # header in a group, so look at the tasks of that group.
-            for task in maybe_list(getattr(self.tasks, 'tasks', self.tasks)) or []:
-                if isinstance(task, chord):
-                    # Let the nested chord do the error linking itself on its
-                    # header and body where needed, based on the current configuration
-                    task.link_error(errback)
 
         self.body.link_error(errback)
         return errback
