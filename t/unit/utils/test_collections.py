@@ -1,4 +1,5 @@
 import pickle
+import threading
 from collections.abc import Mapping
 from copy import copy
 from itertools import count
@@ -741,6 +742,71 @@ class test_BufferMap:
 
     def test_repr(self):
         assert repr(Messagebuffer(10, [1, 2, 3]))
+
+    def test_clear_resets_total(self):
+        b = BufferMap(10)
+        b.put('k1', 1)
+        b.put('k2', 2)
+        assert b.total == 2
+        b.clear()
+        assert b.total == 0
+        assert len(b) == 0
+
+    def test_context_manager_locks_mutex(self):
+        b = BufferMap(10)
+        with b:
+            b.put('k1', 1)
+            assert b.total == 1
+
+    def test_concurrent_puts_preserve_total(self):
+        b = BufferMap(maxsize=100000, bufmaxsize=100000)
+        barrier = threading.Barrier(4)
+
+        def worker(key):
+            barrier.wait()
+            for i in range(1000):
+                b.put(key, i)
+
+        threads = [threading.Thread(target=worker, args=(f'k{i % 2}',)) for i in range(4)]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+
+        true_count = sum(len(buf) for buf in b.values())
+        assert b.total == true_count == 4000
+
+    def test_concurrent_puts_and_takes_preserve_total(self):
+        b = BufferMap(maxsize=100, bufmaxsize=50)
+        barrier = threading.Barrier(4)
+
+        def producer(key):
+            barrier.wait()
+            for i in range(500):
+                b.put(key, i)
+
+        def consumer(key):
+            barrier.wait()
+            for _ in range(500):
+                try:
+                    b.take(key)
+                except b.Empty:
+                    pass
+
+        threads = [
+            threading.Thread(target=producer, args=('a',)),
+            threading.Thread(target=producer, args=('b',)),
+            threading.Thread(target=consumer, args=('a',)),
+            threading.Thread(target=consumer, args=('b',)),
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+
+        true_count = sum(len(buf) for buf in b.values())
+        assert b.total == true_count
+        assert b.total <= b.maxsize
 
 
 class test_ChainMap:
