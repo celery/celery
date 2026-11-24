@@ -882,6 +882,33 @@ class test_RedisResultConsumer:
         # The important thing is that on_wait_for_pending did not crash.
         assert task_id in consumer.backend._pending_messages
 
+    def test_on_wait_for_pending_skips_none_meta(self):
+        """_iter_meta may yield None; those entries must not be treated as results."""
+        from celery.utils.collections import BufferMap
+
+        consumer = self.get_consumer()
+        consumer.backend._pending_results = {}, {}
+        consumer.backend._pending_messages = BufferMap(10)
+
+        task_id = 'test-task-none-meta'
+        meta = {
+            'task_id': task_id,
+            'status': states.SUCCESS,
+            'result': 42,
+        }
+        consumer.backend._pending_messages.put(task_id, meta)
+
+        class MockResult:
+            def _iter_meta(self, **kwargs):
+                return [None, meta]
+
+        with patch.object(consumer, 'on_state_change',
+                          wraps=consumer.on_state_change) as on_state_change:
+            consumer.on_wait_for_pending(MockResult())
+
+        on_state_change.assert_called_once_with(meta, None)
+        assert task_id not in consumer.backend._pending_messages
+
     def _lock_is_held(self, lock):
         # probe from another thread: a non-blocking acquire fails
         # iff some thread currently holds the lock.
@@ -1003,6 +1030,30 @@ class test_RedisResultConsumer:
             sleep.side_effect = check_unlocked
             consumer.drain_events(timeout=1)
         sleep.assert_called_once_with(1)
+
+    def test_drain_events_without_pubsub_or_timeout_is_noop(self):
+        consumer = self.get_consumer()
+        consumer._pubsub = None
+        with patch('celery.backends.redis.time.sleep') as sleep:
+            consumer.drain_events(timeout=None)
+            consumer.drain_events(timeout=0)
+        sleep.assert_not_called()
+
+    def test_flush_pending_unsubscribe_without_pubsub(self):
+        # Pubsub may already be gone (reconnect cleared it); still drop the
+        # subscription bookkeeping without calling unsubscribe.
+        consumer = self.get_consumer()
+        consumer.start('initial')
+        pubsub = consumer._pubsub
+        key = consumer.backend.get_key_for_task('initial')
+        assert key in consumer.subscribed_to
+        consumer._pubsub = None
+
+        consumer.cancel_for('initial')
+
+        assert key not in consumer.subscribed_to
+        assert not consumer._pending_unsubscribe
+        pubsub.unsubscribe.assert_not_called()
 
     def test_stop_closes_pubsub(self):
         consumer = self.get_consumer()
@@ -1569,6 +1620,13 @@ class test_RedisBackend(basetest_RedisBackend):
         assert 'socket_keepalive' not in x.connparams
         assert x.connparams['db'] == 3
 
+    def test_socket_keepalive(self):
+        pytest.importorskip('redis')
+
+        self.app.conf.redis_socket_keepalive = True
+        x = self.Backend('redis://localhost:6379/0', app=self.app)
+        assert x.connparams['socket_keepalive'] is True
+
     def test_backend_ssl(self):
         pytest.importorskip('redis')
 
@@ -1912,6 +1970,37 @@ class test_RedisBackend(basetest_RedisBackend):
         self.app.conf.result_backend_transport_options = {}
         b = self.Backend(app=self.app)
         assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_none(self):
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=None,
+        )
+        b = self.Backend(app=self.app)
+        assert ConnectionError not in b.connection_errors
+
+    def test_additional_connection_errors_non_iterable(self):
+        # A bare non-iterable value is wrapped as a one-element sequence, then
+        # ignored when it is not an exception class.
+        self.app.conf.result_backend_transport_options = dict(
+            additional_connection_errors=42,
+        )
+        b = self.Backend(app=self.app)
+        assert 42 not in b.connection_errors
+        assert ConnectionError not in b.connection_errors
+
+    def test_on_task_call_consumes_when_join_will_not_block(self):
+        with patch('celery.backends.redis.task_join_will_block',
+                   return_value=False), \
+                patch.object(self.b.result_consumer, 'consume_from') as consume:
+            self.b.on_task_call(Mock(name='producer'), 'tid-1')
+        consume.assert_called_once_with('tid-1')
+
+    def test_on_task_call_skips_when_join_will_block(self):
+        with patch('celery.backends.redis.task_join_will_block',
+                   return_value=True), \
+                patch.object(self.b.result_consumer, 'consume_from') as consume:
+            self.b.on_task_call(Mock(name='producer'), 'tid-1')
+        consume.assert_not_called()
 
     def test_additional_connection_errors_scalar_class(self):
         self.app.conf.result_backend_transport_options = dict(
@@ -3514,6 +3603,11 @@ class test_SentinelBackend:
     def test_no_redis(self):
         self.Backend.redis = None
         with pytest.raises(ImproperlyConfigured):
+            self.Backend(app=self.app)
+
+    def test_no_sentinel(self):
+        self.Backend.sentinel = None
+        with pytest.raises(ImproperlyConfigured, match='sentinel'):
             self.Backend(app=self.app)
 
     def test_url(self):
