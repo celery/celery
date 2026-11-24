@@ -196,6 +196,84 @@ class test_DynamoDBBackend:
             **self.backend._get_table_schema()
         )
 
+    def test_get_or_create_table_create_race(self):
+        # Another pool process is creating the table: create_table raises
+        # ResourceInUseException, which must be waited out, not propagated
+        # (the task that produced the result would be stored as FAILURE).
+        from botocore.exceptions import ClientError
+
+        self.backend._client = MagicMock()
+        not_found = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceNotFoundException'
+                }
+            },
+            'DescribeTable'
+        )
+        in_use = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceInUseException'
+                }
+            },
+            'CreateTable'
+        )
+        table_description = {
+            'Table': {
+                'TableStatus': 'ACTIVE'
+            }
+        }
+        mock_describe_table = self.backend._client.describe_table = \
+            MagicMock()
+        mock_describe_table.side_effect = [not_found, table_description]
+        mock_create_table = self.backend._client.create_table = MagicMock()
+        mock_create_table.side_effect = in_use
+        self.backend._wait_for_table_status = MagicMock()
+
+        assert self.backend._get_or_create_table() == table_description
+        mock_create_table.assert_called_once_with(
+            **self.backend._get_table_schema()
+        )
+        self.backend._wait_for_table_status.assert_called_once_with(
+            'ACTIVE'
+        )
+        assert mock_describe_table.call_count == 2
+
+    def test_get_or_create_table_create_other_error(self):
+        # A create failure for any other reason still propagates.
+        from botocore.exceptions import ClientError
+
+        self.backend._client = MagicMock()
+        not_found = ClientError(
+            {
+                'Error': {
+                    'Code': 'ResourceNotFoundException'
+                }
+            },
+            'DescribeTable'
+        )
+        other = ClientError(
+            {
+                'Error': {
+                    'Code': 'ValidationException'
+                }
+            },
+            'CreateTable'
+        )
+        mock_describe_table = self.backend._client.describe_table = \
+            MagicMock()
+        mock_describe_table.side_effect = not_found
+        mock_create_table = self.backend._client.create_table = MagicMock()
+        mock_create_table.side_effect = other
+        self.backend._wait_for_table_status = MagicMock()
+
+        with pytest.raises(ClientError) as exc_info:
+            self.backend._get_or_create_table()
+        assert exc_info.value.response['Error']['Code'] == \
+            'ValidationException'
+        self.backend._wait_for_table_status.assert_not_called()
+
     def test_get_or_create_table_already_exists(self):
         self.backend._client = MagicMock()
         mock_create_table = self.backend._client.create_table = MagicMock()

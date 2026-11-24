@@ -1410,6 +1410,13 @@ you to customize the table names:
         'group': 'myapp_groupmeta',
     }
 
+.. versionchanged:: 5.7
+
+    The ``date_done`` indexes are named after the configured tables
+    (``ix_myapp_taskmeta_date_done`` above), so apps with different table
+    names can share a database or schema. Tables created before this change
+    keep their existing index.
+
 .. note::
 
     Starting in Celery 5.7, the database result backend supports storing task
@@ -2675,7 +2682,9 @@ This is a dict supporting the following keys:
 
 * ``port``
 
-    The port the Couchbase server is listening to. Defaults to ``8091``.
+    The key-value port of the Couchbase server. Defaults to the SDK's,
+    ``11210``. ``8091``, the HTTP port and the previous default, is ignored,
+    since the SDK can't connect to it.
 
 * ``bucket``
 

@@ -1,5 +1,7 @@
 from unittest.mock import Mock, patch
 
+import pytest
+
 from celery.concurrency.gevent import TaskPool, Timer, apply_timeout
 
 gevent_modules = (
@@ -39,6 +41,7 @@ class test_Timer:
         entry = Mock()
         g = x._enter(1, 0, entry)
         assert x.queue
+        x._Greenlet.spawn_later.assert_called_once_with(0, x._apply_entry, entry)
 
         x._entry_exit(g)
         g.kill.assert_called_with()
@@ -46,12 +49,167 @@ class test_Timer:
 
         x._queue.add(g)
         x.clear()
+        g.entry.cancel.assert_called_once_with()
         x._queue.add(g)
         g.kill.side_effect = KeyError()
         x.clear()
 
         g = x._Greenlet()
         g.cancel()
+
+    def test_cancel_and_apply_entry(self):
+        import gevent
+        gevent.Greenlet = type('Greenlet', (), {'kill': Mock()})
+        x = Timer()
+        entry = Mock(canceled=False)
+
+        x._apply_entry(entry)
+        entry.assert_called_once_with()
+
+        g = x._Greenlet()
+        g.entry = entry
+        g.kill = Mock()
+        g.cancel(block=False)
+
+        entry.cancel.assert_called_once_with()
+        g.kill.assert_called_once_with(block=False)
+
+        entry.reset_mock()
+        entry.canceled = True
+        x._apply_entry(entry)
+        entry.assert_not_called()
+
+
+class test_Timer_real:
+    @pytest.fixture
+    def gevent(self):
+        return pytest.importorskip('gevent')
+
+    @pytest.fixture
+    def timer(self, gevent):
+        timer = Timer()
+        yield timer
+        for g in list(timer.queue):
+            g.entry.cancel()
+            g.kill(block=False)
+        gevent.sleep(0)
+
+    def assert_quiet(self, timer, gevent, calls, expected):
+        from gevent.event import Event
+
+        barrier = Event()
+        observer = timer.call_after(0.01, barrier.set)
+        assert barrier.wait(timeout=2)
+        observer.join(timeout=2)
+        gevent.sleep(0)
+        assert calls == expected
+
+    @pytest.mark.parametrize('cancel_via_timer', [False, True])
+    def test_cancel_after_multiple_iterations(self, timer, gevent, cancel_via_timer):
+        from gevent.queue import Queue
+
+        ticks = Queue()
+        calls = []
+
+        def tick():
+            calls.append(len(calls))
+            ticks.put(len(calls))
+
+        first = timer.call_repeatedly(0.001, tick)
+        for expected in range(1, 4):
+            assert ticks.get(timeout=2) == expected
+        assert first.dead
+        assert any(g.entry is first.entry and g is not first for g in timer.queue)
+        if cancel_via_timer:
+            timer.cancel(first)
+        else:
+            first.cancel()
+        assert first.entry.canceled
+        self.assert_quiet(timer, gevent, calls, [0, 1, 2])
+        assert not timer.queue
+
+    def test_cancel_leaves_other_timer_running(self, timer, gevent):
+        from gevent.queue import Queue
+
+        ticks = Queue()
+        canceled = []
+        first = timer.call_repeatedly(0.001, canceled.append, ('canceled',))
+        timer.call_repeatedly(0.001, ticks.put, ('other',))
+        assert ticks.get(timeout=2) == 'other'
+        first.cancel()
+        expected = list(canceled)
+        while not ticks.empty():
+            ticks.get_nowait()
+        assert ticks.get(timeout=2) == 'other'
+        self.assert_quiet(timer, gevent, canceled, expected)
+
+    def test_clear_stops_repeated_scheduling(self, timer, gevent):
+        from gevent.event import Event
+
+        entered = Event()
+        calls = []
+
+        def tick():
+            calls.append('tick')
+            entered.set()
+            gevent.sleep(0.05)
+
+        first = timer.call_repeatedly(0.001, tick)
+        assert entered.wait(timeout=2)
+        timer.clear()
+        assert first.entry.canceled
+        assert not timer.queue
+        self.assert_quiet(timer, gevent, calls, ['tick'])
+
+    def test_cancel_from_own_callback(self, timer, gevent):
+        from gevent.queue import Queue
+
+        ticks = Queue()
+        calls = []
+
+        def tick():
+            calls.append(len(calls))
+            ticks.put(len(calls))
+            if len(calls) == 2:
+                handle.cancel()
+
+        handle = timer.call_repeatedly(0.001, tick)
+        for expected in (1, 2):
+            assert ticks.get(timeout=2) == expected
+        assert handle.entry.canceled
+        self.assert_quiet(timer, gevent, calls, [0, 1])
+        assert not timer.queue
+
+    @pytest.mark.parametrize('method', ['call_after', 'call_at'])
+    def test_single_shot_and_repeated_cancel(self, timer, gevent, method):
+        from time import monotonic
+
+        from gevent.event import Event
+
+        called = Event()
+        when = 0.001 if method == 'call_after' else monotonic() + 0.001
+        handle = getattr(timer, method)(when, called.set)
+        assert isinstance(handle, gevent.Greenlet)
+        assert called.wait(timeout=2)
+        handle.join(timeout=2)
+        handle.cancel()
+        timer.cancel(handle)
+        handle.cancel(block=False)
+        assert handle.dead
+        assert handle.entry.canceled
+
+    @pytest.mark.parametrize('cancel_via_timer', [False, True])
+    def test_cancel_single_shot_before_start(self, timer, gevent, cancel_via_timer):
+        called = []
+        handle = timer.call_after(60, called.append, ('unexpected',))
+        if cancel_via_timer:
+            timer.cancel(handle)
+        else:
+            handle.cancel()
+        assert handle.dead
+        assert handle.entry.canceled
+        self.assert_quiet(timer, gevent, called, [])
+        assert not timer.queue
 
 
 class test_TaskPool:
