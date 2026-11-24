@@ -206,6 +206,54 @@ class test_lookup_route(RouteCase):
         assert options.get('priority') is None
         assert 'expiration' not in options
 
+    def test_router_class__returned_dict_is_not_modified(self):
+        # A pre-4.0 router class that returns the same dict for every call.
+        self.simple_queue_setup()
+        route = {'queue': 'foo'}
+        step = Mock(spec=['route_for_task'])
+        step.route_for_task.return_value = route
+        router = Router(self.app, [step], self.app.amqp.queues)
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            self.mytask.apply_async((1,), router=router,
+                                    priority=9, expires=30)
+            self.mytask.apply_async((2,), router=router)
+        assert route == {'queue': 'foo'}
+        options = send.call_args_list[1][1]
+        assert options.get('priority') is None
+        assert 'expiration' not in options
+
+    def test_route__options_are_not_merged_into_a_returned_dict(self):
+        # The chord fallback routes with its own keyword arguments as
+        # options: they must not end up in the router's dict.
+        self.simple_queue_setup()
+        route = {'queue': 'foo', 'headers': {'tenant': 'a'}}
+        router = Router(self.app, [lambda *args, **kwargs: route],
+                        self.app.amqp.queues)
+        first = router.route({'result': [1], 'headers': {'x': 1}},
+                             self.mytask.name)
+        assert first['result'] == [1]
+        assert route == {'queue': 'foo', 'headers': {'tenant': 'a'}}
+        second = router.route({}, self.mytask.name)
+        assert 'result' not in second
+        assert second['headers'] == {'tenant': 'a'}
+
+    def test_route__does_not_modify_the_options_it_is_given(self):
+        self.simple_queue_setup()
+        router = Router(self.app, [], self.app.amqp.queues)
+        options = {'queue': 'foo', 'priority': 5}
+        routed = router.route(options, self.mytask.name)
+        assert options == {'queue': 'foo', 'priority': 5}
+        assert routed['queue'].name == 'foo'
+        assert routed['priority'] == 5
+
+    def test_router_fun__may_return_a_read_only_mapping(self):
+        from types import MappingProxyType
+        self.simple_queue_setup()
+        route = MappingProxyType({'queue': 'foo'})
+        router = Router(self.app, [lambda *args, **kwargs: route],
+                        self.app.amqp.queues)
+        assert router.route({}, self.mytask.name)['queue'].name == 'foo'
+
     def test_compat_router_classes__called_with(self):
         self.simple_queue_setup()
         step = Mock(spec=['route_for_task'])
