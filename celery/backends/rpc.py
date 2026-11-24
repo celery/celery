@@ -2,9 +2,9 @@
 
 RPC-style result backend, using reply-to and one queue per client.
 """
-from contextlib import nullcontext
 import logging
 import time
+from contextlib import nullcontext
 
 import kombu
 from kombu.common import maybe_declare
