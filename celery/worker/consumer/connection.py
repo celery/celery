@@ -1,9 +1,11 @@
 """Consumer Broker Connection Bootstep."""
 from kombu.common import ignore_errors
+from kombu.utils.encoding import safe_repr
 from kombu.utils.url import maybe_sanitize_url
 
 from celery import bootsteps
 from celery.utils.log import get_logger
+from celery.utils.serialization import jsonify
 
 __all__ = ('Connection',)
 
@@ -51,4 +53,10 @@ class Connection(bootsteps.StartStopStep):
                     maybe_sanitize_url(url) if isinstance(url, str) else url
                     for url in alternates
                 ]
-        return {'broker': params}
+        # Values such as broker_transport_options entries may not be JSON
+        # serializable (e.g. a redis-py Retry object); represent them the
+        # same way `inspect conf` does, or the reply cannot be encoded at
+        # all and the worker drops its pidbox (#11056).
+        return jsonify(
+            {'broker': params}, unknown_type_filter=safe_repr,
+        )

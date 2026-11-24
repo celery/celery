@@ -196,11 +196,15 @@ def synloop(obj, connection, consumer, blueprint, hub, qos,
             if blueprint.state == RUN:
                 raise
         # drain this connection so broker heartbeats are consumed.
+        # Barely wait for a frame: this connection rarely has one, and
+        # waiting would delay every cycle (and so every message). Not 0:
+        # py-amqp busy-loops on a non-blocking socket until the rest of a
+        # partly received frame arrives.
         if is_green and obj.amqheartbeat and obj.event_dispatcher:
             connection_ = obj.event_dispatcher.connection
             if connection_ and connection_.supports_heartbeats:
                 try:
-                    _quick_drain(obj.event_dispatcher.connection)
+                    _quick_drain(obj.event_dispatcher.connection, timeout=0.001)
                 except OSError:
                     if blueprint.state == RUN:
                         raise
