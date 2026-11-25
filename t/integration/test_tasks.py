@@ -10,6 +10,7 @@ import pytest
 
 import celery
 from celery import chain, chord, group
+from celery.backends.base import SyncBackendMixin
 from celery.canvas import StampingVisitor
 from celery.signals import before_task_publish, task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -260,29 +261,31 @@ class test_tasks:
     def test_wait_for_timeout_with_slow_backend(self, manager, monkeypatch):
         """A slow backend poll must count against the wait_for timeout (#11111).
 
-        The fake clock advances 0.5s on every monotonic() call, so each
-        poll costs 0.5s against a 1s timeout: the wait must raise after
-        exactly 2 polls. Without the fix the poll time is ignored and the
-        wait only times out after 6 polls (one per 0.2s sleep). Everything
-        else (real backend, real round-trip) is live. wait_for is called
-        directly: AsyncResult.get() takes the async consumer path on
-        backends that have one, which never polls. Skipped on backends
-        without a polling wait_for (e.g. redis, rpc).
+        The fake clock advances 0.5s inside counting_get_task_meta, so
+        each poll costs 0.5s against a 1s timeout: the wait must raise
+        after exactly 2 polls. Without the fix the poll time is ignored
+        and the wait only times out after 6 polls (one per 0.2s sleep).
+        Advancing the clock in the mocked backend call, rather than on
+        every monotonic() call, keeps the test independent of how the
+        implementation reads the clock. Everything else (real backend,
+        real round-trip) is live. wait_for is called directly:
+        AsyncResult.get() takes the async consumer path on backends that
+        have one, which never polls. Skipped on backends without a
+        polling wait_for (e.g. redis, rpc).
         """
         backend = manager.app.backend
-        if not hasattr(backend, 'wait_for'):
+        if not isinstance(backend, SyncBackendMixin):
             raise pytest.skip('Backend has no polling wait_for')
         polls = []
         orig_get_task_meta = backend.get_task_meta
+        clock = [0.0]
 
         def counting_get_task_meta(*args, **kwargs):
             polls.append(1)
+            clock[0] += 0.5
             return orig_get_task_meta(*args, **kwargs)
 
-        clock = [0.0]
-
         def fake_monotonic():
-            clock[0] += 0.5
             return clock[0]
 
         monkeypatch.setattr(backend, 'get_task_meta', counting_get_task_meta)
