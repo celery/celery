@@ -669,6 +669,140 @@ class test_add_to_chord:
             return self.add_to_chord(sig, lazy)
         self.adds = adds
 
+        @self.app.task(shared=False, bind=True)
+        def add_to_all(self, nums, val):
+            for num in nums:
+                self.add_to_chord(add.s(num, val))
+            return 0
+        self.add_to_all = add_to_all
+
+        @self.app.task(shared=False)
+        def identity(x):
+            return x
+        self.identity = identity
+
+    def test_add_to_chord_eager(self):
+        # Issue #4071
+        from celery import chord
+        self.app.conf.task_always_eager = True
+        c = chord(
+            [self.add_to_all.s([1, 2], 4), self.add.si(10, 10)],
+            self.identity.s(),
+        )
+        assert c.delay().get() == [0, 20, 5, 6]
+
+    def test_add_to_chord_eager_apply_skips_result_backend(self):
+        from celery import chord
+        c = chord([self.add_to_all.s([1, 2], 4)], self.identity.s())
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = c.apply()
+        assert res.get() == [0, 5, 6]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_add_to_chord_eager_not_in_header(self):
+        from celery import chord
+        with pytest.raises(ValueError):
+            self.add_to_all.apply(([1], 4), throw=True)
+        c = chord([self.add.si(1, 1)], self.add_to_all.s(4))
+        with pytest.raises(ValueError):
+            c.apply().get()
+
+    def test_add_to_chord_eager_lazy(self):
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True)
+        def add_lazy(self):
+            self.add_to_chord(add.s(1, 2), lazy=True)
+            return 0
+
+        # The eager chord can't pass the result of the caller's own
+        # sig.delay() to the body, so lazy is refused instead.
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).apply().get()
+        self.app.conf.task_always_eager = True
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).delay().get()
+
+    def test_add_to_chord_eager_keeps_request_headers(self):
+        from celery import chord
+
+        @self.app.task(shared=False, bind=True)
+        def headers(self):
+            return self.request.headers
+
+        assert chord([headers.s()], self.identity.s()).apply().get() == [None]
+
+    def test_add_to_chord_eager_from_an_added_task(self):
+        # A task added to the chord is a member of it, as on a worker: it
+        # can add more.
+        from celery import chord
+        add_to_all = self.add_to_all
+
+        @self.app.task(shared=False, bind=True)
+        def add_one_that_adds(self):
+            self.add_to_chord(add_to_all.s([1], 4))
+            return 'outer'
+
+        c = chord([add_one_that_adds.s()], self.identity.s())
+        assert sorted(c.apply().get(), key=str) == [0, 5, 'outer']
+
+    def test_add_to_chord_eager_after_a_retry(self):
+        # The retried run is still a member of the chord.
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True, max_retries=1)
+        def add_then_retry(self):
+            if self.request.retries < 1:
+                raise self.retry(countdown=0)
+            self.add_to_chord(add.s(1, 2))
+            return 'retried'
+
+        c = chord([add_then_retry.s()], self.identity.s())
+        assert c.apply().get() == ['retried', 3]
+
+    def test_add_to_chord_eager_applies_the_added_task_once(self):
+        from celery import chord
+        ran = []
+
+        @self.app.task(shared=False)
+        def record(x):
+            ran.append(x)
+            return x
+
+        @self.app.task(shared=False, bind=True)
+        def add_record(self):
+            self.add_to_chord(record.s(1))
+            return 0
+
+        c = chord([add_record.s()], self.identity.s())
+        assert c.apply().get() == [0, 1]
+        assert ran == [1]
+
+    def test_add_to_chord_eager_added_task_fails(self):
+        # A failed added task is handled like a failed header task.
+        from celery import chord
+
+        @self.app.task(shared=False)
+        def fail():
+            raise KeyError('added')
+
+        @self.app.task(shared=False, bind=True)
+        def add_failing(self):
+            self.add_to_chord(fail.s())
+            return 0
+
+        c = chord([add_failing.s()], self.identity.s())
+        with pytest.raises(KeyError):
+            c.apply().get()
+        res = c.apply(propagate=False).get()
+        assert res[0] == 0
+        assert isinstance(res[1], KeyError)
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_add_to_chord(self):
         sig = self.add.s(2, 2)
