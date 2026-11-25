@@ -1,10 +1,11 @@
+import time
 from contextlib import contextmanager
 from unittest.mock import Mock, PropertyMock, patch, sentinel
 
 import pytest
 from kombu.exceptions import OperationalError
 
-from celery import canvas, group, result, uuid
+from celery import canvas, group, result, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import ChordError, MaxRetriesExceededError, Reject, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
@@ -108,6 +109,172 @@ class test_unlock_chord_task(ChordCase):
         )
 
         assert applied == [([2, 4],)]
+
+    def test_unlock_redelivered_after_dispatch_does_not_redispatch(self):
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with self._chord_context(AlwaysReady) as (cb, retry, _):
+            cb.type.apply_async.assert_called_once()
+            # Broker redelivery after a lost worker (task_acks_late):
+            # the same chord_unlock runs again with the same group id
+            # and must find the body already dispatched (#11037).
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=AlwaysReady,
+            )
+            cb.type.apply_async.assert_called_once()
+            assert not retry.call_count
+
+    def test_unlock_redelivered_after_join_failure_does_not_fail_again(self):
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        with self._chord_context(Failed) as (cb, retry, fail_current):
+            fail_current.assert_called_once()
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=Failed,
+            )
+            cb.type.apply_async.assert_not_called()
+            fail_current.assert_called_once()
+
+    def test_unlock_ready_failed_stores_the_failure_on_the_body(self):
+        # The other tests replace fail_from_current_stack with a mock.
+        # This one runs the real method, which needs an exception being
+        # handled when chord_error_from_stack() calls it.
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        def setup(callback):
+            del self.app.backend.fail_from_current_stack
+
+        with self._chord_context(Failed, setup) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            meta = self.app.backend.get_task_meta(cb.id)
+            assert meta['status'] == 'FAILURE'
+            assert isinstance(meta['result'], ChordError)
+
+    def test_unlock_not_ready_does_not_claim(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with self._chord_context(NeverReady, interval=10, max_retries=30) \
+                as (cb, retry, fail):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(countdown=10, max_retries=30)
+            fail.assert_not_called()
+            # Polling must not claim the chord: once the header is
+            # ready, a later run of the same polling chain still
+            # dispatches the body.
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=AlwaysReady,
+            )
+            cb.type.apply_async.assert_called_once()
+
+    def test_unlock_while_another_worker_finishes_retries(self):
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        status, _token = self.app.backend.try_claim_chord_unlock(group_id)
+        assert status == 'claimed'
+        callback.apply_async = Mock()
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        with patch_unlock_retry(self.app) as (unlock, retry):
+            with pytest.raises(Retry):
+                unlock_chord(
+                    group_id, callback.s(), interval=10, max_retries=30,
+                    result=[], GroupResult=AlwaysReady,
+                )
+        retry.assert_called_with(countdown=10, max_retries=30)
+        callback.apply_async.assert_not_called()
+
+    def test_unlock_takes_over_abandoned_claim(self):
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        backend = self.app.backend
+        backend.store_result(
+            backend._chord_unlock_claim_id(group_id),
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            states.STARTED,
+        )
+        applied = []
+        callback.apply_async = Mock(
+            side_effect=lambda *a, **kw: applied.append(a))
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        unlock_chord(
+            group_id, callback.s(),
+            result=[], GroupResult=AlwaysReady,
+        )
+        assert len(applied) == 1
+
+    def test_unlock_dispatches_body_when_the_claim_raises(self):
+        # A backend that cannot answer the claim must not lose the body.
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with patch.object(self.app.backend, 'try_claim_chord_unlock',
+                          side_effect=RuntimeError('backend down')):
+            with self._chord_context(AlwaysReady) as (cb, retry, _):
+                cb.type.apply_async.assert_called_once()
+                assert not retry.call_count
+
+    def test_unlock_retry_refused_when_another_worker_finishes(self):
+        # The copy that finds another worker's fresh claim retries;
+        # if the retry itself cannot be scheduled, the chord is left
+        # to that worker instead of being failed or dispatched twice.
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        status, _token = self.app.backend.try_claim_chord_unlock(group_id)
+        assert status == 'claimed'
+        callback.apply_async = Mock()
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        with patch_unlock_retry(self.app) as (unlock, retry):
+            retry.side_effect = RuntimeError('broker down')
+            unlock_chord(
+                group_id, callback.s(), interval=10, max_retries=30,
+                result=[], GroupResult=AlwaysReady,
+            )
+        retry.assert_called_with(countdown=10, max_retries=30)
+        callback.apply_async.assert_not_called()
 
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')
@@ -267,9 +434,14 @@ class test_unlock_chord_task(ChordCase):
                     setup(callback)
                 try:
                     assert self.app.tasks['celery.chord_unlock'] is unlock
+                    # A real chord run always gets a fresh group id, and
+                    # chord_unlock now records its dispatch against it
+                    # (#11037), so reuse across tests would look like a
+                    # redelivery of an already finished chord.
+                    self.chord_group_id = uuid()
                     try:
                         unlock(
-                            'group_id', callback_s,
+                            self.chord_group_id, callback_s,
                             result=[
                                 self.app.AsyncResult(r) for r in ['1', 2, 3]
                             ],
