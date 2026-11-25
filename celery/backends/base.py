@@ -1022,6 +1022,147 @@ class Backend:
     def set_chord_size(self, group_id, chord_size):
         pass
 
+    #: How long (in seconds) a chord_unlock dispatch claim counts as
+    #: owned by a live worker.  A claim older than this is treated as
+    #: abandoned (its owner was lost before it could finish), so a
+    #: redelivered chord_unlock may take it over instead of losing
+    #: the chord body.  The lease only has to cover publishing the
+    #: body (or failing the chord), which happens right after the
+    #: claim is taken; joining the header happens before it.
+    #: The trade-off is deliberate: a worker killed while it holds
+    #: the claim delays the body by up to the lease, where the body
+    #: used to be dispatched again almost immediately.
+    #: Each chord also leaves one more stored result,
+    #: ``chord-unlock-claim-<group_id>``, until results expire, so
+    #: anyone counting or cleaning the result table sees one extra
+    #: row (or file) per chord.
+    chord_unlock_claim_lease = 60.0
+
+    def _chord_unlock_claim_id(self, group_id):
+        """Synthetic result id under which the dispatch claim is stored."""
+        return f'chord-unlock-claim-{group_id}'
+
+    def try_claim_chord_unlock(self, group_id):
+        """Claim the right to finish the chord waiting on ``group_id``.
+
+        Backends without native chord support finish a chord in the
+        ``celery.chord_unlock`` task, which records nothing about
+        having dispatched the body.  With ``task_acks_late`` a worker
+        lost after dispatching the body but before acking causes the
+        broker to redeliver ``chord_unlock``, and the copy dispatched
+        the body again (#11037).
+
+        The claim is stored as an ordinary result under a synthetic
+        id derived from the group id, so every backend that can store
+        a result supports it through the semantics it already has:
+        a lease is stored with state ``STARTED`` carrying a unique
+        token and the time it was taken, and a finished dispatch is
+        stored with state ``SUCCESS``, which the key/value, database,
+        MongoDB and Cassandra backends already refuse to overwrite
+        with a later result.  The stored claim expires like any other
+        result (``result_expires`` and backend cleanup), mirroring
+        the expiring ``done`` marker of the Redis backend.
+
+        Returns a ``(status, token)`` pair:
+
+        - ``('claimed', token)``: the caller owns the claim and must
+          finish the chord, then call
+          :meth:`mark_chord_unlock_dispatched`.  This is also
+          returned when the backend cannot store or read the claim
+          at all (for example the disabled backend): failing open
+          preserves the previous at-least-once behaviour instead of
+          losing the body.
+        - ``('dispatched', None)``: a previous run already finished
+          this chord; the caller must not dispatch or fail it again.
+        - ``('in_progress', None)``: another live worker holds a
+          fresh claim; the caller should poll again later rather
+          than finish the chord itself.
+
+        This is a check-and-set built from separate reads and
+        writes, not a single atomic operation, so two copies running
+        at exactly the same moment can still both claim.  It closes
+        the reported case -- a redelivery that starts after the
+        first run stored its claim -- and the token re-read after
+        taking over an abandoned lease narrows the remaining race
+        to copies whose claim writes interleave before either
+        re-reads.  Backends that can decide the claim in one step
+        override this: the database backend inserts the claim row
+        against the unique ``task_id``, so exactly one copy wins.
+        """
+        from kombu.utils.uuid import uuid
+
+        token = uuid()
+        claim_id = self._chord_unlock_claim_id(group_id)
+        try:
+            meta = self.get_task_meta(claim_id, cache=False)
+        except Exception:  # pylint: disable=broad-except
+            return 'claimed', token
+        if meta.get('status') == states.SUCCESS:
+            return 'dispatched', None
+        if meta.get('status') == states.STARTED:
+            payload = meta.get('result')
+            claimed_at = payload.get('claimed_at', 0) if isinstance(payload, dict) else 0
+            try:
+                claimed_at = float(claimed_at)
+            except (TypeError, ValueError):
+                claimed_at = 0.0
+            if time.time() - claimed_at < self.chord_unlock_claim_lease:
+                return 'in_progress', None
+            # The lease was abandoned: fall through and take it over.
+        try:
+            self.store_result(
+                claim_id,
+                {'token': token, 'claimed_at': time.time()},
+                states.STARTED,
+            )
+            meta = self.get_task_meta(claim_id, cache=False)
+        except Exception:  # pylint: disable=broad-except
+            return 'claimed', token
+        if meta.get('status') == states.SUCCESS:
+            return 'dispatched', None
+        payload = meta.get('result')
+        if not isinstance(payload, dict) or payload.get('token') != token:
+            # Another copy stored its claim after ours.
+            return 'in_progress', None
+        return 'claimed', token
+
+    def mark_chord_unlock_dispatched(self, group_id, token=None):
+        """Record that the chord waiting on ``group_id`` was finished.
+
+        Best effort: if storing the marker fails the claim lease is
+        left behind and expires, after which a redelivery may finish
+        the chord again -- the previous behaviour -- rather than the
+        body being lost because of a failed marker write.
+        """
+        try:
+            self.store_result(
+                self._chord_unlock_claim_id(group_id),
+                {'token': token, 'dispatched_at': time.time()},
+                states.SUCCESS,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                'Chord %r: could not store the chord_unlock dispatch '
+                'marker; a redelivered chord_unlock may dispatch the '
+                'body again', group_id, exc_info=True,
+            )
+
+    def reset_chord_unlock_claim(self, group_id):
+        """Forget any dispatch claim for ``group_id``.
+
+        Called when a new chord run is launched for the group, as a
+        frozen chord can be reapplied under the same group id for a
+        new run whose body must be dispatched again.  Best effort,
+        like :meth:`mark_chord_unlock_dispatched`.
+        """
+        try:
+            self.forget(self._chord_unlock_claim_id(group_id))
+        except Exception:  # pylint: disable=broad-except
+            logger.debug(
+                'Chord %r: could not reset the chord_unlock dispatch '
+                'claim', group_id, exc_info=True,
+            )
+
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
@@ -1057,6 +1198,11 @@ class Backend:
         if 'exchange_type' in routing_options:
             # unlock_chord needs this for retries.
             kwargs['_chord_unlock_exchange_type'] = routing_options['exchange_type']
+
+        # A new chord run starts here: clear the dispatch claim of
+        # any previous run under the same group id, so only copies of
+        # this run's chord_unlock are deduplicated against each other.
+        self.reset_chord_unlock_claim(header_result.id)
 
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
