@@ -564,6 +564,73 @@ class test_add_to_chord:
 
         assert chord([headers.s()], self.identity.s()).apply().get() == [None]
 
+    def test_add_to_chord_eager_from_an_added_task(self):
+        # A task added to the chord is a member of it, as on a worker: it
+        # can add more.
+        from celery import chord
+        add_to_all = self.add_to_all
+
+        @self.app.task(shared=False, bind=True)
+        def add_one_that_adds(self):
+            self.add_to_chord(add_to_all.s([1], 4))
+            return 'outer'
+
+        c = chord([add_one_that_adds.s()], self.identity.s())
+        assert sorted(c.apply().get(), key=str) == [0, 5, 'outer']
+
+    def test_add_to_chord_eager_after_a_retry(self):
+        # The retried run is still a member of the chord.
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True, max_retries=1)
+        def add_then_retry(self):
+            if self.request.retries < 1:
+                raise self.retry(countdown=0)
+            self.add_to_chord(add.s(1, 2))
+            return 'retried'
+
+        c = chord([add_then_retry.s()], self.identity.s())
+        assert c.apply().get() == ['retried', 3]
+
+    def test_add_to_chord_eager_applies_the_added_task_once(self):
+        from celery import chord
+        ran = []
+
+        @self.app.task(shared=False)
+        def record(x):
+            ran.append(x)
+            return x
+
+        @self.app.task(shared=False, bind=True)
+        def add_record(self):
+            self.add_to_chord(record.s(1))
+            return 0
+
+        c = chord([add_record.s()], self.identity.s())
+        assert c.apply().get() == [0, 1]
+        assert ran == [1]
+
+    def test_add_to_chord_eager_added_task_fails(self):
+        # A failed added task is handled like a failed header task.
+        from celery import chord
+
+        @self.app.task(shared=False)
+        def fail():
+            raise KeyError('added')
+
+        @self.app.task(shared=False, bind=True)
+        def add_failing(self):
+            self.add_to_chord(fail.s())
+            return 0
+
+        c = chord([add_failing.s()], self.identity.s())
+        with pytest.raises(KeyError):
+            c.apply().get()
+        res = c.apply(propagate=False).get()
+        assert res[0] == 0
+        assert isinstance(res[1], KeyError)
+
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_add_to_chord(self):
         sig = self.add.s(2, 2)

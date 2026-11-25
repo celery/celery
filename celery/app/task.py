@@ -1046,7 +1046,11 @@ class Task:
             if isinstance(retval, ExceptionWithTraceback):
                 retval = retval.exc
         if isinstance(retval, Retry) and retval.sig is not None:
-            return retval.sig.apply(retries=retries + 1)
+            retry_options = {'retries': retries + 1}
+            if '_eager_chord_added' in options:
+                # The retried run is still a member of the eager chord.
+                retry_options['_eager_chord_added'] = options['_eager_chord_added']
+            return retval.sig.apply(**retry_options)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
@@ -1209,8 +1213,9 @@ class Task:
         Currently only supported by the Redis result backend, and by
         chords run eagerly (:setting:`task_always_eager` or ``chord.apply()``),
         where the signature is applied at once and its result is passed to
-        the chord body after the results of the header.  ``lazy`` isn't
-        supported in eager chords.
+        the chord body after the results of the header.  On a worker the
+        results can come in any order, so the body shouldn't rely on the
+        order of its results.  ``lazy`` isn't supported in eager chords.
 
         Arguments:
             sig (Signature): Signature to extend chord with.
@@ -1232,7 +1237,8 @@ class Task:
                 raise NotImplementedError(
                     'add_to_chord(lazy=True) is not supported in a chord '
                     'that runs eagerly')
-            result = sig.apply()
+            # The added task is a member of the chord too.
+            result = sig.apply(_eager_chord_added=added)
             added.append(result)
             return result
         if not self.request.chord:
