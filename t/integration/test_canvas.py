@@ -1494,6 +1494,34 @@ class test_result_set:
         rs.backend._cache.clear()
         assert rs.join_native(timeout=0, interval=30) == [2, 4, 6]
 
+    @flaky
+    def test_get_many_slow_backend_counts_towards_timeout(self, manager, monkeypatch):
+        """A slow backend poll must count against the get_many timeout (#11111).
+
+        Each poll takes ~0.5s against a 1s timeout: the wait must raise
+        after ~1.2s, not after several seconds of polls plus sleeps.
+        The sleep stands in for a slow backend request; everything else
+        (real backend, real round-trip) is live. get_many is called
+        directly: ResultSet.join_native() takes the async consumer path
+        on backends that have one, which never calls get_many.
+        """
+        if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
+            raise pytest.skip('get_many is the key/value backend poll loop')
+
+        backend = manager.app.backend
+        orig_mget = backend.mget
+
+        def slow_mget(keys):
+            sleep(0.5)
+            return orig_mget(keys)
+
+        monkeypatch.setattr(backend, 'mget', slow_mget)
+        task_ids = [str(uuid.uuid4()) for _ in range(3)]
+        start = monotonic()
+        with pytest.raises(TimeoutError):
+            list(backend.get_many(task_ids, timeout=1, interval=0.2))
+        assert monotonic() - start < 2.5
+
 
 class test_group:
     @flaky

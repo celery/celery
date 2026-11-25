@@ -257,6 +257,33 @@ class test_tasks:
         with pytest.raises(celery.exceptions.TimeoutError):
             result.get(timeout=5)
 
+    @flaky
+    def test_wait_for_timeout_with_slow_backend(self, manager, monkeypatch):
+        """A slow backend poll must count against the wait_for timeout (#11111).
+
+        Each poll takes ~0.5s against a 1s timeout: the wait must raise
+        after ~1.2s, not after several seconds of polls plus sleeps.
+        The sleep stands in for a slow backend request; everything else
+        (real backend, real round-trip) is live. wait_for is called
+        directly: AsyncResult.get() takes the async consumer path on
+        backends that have one, which never polls. Skipped on backends
+        without a polling wait_for (e.g. redis, rpc).
+        """
+        backend = manager.app.backend
+        if not hasattr(backend, 'wait_for'):
+            raise pytest.skip('Backend has no polling wait_for')
+        orig_get_task_meta = backend.get_task_meta
+
+        def slow_get_task_meta(*args, **kwargs):
+            time.sleep(0.5)
+            return orig_get_task_meta(*args, **kwargs)
+
+        monkeypatch.setattr(backend, 'get_task_meta', slow_get_task_meta)
+        start = time.monotonic()
+        with pytest.raises(celery.exceptions.TimeoutError):
+            backend.wait_for(str(uuid4()), timeout=1, interval=0.2)
+        assert time.monotonic() - start < 2.5
+
     @pytest.mark.timeout(60)
     @flaky
     def test_expired(self, manager):
