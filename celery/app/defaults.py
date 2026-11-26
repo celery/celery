@@ -357,6 +357,7 @@ NAMESPACES = Namespace(
         lost_wait=Option(10.0, type='float', old={'celeryd_worker_lost_wait'}),
         max_memory_per_child=Option(type='int'),
         max_tasks_per_child=Option(type='int'),
+        max_idle=Option(None, type='float'),
         pool=Option(DEFAULT_POOL),
         pool_putlocks=Option(True, type='bool'),
         pool_restarts=Option(False, type='bool'),
