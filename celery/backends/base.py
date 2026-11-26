@@ -28,7 +28,7 @@ from celery._state import get_current_task
 from celery.app.task import Context
 from celery.exceptions import (BackendGetMetaError, BackendStoreError, ChordError, ImproperlyConfigured,
                                NotRegistered, SecurityError, TaskRevokedError, TimeoutError)
-from celery.result import GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
+from celery.result import AsyncResult, GroupResult, ResultBase, ResultSet, allow_join_result, result_from_tuple
 from celery.utils.collections import BufferMap
 from celery.utils.functional import LRUCache, arity_greater, maybe_list
 from celery.utils.log import get_logger
@@ -294,6 +294,14 @@ class Backend:
             self.store_result(task_id, result, state, request=request)
         if request and request.chord:
             self.on_chord_part_return(request, state, result)
+        if request and request.workflow:
+            for workflow_elem in request.workflow:
+                new_request = Context(request.__dict__)
+                new_request.workflow = None
+                new_request.group = workflow_elem["group"]
+                new_request.group_index = workflow_elem["group_index"]
+                new_request.chord = workflow_elem["chord"]
+                self.on_chord_part_return(new_request, state, result, parents=workflow_elem["parents"])
 
     def mark_as_failure(self, task_id, exc,
                         traceback=None, request=None,
@@ -1016,7 +1024,17 @@ class Backend:
         raise NotImplementedError('Backend does not support add_to_chord')
 
     def on_chord_part_return(self, request, state, result, **kwargs):
-        pass
+        parents = kwargs.pop("parents", None)
+        if parents and 0 == parents.index(request.id):
+            self.fallback_chord_unlock(
+                GroupResult(
+                    id=request.group,
+                    results=[
+                        AsyncResult(parent) for parent in parents if parent is not None
+                    ],
+                ),
+                maybe_signature(request.chord),
+            )
 
     def set_chord_size(self, group_id, chord_size):
         pass

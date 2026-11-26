@@ -375,7 +375,7 @@ class AMQP:
                    create_sent_event=False, root_id=None, parent_id=None,
                    shadow=None, chain=None, now=None, timezone=None,
                    origin=None, ignore_result=False, argsrepr=None, kwargsrepr=None, stamped_headers=None,
-                   replaced_task_nesting=0, **options):
+                   replaced_task_nesting=0, workflow=None, **options):
 
         args = args or ()
         kwargs = kwargs or {}
@@ -446,6 +446,7 @@ class AMQP:
                     'errbacks': errbacks,
                     'chain': chain,
                     'chord': chord,
+                    'workflow': workflow,
                 },
             ),
             sent_event={
