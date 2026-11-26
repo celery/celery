@@ -26,7 +26,7 @@ files = [
 
 [tool.codespell]
 ignore-words-list = "assertin"
-skip = "./.*,docs/AUTHORS.txt,docs/history/*,docs/spelling_wordlist.txt,Changelog.rst,CONTRIBUTORS.txt,*.key"
+skip = "./.*,docs/AUTHORS.txt,docs/history/*,docs/spelling_wordlist.txt,Changelog.rst,CONTRIBUTORS.txt,*.key,celery/bin/click_plugins.py"
 
 [tool.coverage.run]
 branch = true

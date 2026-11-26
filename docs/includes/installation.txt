@@ -121,6 +121,9 @@ Transports and Backends
 :``celery[gcpubsub]``:
     for using the Google Cloud Pub/Sub as a message transport (*experimental*)..
 
+:``celery[repl]``:
+    for the :program:`celery amqp repl` interactive shell.
+
 
 
 .. _celery-installing-from-source:
