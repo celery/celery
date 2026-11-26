@@ -709,6 +709,40 @@ class test_task_retries(TasksCase):
             result.get()
         assert self.retry_task_explicit_exception.iterations == 1
 
+    def test_autoretry_max_retries_override_does_not_persist(self):
+        # A single self.retry(max_retries=...) must not pin the autoretry
+        # limit for every later execution of the task. The autoretry wrapper
+        # is meant to consume the override once ("Stop propagation"), but
+        # task.retry() always raises, so the cleanup after it never ran.
+        calls = []
+
+        @self.app.task(bind=True, shared=False, autoretry_for=(ValueError,),
+                       max_retries=2, retry_backoff=False, retry_jitter=False)
+        def task(self_, mode):
+            calls.append(self_.request.retries)
+            if mode == 'override' and not self_.request.retries:
+                # One-time explicit override, e.g. a special case that must
+                # not be retried at all.
+                raise self_.retry(exc=ValueError('forced'), max_retries=0,
+                                  countdown=0)
+            if self_.request.retries < 2:
+                raise ValueError('transient')
+            return 'recovered'
+
+        # First execution: forced immediate failure via the override.
+        result = task.apply(args=('override',), throw=False)
+        assert result.state == 'FAILURE'
+        assert calls == [0]
+        # The override applies to this execution only and is then consumed.
+        assert not hasattr(task, 'override_max_retries')
+
+        # A fresh execution is unaffected: it retries transient errors up to
+        # the task's own max_retries and recovers.
+        calls.clear()
+        result = task.apply(args=('normal',), throw=False)
+        assert result.get() == 'recovered'
+        assert calls == [0, 1, 2]
+
     def test_retry_eager_should_return_value(self):
         self.retry_task.max_retries = 3
         self.retry_task.iterations = 0
