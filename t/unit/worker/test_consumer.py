@@ -983,6 +983,20 @@ class test_Consumer(ConsumerTestCase):
 
         assert consumer._limit_timers == {}
 
+    def test_on_close_forgets_rate_limit_timers_without_timer(self, on_close_ctx):
+        """A consumer can have no timer.  on_close() must not try to cancel
+        the timer entries then, but it must still forget them.
+        """
+        state, Consumer, consumer = on_close_ctx
+        consumer.timer = None
+        entry = Mock(name='entry')
+        consumer._limit_timers = {Mock(name='bucket'): (object(), entry)}
+
+        Consumer.on_close(consumer)
+
+        entry.cancel.assert_not_called()
+        assert consumer._limit_timers == {}
+
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
         conn = self.app._connection.return_value
