@@ -19,14 +19,12 @@ from unittest.mock import ANY, DEFAULT, MagicMock, Mock, patch
 import pytest
 from kombu import Exchange, Queue
 from kombu.exceptions import EncodeError, LimitExceeded
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationInfo, model_validator
 from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ConfigDict, Field, SecretStr, ValidationInfo, model_validator
 from vine import promise
 
-from celery import Celery, _state
+from celery import Celery, _state, current_app, shared_task
 from celery import app as _app
-from celery import current_app, shared_task
 from celery.app import base as _appbase
 from celery.app import defaults
 from celery.app.amqp import AMQP

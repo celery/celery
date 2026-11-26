@@ -18,7 +18,7 @@ def upgrade(ctx):
 def _slurp(filename):
     # TODO: Handle case when file does not exist
     with open(filename, encoding='utf-8', newline='') as read_fh:
-        return [line for line in read_fh]
+        return [*read_fh]
 
 
 def _compat_key(key, namespace='CELERY'):
