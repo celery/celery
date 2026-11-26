@@ -1083,6 +1083,29 @@ class test_BaseBackend_dict:
         failed = {call_[0][0]: call_[0][2] for call_ in store_result.call_args_list}
         assert failed == {'body-id': states.FAILURE, 'after-id': states.FAILURE}
 
+    def test_chord_error_from_stack_returns_the_failed_part_to_the_outer_chord(self):
+        outer = signature('outer', options={'task_id': 'outer-id'})
+        callback = signature('body', options={
+            'task_id': 'body-id', 'chord': outer, 'group_id': 'outer-header-id', 'group_index': 2,
+        })
+
+        with patch.object(self.b, 'store_result') as store_result, \
+                patch.object(self.b, 'on_chord_part_return') as return_part:
+            return_part.side_effect = lambda *args: store_result.assert_called_once()
+            try:
+                raise ValueError('inner header failed')
+            except ValueError as exc:
+                self.b.chord_error_from_stack(callback, exc=exc)
+                assert store_result.call_args.args[:3] == ('body-id', exc, states.FAILURE)
+                return_part.assert_called_once_with(ANY, states.FAILURE, exc)
+
+        request = return_part.call_args.args[0]
+        assert request.id == 'body-id'
+        assert request.task == 'body'
+        assert request.chord == outer
+        assert request.group == 'outer-header-id'
+        assert request.group_index == 2
+
     def test_chord_error_from_stack_fails_the_chain_after_a_group_body(self):
         after = signature('after', options={'task_id': 'after-id'})
         callback = group([signature('x1', options={'task_id': 'x1-id'})], options={'chain': [after]})
@@ -1677,6 +1700,26 @@ class test_BaseBackend_dict:
         backend.fail_from_current_stack.assert_any_call("task-id-1", exc=exc)
         backend.fail_from_current_stack.assert_any_call("task-id-2", exc=exc)
 
+    def test_handle_group_chord_error_returns_each_failed_part_to_the_outer_chord(self):
+        task_ids = ['first-id', 'second-id']
+        b, backend, group_callback, _, exc = self._setup_group_chord_error_test(task_ids=task_ids)
+        outer = signature('outer', options={'task_id': 'outer-id'})
+        for index, task in enumerate(group_callback.tasks):
+            task.set(chord=outer, group_id='outer-header-id', group_index=index)
+        backend.on_chord_part_return.side_effect = lambda *args: backend.mark_as_failure.assert_called_once()
+
+        b._handle_group_chord_error(group_callback, backend, exc)
+
+        assert backend.on_chord_part_return.call_args_list == [
+            call(ANY, states.FAILURE, exc), call(ANY, states.FAILURE, exc),
+        ]
+        for index, call_ in enumerate(backend.on_chord_part_return.call_args_list):
+            request = call_.args[0]
+            assert request.id == task_ids[index]
+            assert request.chord == outer
+            assert request.group == 'outer-header-id'
+            assert request.group_index == index
+
     def test_handle_group_chord_error_stores_failures_before_revoke(self):
         # The revoke handler keeps a result that is already ready, so every
         # failure has to be in the backend before the revoke goes out.
@@ -2228,6 +2271,22 @@ class test_KeyValueStoreBackend:
             self.b.expire.assert_not_called()
             deps.delete.assert_called_with()
             deps.join_native.assert_called_with(propagate=True, timeout=3.0)
+
+    def test_chord_part_return_counts_tasks_in_group_results(self):
+        with self._chord_part_context(self.b) as (task, deps, _):
+            deps.results = [
+                self.app.AsyncResult('first'),
+                self.app.GroupResult('nested', [self.app.AsyncResult('second'), self.app.AsyncResult('third')]),
+            ]
+            deps.__len__.return_value = 2
+            self.b.incr.side_effect = [2, 3]
+
+            task.request.id = 'second'
+            self.b.on_chord_part_return(task.request, states.FAILURE, ValueError('second failed'))
+            deps.join_native.assert_not_called()
+            task.request.id = 'third'
+            self.b.on_chord_part_return(task.request, states.FAILURE, ValueError('third failed'))
+            deps.join_native.assert_called_once()
 
     def test_chord_part_return_join_raises_internal(self):
         with self._chord_part_context(self.b) as (task, deps, callback):

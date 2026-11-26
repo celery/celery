@@ -269,7 +269,7 @@ class GCSBackend(GCSBackendBase):
             deps = self._restore_deps(gid, request)
             if deps is None:
                 return
-            size = len(deps)
+            size = self._chord_size_from_results(deps)
         if val > size:  # pragma: no cover
             logger.warning(
                 'Chord counter incremented too many times for %r', gid

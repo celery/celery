@@ -25,7 +25,7 @@ from .tasks import (ExpectedException, StampOnReplace, add, add_chord_to_chord, 
                     redis_echo_group_id, replace_with_chain, replace_with_chain_which_contains_a_group,
                     replace_with_chain_which_raises, replace_with_empty_chain, replace_with_stamped_task, retry_once,
                     return_exception, return_priority, return_request_eta, second_order_replace1, tsum,
-                    write_to_file_and_return_int, xsum)
+                    write_errback_to_file, write_to_file_and_return_int, xsum)
 
 TIMEOUT = 60
 
@@ -3418,59 +3418,36 @@ class test_chord:
         res_obj = orig_sig.delay()
         assert res_obj.get(timeout=TIMEOUT) == [42]
 
-    def test_nested_chord_header_link_error(self, manager, subtests):
+    @pytest.mark.parametrize('how', [
+        'method', 'frozen', 'chain_method', 'chain_option', 'deep_chain', 'option', 'group_body',
+    ])
+    def test_nested_chord_header_link_error(self, how, manager, tmp_path):
         try:
             manager.app.backend.ensure_chords_allowed()
         except NotImplementedError as e:
             raise pytest.skip(e.args[0])
 
-        if not manager.app.conf.result_backend.startswith("redis"):
-            raise pytest.skip("Requires redis result backend.")
-        redis_connection = get_redis_connection()
-
-        errback_msg = "errback called"
-        errback_key = "echo_errback"
-        errback_sig = redis_echo.si(errback_msg, redis_key=errback_key)
-
-        body_msg = "chord body called"
-        body_key = "echo_body"
-        body_sig = redis_echo.si(body_msg, redis_key=body_key)
-
-        redis_connection.delete(errback_key, body_key)
-
         manager.app.conf.task_allow_error_cb_on_chord_header = False
+        calls = tmp_path / 'errback-calls'
+        errback = write_errback_to_file.s(file_name=str(calls))
+        inner_body = group(identity.si(2), identity.si(3)) if how == 'group_body' else identity.si(2)
+        inner = chord([identity.si(1), fail.si()], inner_body)
+        outer = chord([identity.si(3), inner], identity.si(4))
+        if how == 'deep_chain':
+            outer = chord([identity.si(5), outer], identity.si(6))
 
-        chord_inner = chord(
-            [identity.si("t1"), fail.si()],
-            identity.si("t2 (body)"),
-        )
-        chord_outer = chord(
-            group(
-                [
-                    identity.si("t3"),
-                    chord_inner,
-                ],
-            ),
-            body_sig,
-        )
-        chord_outer.link_error(errback_sig)
-        chord_outer.delay()
+        if how == 'frozen':
+            outer.freeze()
+        workflow = chain(identity.si(0), outer) if how.startswith('chain_') or how == 'deep_chain' else outer
+        if how.endswith('option'):
+            result = workflow.apply_async(link_error=errback)
+        else:
+            result = workflow.on_error(errback).apply_async()
 
-        with subtests.test(msg="Confirm the body was not executed"):
-            with pytest.raises(TimeoutError):
-                # confirm the chord body was not called
-                await_redis_echo((body_msg,), redis_key=body_key, timeout=10)
-            # Double check
-            assert not redis_connection.exists(body_key), "Chord body was called when it should have not"
-
-        with subtests.test(msg="Confirm only one errback was called"):
-            await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
-            with pytest.raises(TimeoutError):
-                # Double check
-                await_redis_echo((errback_msg,), redis_key=errback_key, timeout=10)
-
-        # Cleanup
-        redis_connection.delete(errback_key)
+        with pytest.raises(ChordError):
+            result.get(timeout=TIMEOUT, follow_parents=False)
+        assert result.state == states.FAILURE
+        assert calls.read_text().splitlines() == [result.id]
 
     def test_enabling_flag_allow_error_cb_on_chord_header(self, manager, subtests):
         """
@@ -3975,6 +3952,22 @@ class test_chord:
         # Both errbacks of the body ran: its own and the chord's
         await_redis_count(2, redis_key=result.id)
         get_redis_connection().delete(result.id)
+
+    def test_link_error_option_runs_once_on_nested_chord_body_failure(self, manager):
+        if not manager.app.conf.result_backend.startswith('redis'):
+            raise pytest.skip('Requires redis result backend.')
+
+        redis_key = str(uuid.uuid4())
+        errback = redis_echo.si('failed', redis_key=redis_key)
+        inner = chord([identity.si(1), identity.si(2)], fail.si())
+        workflow = chord([inner, identity.si(3)], identity.s())
+        try:
+            result = workflow.apply_async(link_error=errback)
+            with pytest.raises(ChordError):
+                result.get(timeout=TIMEOUT, follow_parents=False)
+            await_redis_echo('failed', redis_key=redis_key)
+        finally:
+            get_redis_connection().delete(redis_key)
 
     def test_link_option_on_group_body_runs_once(self, manager):
         if not manager.app.conf.result_backend.startswith('redis'):

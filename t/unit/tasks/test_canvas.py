@@ -3186,6 +3186,20 @@ class test_chord(CanvasCase):
         for header_call in header_apply.call_args_list:
             assert key not in header_call.kwargs
 
+    def test_link_error_option_keeps_generator_header_lazy(self):
+        def header():
+            yield self.add.si(1, 1)
+            yield self.add.si(2, 2)
+            assert header_apply.called
+            yield self.add.si(3, 3)
+
+        workflow = chord(header(), self.xsum.s())
+        with patch.object(self.app.backend, 'apply_chord'), \
+                patch('celery.canvas.Signature.apply_async') as header_apply:
+            workflow.apply_async(link_error=self.div.si(2))
+
+        assert header_apply.call_count == 3
+
     def _body_to_run(self, x, eager, **options):
         """Apply the chord ``x`` and return the body it was going to run."""
         if eager:
@@ -3710,6 +3724,48 @@ class test_chord(CanvasCase):
         for header_task in c.tasks:
             assert header_task.options['link_error'] == [err.clone(immutable=True)]
         assert c.body.options["link_error"] == [err]
+
+    def _nested_chord_link_error(self, err, how):
+        inner = chord([self.add.si(1, 1), self.add.si(2, 2)], self.xsum.s())
+        outer = chord([inner, self.add.si(3, 3)], self.xsum.s())
+        if how == 'unfrozen':
+            outer.link_error(err)
+        elif how == 'frozen':
+            outer.freeze()
+            outer.link_error(err)
+        else:
+            # A chain freezes each step and then links the errback to it
+            c = chain(self.add.si(0, 0), outer)
+            c.prepare_steps(c.args, c.kwargs, c.tasks, app=self.app,
+                            link_error=[err], clone=False)
+            outer = c.tasks[-1]
+        nested, = (task for task in getattr(outer.tasks, 'tasks', outer.tasks)
+                   if isinstance(task, chord))
+        return outer, nested
+
+    @pytest.mark.parametrize('how', ['unfrozen', 'frozen', 'chain'])
+    def test_link_error_on_nested_chord(self, how):
+        self.app.conf.task_allow_error_cb_on_chord_header = False
+        err = signature('err')
+        outer, nested = self._nested_chord_link_error(err, how)
+        assert outer.body.options['link_error'] == [err]
+        assert not nested.body.options.get('link_error')
+
+    @pytest.mark.parametrize('how', ['unfrozen', 'frozen', 'chain'])
+    def test_link_error_on_nested_chord_with_header_errbacks(self, how):
+        self.app.conf.task_allow_error_cb_on_chord_header = True
+        err = signature('err')
+        outer, nested = self._nested_chord_link_error(err, how)
+        assert outer.body.options['link_error'] == [err]
+        # Linked once through the header, not a second time as a nested chord
+        assert nested.body.options['link_error'] == [err.clone(immutable=True)]
+
+    def test_set_immutable_after_freeze(self):
+        x = chord([self.add.s(2, 2), self.add.s(4, 4)], body=self.mul.s(4))
+        x.freeze()
+        x.set_immutable(True)
+        assert all(task.immutable for task in x.tasks.tasks)
+        assert not x.body.immutable
 
     def test_chord_run_ensures_body_has_valid_task_id(self):
         """Test that chord.run() ensures body always gets a valid task ID.

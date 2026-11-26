@@ -430,6 +430,22 @@ class test_GCSBackend:
         )
         mock_delete_chord_key.assert_called_once_with(group_key)
 
+    @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled', return_value=True)
+    def test_on_chord_part_return_counts_tasks_in_group_results(self, mock_firestore_ttl):
+        backend = GCSBackend(app=self.app)
+        request = Mock(group='outer-header', chord={})
+        nested = self.app.GroupResult('nested', [self.app.AsyncResult('second'), self.app.AsyncResult('third')])
+        deps = MagicMock()
+        deps.__len__.return_value = 2
+        deps.results = [self.app.AsyncResult('first'), nested]
+
+        with patch.object(backend, 'incr', return_value=2), \
+                patch.object(backend, '_restore_deps', return_value=deps) as restore:
+            backend.on_chord_part_return(request, 'FAILURE', ValueError('second failed'))
+
+        restore.assert_called_once_with('outer-header', request)
+        deps.join_native.assert_not_called()
+
     @patch.object(GCSBackend, '_is_firestore_ttl_policy_enabled')
     @patch('celery.backends.gcs.GroupResult.restore')
     @patch('celery.backends.gcs.maybe_signature')

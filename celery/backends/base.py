@@ -162,8 +162,19 @@ def _create_fake_task_request(task_id, errbacks=None, task_name='unknown', **ext
     })
 
 
+def _return_failed_chord_part(backend, callback, exc):
+    """Report a callback that failed before dispatch to its enclosing chord."""
+    options = callback.options
+    if outer := options.get("chord"):
+        part = _create_fake_task_request(
+            task_id=options.get("task_id"), task_name=callback.task, chord=outer,
+            group=options.get("group_id"), group_index=options.get("group_index"),
+        )
+        backend.on_chord_part_return(part, states.FAILURE, exc)
+
+
 def _result_errbacks(sig, app):
-    """Return the id of the result of ``sig`` and the errbacks linked to it.
+    """Return the signature owning the result and the errbacks linked to it.
 
     A chord's result is that of its body, which the chord's own errbacks
     are linked to when it runs. For a group, the errbacks of its tasks are
@@ -179,7 +190,7 @@ def _result_errbacks(sig, app):
     if isinstance(sig, group):
         for task in sig.tasks:
             errbacks.extend(_result_errbacks(task, app)[1])
-    return sig.options.get("task_id"), errbacks
+    return sig, errbacks
 
 
 class _nulldict(dict):
@@ -503,6 +514,7 @@ class Backend:
         else:
             exception_info = backend.fail_from_current_stack(callback_id, exc=exc)
         backend._fail_chain(callback.options.get("chain"), exc)
+        _return_failed_chord_part(backend, callback, exc)
         return exception_info
 
     def _handle_group_chord_error(self, group_callback, backend, exc=None):
@@ -533,16 +545,18 @@ class Backend:
                 # Each task calls its own errbacks, which chord.link_error()
                 # links there, and those of the group, each one once.
                 group_errbacks = maybe_list(group_callback.options.get("link_error")) or []
-                task_errbacks = dict(
-                    _result_errbacks(task, self.app)
-                    for task in group_callback.tasks
-                )
+                task_results = {
+                    task.id: (task, errbacks)
+                    for task, errbacks in (_result_errbacks(task, self.app) for task in group_callback.tasks)
+                }
 
                 # Handle each task in the group individually
+                failed_parts = []
                 for result in frozen_group.results:
                     try:
+                        task, task_errbacks = task_results.get(result.id, (None, ()))
                         errbacks = []
-                        for errback in (*task_errbacks.get(result.id, ()), *group_errbacks):
+                        for errback in (*task_errbacks, *group_errbacks):
                             if errback not in errbacks:
                                 errbacks.append(errback)
                         # Create fake request for error callbacks
@@ -561,6 +575,8 @@ class Backend:
 
                         # Mark the individual task as failed with original exception
                         backend.fail_from_current_stack(result.id, exc=original_exc)
+                        if task is not None:
+                            failed_parts.append(task)
 
                     except Exception as task_exc:  # pylint: disable=broad-except
                         # Log error but continue with other tasks
@@ -573,6 +589,9 @@ class Backend:
                 frozen_group_id = getattr(frozen_group, 'id', None)
                 if frozen_group_id:
                     backend.mark_as_failure(frozen_group_id, original_exc)
+                # The last part can trigger the outer chord to join its header.
+                for part in failed_parts:
+                    _return_failed_chord_part(backend, part, original_exc)
                 frozen_group.revoke()
 
             return None
@@ -1577,6 +1596,13 @@ class BaseKeyValueStoreBackend(Backend):
         self.expire(self.get_key_for_group(header_result.id),
                     self._chord_result_expires)
 
+    def _chord_size_from_results(self, results):
+        """Count the tasks reporting completion for a restored chord header."""
+        return len(results) + sum(
+            self._chord_size_from_results(result) - 1
+            for result in results.results if isinstance(result, ResultSet)
+        )
+
     def on_chord_part_return(self, request, state, result, **kwargs):
         if not self.implements_incr:
             return
@@ -1609,7 +1635,7 @@ class BaseKeyValueStoreBackend(Backend):
         # to the number of dependencies we can see from the restored result
         size = request.chord.get("chord_size")
         if size is None:
-            size = len(deps)
+            size = self._chord_size_from_results(deps)
         if val > size:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
