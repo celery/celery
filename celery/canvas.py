@@ -491,7 +491,7 @@ class Signature(dict):
 
             super().__init__(
                 task=task_name, args=tuple(args or ()),
-                kwargs=kwargs or {},
+                kwargs=dict(kwargs or {}),
                 options=dict(options or {}, **ex),
                 subtask_type=subtask_type,
                 immutable=immutable,
@@ -2547,9 +2547,14 @@ class _chord(Signature):
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
-        return body.apply(
-            args=(tasks.apply(args, kwargs).get(propagate=propagate),),
-        )
+        # Header tasks that call Task.add_to_chord() put the results of
+        # the tasks they add here.
+        added = []
+        results = tasks.apply(
+            args, kwargs, _eager_chord_added=added,
+        ).get(propagate=propagate)
+        results += [result.get(propagate=propagate) for result in added]
+        return body.apply(args=(results,))
 
     @classmethod
     def _descend(cls, sig_obj):
