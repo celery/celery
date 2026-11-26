@@ -763,6 +763,7 @@ class Request:
                     )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
+            self.send_event('task-ignored')
             return self.acknowledge()
         elif isinstance(exc, Retry):
             return self.on_retry(exc_info)

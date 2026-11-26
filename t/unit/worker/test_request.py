@@ -354,6 +354,20 @@ class test_Request(RequestCase):
         req.on_failure(einfo)
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
+    def test_on_failure_Ignore_sends_task_ignored_event(self):
+        # Issue #11093: an ignored task must emit a terminal event so
+        # event monitors do not leave it in STARTED forever.
+        einfo = None
+        try:
+            raise Ignore()
+        except Ignore:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.on_failure(einfo)
+        req.eventer.send.assert_called_with('task-ignored', uuid=req.id)
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+
     def test_on_failure_Reject_rejects(self):
         einfo = None
         try:

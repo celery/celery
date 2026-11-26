@@ -73,6 +73,7 @@ TASK_EVENT_TO_STATE = {
     'succeeded': states.SUCCESS,
     'revoked': states.REVOKED,
     'rejected': states.REJECTED,
+    'ignored': states.IGNORED,
 }
 
 
@@ -244,7 +245,7 @@ class Task:
     """Task State."""
 
     name = received = sent = started = succeeded = failed = retried = \
-        revoked = rejected = args = kwargs = eta = expires = retries = \
+        revoked = rejected = ignored = args = kwargs = eta = expires = retries = \
         worker = result = exception = timestamp = runtime = traceback = \
         exchange = routing_key = root_id = parent_id = client = None
     state = states.PENDING
@@ -252,7 +253,7 @@ class Task:
 
     _fields = (
         'uuid', 'name', 'state', 'received', 'sent', 'started', 'rejected',
-        'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
+        'ignored', 'succeeded', 'failed', 'retried', 'revoked', 'args', 'kwargs',
         'eta', 'expires', 'retries', 'worker', 'result', 'exception',
         'timestamp', 'runtime', 'traceback', 'exchange', 'routing_key',
         'clock', 'client', 'root', 'root_id', 'parent', 'parent_id',

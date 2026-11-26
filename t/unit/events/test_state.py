@@ -478,6 +478,22 @@ class test_State:
         assert task2.root is task
         assert task2 in task.children
 
+    def test_task_ignored_event_sets_ignored_state(self):
+        # Issue #11093: task-ignored is a terminal event for monitors.
+        state = State()
+        state.event({
+            'type': 'task-started', 'uuid': 'x', 'hostname': 'h',
+            'timestamp': 1.0, 'local_received': 1.0, 'clock': 1,
+            'name': 'proj.add', 'args': '(2, 2)', 'kwargs': '{}',
+        })
+        state.event({
+            'type': 'task-ignored', 'uuid': 'x', 'hostname': 'h',
+            'timestamp': 2.0, 'local_received': 2.0, 'clock': 2,
+        })
+        task = state.tasks['x']
+        assert task.state == states.IGNORED
+        assert task.ignored == 2.0
+
     def test_task_children_set_if_received_in_wrong_order(self):
         r = ev_task_states(State())
         r.events.insert(0, r.events.pop())

@@ -765,6 +765,16 @@ task-rejected
 The task was rejected by the worker, possibly to be re-queued or moved to a
 dead letter queue.
 
+.. event:: task-ignored
+
+task-ignored
+~~~~~~~~~~~~
+
+:signature: ``task-ignored(uuid)``
+
+The task raised :exc:`~celery.exceptions.Ignore` and was acknowledged
+without being executed to completion.
+
 .. event:: task-revoked
 
 task-revoked
