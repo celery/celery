@@ -94,6 +94,11 @@ def non_eta_task_with_retries(self):
     return self.request.retries
 
 
+@shared_task(rate_limit="5/s")
+def rate_limited_noop():
+    """Do nothing, at most 5 times each second on each worker. For rate limit tests."""
+
+
 @shared_task
 def summarize_results(results):
     """Sum a list of results. For chord callback tests."""
