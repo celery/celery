@@ -456,6 +456,7 @@ class LazyModule(ModuleType):
     _all_by_module = {}
     _direct = {}
     _object_origins = {}
+    _app_attrs = {}
 
     def __getattr__(self, name):
         if name in self._object_origins:
@@ -468,6 +469,10 @@ class LazyModule(ModuleType):
             module = __import__(self._direct[name], None, None, [name])
             setattr(self, name, module)
             return module
+        elif name in self._app_attrs:
+            proxy = Proxy(getappattr, (self._app_attrs[name],))
+            setattr(self, name, proxy)
+            return proxy
         return ModuleType.__getattribute__(self, name)
 
     def __dir__(self):
@@ -524,18 +529,13 @@ def recreate_module(name, compat_modules=None, by_module=None, direct=None,
 
 
 def get_compat_module(pkg, name):
-    def prepare(attr):
-        if isinstance(attr, str):
-            return Proxy(getappattr, (attr,))
-        return attr
-
     attrs = COMPAT_MODULES[pkg.__name__][name]
     if isinstance(attrs, str):
         fqdn = '.'.join([pkg.__name__, name])
         module = sys.modules[fqdn] = import_module(attrs)
         return module
-    attrs['__all__'] = list(attrs)
-    return create_module(name, dict(attrs), pkg=pkg, prepare_attr=prepare)
+    return create_module(name, {'__all__': list(attrs)}, pkg=pkg,
+                         cls_attrs={'_app_attrs': attrs})
 
 
 def get_origins(defs):

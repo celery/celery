@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 from unittest.mock import Mock, patch
 
 import pytest
@@ -23,6 +26,25 @@ class test_gevent_patch:
         from celery import maybe_patch_concurrency
         maybe_patch_concurrency(['x', '-P', 'gevent'])
         patch_all.assert_called()
+
+    def test_kombu_uses_patched_sleep(self):
+        pytest.importorskip('gevent')
+        import celery
+        root = os.path.dirname(os.path.dirname(os.path.abspath(celery.__file__)))
+        script = '\n'.join([
+            'import sys',
+            f'sys.path.insert(0, {root!r})',
+            'import celery',
+            "celery.maybe_patch_concurrency(['celery', 'worker', '-P', 'gevent'])",
+            'import gevent',
+            'import kombu.utils.functional',
+            'print(kombu.utils.functional.sleep is gevent.sleep)',
+        ])
+        result = subprocess.run(
+            [sys.executable, '-c', script], capture_output=True, text=True, timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == 'True'
 
 
 class test_Timer:

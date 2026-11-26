@@ -4,7 +4,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from celery.local import PromiseProxy, Proxy, maybe_evaluate, try_import
+import celery
+from celery.local import PromiseProxy, Proxy, get_compat_module, maybe_evaluate, try_import
 
 
 class test_try_import:
@@ -353,3 +354,27 @@ class test_celery_import:
 
         assert celery.__spec__ == spec
         assert find_spec("celery") == spec
+
+
+class test_compat_module:
+
+    @pytest.fixture
+    def messaging(self, monkeypatch):
+        monkeypatch.setitem(sys.modules, 'celery.messaging', sys.modules['celery.messaging'])
+        return get_compat_module(celery, 'messaging')
+
+    @pytest.mark.usefixtures('depends_on_current_app')
+    def test_proxy_is_created_on_first_access(self, app, messaging):
+        assert 'TaskConsumer' not in vars(messaging)
+        consumer = messaging.TaskConsumer
+        assert isinstance(consumer, Proxy)
+        assert vars(messaging)['TaskConsumer'] is consumer
+        assert consumer == app.amqp.TaskConsumer
+
+    def test_all_and_dir(self, messaging):
+        names = {'TaskConsumer', 'establish_connection', 'get_consumer_set'}
+        assert names <= set(messaging.__all__) <= set(dir(messaging))
+
+    def test_import(self):
+        import celery.registry
+        assert isinstance(celery.registry.tasks, Proxy)
