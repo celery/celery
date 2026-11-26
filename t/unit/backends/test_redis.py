@@ -14,9 +14,13 @@ import pytest
 
 try:
     from redis import CredentialProvider, exceptions
+    from redis.crc import key_slot
+    from redis.exceptions import RedisClusterException
 except ImportError:
     exceptions = None
     CredentialProvider = None
+    key_slot = None
+    RedisClusterException = None
 
 from kombu.exceptions import OperationalError
 from kombu.utils.encoding import ensure_bytes
@@ -268,6 +272,62 @@ class Redis(conftest.MockCallbacks):
         raise AssertionError('Unrecognized Redis chord script')
 
 
+class ClusterPipeline(Pipeline):
+    # redis-py blocks PUBLISH (among others) in a cluster pipeline.
+    def __getattr__(self, attr):
+        if attr == 'publish':
+            def blocked(*args, **kwargs):
+                raise RedisClusterException(
+                    'ERROR: Calling pipelined function publish is blocked '
+                    'when running redis in cluster mode...')
+            return blocked
+        return super().__getattr__(attr)
+
+
+class ClusterPubSub(PubSub):
+    # the node, and so the pool, is only chosen on the first subscribe.
+    connection_pool = None
+
+
+class RedisCluster(Redis):
+    """A single-node cluster.
+
+    One keyspace, but it refuses every multi-slot command the way a real
+    cluster (CROSSSLOT) or redis-py's client does, and it has no
+    ``connection_pool``.
+    """
+    Pipeline = ClusterPipeline
+    pubsub = ClusterPubSub
+
+    def __init__(self, host=None, port=None, **kw):
+        Redis.__init__(self, host, port, **kw)
+        self.cluster_kwargs = kw
+        del self.connection_pool
+
+    @staticmethod
+    def _slots(keys):
+        return {key_slot(ensure_bytes(key)) for key in keys}
+
+    def mget(self, keys):
+        if len(self._slots(keys)) > 1:
+            raise RedisClusterException(
+                'MGET - all keys must map to the same key slot')
+        return [self.get(key) for key in keys]
+
+    def mget_nonatomic(self, keys):
+        return [self.get(key) for key in keys]
+
+    def register_script(self, script):
+        run = Redis.register_script(self, script)
+
+        def run_on_one_slot(keys, args, client=None):
+            if len(self._slots(keys)) > 1:
+                raise exceptions.ResponseError(
+                    "CROSSSLOT Keys in request don't hash to the same slot")
+            return run(keys, args, client=client)
+        return run_on_one_slot
+
+
 class Sentinel(conftest.MockCallbacks):
     def __init__(self, sentinels, min_other_sentinels=0, sentinel_kwargs=None,
                  **connection_kwargs):
@@ -284,6 +344,7 @@ class Sentinel(conftest.MockCallbacks):
 
 class redis:
     StrictRedis = Redis
+    RedisCluster = RedisCluster
 
     class ConnectionPool:
         def __init__(self, **kwargs):
@@ -3571,6 +3632,285 @@ class test_RedisBackend_chords_complex(basetest_RedisBackend):
         else:
             expected_join = mock_result_obj.join
         callback.delay.assert_called_once_with(expected_join())
+
+
+GROUP_KEY_SUFFIXES = ('', '.j', '.t', '.s', '.d', '.c')
+
+
+class test_RedisBackend_cluster(basetest_RedisBackend):
+    """The result backend on a ``redis.RedisCluster`` client."""
+
+    @pytest.fixture(autouse=True)
+    def simple_header_result(self):
+        with patch(
+            "celery.result.GroupResult.restore", return_value=None,
+        ) as p:
+            yield p
+
+    def setup_method(self):
+        pytest.importorskip('redis')
+        self.app.conf.result_backend_transport_options = {'cluster': True}
+        super().setup_method()
+
+    def _task_ids_on_distinct_slots(self, count):
+        ids, slots = [], set()
+        while len(ids) < count:
+            task_id = uuid()
+            slot = key_slot(self.b.get_key_for_task(task_id))
+            if slot not in slots:
+                slots.add(slot)
+                ids.append(task_id)
+        return ids
+
+    # -- client construction
+
+    def test_client_is_a_cluster_client(self):
+        assert isinstance(self.b.client, RedisCluster)
+        assert self.b._client_is_cluster()
+        assert not hasattr(self.b.client, 'connection_pool')
+
+    def test_standalone_client_without_the_option(self):
+        self.app.conf.result_backend_transport_options = {}
+        b = self.Backend(app=self.app)
+        assert isinstance(b.client, Redis)
+        assert not isinstance(b.client, RedisCluster)
+        assert not b._client_is_cluster()
+
+    def test_url_host_and_port(self):
+        b = self.Backend('redis://:secret@cluster.example.com:7000/0',
+                         app=self.app)
+        assert b.client.host == 'cluster.example.com'
+        assert b.client.port == 7000
+        assert b.client.password == 'secret'
+        # redis-py rejects the argument outright, even when it is 0.
+        assert 'db' not in b.client.cluster_kwargs
+        assert 'connection_class' not in b.client.cluster_kwargs
+        # the default False is deprecated and omitted for RedisCluster
+        assert 'retry_on_timeout' not in b.client.cluster_kwargs
+
+    def test_url_selecting_a_database_is_refused(self):
+        b = self.Backend('redis://localhost:7000/1', app=self.app)
+        with pytest.raises(ImproperlyConfigured, match='database 0'):
+            b.client
+
+    def test_unix_socket_url_is_refused(self):
+        b = self.Backend('socket:///tmp/redis.sock', app=self.app)
+        with pytest.raises(ImproperlyConfigured, match='Unix socket'):
+            b.client
+
+    def test_rediss_url_enables_ssl(self):
+        b = self.Backend(
+            'rediss://localhost:7000/0?ssl_cert_reqs=CERT_NONE', app=self.app)
+        assert b.client.cluster_kwargs['ssl'] is True
+        assert b.client.cluster_kwargs['ssl_cert_reqs'] == ssl.CERT_NONE
+        assert 'connection_class' not in b.client.cluster_kwargs
+
+    def test_redis_backend_use_ssl_enables_ssl(self):
+        self.app.conf.redis_backend_use_ssl = {
+            'ssl_cert_reqs': ssl.CERT_REQUIRED,
+            'ssl_ca_certs': '/path/to/ca.crt',
+        }
+        b = self.Backend('redis://localhost:7000', app=self.app)
+        assert b.client.cluster_kwargs['ssl'] is True
+        assert b.client.cluster_kwargs['ssl_ca_certs'] == '/path/to/ca.crt'
+
+    def test_retry_on_timeout_is_kept_when_enabled(self):
+        self.app.conf.redis_retry_on_timeout = True
+        b = self.Backend('redis://localhost:7000/0', app=self.app)
+        assert b.client.cluster_kwargs['retry_on_timeout'] is True
+
+    def test_missing_cluster_client_class(self):
+        class legacy_redis:
+            StrictRedis = Redis
+            ConnectionPool = redis.ConnectionPool
+        self.Backend.redis = legacy_redis
+        b = self.Backend(app=self.app)
+        with pytest.raises(ImproperlyConfigured, match='RedisCluster'):
+            b.client
+
+    # -- key names
+
+    def test_group_keys_share_one_slot(self):
+        gid = uuid()
+        keys = [self.b.get_key_for_group(gid, suffix)
+                for suffix in GROUP_KEY_SUFFIXES]
+        assert keys[0] == f'celery-taskset-meta-{{{gid}}}'.encode()
+        assert keys[1] == f'celery-taskset-meta-{{{gid}}}.j'.encode()
+        assert keys[5] == f'celery-taskset-meta-{{{gid}}}.c'.encode()
+        assert len({key_slot(key) for key in keys}) == 1
+
+    def test_group_key_is_tagged_once(self):
+        gid = uuid()
+        tagged = self.b.get_key_for_group(gid, '.j')
+        assert self.b.get_key_for_group('{%s}' % gid, '.j') == tagged
+        assert self.b.get_key_for_group(gid.encode(), '.j') == tagged
+        assert self.b.get_key_for_group(
+            b'{' + gid.encode() + b'}', '.j') == tagged
+        from uuid import UUID
+        assert self.b.get_key_for_group(UUID(gid), '.j') == tagged
+
+    def test_group_key_requires_an_id(self):
+        with pytest.raises(ValueError):
+            self.b.get_key_for_group('')
+
+    def test_group_keys_keep_the_global_keyprefix(self):
+        self.app.conf.result_backend_transport_options = {
+            'cluster': True, 'global_keyprefix': 'test',
+        }
+        b = self.Backend(app=self.app)
+        gid = uuid()
+        assert b.get_key_for_group(gid, '.j') == (
+            f'test_celery-taskset-meta-{{{gid}}}.j'.encode())
+        assert b.get_key_for_task(gid) == f'test_celery-task-meta-{gid}'.encode()
+
+    def test_task_and_chord_keys_are_not_tagged(self):
+        tid = uuid()
+        assert self.b.get_key_for_task(tid) == f'celery-task-meta-{tid}'.encode()
+        assert self.b.get_key_for_chord(tid) == f'chord-unlock-{tid}'.encode()
+
+    def test_standalone_group_keys_are_unchanged(self):
+        # Existing deployments must find their groups and chords under
+        # the names they were stored with.
+        self.app.conf.result_backend_transport_options = {}
+        b = self.Backend(app=self.app)
+        keys = [b.get_key_for_group('gid1', suffix)
+                for suffix in GROUP_KEY_SUFFIXES]
+        assert keys[0] == b'celery-taskset-meta-gid1'
+        assert keys[1] == b'celery-taskset-meta-gid1.j'
+        assert b'{' not in b''.join(keys)
+        # which is why they could not be used on a cluster as they are
+        assert len({key_slot(key) for key in keys}) == len(keys)
+
+    # -- commands
+
+    def test_set_does_not_pipeline_publish(self):
+        self.b.set(b'key', b'value')
+        self.b.client.set.assert_called_once_with(b'key', b'value', ex=86400)
+        self.b.client.publish.assert_called_once_with(b'key', b'value')
+        self.b.client.pipeline.assert_not_called()
+
+    def test_set_without_expiry(self):
+        self.app.conf.result_expires = None
+        b = self.Backend(app=self.app)
+        b.set(b'key', b'value')
+        b.client.set.assert_called_once_with(b'key', b'value')
+        b.client.publish.assert_called_once_with(b'key', b'value')
+
+    def test_set_failure_expires(self):
+        self.app.conf.result_failure_expires = 600
+        b = self.Backend(app=self.app)
+        b._set_with_state(b'key', b'value', states.FAILURE)
+        b.client.set.assert_called_once_with(b'key', b'value', ex=600)
+        b.client.publish.assert_called_once_with(b'key', b'value')
+
+    def test_client_blocks_pipelined_publish(self):
+        # what the standalone code path would run into
+        with pytest.raises(RedisClusterException, match='publish'):
+            with self.b.client.pipeline() as pipe:
+                pipe.publish(b'key', b'value')
+
+    def test_mget_reads_keys_on_distinct_slots(self):
+        keys = [self.b.get_key_for_task(task_id)
+                for task_id in self._task_ids_on_distinct_slots(3)]
+        for key in keys:
+            self.b.client.set(key, key)
+        with pytest.raises(RedisClusterException):
+            self.b.client.mget(keys)
+        assert self.b.mget(keys) == keys
+        self.b.client.mget_nonatomic.assert_called_once_with(keys)
+
+    def test_get_many_reads_keys_on_distinct_slots(self):
+        ids = self._task_ids_on_distinct_slots(3)
+        for task_id in ids:
+            self.b.store_result(task_id, task_id, states.SUCCESS)
+        results = dict(self.b.get_many(ids, timeout=1))
+        assert {tid: meta['result'] for tid, meta in results.items()} == {
+            tid: tid for tid in ids}
+
+    # -- result consumer
+
+    def test_reconnect_pubsub_reads_metas_on_distinct_slots(self):
+        consumer = self.b.result_consumer
+        ids = self._task_ids_on_distinct_slots(3)
+        consumer.start(ids[0])
+        for task_id in ids[1:]:
+            consumer.consume_from(task_id)
+        self.b.store_result(ids[0], 1, states.SUCCESS)
+        self.b.store_result(ids[1], None, states.STARTED)
+        self.b.store_result(ids[2], 3, states.SUCCESS)
+        fresh = self.b.client.pubsub()
+        self.b.client.pubsub = Mock(return_value=fresh)
+
+        with patch.object(consumer, 'on_state_change',
+                          wraps=consumer.on_state_change) as on_state_change:
+            consumer._reconnect_pubsub()
+
+        seen = sorted(c.args[0]['task_id'] for c in on_state_change.call_args_list)
+        assert seen == sorted(ids)
+        # the ready tasks are not subscribed again, the running one is
+        assert consumer._pubsub is fresh
+        fresh.subscribe.assert_called_once_with(
+            self.b.get_key_for_task(ids[1]))
+        assert consumer.subscribed_to == {self.b.get_key_for_task(ids[1])}
+        assert not consumer._pending_unsubscribe
+        self.b.client.mget.assert_not_called()
+
+    def test_reconnect_pubsub_with_nothing_subscribed(self):
+        consumer = self.b.result_consumer
+        consumer.start('initial')
+        consumer.cancel_for('initial')
+        assert not consumer.subscribed_to
+        fresh = self.b.client.pubsub()
+        self.b.client.pubsub = Mock(return_value=fresh)
+
+        consumer._reconnect_pubsub()
+
+        assert consumer._pubsub is fresh
+        # a cluster pubsub has no pool until it subscribes to something
+        assert fresh.connection_pool is None
+        fresh.subscribe.assert_not_called()
+        self.b.client.mget_nonatomic.assert_not_called()
+
+    @patch('celery.backends.asynchronous.BaseResultConsumer.on_after_fork')
+    def test_on_after_fork_without_connection_pool(self, parent_method):
+        consumer = self.b.result_consumer
+        consumer.start('initial')
+        consumer.on_after_fork()
+        parent_method.assert_called_once()
+        consumer._pubsub.close.assert_called_once()
+
+    # -- chords
+
+    def test_chord_runs_body_once_with_every_header_result(self):
+        with self.chord_context(2) as (tasks, request, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
+            # the chord data was cleaned up, the done marker was left
+            for suffix in ('.j', '.t', '.s', '.d'):
+                assert self.b.get_key_for_group(request.group, suffix) \
+                    not in self.b.client.keyspace
+            assert self.b.client.get(
+                self.b.get_key_for_group(request.group, '.c')) == b'done'
+
+    def test_chord_scripts_run_on_one_slot(self):
+        # the fake refuses multi-slot keys like a cluster would; the
+        # untagged standalone key names would not pass.
+        with pytest.raises(exceptions.ResponseError, match='CROSSSLOT'):
+            self.b._chord_part_return_script(
+                keys=[b'celery-taskset-meta-gid1' + suffix.encode()
+                      for suffix in ('.j', '.t', '.s', '.d', '', '.c')],
+                args=['tid', 'value', 1, 0, 0, 0, 10, 'token'],
+            )
+
+    def test_chord_header_task_is_counted_once(self):
+        with self.chord_context(2) as (tasks, _, callback):
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 10)
+            self.b.on_chord_part_return(tasks[0].request, states.SUCCESS, 11)
+            callback.delay.assert_not_called()
+            self.b.on_chord_part_return(tasks[1].request, states.SUCCESS, 20)
+            callback.delay.assert_called_once_with([10, 20])
 
 
 class test_SentinelBackend:

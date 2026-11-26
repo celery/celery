@@ -6,13 +6,29 @@ from celery.backends.redis import RedisBackend
 from celery.contrib.testing.app import TestApp, setup_default_app
 from celery.contrib.testing.worker import start_worker
 
-from .conftest import TEST_BACKEND
+from .conftest import TEST_BACKEND, TEST_BACKEND_TRANSPORT_OPTIONS
+
+
+def backend_connection_pools(backend):
+    client = backend.client
+    pool = getattr(client, 'connection_pool', None)
+    if pool is not None:
+        return [pool]
+    # a RedisCluster client keeps one pool per node
+    return [
+        node.redis_connection.connection_pool
+        for node in client.get_nodes()
+        if node.redis_connection is not None
+    ]
 
 
 def backend_socket_refs(backend):
     # Capture backend sockets opened by this run without preventing GC from reclaiming them.
-    pool = backend.client.connection_pool
-    connections = [*pool._available_connections, *pool._in_use_connections]
+    connections = [
+        connection
+        for pool in backend_connection_pools(backend)
+        for connection in (*pool._available_connections, *pool._in_use_connections)
+    ]
     return [
         weakref.ref(connection._sock)
         for connection in connections
@@ -27,7 +43,10 @@ def socket_is_open(socket_ref):
 
 
 def run_one_fixture_cycle():
-    app = TestApp(config={'result_backend': TEST_BACKEND})
+    app = TestApp(config={
+        'result_backend': TEST_BACKEND,
+        'result_backend_transport_options': dict(TEST_BACKEND_TRANSPORT_OPTIONS),
+    })
 
     @app.task
     def store_result():

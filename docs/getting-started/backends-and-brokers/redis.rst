@@ -115,6 +115,49 @@ If you are using Sentinel, you should specify the master_name using the :setting
 
     app.conf.result_backend_transport_options = {'master_name': "mymaster"}
 
+.. _redis-result-backend-cluster:
+
+Redis Cluster
+^^^^^^^^^^^^^
+
+.. versionadded:: 5.8
+
+To store results in a Redis Cluster (or a compatible server such as Valkey
+running in cluster mode), point the backend at any node of the cluster and
+enable the ``cluster`` key under :setting:`result_backend_transport_options`:
+
+.. code-block:: python
+
+    app.conf.result_backend = 'redis://cluster.example.com:6379/0'
+    app.conf.result_backend_transport_options = {'cluster': True}
+
+The backend then connects with :class:`redis.RedisCluster`, which discovers
+the other nodes by itself. A cluster has no databases, so the URL must not
+select one other than ``0``, and Unix socket URLs are not supported. TLS is
+configured as for a single server, with a ``rediss://`` URL or
+:setting:`redis_backend_use_ssl`. An application that builds its own
+:class:`redis.RedisCluster` (for example with ``address_remap``) can also
+assign it to the backend's ``client`` attribute: the backend adapts to any
+cluster client, whichever way it was created.
+
+The commands listed in the 5.7 note above are also required on a cluster.
+Keys that one command has to reach together must hash to the same slot, so
+with a cluster client the backend names the keys of a group or chord
+``celery-taskset-meta-{<group id>}`` and ``celery-taskset-meta-{<group id>}.j``
+and so on: Redis Cluster hashes only the part between the braces. Task
+result keys (``celery-task-meta-<task id>``) are unchanged and spread over
+the slots, and the backend reads several of them with one ``MGET`` per
+slot. With a single Redis server or Sentinel nothing changes, including
+the ``celery-taskset-meta-<group id>`` key names.
+
+.. warning::
+
+    Because the group keys change name, a chord that was started before a
+    deployment switched to a cluster client will not complete after it:
+    its workers no longer find the header results it has already
+    collected. Old keys are not migrated. Let running chords finish before
+    enabling the ``cluster`` option.
+
 .. _redis-result-backend-global-keyprefix:
 
 Global keyprefix

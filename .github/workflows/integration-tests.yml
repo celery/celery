@@ -53,6 +53,26 @@ jobs:
           sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
 
       - uses: actions/checkout@v7
+      - name: Start Redis Cluster (single node)
+        if: matrix.toxenv == 'redis_cluster'
+        run: |
+          docker run --detach --name redis-cluster --network host \
+            --env REDIS_CLUSTER_PORT=7000 \
+            --volume "$PWD/docker/redis-cluster/entrypoint.sh:/entrypoint.sh:ro" \
+            --entrypoint /bin/sh redis:latest /entrypoint.sh
+          for _ in $(seq 1 60); do
+            if docker exec redis-cluster redis-cli -p 7000 cluster info 2>/dev/null \
+                | tr -d '\r' | grep -q '^cluster_state:ok' &&
+               docker exec redis-cluster redis-cli -p 7000 cluster info 2>/dev/null \
+                | tr -d '\r' | grep -q '^cluster_slots_assigned:16384'; then
+              echo "Redis Cluster is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Redis Cluster did not become ready"
+          docker logs redis-cluster
+          exit 1
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v7
         with:

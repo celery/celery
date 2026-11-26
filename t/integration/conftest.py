@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 TEST_BROKER = os.environ.get('TEST_BROKER', 'pyamqp://')
 TEST_BACKEND = os.environ.get('TEST_BACKEND', 'redis://')
+# TEST_BACKEND_CLUSTER=1 runs the Redis result backend on a Redis Cluster
+# node at TEST_BACKEND (the ``redis_cluster`` tox environment).
+TEST_BACKEND_CLUSTER = os.environ.get(
+    'TEST_BACKEND_CLUSTER', '').lower() in ('1', 'true', 'yes')
+TEST_BACKEND_TRANSPORT_OPTIONS = {'cluster': True} if TEST_BACKEND_CLUSTER else {}
 
 RETRYABLE_EXCEPTIONS = (OSError, ConnectionError, TimeoutError)
 
@@ -62,7 +67,16 @@ def celery_worker():
 
 
 def get_active_redis_channels():
-    return get_redis_connection().execute_command('PUBSUB CHANNELS')
+    """The Pub/Sub channels of the server the Redis result backend uses."""
+    from celery import current_app
+    from celery.backends.redis import RedisBackend
+
+    backend = current_app.backend
+    if isinstance(backend, RedisBackend):
+        # the backend may be a different server (e.g. a Redis Cluster) than
+        # the one get_redis_connection() reaches
+        return backend.client.pubsub_channels()
+    return get_redis_connection().pubsub_channels()
 
 
 def check_for_logs(caplog, message: str, max_wait: float = 1.0, interval: float = 0.1) -> bool:
@@ -86,6 +100,9 @@ def celery_config(request):
         'cassandra_read_consistency': 'ONE',
         'cassandra_write_consistency': 'ONE',
     }
+    if TEST_BACKEND_TRANSPORT_OPTIONS:
+        config['result_backend_transport_options'] = dict(
+            TEST_BACKEND_TRANSPORT_OPTIONS)
     try:
         # To override the default configuration, create the integration-tests-config.json file
         # in Celery's root directory.
