@@ -175,15 +175,22 @@ class ArangoDbBackend(KeyValueStoreBackend):
     def cleanup(self):
         if not self.expires:
             return
-        checkpoint = (self.app.now() - self.expires_delta).isoformat()
+        checkpoint = self.app.now() - self.expires_delta
+        # ``task`` holds the encoded result, a JSON string, so parse it to
+        # read date_done: on the string itself it's null, which AQL sorts
+        # before any value, and every result was removed. Compare instants,
+        # not ISO strings, since those can carry different UTC offsets.
         self.db.AQLQuery(
             """
             FOR record IN @@collection
-                FILTER record.task.date_done < @checkpoint
+                LET meta = IS_STRING(record.task)
+                    ? JSON_PARSE(record.task) : record.task
+                LET done = DATE_TIMESTAMP(meta.date_done)
+                FILTER done != null AND done < @checkpoint
                 REMOVE record IN @@collection
             """,
             bindVars={
                 "@collection": self.collection,
-                "checkpoint": checkpoint,
+                "checkpoint": int(checkpoint.timestamp() * 1000),
             },
         )
