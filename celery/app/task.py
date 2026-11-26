@@ -11,7 +11,7 @@ from kombu.utils.uuid import uuid
 from celery import current_app, states
 from celery._state import _task_stack
 from celery.canvas import _chain, group, signature
-from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Replaced, Retry
+from celery.exceptions import ImproperlyConfigured, MaxRetriesExceededError, Reject, Replaced, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
 from celery.utils import abstract, deprecated
