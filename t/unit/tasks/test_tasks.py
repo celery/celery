@@ -1839,6 +1839,113 @@ class test_task_routing_attribute_deprecation(TasksCase):
                 pass
 
 
+class test_custom_task_id_generation(TasksCase):
+    @pytest.mark.parametrize('operation', ['apply', 'eager', 'chain', 'chord'])
+    def test_eager_workflows_use_the_configured_generator(self, operation):
+        generated = iter(f'custom-{index}' for index in range(20))
+        self.app.conf.task_id_generator = lambda: next(generated)
+        self.app.conf.task_always_eager = True
+        observed = []
+
+        @self.app.task(bind=True)
+        def add(task, x, y):
+            observed.append(task.request.id)
+            return x + y
+
+        @self.app.task(bind=True)
+        def total(task, values):
+            observed.append(task.request.id)
+            return sum(values)
+
+        if operation == 'apply':
+            result = add.apply((2, 3))
+            expected = 5
+        elif operation == 'eager':
+            result = add.apply_async((2, 3))
+            expected = 5
+        elif operation == 'chain':
+            result = chain(add.s(2, 3), add.s(4), app=self.app).apply_async()
+            expected = 9
+        else:
+            result = group(add.s(1, 2), add.s(3, 4), app=self.app) | total.s()
+            result = result.apply_async()
+            expected = 10
+
+        assert result.get() == expected
+        assert result.id.startswith('custom-')
+        assert observed and all(task_id.startswith('custom-') for task_id in observed)
+        assert len(observed) == len(set(observed))
+
+    @pytest.mark.parametrize('operation', ['apply', 'apply_async'])
+    def test_eager_explicit_id_does_not_call_the_generator(self, operation):
+        generator = Mock(side_effect=AssertionError('explicit ID must be retained'))
+        self.app.conf.task_id_generator = generator
+        self.app.conf.task_always_eager = True
+        result = getattr(self.mytask, operation)(task_id='explicit-id')
+        assert result.get() is True
+        assert result.id == 'explicit-id'
+        generator.assert_not_called()
+
+    def test_eager_retry_reuses_the_generated_id(self):
+        generator = Mock(side_effect=['custom-original', 'unexpected-new-id'])
+        self.app.conf.task_id_generator = generator
+        self.app.conf.task_always_eager = True
+        observed = []
+
+        @self.app.task(bind=True, max_retries=1)
+        def retry_once(task):
+            observed.append(task.request.id)
+            if task.request.retries == 0:
+                raise task.retry(countdown=0)
+            return task.request.retries
+
+        result = retry_once.apply_async()
+        assert result.get() == 1
+        assert result.id == 'custom-original'
+        assert observed == ['custom-original', 'custom-original']
+        generator.assert_called_once_with()
+
+    def test_async_retry_reuses_the_generated_id(self):
+        generator = Mock(side_effect=['custom-original', 'unexpected-new-id'])
+        self.app.conf.task_id_generator = generator
+        self.app.conf.task_always_eager = False
+        with patch.object(self.app.amqp, 'send_task_message') as send:
+            result = self.mytask.apply_async()
+            self.mytask.push_request(id=result.id, retries=0, called_directly=False,
+                                     is_eager=False, args=(), kwargs={})
+            try:
+                with pytest.raises(Retry) as retried:
+                    self.mytask.retry(countdown=0)
+            finally:
+                self.mytask.pop_request()
+        assert result.id == 'custom-original'
+        assert retried.value.sig.id == 'custom-original'
+        assert [sent.args[2].headers['id'] for sent in send.call_args_list] == [
+            'custom-original', 'custom-original',
+        ]
+        generator.assert_called_once_with()
+
+    @pytest.mark.parametrize('method', ['apply', 'eager', 'freeze'])
+    @pytest.mark.parametrize('generator_fails', [False, True])
+    def test_default_generator_is_used_when_unset_or_custom_generator_fails(self, method, generator_fails):
+        generator = Mock(side_effect=ValueError('generator unavailable'))
+        self.app.conf.task_id_generator = generator if generator_fails else None
+        self.app.conf.task_always_eager = True
+        with patch('celery.canvas.uuid', return_value='fallback-id') as fallback:
+            if method == 'freeze':
+                result = self.mytask.s().freeze()
+            elif method == 'eager':
+                result = self.mytask.apply_async()
+            else:
+                result = self.mytask.apply()
+        assert result.id == 'fallback-id'
+        fallback.assert_called_once_with()
+        if generator_fails:
+            generator.assert_called_once_with()
+        else:
+            generator.assert_not_called()
+
+
 class test_apply_task(TasksCase):
 
     def test_apply_with_app_conf_time_limit_sets_request_fields(self):

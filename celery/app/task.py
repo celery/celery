@@ -6,11 +6,10 @@ import types
 from billiard.einfo import ExceptionInfo, ExceptionWithTraceback
 from kombu import serialization
 from kombu.exceptions import OperationalError
-from kombu.utils.uuid import uuid
 
 from celery import current_app, states
 from celery._state import _task_stack
-from celery.canvas import _chain, group, signature
+from celery.canvas import _chain, _new_task_id, group, signature
 from celery.exceptions import Ignore, ImproperlyConfigured, MaxRetriesExceededError, Reject, Retry
 from celery.local import class_property
 from celery.result import EagerResult, denied_join_result
@@ -751,7 +750,7 @@ class Task:
                     accept=[content_type]
                 )
             with denied_join_result():
-                return self.apply(args, kwargs, task_id=task_id or uuid(),
+                return self.apply(args, kwargs, task_id=task_id or _new_task_id(app),
                                   link=link, link_error=link_error, **options)
         else:
             return app.send_task(
@@ -985,7 +984,7 @@ class Task:
         app = self._get_app()
         args = args or ()
         kwargs = kwargs or {}
-        task_id = task_id or uuid()
+        task_id = task_id or _new_task_id(app)
         retries = retries or 0
         if throw is None:
             throw = app.conf.task_eager_propagates

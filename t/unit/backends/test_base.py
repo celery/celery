@@ -1554,7 +1554,8 @@ class test_BaseBackend_dict:
         # Verify self was used as fallback backend
         backend.fail_from_current_stack.assert_called_once()
 
-    def test_chord_error_from_stack_generates_id_when_callback_id_is_none(self):
+    @pytest.mark.parametrize('custom_id', [None, 'custom-chord-error'])
+    def test_chord_error_from_stack_generates_id_when_callback_id_is_none(self, custom_id):
         """chord_error_from_stack must not crash when callback.id is None.
 
         Regression test for https://github.com/celery/celery/issues/4834
@@ -1563,6 +1564,8 @@ class test_BaseBackend_dict:
         stored and errback handlers can fire.
         """
         backend = self.b
+        if custom_id:
+            self.app.conf.task_id_generator = Mock(return_value=custom_id)
 
         callback = MagicMock(name='callback')
         callback.id = None
@@ -1583,6 +1586,9 @@ class test_BaseBackend_dict:
         )
         # The generated ID must also be stored on the callback
         assert callback.options['task_id'] is not None
+        if custom_id:
+            assert actual_id == callback.options['task_id'] == custom_id
+            self.app.conf.task_id_generator.assert_called_once_with()
 
     def _create_mock_frozen_group(self, group_id="group-id", task_ids=None, task_names=None):
         """Helper to create mock frozen group with results."""

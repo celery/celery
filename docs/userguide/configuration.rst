@@ -191,6 +191,7 @@ For a complete Django example, see :ref:`django-first-steps`.
 ``CELERY_QUEUES``                          :setting:`task_queues`
 ``CELERY_ROUTES``                          :setting:`task_routes`
 ``CELERY_SEND_SENT_EVENT``                 :setting:`task_send_sent_event`
+``CELERY_TASK_ID_GENERATOR``               :setting:`task_id_generator`
 ``CELERY_TASK_SERIALIZER``                 :setting:`task_serializer`
 ``CELERYD_SOFT_TIME_LIMIT``                :setting:`task_soft_time_limit`
 ``CELERY_TASK_TRACK_STARTED``              :setting:`task_track_started`
@@ -431,6 +432,51 @@ Default: 3.
 Maximum nesting depth used when generating ``argsrepr`` and ``kwargsrepr``.
 Deeper containers are shown as ``{...}`` / ``[...]``. Set to ``0`` or
 :const:`None` for no limit.
+
+.. setting:: task_id_generator
+
+``task_id_generator``
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.8
+
+Default: :const:`None` (use :func:`kombu.utils.uuid.uuid`).
+
+A callable whose result is converted to a string and used as a new task ID.
+When unset or :const:`None`, Celery uses Kombu's UUID generator. Use this
+setting for formats such as ULIDs, Snowflake IDs, or prefixed UUIDs.
+
+The callable must take no arguments and return a value that can be
+converted to a string.
+
+.. code-block:: python
+
+    # Using ULID (pip install python-ulid)
+    import ulid
+
+    def ulid_generator():
+        return str(ulid.ULID())
+
+    app.conf.task_id_generator = ulid_generator
+
+On Python 3.14 and later, the standard library can generate UUIDv7 values:
+
+.. code-block:: python
+
+    from uuid import uuid7
+
+    app.conf.task_id_generator = uuid7
+
+If the callable raises an exception, Celery will fall back to the
+default UUID generator.
+Explicitly supplied task IDs are preserved, and retries reuse the original ID.
+
+.. note::
+
+    This setting applies to all task ID assignment points, including
+    :meth:`~celery.app.base.Celery.send_task` and canvas primitives
+    such as :class:`~celery.canvas.group`, :class:`~celery.canvas.chain`,
+    and :class:`~celery.canvas.chord`.
 
 .. setting:: task_publish_retry
 
