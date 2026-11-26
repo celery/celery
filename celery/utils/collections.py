@@ -1,4 +1,5 @@
 """Custom maps, sets, sequences, and other data structures."""
+import threading
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
@@ -853,6 +854,7 @@ class BufferMap(OrderedDict, Evictable):
     def __init__(self, maxsize, iterable=None, bufmaxsize=1000):
         # type: (int, Iterable, int) -> None
         super().__init__()
+        self.mutex = threading.RLock()
         self.maxsize = maxsize
         self.bufmaxsize = bufmaxsize
         if iterable:
@@ -861,44 +863,53 @@ class BufferMap(OrderedDict, Evictable):
         self.total = sum(len(buf) for buf in self.values())
         self.maxsize and self.evict()
 
+    def __enter__(self):
+        return self.mutex.__enter__()
+
+    def __exit__(self, *args):
+        return self.mutex.__exit__(*args)
+
     def put(self, key, item):
         # type: (Any, Any) -> None
-        buf = self._get_or_create_buffer(key)
-        before = len(buf)
-        buf.put(item)
-        self.total += len(buf) - before
-        self.move_to_end(key)   # least recently used.
-        self.maxsize and self._evict()
+        with self.mutex:
+            buf = self._get_or_create_buffer(key)
+            before = len(buf)
+            buf.put(item)
+            self.total += len(buf) - before
+            self.move_to_end(key)   # least recently used.
+            self.maxsize and self._evict()
 
     def extend(self, key, it):
         # type: (Any, Iterable) -> None
-        buf = self._get_or_create_buffer(key)
-        before = len(buf)
-        buf.extend(it)
-        self.total += len(buf) - before
-        self.maxsize and self._evict()
+        with self.mutex:
+            buf = self._get_or_create_buffer(key)
+            before = len(buf)
+            buf.extend(it)
+            self.total += len(buf) - before
+            self.maxsize and self._evict()
 
     def take(self, key, *default):
         # type: (Any, *Any) -> Any
-        item, throw = None, False
-        try:
-            buf = self[key]
-        except KeyError:
-            throw = True
-        else:
+        with self.mutex:
+            item, throw = None, False
             try:
-                item = buf.take()
-                self.total -= 1
-            except self.Empty:
+                buf = self[key]
+            except KeyError:
                 throw = True
             else:
-                self.move_to_end(key)  # mark as LRU
+                try:
+                    item = buf.take()
+                    self.total -= 1
+                except self.Empty:
+                    throw = True
+                else:
+                    self.move_to_end(key)  # mark as LRU
 
-        if throw:
-            if default:
-                return default[0]
-            raise self.Empty()
-        return item
+            if throw:
+                if default:
+                    return default[0]
+                raise self.Empty()
+            return item
 
     def _get_or_create_buffer(self, key):
         # type: (Any) -> Messagebuffer
@@ -914,28 +925,36 @@ class BufferMap(OrderedDict, Evictable):
 
     def _LRUpop(self, *default):
         # type: (*Any) -> Any
-        return self[self._LRUkey()].take(*default)
+        with self.mutex:
+            return self[self._LRUkey()].take(*default)
 
     def _pop_to_evict(self):
         # type: () -> None
-        for _ in range(100):
-            key = self._LRUkey()
-            buf = self[key]
-            try:
-                buf.take()
-            except (IndexError, self.Empty):
-                # buffer empty, remove it from mapping.
-                self.pop(key)
-            else:
-                # we removed one item
-                self.total -= 1
-                # if buffer is empty now, remove it from mapping.
-                if not len(buf):
+        with self.mutex:
+            for _ in range(100):
+                key = self._LRUkey()
+                buf = self[key]
+                try:
+                    buf.take()
+                except (IndexError, self.Empty):
+                    # buffer empty, remove it from mapping.
                     self.pop(key)
                 else:
-                    # move to least recently used.
-                    self.move_to_end(key)
+                    # we removed one item
+                    self.total -= 1
+                    # if buffer is empty now, remove it from mapping.
+                    if not len(buf):
+                        self.pop(key)
+                    else:
+                        # move to least recently used.
+                        self.move_to_end(key)
                 break
+
+    def clear(self):
+        # type: () -> None
+        with self.mutex:
+            super().clear()
+            self.total = 0
 
     def __repr__(self):
         # type: () -> str

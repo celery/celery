@@ -5,7 +5,7 @@ import selectors
 import threading
 import time
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from functools import partial
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
 from urllib.parse import unquote
@@ -321,12 +321,13 @@ class ResultConsumer(BaseResultConsumer):
                 if meta['status'] in (states.SUCCESS, states.FAILURE):
                     pending_messages = self.backend._pending_messages
                     task_id = meta['task_id']
-                    try:
-                        buf = pending_messages.pop(task_id)
-                    except KeyError:
-                        pass
-                    else:
-                        pending_messages.total -= len(buf)
+                    with getattr(pending_messages, 'mutex', nullcontext()):
+                        try:
+                            buf = pending_messages.pop(task_id)
+                        except KeyError:
+                            pass
+                        else:
+                            pending_messages.total -= len(buf)
 
     def stop(self):
         with self._locked():
