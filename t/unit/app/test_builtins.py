@@ -2,9 +2,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from celery import chord, group
+from celery import Task, chord, group
 from celery.app import builtins
 from celery.contrib.testing.mocks import ContextMock
+from celery.exceptions import Ignore, Reject
 from celery.utils.functional import pass1
 
 
@@ -57,6 +58,104 @@ class test_map(BuiltinsCase):
         )
         assert res, [4, 16 == 64]
 
+    def test_run__fires_task_lifecycle_hooks(self):
+        # Every mapped item must go through the task trace, so that
+        # before_start/on_success/on_failure/after_return fire just like
+        # they do for single tasks (see issue #7585).
+        calls = []
+
+        class HookedTask(Task):
+            def before_start(self, task_id, args, kwargs):
+                calls.append(('before_start', args))
+
+            def on_success(self, retval, task_id, args, kwargs):
+                calls.append(('on_success', retval))
+
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                calls.append(('on_failure', repr(exc)))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def hooked(x):
+            return x * 2
+
+        res = self.app.tasks['celery.map'](hooked, [1, 2])
+        assert res == [2, 4]
+        assert calls == [
+            ('before_start', (1,)),
+            ('on_success', 2),
+            ('after_return', 'SUCCESS'),
+            ('before_start', (2,)),
+            ('on_success', 4),
+            ('after_return', 'SUCCESS'),
+        ]
+
+    def test_run__item_failure_calls_on_failure(self):
+        calls = []
+
+        class HookedTask(Task):
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                calls.append(('on_failure', repr(exc)))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def fails(x):
+            raise ValueError('nope')
+
+        with pytest.raises(ValueError):
+            self.app.tasks['celery.map'](fails, [1])
+        assert calls == [
+            ('on_failure', "ValueError('nope')"),
+            ('after_return', 'FAILURE'),
+        ]
+
+    def test_run__item_ignore_stops_map(self):
+        # On main, an item raising Ignore stopped the whole map task.
+        # Routing items through apply() records the item as IGNORED and
+        # .get() returns None instead, so the map carried on with None
+        # in the results. Re-raise to keep the old semantics.
+        seen = []
+
+        @self.app.task(shared=False)
+        def maybe_ignore(x):
+            seen.append(x)
+            if x == 2:
+                raise Ignore()
+            return x * 2
+
+        with pytest.raises(Ignore):
+            self.app.tasks['celery.map'](maybe_ignore, [1, 2, 3])
+        assert seen == [1, 2]
+
+    def test_run__ignored_item_without_exception_result_raises_ignore(self):
+        # Fallback in _apply_item_through_trace: the trace normally
+        # stores the Ignore exception as the result, but if an IGNORED
+        # item ever arrives with no exception attached, raise a fresh
+        # Ignore instead of carrying on with None.
+        from celery import states
+
+        task = Mock()
+        task.apply.return_value = Mock(state=states.IGNORED, result=None)
+        with pytest.raises(Ignore):
+            builtins._apply_item_through_trace(task, (1,))
+        task.apply.assert_called_once_with((1,))
+
+    def test_run__rejected_item_without_exception_result_raises_reject(self):
+        # Same fallback for REJECTED items.
+        from celery import states
+
+        task = Mock()
+        task.apply.return_value = Mock(state=states.REJECTED, result=None)
+        with pytest.raises(Reject):
+            builtins._apply_item_through_trace(task, (1,))
+        task.apply.assert_called_once_with((1,))
+
 
 class test_starmap(BuiltinsCase):
 
@@ -70,6 +169,51 @@ class test_starmap(BuiltinsCase):
             smap_mul, [(2, 2), (4, 4), (8, 8)],
         )
         assert res, [4, 16 == 64]
+
+    def test_run__fires_task_lifecycle_hooks(self):
+        calls = []
+
+        class HookedTask(Task):
+            def before_start(self, task_id, args, kwargs):
+                calls.append(('before_start', args))
+
+            def after_return(self, status, retval, task_id, args, kwargs,
+                             einfo):
+                calls.append(('after_return', status))
+
+        @self.app.task(shared=False, base=HookedTask)
+        def hooked(x, y):
+            return x * y
+
+        res = self.app.tasks['celery.starmap'](
+            hooked, [(2, 2), (4, 4)],
+        )
+        assert res == [4, 16]
+        assert calls == [
+            ('before_start', (2, 2)),
+            ('after_return', 'SUCCESS'),
+            ('before_start', (4, 4)),
+            ('after_return', 'SUCCESS'),
+        ]
+
+    def test_run__item_reject_stops_starmap(self):
+        # Same as test_run__item_ignore_stops_map for map: an item
+        # raising Reject used to stop the whole starmap task, but
+        # apply() records it as REJECTED and .get() returns None.
+        seen = []
+
+        @self.app.task(shared=False)
+        def maybe_reject(x, y):
+            seen.append((x, y))
+            if x == 2:
+                raise Reject('nope', requeue=False)
+            return x * y
+
+        with pytest.raises(Reject):
+            self.app.tasks['celery.starmap'](
+                maybe_reject, [(1, 1), (2, 2), (3, 3)],
+            )
+        assert seen == [(1, 1), (2, 2)]
 
 
 class test_chunks(BuiltinsCase):

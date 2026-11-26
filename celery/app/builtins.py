@@ -190,6 +190,30 @@ def add_unlock_chord_task(app):
     return unlock_chord
 
 
+def _apply_item_through_trace(task, args):
+    """Apply one map/starmap item through the task trace.
+
+    The result is already computed, so joining it cannot block.
+    ``EagerResult.get()`` re-raises FAILURE, but IGNORED/REJECTED are
+    not in PROPAGATE_STATES, so without the check below the map would
+    carry on with None for the item. On main the item's Ignore/Reject
+    stopped the whole map task, so re-raise those to keep that
+    behaviour. The trace stores the predicate exception as the result.
+    """
+    from celery import states
+
+    result = task.apply(args)
+    if result.state in (states.IGNORED, states.REJECTED):
+        exc = result.result
+        if isinstance(exc, Exception):
+            raise exc
+        from celery.exceptions import Ignore, Reject
+        if result.state == states.IGNORED:
+            raise Ignore()
+        raise Reject()
+    return result.get(disable_sync_subtasks=False)
+
+
 @connect_on_app_finalize
 def add_map_task(app):
     from celery.canvas import signature
@@ -197,7 +221,13 @@ def add_map_task(app):
     @app.task(name='celery.map', shared=False, lazy=False)
     def xmap(task, it):
         task = signature(task, app=app).type
-        return [task(item) for item in it]
+        # Execute every item through the task trace so that task
+        # lifecycle hooks (before_start/on_success/on_failure/
+        # after_return) and signals fire, just like for single tasks.
+        return [
+            _apply_item_through_trace(task, (item,))
+            for item in it
+        ]
     return xmap
 
 
@@ -208,7 +238,12 @@ def add_starmap_task(app):
     @app.task(name='celery.starmap', shared=False, lazy=False)
     def xstarmap(task, it):
         task = signature(task, app=app).type
-        return [task(*item) for item in it]
+        # See _apply_item_through_trace: run through the trace, never
+        # block on get().
+        return [
+            _apply_item_through_trace(task, item)
+            for item in it
+        ]
     return xstarmap
 
 
