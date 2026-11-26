@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from time import sleep
+
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
-from t.integration.tasks import add, add_with_result, identity
+from t.integration.conftest import get_redis_connection
+from t.integration.tasks import add, add_with_result, errback_new_style, identity
 from t.smoke.conftest import SuiteOperations, TaskTermination
 from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
                            self_termination_sigkill_with_retries, soft_time_limit_lower_than_time_limit,
@@ -198,3 +201,21 @@ class test_time_limit:
         )
 
         assert result.get(timeout=RESULT_TIMEOUT) is None
+
+    def test_hard_timeout_calls_the_errback_once(self, celery_setup: CeleryTestSetup):
+        """A hard time limit runs the failure handling once (#11090)."""
+        queue = celery_setup.worker.worker_queue
+        sig = self_termination_delay_timeout.s().set(queue=queue)
+        sig.link_error(errback_new_style.s().set(queue=queue))
+        task_id = sig.freeze().id
+        redis_connection = get_redis_connection()
+        redis_connection.delete(task_id)
+
+        with pytest.raises(TimeLimitExceeded):
+            sig.apply_async().get(timeout=RESULT_TIMEOUT)
+
+        # The errback counts its calls under the id of the failed task.
+        # Give a second call time to arrive before counting.
+        sleep(5)
+        assert int(redis_connection.get(task_id)) == 1
+        redis_connection.delete(task_id)
