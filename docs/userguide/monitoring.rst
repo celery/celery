@@ -772,8 +772,10 @@ task-ignored
 
 :signature: ``task-ignored(uuid)``
 
-The task raised :exc:`~celery.exceptions.Ignore` and was acknowledged
-without being executed to completion.
+.. versionadded:: 5.7
+
+The task raised :exc:`~celery.exceptions.Ignore` and the worker
+acknowledged the message and did not store a state for it.
 
 .. event:: task-revoked
 

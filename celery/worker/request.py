@@ -18,7 +18,8 @@ from celery import current_app, signals, states
 from celery.app.task import Context
 from celery.app.trace import fast_trace_task, task_has_custom, trace_task, trace_task_ret
 from celery.concurrency.base import BasePool
-from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError,
+from celery.exceptions import (BackendGetMetaError, Ignore, InvalidTaskError, Reject, Replaced, Retry,
+                               TaskRevokedError,
                                Terminated, TimeLimitExceeded, WorkerLostError)
 from celery.platforms import signals as _signals
 from celery.utils.functional import maybe, maybe_list, noop
@@ -763,7 +764,10 @@ class Request:
                     )
             return self.reject(requeue=exc.requeue)
         elif isinstance(exc, Ignore):
-            self.send_event('task-ignored')
+            if not isinstance(exc, Replaced):
+                # A replaced task continues under the same id: its
+                # replacement sends the last event.
+                self.send_event('task-ignored')
             return self.acknowledge()
         elif isinstance(exc, Retry):
             return self.on_retry(exc_info)

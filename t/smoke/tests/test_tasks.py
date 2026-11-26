@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from time import sleep
+from time import monotonic, sleep
 
 import pytest
 from pytest_celery import RESULT_TIMEOUT, CeleryTestSetup, CeleryTestWorker, CeleryWorkerCluster
@@ -9,9 +9,9 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from celery import Celery, signature
 from celery.exceptions import SoftTimeLimitExceeded, TimeLimitExceeded, WorkerLostError
 from t.integration.conftest import get_redis_connection
-from t.integration.tasks import add, add_with_result, errback_new_style, identity
+from t.integration.tasks import add, add_with_result, errback_new_style, identity, sleeping
 from t.smoke.conftest import SuiteOperations, TaskTermination
-from t.smoke.tasks import (noop, replace_with_task, self_termination_delay_timeout,
+from t.smoke.tasks import (ignores, noop, replace_with_task, self_termination_delay_timeout,
                            self_termination_sigkill_with_retries, soft_time_limit_lower_than_time_limit,
                            soft_time_limit_must_exceed_time_limit)
 
@@ -219,3 +219,51 @@ class test_time_limit:
         sleep(5)
         assert int(redis_connection.get(task_id)) == 1
         redis_connection.delete(task_id)
+
+
+class test_task_ignored_event:
+    @pytest.fixture
+    def default_worker_app(self, default_worker_app: Celery) -> Celery:
+        app = default_worker_app
+        app.conf.worker_send_task_events = True
+        return app
+
+    def watch(self, celery_setup: CeleryTestSetup, sig, until: str):
+        """Run ``sig`` and follow its events, as a monitor would, up to ``until``."""
+        app = celery_setup.app
+        state = app.events.State()
+        seen = []
+        sent = []
+        deadline = monotonic() + RESULT_TIMEOUT
+
+        def on_event(event):
+            state.event(event)
+            if sent and event.get("uuid") == sent[0].id:
+                seen.append(event["type"])
+            # Worker heartbeats keep this handler running, so the
+            # deadline ends the capture when ``until`` never comes.
+            if until in seen or monotonic() > deadline:
+                receiver.should_stop = True
+
+        def on_consume_ready(*args, **kwargs):
+            sent.append(sig.apply_async(queue=celery_setup.worker.worker_queue))
+
+        with app.connection() as connection:
+            receiver = app.events.Receiver(connection, handlers={"*": on_event})
+            receiver.on_consume_ready = on_consume_ready
+            receiver.capture(wakeup=False)
+        return state.tasks[sent[0].id], seen
+
+    def test_ignored_task_ends_as_ignored(self, celery_setup: CeleryTestSetup):
+        task, seen = self.watch(celery_setup, ignores.si(), "task-ignored")
+        assert seen[-1:] == ["task-ignored"]
+        assert task.state == "IGNORED"
+
+    def test_replaced_task_is_not_shown_as_ignored(self, celery_setup: CeleryTestSetup):
+        # The replacement sleeps so that every event of the replaced
+        # task is in before the last one.
+        replace_with = signature(sleeping, args=(2,), queue=celery_setup.worker.worker_queue)
+        task, seen = self.watch(celery_setup, replace_with_task.si(replace_with), "task-succeeded")
+        assert seen[-1:] == ["task-succeeded"]
+        assert "task-ignored" not in seen
+        assert task.state == "SUCCESS"
