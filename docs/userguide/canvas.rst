@@ -911,6 +911,29 @@ They do not delay the body callback, and they do not change the
 ``chord_unlock`` retry interval (that remains the ``countdown`` argument of
 :meth:`~celery.chord.run`).
 
+On backends without native chord support the body is dispatched by the
+``celery.chord_unlock`` task. If a worker is lost after dispatching the
+body but before acknowledging the task (with :setting:`task_acks_late`),
+the broker redelivers ``chord_unlock``. To stop the redelivered copy from
+dispatching the body a second time, the backend first records a dispatch
+claim under the synthetic result id ``chord-unlock-claim-<group_id>``, and
+only the copy holding the claim finishes the chord.
+
+A claim is leased: if the worker holding it has not finished within
+``chord_unlock_claim_lease`` seconds (a result backend attribute,
+60 seconds by default), the claim counts as abandoned and a redelivered
+``chord_unlock`` may take it over and finish the chord. The trade-off is
+deliberate: a worker killed while it holds the claim delays the body by
+up to the lease, where the body used to be dispatched again almost
+immediately. Each chord also leaves one extra stored result (the claim)
+until results expire.
+
+The database backend decides claims and lease takeovers atomically.
+Backends without such a primitive, such as the filesystem backend, use
+the base read-after-write claim instead: each copy stores its claim and
+reads it back, and a copy whose token is no longer the stored one treats
+the chord as already claimed by another copy.
+
 Let's calculate the sum of the expression
 :math:`1 + 1 + 2 + 2 + 3 + 3 ... n + n` up to a hundred digits.
 
