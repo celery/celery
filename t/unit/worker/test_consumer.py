@@ -1,10 +1,11 @@
 import errno
 import logging
 import socket
+import weakref
 from collections import deque
 from time import monotonic
 from types import SimpleNamespace
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import ANY, MagicMock, Mock, call, patch
 
 import pytest
 from amqp import ChannelError
@@ -12,6 +13,7 @@ from billiard.exceptions import RestartFreqExceeded
 from kombu import Queue
 from kombu.asynchronous import Hub
 from kombu.asynchronous.timer import Timer
+from kombu.utils.limits import TokenBucket
 
 from celery import bootsteps
 from celery.contrib.testing.mocks import ContextMock
@@ -38,7 +40,10 @@ class FakeOnCloseRequest:
     def __init__(self, id, entry=None):
         self.id = id
         self.name = 'test.task'
-        self._eta_timer_entry = entry
+        # The real Request holds only a weak reference to its timer entry
+        # (the entry's args hold the request); the test keeps the strong one.
+        self.entry = entry
+        self._eta_timer_entry = None if entry is None else weakref.ref(entry)
 
 
 @pytest.fixture
@@ -55,6 +60,7 @@ def on_close_ctx():
     consumer.controller = Mock()
     consumer.controller.semaphore = Mock()
     consumer.task_buckets = {}
+    consumer._limit_timers = {}
     consumer.pool = Mock()
     consumer.pool.flush = Mock()
 
@@ -436,7 +442,7 @@ class test_Consumer(ConsumerTestCase):
         assert c._limit_order == limit_order + 1
         bucket.can_consume.assert_called_with(4)
         c.timer.call_after.assert_called_with(
-            3.33, c._schedule_bucket_request, (bucket,),
+            3.33, c._on_bucket_wakeup, (bucket, ANY),
             priority=c._limit_order,
         )
         bucket.expected_time.assert_called_with(4)
@@ -472,6 +478,129 @@ class test_Consumer(ConsumerTestCase):
             c.qos.decrement_eventually.assert_called_with()
             bucket.add.assert_called_with((request, 1))
             task_reserved.assert_called_with(bucket)
+
+    def waiting_bucket(self):
+        bucket = Mock(name='bucket')
+        bucket.contents = deque()
+        bucket.add = bucket.contents.append
+        bucket.pop = bucket.contents.popleft
+        bucket.can_consume.return_value = False
+        bucket.expected_time.return_value = 1.0
+        return bucket
+
+    def fire_bucket_timer(self, c, bucket):
+        """Run the callback of the last timer armed for ``bucket``."""
+        _, callback, args = c.timer.call_after.call_args.args
+        assert args[0] is bucket
+        callback(*args)
+
+    def test_limit_task_arms_one_timer_per_bucket(self):
+        # Each request that waits for tokens must not arm a timer of its
+        # own: every such timer re-arms itself until the bucket is empty,
+        # so on a busy queue the timers would grow with the requests.
+        c = self.get_consumer()
+        c.timer = Timer()
+        bucket = TokenBucket(fill_rate=1, capacity=1)
+        assert bucket.can_consume(1)  # use the only token
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            for _ in range(10):
+                c._limit_task(Mock(), bucket, 1)
+
+        move_to_pool.assert_not_called()
+        assert len(bucket.contents) == 10
+        assert len(c.timer.queue) == 1
+
+    def test_limit_task_arms_a_timer_for_each_bucket(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        first, second = self.waiting_bucket(), self.waiting_bucket()
+
+        c._limit_task(Mock(), first, 1)
+        c._limit_task(Mock(), second, 1)
+        c._limit_task(Mock(), first, 1)
+
+        assert c.timer.call_after.call_count == 2
+
+    def test_on_bucket_wakeup_arms_the_next_timer(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        first, second = Mock(), Mock()
+        c._limit_task(first, bucket, 1)
+        c._limit_task(second, bucket, 1)
+        assert c.timer.call_after.call_count == 1
+        bucket.can_consume.side_effect = [True, False]
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            self.fire_bucket_timer(c, bucket)
+
+        move_to_pool.assert_called_once_with(first)
+        assert list(bucket.contents) == [(second, 1)]
+        assert c.timer.call_after.call_count == 2
+        assert c._limit_timers[bucket][1] is c.timer.call_after.return_value
+
+    def test_on_bucket_wakeup_of_a_replaced_timer_does_nothing(self):
+        # If two timers were armed for one bucket, for example by the timer
+        # thread and the consumer at the same time, the timer that is no
+        # longer recorded must stop.  Otherwise both chains of timers would
+        # serve the bucket until it is empty.
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        c._limit_task(Mock(), bucket, 1)
+        _, callback, stale_args = c.timer.call_after.call_args.args
+        c._limit_timers.clear()
+        c._limit_task(Mock(), bucket, 1)  # arms the recorded timer
+        armed = c._limit_timers[bucket]
+
+        callback(*stale_args)
+
+        assert c.timer.call_after.call_count == 2
+        assert c._limit_timers[bucket] is armed
+        bucket.can_consume.assert_called_with(1)
+        assert len(bucket.contents) == 2
+
+    def test_on_bucket_wakeup_forgets_the_timer_of_an_empty_bucket(self):
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        request = Mock()
+        c._limit_task(request, bucket, 1)
+        bucket.can_consume.return_value = True
+
+        with patch(
+            'celery.worker.consumer.consumer.Consumer._limit_move_to_pool'
+        ) as move_to_pool:
+            self.fire_bucket_timer(c, bucket)
+
+        move_to_pool.assert_called_once_with(request)
+        assert c.timer.call_after.call_count == 1
+        assert bucket not in c._limit_timers
+
+        c._limit_task(Mock(), bucket, 1)  # tokens are available
+
+        assert c.timer.call_after.call_count == 1
+
+    def test_limit_task_arms_a_timer_again_after_on_close(self):
+        # on_close() empties the buckets and cancels their timers, so the
+        # cancelled timers never fire.  A bucket must not count as armed
+        # after that, or its requests would wait for ever.
+        c = self.get_consumer()
+        c.timer = Mock()
+        bucket = self.waiting_bucket()
+        c._limit_task(Mock(), bucket, 1)
+        _, entry = c._limit_timers[bucket]
+
+        c.on_close()
+        c._limit_task(Mock(), bucket, 1)
+
+        c.timer.cancel.assert_called_once_with(entry)
+        assert c.timer.call_after.call_count == 2
 
     def test_max_restarts_exceeded(self):
         c = self.get_consumer()
@@ -795,9 +924,8 @@ class test_Consumer(ConsumerTestCase):
 
         Consumer.on_close(consumer)
 
-        consumer.timer.cancel.assert_called_once_with(
-            scheduled._eta_timer_entry)
-        scheduled._eta_timer_entry.cancel.assert_not_called()
+        consumer.timer.cancel.assert_called_once_with(scheduled.entry)
+        scheduled.entry.cancel.assert_not_called()
 
     def test_on_close_logs_and_continues_if_timer_cancel_raises(self, on_close_ctx):
         """A failing cancellation must not abort the rest of the cleanup."""
@@ -828,6 +956,46 @@ class test_Consumer(ConsumerTestCase):
         assert state.requests.get(running.id) is running
         assert running in state.active_requests
         assert running not in state.scheduled_requests
+
+    def test_on_close_cancels_and_forgets_rate_limit_timers(self, on_close_ctx):
+        """The buckets are emptied, so their pending timers have nothing
+        to do.  They must be cancelled through ``self.timer.cancel(entry)``
+        and forgotten, so that the next connection can arm new ones.
+        """
+        state, Consumer, consumer = on_close_ctx
+        bucket, entry = Mock(name='bucket'), Mock(name='entry')
+        consumer._limit_timers = {bucket: (object(), entry)}
+
+        Consumer.on_close(consumer)
+
+        consumer.timer.cancel.assert_called_once_with(entry)
+        entry.cancel.assert_not_called()
+        assert consumer._limit_timers == {}
+
+    def test_on_close_forgets_rate_limit_timers_if_cancel_raises(self, on_close_ctx):
+        state, Consumer, consumer = on_close_ctx
+        consumer.timer.cancel.side_effect = RuntimeError('boom')
+        consumer._limit_timers = {
+            Mock(name='bucket'): (object(), Mock(name='entry')),
+        }
+
+        Consumer.on_close(consumer)
+
+        assert consumer._limit_timers == {}
+
+    def test_on_close_forgets_rate_limit_timers_without_timer(self, on_close_ctx):
+        """A consumer can have no timer.  on_close() must not try to cancel
+        the timer entries then, but it must still forget them.
+        """
+        state, Consumer, consumer = on_close_ctx
+        consumer.timer = None
+        entry = Mock(name='entry')
+        consumer._limit_timers = {Mock(name='bucket'): (object(), entry)}
+
+        Consumer.on_close(consumer)
+
+        entry.cancel.assert_not_called()
+        assert consumer._limit_timers == {}
 
     def test_connect_error_handler(self):
         self.app._connection = _amqp_connection()
@@ -937,7 +1105,10 @@ class test_Consumer(ConsumerTestCase):
         mock_request_acks_late_not_acknowledged.cancel.assert_called_once_with(c.pool, emit_retry=False)
         # acks_late acknowledged tasks should NOT be cancelled
         mock_request_acks_late_acknowledged.cancel.assert_not_called()
-        # Non-acks_late tasks should be cancelled normally (with RETRY)
+        # Non-acks_late tasks are cancelled with emit_retry=True; the
+        # request itself stores FAILURE instead of RETRY for them since
+        # their message was already acknowledged (#11079, see
+        # test_request.py::test_cancel__acknowledged_stores_failure_not_retry)
         mock_request_acks_early.cancel.assert_called_once_with(c.pool, emit_retry=True)
 
         active_requests.clear()
@@ -1326,6 +1497,7 @@ class test_Consumer(ConsumerTestCase):
         consumer.controller.max_concurrency = None
         consumer.controller.semaphore = Mock()
         consumer.task_buckets = {}
+        consumer._limit_timers = {}
         consumer.initial_prefetch_count = 1
         consumer.connection = Mock()
         consumer.connection.connection_errors = ()
@@ -2340,3 +2512,244 @@ class test_Gossip:
         drift = abs(int(worker.local_received) - int(worker.timestamp))
         assert drift <= HEARTBEAT_DRIFT_MAX
         warn_drift.assert_not_called()
+
+
+class test_Consumer_on_unknown_task(ConsumerTestCase):
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto2(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-id-proto2',
+            'task': 'unregistered.task',
+            'root_id': 'root-id-proto2',
+            'parent_id': 'parent-id-proto2',
+            'group': 'group-id-proto2',
+            'group_index': 2,
+        }
+        message.properties = {
+            'correlation_id': 'corr-id-1',
+            'reply_to': 'reply-queue-1',
+        }
+        message.delivery_info = {'routing_key': 'celery', 'is_eager': False}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'chord_sig': 'sig'},
+                'errbacks': [{'errback_sig': 'err'}],
+                'chain': [{'chain_sig': 'chain'}],
+                'callbacks': [{'callback_sig': 'cb'}],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto2'
+        assert exc.args[0] == 'unregistered.task'
+        assert request.id == 'task-id-proto2'
+        assert request.task_id == 'task-id-proto2'
+        assert request.name == 'unregistered.task'
+        assert request.root_id == 'root-id-proto2'
+        assert request.parent_id == 'parent-id-proto2'
+        assert request.group == 'group-id-proto2'
+        assert request.group_index == 2
+        assert request.chord == {'chord_sig': 'sig'}
+        assert request.errbacks == [{'errback_sig': 'err'}]
+        assert request.chain == [{'chain_sig': 'chain'}]
+        assert request.callbacks == [{'callback_sig': 'cb'}]
+        assert request.correlation_id == 'corr-id-1'
+        assert request.reply_to == 'reply-queue-1'
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_passes_chord_chain_errbacks_proto1(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {}
+        payload = {
+            'id': 'task-id-proto1',
+            'task': 'unregistered.proto1.task',
+            'root_id': 'root-id-proto1',
+            'parent_id': 'parent-id-proto1',
+            'group': 'group-id-proto1',
+            'group_index': 0,
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+            'chain': [{'chain_sig_p1': 'chain'}],
+            'callbacks': None,
+        }
+        message.payload = payload
+        message.properties = {'correlation_id': 'corr-p1', 'reply_to': 'reply-p1'}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.proto1.task'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        task_id, exc = c.app.backend.mark_as_failure.call_args[0]
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+
+        assert task_id == 'task-id-proto1'
+        assert exc.args[0] == 'unregistered.proto1.task'
+        assert request.id == 'task-id-proto1'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.chain == [{'chain_sig_p1': 'chain'}]
+        assert request.group == 'group-id-proto1'
+        assert request.group_index == 0
+        message.reject_log_error.assert_called_once()
+
+    def test_on_unknown_task_end_to_end_triggers_chord_and_chain_and_errbacks(self):
+        c = self.get_consumer()
+        backend = c.app.backend
+        backend.on_chord_part_return = Mock()
+        backend._fail_chain = Mock()
+        backend._call_task_errbacks = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{"mock": "body"}'
+        message.headers = {
+            'id': 'task-e2e',
+            'task': 'missing.task',
+            'group': 'chord-group-1',
+            'group_index': 0,
+        }
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = (
+            (), {}, {
+                'chord': {'header': 'h'},
+                'errbacks': ['err_sig'],
+                'chain': ['next_task_sig'],
+            }
+        )
+
+        c.on_unknown_task(None, message, KeyError('missing.task'))
+
+        backend.on_chord_part_return.assert_called_once()
+        backend._fail_chain.assert_called_once()
+        backend._call_task_errbacks.assert_called_once()
+
+        # Check call arguments
+        req = backend.on_chord_part_return.call_args[0][0]
+        assert req.chord == {'header': 'h'}
+        assert req.group == 'chord-group-1'
+
+        chain_arg = backend._fail_chain.call_args[0][0]
+        assert chain_arg == ['next_task_sig']
+
+        errback_req = backend._call_task_errbacks.call_args[0][0]
+        assert errback_req.errbacks == ['err_sig']
+
+    def test_on_unknown_task_does_not_retry_lazy_payload_decode(self):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        class MalformedMessage:
+            body = b'{'
+            headers = {
+                'id': 'malformed-task-id',
+                'task': 'unregistered.malformed',
+            }
+            properties = {}
+            delivery_info = {}
+
+            def decode(self):
+                raise ValueError('malformed message body')
+
+            @property
+            def payload(self):
+                raise ValueError('lazy payload decode must not be retried')
+
+            def reject_log_error(self, *args):
+                pass
+
+        message = MalformedMessage()
+        c.on_unknown_task(None, message, KeyError('unregistered.malformed'))
+
+        c.app.backend.mark_as_failure.assert_called_once()
+        assert c.app.backend.mark_as_failure.call_args.args[0] == 'malformed-task-id'
+
+    @pytest.mark.parametrize(
+        'headers, payload',
+        [
+            ({'task': 'unregistered.missing_id'}, None),
+            ({}, {'task': 'unregistered.missing_id'}),
+        ],
+        ids=['protocol-v2-missing-id', 'protocol-v1-missing-id'],
+    )
+    def test_on_unknown_task_without_id_is_rejected(self, headers, payload):
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = headers
+        message.properties = {}
+        message.delivery_info = {}
+
+        c.on_unknown_task(payload, message, KeyError('unregistered.missing_id'))
+
+        c.app.backend.mark_as_failure.assert_not_called()
+        message.reject_log_error.assert_called_once()
+
+    def test_task_handler_passes_a_protocol_1_payload_on(self):
+        # Protocol 1 keeps chord and errback metadata in the decoded body.
+        c = self.get_consumer()
+        c.app.backend.mark_as_failure = Mock()
+        c.strategies = {}
+        payload = {
+            'id': 'task-id-proto1-handler',
+            'task': 'unregistered.proto1.task',
+            'chord': {'chord_sig_p1': 'sig'},
+            'errbacks': [{'errback_sig_p1': 'err'}],
+        }
+        message = Mock(name='message')
+        message.body = b'{}'
+        message.headers = {}
+        message.decode.return_value = payload
+        message.properties = {}
+        message.delivery_info = {'routing_key': 'celery'}
+
+        c.create_task_handler()(message)
+
+        request = c.app.backend.mark_as_failure.call_args[1]['request']
+        assert request.id == 'task-id-proto1-handler'
+        assert request.chord == {'chord_sig_p1': 'sig'}
+        assert request.errbacks == [{'errback_sig_p1': 'err'}]
+        assert request.delivery_info == {'routing_key': 'celery'}
+
+    @pytest.mark.parametrize(
+        'field, value',
+        [
+            ('chain', ['not-a-signature']),
+            ('chain', 'not-a-signature'),
+            ('chord', 'not-a-signature'),
+            ('errbacks', 5),
+            ('group', 5),
+            ('group', {'unexpected': 'mapping'}),
+        ],
+    )
+    def test_on_unknown_task_survives_malformed_canvas_fields(self, field, value):
+        c = self.get_consumer()
+        embed = {'callbacks': None, 'errbacks': None, 'chain': None, 'chord': None}
+        embed[field] = value
+        message = Mock(name='message')
+        message.body = b'[]'
+        message.headers = {'id': 'task-id-bad-fields', 'task': 'unregistered.task'}
+        message.properties = {}
+        message.delivery_info = {}
+        message.decode.return_value = [[], {}, embed]
+
+        c.on_unknown_task(None, message, KeyError('unregistered.task'))
+
+        # Rejection happens before result-backend propagation; malformed
+        # canvas metadata must never escape the consumer callback.
+        message.reject_log_error.assert_called_once()
