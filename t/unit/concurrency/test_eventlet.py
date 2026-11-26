@@ -89,6 +89,136 @@ class test_Timer(EventletCase):
         x.cancel(tref)
 
 
+class test_Timer_real:
+
+    @pytest.fixture
+    def eventlet(self):
+        # EventletCase leaves stubbed modules behind, start from a clean import.
+        for mod in [mod for mod in sys.modules if mod.startswith('eventlet')]:
+            del sys.modules[mod]
+        return pytest.importorskip('eventlet')
+
+    @pytest.fixture
+    def timer(self, eventlet):
+        timer = Timer()
+        yield timer
+        for g in list(timer.queue):
+            g.entry.cancel()
+            g.kill()
+        eventlet.sleep(0)
+
+    def assert_quiet(self, timer, eventlet, calls, expected):
+        from eventlet.event import Event
+
+        barrier = Event()
+        timer.call_after(0.01, barrier.send)
+        with eventlet.Timeout(2):
+            barrier.wait()
+        eventlet.sleep(0)
+        assert calls == expected
+
+    @pytest.mark.parametrize('cancel_via_timer', [False, True])
+    def test_cancel_after_multiple_iterations(
+            self, timer, eventlet, cancel_via_timer):
+        from eventlet.queue import Queue
+
+        ticks = Queue()
+        calls = []
+
+        def tick():
+            calls.append(len(calls))
+            ticks.put(len(calls))
+
+        first = timer.call_repeatedly(0.001, tick)
+        for expected in range(1, 4):
+            assert ticks.get(timeout=2) == expected
+        assert first.dead
+        assert any(
+            g.entry is first.entry and g is not first for g in timer.queue
+        )
+        if cancel_via_timer:
+            timer.cancel(first)
+        else:
+            first.cancel()
+        assert first.entry.canceled
+        self.assert_quiet(timer, eventlet, calls, [0, 1, 2])
+        assert not timer.queue
+
+    def test_cancel_leaves_other_timer_running(self, timer, eventlet):
+        from eventlet.queue import Queue
+
+        ticks = Queue()
+        canceled = []
+        first = timer.call_repeatedly(0.001, canceled.append, ('canceled',))
+        timer.call_repeatedly(0.001, ticks.put, ('other',))
+        assert ticks.get(timeout=2) == 'other'
+        first.cancel()
+        expected = list(canceled)
+        while not ticks.empty():
+            ticks.get_nowait()
+        assert ticks.get(timeout=2) == 'other'
+        self.assert_quiet(timer, eventlet, canceled, expected)
+
+    def test_clear_stops_repeated_scheduling(self, timer, eventlet):
+        from eventlet.event import Event
+
+        entered = Event()
+        calls = []
+
+        def tick():
+            calls.append('tick')
+            entered.send()
+            eventlet.sleep(0.05)
+
+        first = timer.call_repeatedly(0.001, tick)
+        with eventlet.Timeout(2):
+            entered.wait()
+        timer.clear()
+        assert first.entry.canceled
+        assert not timer.queue
+        self.assert_quiet(timer, eventlet, calls, ['tick'])
+
+    def test_cancel_from_own_callback(self, timer, eventlet):
+        from eventlet.queue import Queue
+
+        ticks = Queue()
+        calls = []
+
+        def tick():
+            calls.append(len(calls))
+            ticks.put(len(calls))
+            if len(calls) == 2:
+                handle.cancel()
+
+        handle = timer.call_repeatedly(0.001, tick)
+        for expected in (1, 2):
+            assert ticks.get(timeout=2) == expected
+        assert handle.entry.canceled
+        self.assert_quiet(timer, eventlet, calls, [0, 1])
+        assert not timer.queue
+
+    @pytest.mark.parametrize('cancel_via_timer', [False, True])
+    def test_cancel_single_shot_before_start(
+            self, timer, eventlet, cancel_via_timer):
+        called = []
+        handle = timer.call_after(60, called.append, ('unexpected',))
+        if cancel_via_timer:
+            timer.cancel(handle)
+        else:
+            handle.cancel()
+        eventlet.sleep(0)
+        assert handle.dead
+        assert handle.entry.canceled
+        self.assert_quiet(timer, eventlet, called, [])
+        assert not timer.queue
+
+    def test_entry_canceled_directly_does_not_run(self, timer, eventlet):
+        called = []
+        handle = timer.call_after(0.001, called.append, ('unexpected',))
+        handle.entry.cancel()
+        self.assert_quiet(timer, eventlet, called, [])
+
+
 class test_TaskPool(EventletCase):
 
     @pytest.fixture(autouse=True)
