@@ -2,6 +2,9 @@ import sys
 from unittest.mock import Mock, patch
 
 import pytest
+from billiard.einfo import ExceptionWithTraceback
+
+from celery.exceptions import Terminated
 
 pytest.importorskip('eventlet')
 
@@ -183,7 +186,16 @@ class test_TaskPool(EventletCase):
             raise GreenletExit()
 
         assert TaskPool._make_killable_target(valid_target)() == "some result..."
-        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
+        # A killed greenlet must be reported as a terminated job, not as
+        # a success: (False, None, None) made Request.on_success() ack a
+        # late-ack task that never finished (Issue #11086).
+        failed, retval, runtime = TaskPool._make_killable_target(terminating_target)()
+        assert failed
+        assert runtime is None
+        exc = retval.exception
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
+        assert isinstance(exc, Terminated)
 
     def test_cleanup_after_job_finish(self):
         testMap = {'1': None}
