@@ -7,6 +7,7 @@ from importlib.metadata import entry_points
 
 import click
 import click.exceptions
+from click.core import ParameterSource
 from click_didyoumean import DYMGroup
 from click_plugins import with_plugins
 
@@ -52,6 +53,15 @@ else:
         _PLUGINS = entry_points().select(group='celery.commands')
 
 
+def _set_color(ctx, param, value):
+    if value is False and ctx.get_parameter_source(param.name) != ParameterSource.COMMANDLINE:
+        # NO_COLOR=0 leaves terminal detection enabled.
+        value = None
+    if value is not None:
+        ctx.color = not value
+    return value
+
+
 @with_plugins(_PLUGINS)
 @click.group(cls=DYMGroup, invoke_without_command=True)
 @click.option('-A',
@@ -88,11 +98,14 @@ else:
               is_eager=True,
               help_group="Global Options")
 @click.option('-C',
-              '--no-color',
+              '--no-color/--color',
               envvar='NO_COLOR',
-              is_flag=True,
+              default=None,
+              callback=_set_color,
+              is_eager=True,
               cls=CeleryOption,
-              help_group="Global Options")
+              help_group="Global Options",
+              help="Disable or force colored output. By default, detect terminal support.")
 @click.option('-q',
               '--quiet',
               is_flag=True,
@@ -151,8 +164,9 @@ def celery(ctx, app, broker, result_backend, loader, config, workdir,
                 UNABLE_TO_LOAD_APP_ERROR_OCCURRED.format(app, exc)
             )
 
-    ctx.obj = CLIContext(app=app, no_color=no_color, workdir=workdir,
+    ctx.obj = CLIContext(app=app, no_color=bool(no_color), workdir=workdir,
                          quiet=quiet)
+    ctx.obj.app.log.colorize_override = None if no_color is None else not no_color
 
     # User options
     worker.params.extend(ctx.obj.app.user_options.get('worker', []))
