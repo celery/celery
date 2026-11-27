@@ -509,6 +509,22 @@ class test_State:
         assert task.state == states.IGNORED
         assert task.as_dict()['ignored'] == task.ignored
 
+    def test_task_ignored_is_not_ready(self):
+        # IGNORED is not in READY_STATES (it follows the REJECTED
+        # precedent), so a monitor still counts an ignored task as not
+        # ready; this pins that behaviour down.
+        state = State()
+        tid = uuid()
+        for type_, clock in (('task-received', 1), ('task-started', 2),
+                             ('task-ignored', 3)):
+            state.event({
+                'type': type_, 'uuid': tid, 'hostname': 'h', 'clock': clock,
+                'timestamp': float(clock), 'local_received': float(clock),
+            })
+        task = state.tasks[tid]
+        assert task.state == states.IGNORED
+        assert task.ready is False
+
     def test_task_children_set_if_received_in_wrong_order(self):
         r = ev_task_states(State())
         r.events.insert(0, r.events.pop())
