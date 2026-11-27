@@ -772,7 +772,7 @@ task-ignored
 
 :signature: ``task-ignored(uuid)``
 
-.. versionadded:: 5.7
+.. versionadded:: 5.7.1
 
 The task raised :exc:`~celery.exceptions.Ignore` and the worker
 acknowledged the message and did not store a state for it.
