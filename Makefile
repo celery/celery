@@ -72,7 +72,8 @@ bump-major:
 	bumpversion major
 
 release:
-	python setup.py register sdist bdist_wheel upload --sign --identity="$(PGPIDENT)"
+	$(PYTHON) -m build
+	twine upload --sign --identity=$(PGPIDENT) dist/*
 
 Documentation:
 	(cd "$(SPHINX_DIR)"; $(MAKE) html)
@@ -142,13 +143,13 @@ test-all: clean-pyc
 	$(TOX)
 
 test:
-	$(PYTHON) setup.py test
+	$(PYTEST) $(TESTDIR)/unit
 
 cov:
 	$(PYTEST) -x --cov="$(PROJ)" --cov-report=html
 
 build:
-	$(PYTHON) setup.py sdist bdist_wheel
+	$(PYTHON) -m build
 
 distcheck: lint test clean
 
