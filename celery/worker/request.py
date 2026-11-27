@@ -781,6 +781,15 @@ class Request:
             # chord header twice, and requeueing would run the task again.
             warn('Task %s[%s] succeeded before the worker was lost: %r',
                  self.name, self.id, exc)
+            result = success_meta.get('result')
+            if self._context.chord:
+                # The child may have been killed after storing SUCCESS but
+                # before running on_chord_part_return() (Issue #11038).
+                # Complete the chord part return from the main process so the
+                # chord does not remain PENDING forever.
+                self.task.backend.on_chord_part_return(
+                    self._context, states.SUCCESS, result,
+                )
             if self.task.acks_late:
                 self.acknowledge()
 
@@ -788,7 +797,6 @@ class Request:
             # Reuse the metadata we just fetched instead of hitting the backend
             # again from the worker's main process (which can be slow during
             # an outage).
-            result = success_meta.get('result')
             self.send_event(
                 'task-succeeded',
                 result=saferepr(result, self.task.resultrepr_maxsize),
