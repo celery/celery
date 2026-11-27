@@ -11,7 +11,7 @@ from celery import Task, chain, chord, group, uuid
 from celery.app.task import _reprtask
 from celery.canvas import StampingVisitor, signature
 from celery.contrib.testing.mocks import ContextMock
-from celery.exceptions import CDeprecationWarning, Ignore, ImproperlyConfigured, Retry
+from celery.exceptions import CDeprecationWarning, Ignore, ImproperlyConfigured, Replaced, Retry
 from celery.result import AsyncResult, EagerResult
 from celery.utils.serialization import UnpickleableExceptionWrapper
 
@@ -1416,7 +1416,7 @@ class test_tasks(TasksCase):
         sig1 = MagicMock(name='sig1')
         sig1.options = {}
         self.mytask.request.id = sentinel.request_id
-        with pytest.raises(Ignore):
+        with pytest.raises(Replaced):
             self.mytask.replace(sig1)
         sig1.freeze.assert_called_once_with(self.mytask.request.id)
         sig1.set.assert_called_once_with(replaced_task_nesting=1,
