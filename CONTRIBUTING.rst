@@ -924,7 +924,7 @@ the steps outlined here: https://bit.ly/koJoso
 
 You can also use `hub`_ to create pull requests. Example: https://theiconic.tech/git-hub-fbe2e13ef4d1
 
-.. _`Pull Requests`: http://help.github.com/send-pull-requests/
+.. _`Pull Requests`: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
 
 .. _`hub`: https://hub.github.com/
 

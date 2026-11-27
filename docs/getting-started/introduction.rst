@@ -217,7 +217,7 @@ Features
             internals.
 
 .. _`Eventlet`: http://eventlet.net/
-.. _`gevent`: http://gevent.org/
+.. _`gevent`: https://www.gevent.org/
 
 Framework Integration
 =====================
