@@ -55,6 +55,10 @@ class EventDispatcher:
     # set of callbacks to be called when :meth:`disabled`.
     on_disabled = None
 
+    # set by the disable_events remote control command when it restricts the
+    # empty set of groups (meaning every group) to the 'worker' group.
+    _all_groups_disabled = False
+
     def __init__(self, connection=None, hostname=None, enabled=True,
                  channel=None, buffer_while_offline=True, app=None,
                  serializer=None, groups=None, delivery_mode=1,

@@ -23,6 +23,7 @@ class Events(bootsteps.StartStopStep):
                  without_gossip=False,
                  **kwargs):
         self.groups = None if task_events else ['worker']
+        self.all_groups_disabled = False
         self.send_events = (
             task_events or
             not without_gossip or
@@ -46,6 +47,7 @@ class Events(bootsteps.StartStopStep):
             buffer_group=['task'] if c.hub else None,
             on_send_buffered=c.on_send_event_buffered if c.hub else None,
         )
+        dis._all_groups_disabled = self.all_groups_disabled
         # register for reads so broker heartbeats are consumed.
         if c.hub and c.amqheartbeat and conn.supports_heartbeats:
             conn.transport.register_with_event_loop(conn.connection, c.hub)
@@ -63,6 +65,7 @@ class Events(bootsteps.StartStopStep):
             dispatcher = c.event_dispatcher
             # remember changes from remote control commands:
             self.groups = dispatcher.groups
+            self.all_groups_disabled = dispatcher._all_groups_disabled is True
 
             # close custom connection
             if dispatcher.connection:
