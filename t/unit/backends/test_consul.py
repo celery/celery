@@ -28,12 +28,17 @@ class test_ConsulBackend:
 
     def test_set(self):
         self.backend.one_client = Mock(name='c.client')
+        self.backend.one_client.kv.get.return_value = (None, None)
         self.backend.one_client.session.create.return_value = 'c8dfa770-4ea3-2ee9-d141-98cf0bfe9c59'
         self.backend.one_client.kv.put.return_value = True
         assert self.backend.set('Key', 'Value') is True
 
     def test_set_reuses_and_renews_session(self):
         self.backend.one_client = Mock(name='c.client')
+        self.backend.one_client.kv.get.side_effect = [
+            (None, None),
+            (None, {'Session': 'session-id'}),
+        ]
         self.backend.one_client.session.create.return_value = 'session-id'
         self.backend.one_client.kv.put.return_value = True
 
@@ -41,7 +46,7 @@ class test_ConsulBackend:
         assert self.backend.set('Key', 'Updated value') is True
 
         self.backend.one_client.session.create.assert_called_once_with(
-            name='Key', behavior='delete', ttl=self.backend.expires
+            name='Key', behavior='delete', ttl=self.backend.expires, lock_delay=0
         )
         self.backend.one_client.session.renew.assert_called_once_with('session-id')
         assert self.backend.one_client.kv.put.call_args_list == [
@@ -53,7 +58,7 @@ class test_ConsulBackend:
         self.backend.one_client = Mock(name='c.client')
         self.backend.one_client.kv.delete.return_value = True
         assert self.backend.delete('Key') is True
-        assert 'Key' not in self.backend._sessions
+        self.backend.one_client.kv.delete.assert_called_once_with('Key')
 
     def test_index_bytes_key(self):
         key = 'test-consul-2'
