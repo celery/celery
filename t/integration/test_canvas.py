@@ -1339,6 +1339,23 @@ class test_chain:
         assert c.apply_async((5,)).get(timeout=TIMEOUT) == 35
 
     @flaky
+    def test_compose_empty_chain_with_callback(self, manager):
+        """Regression test for https://github.com/celery/celery/issues/11162.
+
+        Composing an empty chain that has a success callback used to raise
+        ``IndexError``.  The empty chain runs nothing, so the result is the
+        other task's.
+        """
+        empty = chain()
+        empty.link(add.s(100))
+        for c in (
+            add.si(2, 2) | empty,
+            chain(add.si(1, 1), add.s(2)) | empty,
+            empty | add.si(2, 2),
+        ):
+            assert c.apply_async().get(timeout=TIMEOUT) == 4
+
+    @flaky
     @pytest.mark.parametrize('with_task_id', [False, True])
     def test_chain_of_two_groups_as_tuple_holds_each_task_once(self, manager, with_task_id):
         """Regression test for https://github.com/celery/celery/issues/9608.
