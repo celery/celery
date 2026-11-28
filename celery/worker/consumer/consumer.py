@@ -86,14 +86,11 @@ Please see
 https://docs.celeryq.dev/en/latest/internals/protocol.html
 for more information.
 
-The full contents of the message body was:
-%s
+The full contents of the message body was: %s
 
-The full contents of the message headers:
-%s
+The full contents of the message headers: %s
 
-The delivery info for this task is:
-%s
+The delivery info for this task is: %s
 """
 
 #: Error message for when an invalid task message is received.
@@ -105,8 +102,7 @@ Please ensure your message conforms to the task
 message protocol as described here:
 https://docs.celeryq.dev/en/latest/internals/protocol.html
 
-The full contents of the message body was:
-%s
+The full contents of the message body was: %s
 """
 
 MESSAGE_DECODE_ERROR = """\
@@ -126,7 +122,7 @@ Task %s cannot be acknowledged after a connection loss since late acknowledgemen
 Terminating it instead.
 """
 
-CANCEL_TASKS_BY_DEFAULT = """
+CANCEL_TASKS_BY_DEFAULT = """\
 In Celery 5.1 we introduced an optional breaking change which
 on connection loss cancels all currently executed tasks with late acknowledgement enabled.
 These tasks cannot be acknowledged as the connection is gone, and the tasks are automatically redelivered
@@ -318,9 +314,29 @@ class Consumer:
         return TokenBucket(limit, capacity=1) if limit else None
 
     def reset_rate_limits(self):
+        old_buckets = dict(self.task_buckets)
         self.task_buckets.update(
             (n, self.bucket_for_task(t)) for n, t in self.app.tasks.items()
         )
+        for name, old_bucket in old_buckets.items():
+            if old_bucket is None or not old_bucket.contents:
+                continue
+            armed = self._limit_timers.pop(old_bucket, None)
+            if armed is not None and self.timer is not None:
+                try:
+                    self.timer.cancel(armed[1])
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling rate limit timer entry: %r', exc)
+            new_bucket = self.task_buckets.get(name)
+            if new_bucket is None:
+                while old_bucket.contents:
+                    request, _ = old_bucket.pop()
+                    self._limit_move_to_pool(request)
+            else:
+                while old_bucket.contents:
+                    new_bucket.add(old_bucket.pop())
+                self._schedule_bucket_request(new_bucket)
 
     def _update_prefetch_count(self, index=0):
         """Update prefetch count after pool/shrink grow operations.
@@ -347,7 +363,6 @@ class Consumer:
             abs(index) * self.prefetch_multiplier)
 
     def _limit_move_to_pool(self, request):
-        task_reserved(request)
         self.on_task_request(request)
 
     def _schedule_bucket_request(self, bucket):
@@ -395,11 +410,13 @@ class Consumer:
         self._schedule_bucket_request(bucket)
 
     def _limit_task(self, request, bucket, tokens):
+        task_reserved(request)
         bucket.add((request, tokens))
         return self._schedule_bucket_request(bucket)
 
     def _limit_post_eta(self, request, bucket, tokens):
         self.qos.decrement_eventually()
+        task_reserved(request)
         bucket.add((request, tokens))
         return self._schedule_bucket_request(bucket)
 
