@@ -1,4 +1,5 @@
 """Custom maps, sets, sequences, and other data structures."""
+import threading
 import time
 from collections import OrderedDict as _OrderedDict
 from collections import deque
@@ -530,6 +531,11 @@ class LimitedSet:
         # Orders the items inserted within the clock resolution and keeps
         # the heap from ever comparing the items themselves.
         self._seq = count()
+        # Guards the compound heap/_data operations in add/update/discard/
+        # purge/pop/clear: without it a concurrent pop can empty the heap
+        # between purge's length check and its ``self._heap[0]`` peek
+        # (see #11141).  An RLock: add/update call discard/purge/pop.
+        self._lock = threading.RLock()
 
         if data:
             # import items from data
@@ -555,8 +561,9 @@ class LimitedSet:
     def clear(self):
         # type: () -> None
         """Clear all data, start from scratch again."""
-        self._data.clear()
-        self._heap[:] = []
+        with self._lock:
+            self._data.clear()
+            self._heap[:] = []
 
     def add(self, item, now=None):
         # type: (Any, float) -> None
@@ -569,19 +576,26 @@ class LimitedSet:
         # A float, whatever is given: update(dict), which pickling goes
         # through, takes nothing else.
         now = time.monotonic() if now is None else float(now)
-        if item in self._data:
-            self.discard(item)
-        entry = (now, next(self._seq), item)
-        self._data[item] = entry
-        heappush(self._heap, entry)
-        if self.maxlen and len(self._data) >= self.maxlen:
-            self.purge()
+        with self._lock:
+            if item in self._data:
+                self.discard(item)
+            entry = (now, next(self._seq), item)
+            self._data[item] = entry
+            heappush(self._heap, entry)
+            if self.maxlen and len(self._data) >= self.maxlen:
+                self.purge()
 
     def update(self, other):
         # type: (Iterable) -> None
         """Update this set from other LimitedSet, dict or iterable."""
         if not other:
             return
+        with self._lock:
+            self._update(other)
+
+    def _update(self, other):
+        # type: (Iterable) -> None
+        # Lock is held by update(): this re-enters add/purge/_refresh_heap.
         if isinstance(other, LimitedSet):
             # Give the entries sequence numbers of this set, in the other
             # set's order: its own numbers can be the same as ours, and two
@@ -622,8 +636,9 @@ class LimitedSet:
     def discard(self, item):
         # type: (Any) -> None
         # mark an existing item as removed.  If KeyError is not found, pass.
-        self._data.pop(item, None)
-        self._maybe_refresh_heap()
+        with self._lock:
+            self._data.pop(item, None)
+            self._maybe_refresh_heap()
     pop_value = discard
 
     def purge(self, now=None):
@@ -636,28 +651,30 @@ class LimitedSet:
         """
         now = time.monotonic() if now is None else now
         now = now() if isinstance(now, Callable) else now
-        if self.maxlen:
-            while len(self._data) > self.maxlen:
-                self.pop()
-        # time based expiring:
-        if self.expires:
-            while len(self._data) > self.minlen >= 0:
-                entry = self._heap[0]
-                if not self._is_current(entry):
-                    # left behind by discard(), or by re-adding the item
-                    heappop(self._heap)
-                    continue
-                if entry[0] + self.expires > now:
-                    break  # oldest item hasn't expired yet
-                self.pop()
+        with self._lock:
+            if self.maxlen:
+                while len(self._data) > self.maxlen:
+                    self.pop()
+            # time based expiring:
+            if self.expires:
+                while len(self._data) > self.minlen >= 0:
+                    entry = self._heap[0]
+                    if not self._is_current(entry):
+                        # left behind by discard(), or by re-adding the item
+                        heappop(self._heap)
+                        continue
+                    if entry[0] + self.expires > now:
+                        break  # oldest item hasn't expired yet
+                    self.pop()
 
     def pop(self, default: Any = None) -> Any:
         """Remove and return the oldest item, or :const:`None` when empty."""
-        while self._heap:
-            entry = heappop(self._heap)
-            if self._is_current(entry):
-                del self._data[entry[2]]
-                return entry[2]
+        with self._lock:
+            while self._heap:
+                entry = heappop(self._heap)
+                if self._is_current(entry):
+                    del self._data[entry[2]]
+                    return entry[2]
         return default
 
     def _is_current(self, entry):
@@ -680,7 +697,15 @@ class LimitedSet:
             >>> r == s
             True
         """
-        return {key: inserted for inserted, _, key in self._data.values()}
+        return {key: inserted for inserted, _, key in
+                self._snapshot_values()}
+
+    def _snapshot_values(self):
+        # type: () -> List
+        # Copy of the entries, taken under the lock so a concurrent
+        # mutation cannot change the dict mid-iteration.
+        with self._lock:
+            return list(self._data.values())
 
     def __eq__(self, other):
         # type: (Any) -> bool
@@ -696,7 +721,7 @@ class LimitedSet:
 
     def __iter__(self):
         # type: () -> Iterable
-        return (i for _, _, i in sorted(self._data.values()))
+        return (i for _, _, i in sorted(self._snapshot_values()))
 
     def __len__(self):
         # type: () -> int
