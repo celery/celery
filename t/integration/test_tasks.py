@@ -267,11 +267,12 @@ class test_tasks:
         and the wait only times out after 6 polls (one per 0.2s sleep).
         Advancing the clock in the mocked backend call, rather than on
         every monotonic() call, keeps the test independent of how the
-        implementation reads the clock. Everything else (real backend,
-        real round-trip) is live. wait_for is called directly:
-        AsyncResult.get() takes the async consumer path on backends that
-        have one, which never polls. Skipped on backends without a
-        polling wait_for (e.g. redis, rpc).
+        implementation reads the clock. The poll-interval sleep is
+        patched out too, so the test never really sleeps. Everything
+        else (real backend, real round-trip) is live. wait_for is called
+        directly: AsyncResult.get() takes the async consumer path on
+        backends that have one, which never polls. Skipped on backends
+        without a polling wait_for (e.g. redis, rpc).
         """
         backend = manager.app.backend
         if not isinstance(backend, SyncBackendMixin):
@@ -290,6 +291,7 @@ class test_tasks:
 
         monkeypatch.setattr(backend, 'get_task_meta', counting_get_task_meta)
         monkeypatch.setattr('celery.backends.base.monotonic', fake_monotonic)
+        monkeypatch.setattr('time.sleep', lambda s: None)
         with pytest.raises(celery.exceptions.TimeoutError):
             backend.wait_for(str(uuid4()), timeout=1, interval=0.2)
         assert len(polls) == 2

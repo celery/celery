@@ -1503,10 +1503,11 @@ class test_result_set:
         wait only times out after 6 polls (one per 0.2s sleep). Advancing
         the clock in the mocked backend call, rather than on every
         monotonic() call, keeps the test independent of how the
-        implementation reads the clock. Everything else (real backend,
-        real round-trip) is live. get_many is called directly:
-        ResultSet.join_native() takes the async consumer path on backends
-        that have one, which never calls get_many.
+        implementation reads the clock. The poll-interval sleep is
+        patched out too, so the test never really sleeps. Everything
+        else (real backend, real round-trip) is live. get_many is called
+        directly: ResultSet.join_native() takes the async consumer path
+        on backends that have one, which never calls get_many.
         """
         if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
             raise pytest.skip('get_many is the key/value backend poll loop')
@@ -1526,6 +1527,7 @@ class test_result_set:
 
         monkeypatch.setattr(backend, 'mget', counting_mget)
         monkeypatch.setattr('celery.backends.base.monotonic', fake_monotonic)
+        monkeypatch.setattr('time.sleep', lambda s: None)
         task_ids = [str(uuid.uuid4()) for _ in range(3)]
         with pytest.raises(TimeoutError):
             list(backend.get_many(task_ids, timeout=1, interval=0.2))
