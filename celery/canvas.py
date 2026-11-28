@@ -1196,6 +1196,10 @@ class _chain(Signature):
         # Clone chain's tasks assigning signatures from link_error
         # to each task and adding the chain's links to the last task.
         tasks = [t.clone() for t in self.tasks]
+        if not tasks:
+            # An empty chain runs nothing and never calls its callbacks,
+            # so it adds nothing when composed into another canvas.
+            return tasks
         for sig in maybe_list(self.options.get('link')) or []:
             tasks[-1].link(sig)
         for sig in maybe_list(self.options.get('link_error')) or []:

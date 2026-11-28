@@ -1497,6 +1497,22 @@ class test_chain(CanvasCase):
         assert chain(app=self.app)() is None
         assert chain(app=self.app).apply_async() is None
 
+    @pytest.mark.parametrize('compose', [
+        lambda first, empty: first | empty,
+        lambda first, empty: chain(first, first) | empty,
+        lambda first, empty: empty | first,
+    ], ids=['task_or_empty', 'chain_or_empty', 'empty_or_task'])
+    def test_compose_empty_chain_with_callback(self, compose):
+        # An empty chain never calls its callbacks when run on its own,
+        # so composing it with a success callback must not fail (#11162).
+        empty = chain(app=self.app)
+        empty.link(self.add.s(100))
+        empty.link_error(self.add.s(200))
+        c = compose(self.add.si(2, 2), empty)
+        assert c.apply().get() == 4
+        assert all(not t.options.get('link') for t in c.tasks)
+        assert all(not t.options.get('link_error') for t in c.tasks)
+
     def test_call_no_tasks(self):
         x = chain()
         assert not x()
