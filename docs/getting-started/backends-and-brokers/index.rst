@@ -24,6 +24,19 @@ Broker Instructions
     gcpubsub
     pgmq
 
+.. note::
+
+    Broker URLs are parsed using :mod:`urllib.parse`. If a broker username or
+    password contains URL-reserved or delimiter characters (such as ``[``,
+    ``]``, ``?``, ``#``, ``@``, ``:``, ``/``, or ``%``), percent-encode them
+    with :func:`urllib.parse.quote` (using ``safe=""``) before embedding them
+    in ``broker_url`` or ``Celery(broker=...)``::
+
+        from urllib.parse import quote
+
+        password = quote("p@ss[word]#1", safe="")
+        broker_url = f"amqp://user:{password}@localhost:5672//"
+
 .. _broker-overview:
 
 Broker Overview
