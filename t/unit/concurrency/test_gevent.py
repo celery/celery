@@ -1,8 +1,10 @@
 from unittest.mock import Mock, patch
 
 import pytest
+from billiard.einfo import ExceptionWithTraceback
 
 from celery.concurrency.gevent import TaskPool, Timer, apply_timeout
+from celery.exceptions import Terminated
 
 gevent_modules = (
     'gevent',
@@ -309,6 +311,21 @@ class test_TaskPool:
 
         gevent.kill.assert_called_once()
 
+    def test_terminate_job_unknown_pid(self):
+        pool = TaskPool(10)
+        pool.on_start()
+
+        # Unknown pid: terminate_job() is a no-op, not an error.
+        pool.terminate_job(12345)
+        assert len(pool._pool_map) == 0
+
+    def test_terminate_is_noop(self):
+        # Termination is done in TaskPool.terminate_job(); the
+        # greenlet.terminate hook bound in on_apply() is a no-op.
+        from celery.concurrency.gevent import _terminate
+
+        _terminate(Mock(), None)
+
     def test_make_killable_target(self):
         def valid_target():
             return "some result..."
@@ -318,12 +335,76 @@ class test_TaskPool:
             raise GreenletExit
 
         assert TaskPool._make_killable_target(valid_target)() == "some result..."
-        assert TaskPool._make_killable_target(terminating_target)() == (False, None, None)
+        # A killed greenlet must be reported as a terminated job, not as
+        # a success: (False, None, None) made Request.on_success() ack a
+        # late-ack task that never finished (Issue #11086).
+        failed, retval, runtime = TaskPool._make_killable_target(terminating_target)()
+        assert failed
+        assert runtime is None
+        exc = retval.exception
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
+        assert isinstance(exc, Terminated)
 
     def test_cleanup_after_job_finish(self):
         testMap = {'1': None}
         TaskPool._cleanup_after_job_finish(None, testMap, '1')
         assert len(testMap) == 0
+
+
+class test_TaskPool_killed_job:
+    """A job killed by terminate_job() (cold shutdown) with real gevent."""
+
+    def _killed_job_result(self, gevent):
+        results = []
+        pool = TaskPool(1)
+        pool.on_start()
+
+        def slow_target():
+            gevent.sleep(10)
+            return (0, 'done', 0.1)
+
+        pool.apply_async(slow_target, callback=results.append)
+        pid = list(pool._pool_map.keys())[0]
+        gevent.sleep(0.2)
+        pool.terminate_job(pid)
+        pool.on_stop()
+        assert len(results) == 1
+        return results[0]
+
+    def test_terminate_job_reports_terminated_not_success(self):
+        gevent = pytest.importorskip('gevent')
+        failed, retval, runtime = self._killed_job_result(gevent)
+        assert failed
+        assert runtime is None
+        exc = retval.exception
+        if isinstance(exc, ExceptionWithTraceback):
+            exc = exc.exc
+        assert isinstance(exc, Terminated)
+
+    def test_killed_job_does_not_ack_late_ack_request(self):
+        gevent = pytest.importorskip('gevent')
+        result = self._killed_job_result(gevent)
+
+        @self.app.task(shared=False)
+        def mytask(i):
+            return i
+
+        mytask.acks_late = True
+        from celery.worker.request import Request
+        on_ack = Mock(name='on_ack')
+        req = Request(
+            self.TaskMessage(mytask.name, 'tid-killed', args=[1], kwargs={}),
+            app=self.app, on_ack=on_ack, on_reject=Mock(name='on_reject'),
+        )
+        req.task.backend = Mock()
+        # Request.cancel() marks the request cancelled before the pool
+        # kills its greenlet on a cold shutdown.
+        req._already_cancelled = True
+        req.time_start = 1
+        req.on_success(result)
+        assert not req.acknowledged
+        on_ack.assert_not_called()
 
 
 class test_apply_timeout:

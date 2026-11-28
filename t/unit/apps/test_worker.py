@@ -154,6 +154,111 @@ class test_shutdown_handler:
         _shutdown_handler(worker, sig=sig, how=how, callback=callback, exitcode=exitcode)
         return self.fake_signals[sig]
 
+    def test_gevent_cold_shutdown_can_yield(self, monkeypatch):
+        gevent = pytest.importorskip('gevent')
+        from celery.concurrency.gevent import TaskPool
+
+        observed = []
+
+        def cold_shutdown(worker):
+            gevent.sleep(0)
+            observed.append(state.should_terminate)
+
+        monkeypatch.setattr('celery.apps.worker.on_cold_shutdown', cold_shutdown)
+        worker = Mock(pool=TaskPool())
+        worker._cold_shutdown_scheduled = False
+        quit_handler = self._install(worker, sig='SIGQUIT', how='Cold', callback=cold_shutdown)
+        term_handler = self._install(worker, sig='SIGTERM', how='Cold', callback=cold_shutdown)
+
+        gevent.get_hub().loop.run_callback(quit_handler)
+        gevent.get_hub().loop.run_callback(term_handler)
+        with gevent.Timeout(2):
+            while state.should_terminate is None:
+                gevent.sleep(0.001)
+
+        assert observed == [None]
+        assert state.should_terminate == 0
+
+    @pytest.mark.parametrize('is_green', [False, True])
+    def test_other_pools_keep_synchronous_cold_shutdown(self, monkeypatch, is_green):
+        from celery.concurrency.base import BasePool
+
+        pool = BasePool()
+        pool.is_green = is_green
+        callback = Mock()
+        monkeypatch.setattr('celery.apps.worker.on_cold_shutdown', callback)
+        worker = Mock(pool=pool)
+
+        self._install(worker, how='Cold', callback=callback)()
+
+        callback.assert_called_once_with(worker)
+        worker.consumer.call_soon.assert_not_called()
+        assert state.should_terminate == 0
+
+    def test_second_gevent_signal_leaves_teardown_to_original_handler(self):
+        gevent = pytest.importorskip('gevent')
+        from celery.apps.worker import on_cold_shutdown
+        from celery.concurrency.gevent import TaskPool
+
+        waiting = gevent.event.Event()
+        resume = gevent.event.Event()
+        worker = Mock(pool=TaskPool())
+        worker._cold_shutdown_scheduled = False
+        worker.consumer.connection = None
+        worker.consumer.task_consumer = None
+
+        def wait_for_soft_shutdown():
+            waiting.set()
+            assert resume.wait(timeout=2)
+
+        worker.wait_for_soft_shutdown.side_effect = wait_for_soft_shutdown
+        worker.consumer.pool.stop.side_effect = lambda: observed.append(state.should_terminate)
+        observed = []
+        handler = self._install(worker, sig='SIGQUIT', how='Cold', callback=on_cold_shutdown)
+        handler()
+        try:
+            assert waiting.wait(timeout=2)
+            during_shutdown = self.fake_signals['SIGQUIT']
+            during_shutdown()
+            during_shutdown()
+            gevent.sleep(0)
+            worker.consumer.cancel_active_requests.assert_called_once_with()
+            worker.consumer.pool.stop.assert_not_called()
+            assert state.should_terminate is None
+        finally:
+            resume.set()
+            gevent.sleep(0)
+
+        assert observed == [None]
+        assert state.should_terminate == 0
+        assert worker.consumer.cancel_active_requests.call_count == 2
+
+    def test_threads_cold_shutdown_runs_outside_the_signal_handler(self):
+        from celery.apps.worker import on_cold_shutdown
+        from celery.concurrency.thread import TaskPool
+
+        pool = TaskPool(limit=1)
+        worker = Mock(pool=pool)
+        worker._cold_shutdown_scheduled = False
+        worker.consumer.connection = None
+        worker.consumer.task_consumer = None
+        worker.consumer.pool = pool
+        try:
+            handler = self._install(worker, how='Cold', callback=on_cold_shutdown)
+            handler()
+            handler()
+            worker.wait_for_soft_shutdown.assert_not_called()
+            assert state.should_terminate is None
+            worker.consumer.call_soon.assert_called_once()
+            run_shutdown, from_signal = worker.consumer.call_soon.call_args.args
+            with patch.object(pool, 'stop', wraps=pool.stop) as stop:
+                run_shutdown(from_signal)
+                stop.assert_called_once_with()
+            worker.wait_for_soft_shutdown.assert_called_once_with()
+            assert state.should_terminate == 0
+        finally:
+            pool.stop()
+
     @patch('celery.apps.worker.current_process')
     def test_sets_should_stop_even_if_safe_say_raises(self, current_process):
         current_process.return_value._name = 'MainProcess'

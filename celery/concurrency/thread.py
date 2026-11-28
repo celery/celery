@@ -42,6 +42,9 @@ class TaskPool(BasePool):
         self.executor.shutdown(cancel_futures=True)
         super().on_stop()
 
+    def on_terminate(self) -> None:
+        self.on_stop()
+
     def on_apply(
         self,
         target: TargetFunction,
