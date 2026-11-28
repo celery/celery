@@ -9,6 +9,16 @@ in the main branch & 5.7.x series, please see :ref:`whatsnew-5.7` for
 an overview of what's new in Celery 5.7.0.
 
 
+Unreleased
+==========
+
+- When a pool child is lost after publishing a task's link or next chain step
+  but before storing ``SUCCESS``, the parent now promotes a short-lived
+  callbacks-sent marker to ``SUCCESS`` instead of recording ``FAILURE`` and
+  running the errback beside the link (#10954). Publish-then-store order is
+  unchanged so ``result.children`` stays populated (#1936).
+
+
 .. _version-5.7.0:
 
 5.7.0
@@ -123,7 +133,6 @@ Testing
 
 * Assert exact task replacement nesting levels (`:ghpull:`10925`).
 * Run mock assertions inside ``pytest.raises`` (`:ghpull:`11004`).
-
 
 
 .. _version-5.7.0rc1:

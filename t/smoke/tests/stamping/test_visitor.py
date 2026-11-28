@@ -37,4 +37,7 @@ class test_stamping_visitor:
         assert dev_worker.logs().count(
             json.dumps(on_signature_stamp, indent=4, sort_keys=True)
         )
-        assert dev_worker.logs().count(json.dumps(link_stamp, indent=4, sort_keys=True))
+        dev_worker.assert_log_exists(
+            json.dumps(link_stamp, indent=4, sort_keys=True),
+            timeout=RESULT_TIMEOUT,
+        )
