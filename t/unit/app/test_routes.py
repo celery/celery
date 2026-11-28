@@ -108,6 +108,34 @@ class test_MapRoute(RouteCase):
         with pytest.raises(QueueNotFound):
             expand(route('a'))
 
+    @pytest.mark.parametrize('pattern,matching,nonmatching', [
+        ('proj.tasks.task?', 'proj.tasks.task1', 'proj.tasks.task10'),
+        ('proj.tasks.task[12]', 'proj.tasks.task1', 'proj.tasks.task3'),
+        ('proj.tasks.task[0-9]', 'proj.tasks.task1', 'proj.tasks.taskx'),
+        ('proj.tasks.task[!0]', 'proj.tasks.task1', 'proj.tasks.task0'),
+    ])
+    @pytest.mark.parametrize('destination', ['documents', {'queue': 'documents'}])
+    @pytest.mark.parametrize('use_mapping', [True, False])
+    def test_glob_without_asterisk(self, pattern, matching, nonmatching,
+                                   destination, use_mapping):
+        entries = [(pattern, destination)]
+        route = routes.MapRoute(dict(entries) if use_mapping else entries)
+
+        assert route(matching) == {'queue': 'documents'}
+        assert route(nonmatching) is None
+
+    def test_glob_without_asterisk_preserves_route_precedence(self):
+        route = routes.MapRoute([
+            ('proj.tasks.task?', {'queue': 'single'}),
+            ('proj.tasks.task[0-9]', {'queue': 'digit'}),
+            ('proj.tasks.*', {'queue': 'fallback'}),
+            ('proj.tasks.task1', {'queue': 'exact'}),
+        ])
+
+        assert route('proj.tasks.task1') == {'queue': 'exact'}
+        assert route('proj.tasks.task2') == {'queue': 'single'}
+        assert route('proj.tasks.task10') == {'queue': 'fallback'}
+
 
 class test_lookup_route(RouteCase):
 

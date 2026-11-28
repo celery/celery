@@ -33,7 +33,7 @@ class MapRoute:
         for k, v in map:
             if isinstance(k, Pattern):
                 self.patterns[k] = v
-            elif '*' in k:
+            elif any(char in k for char in '*?['):
                 self.patterns[re.compile(fnmatch.translate(k))] = v
             else:
                 self.map[k] = v
