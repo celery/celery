@@ -6,7 +6,18 @@ from billiard.einfo import ExceptionWithTraceback
 
 from celery.exceptions import Terminated
 
-pytest.importorskip('eventlet')
+try:
+    import eventlet  # noqa: F401
+    HAS_EVENTLET = True
+except ImportError:
+    HAS_EVENTLET = False
+
+# CI (Python 3.11+) does not install eventlet
+# (requirements/extras/eventlet.txt gates it to Python < 3.10),
+# so tests that do not need eventlet must not be skipped with the
+# eventlet-dependent ones, or they never run in CI at all.
+requires_eventlet = pytest.mark.skipif(
+    not HAS_EVENTLET, reason='eventlet is not installed')
 
 from greenlet import GreenletExit  # noqa
 
@@ -37,6 +48,7 @@ class EventletCase:
                 pass
 
 
+@requires_eventlet
 class test_aaa_eventlet_patch(EventletCase):
 
     def test_aaa_is_patched(self):
@@ -56,6 +68,7 @@ class test_aaa_eventlet_patch(EventletCase):
         hub_blocking_detection.assert_called_with(10.3, 10.3)
 
 
+@requires_eventlet
 class test_Timer(EventletCase):
 
     @pytest.fixture(autouse=True)
@@ -92,6 +105,7 @@ class test_Timer(EventletCase):
         x.cancel(tref)
 
 
+@requires_eventlet
 class test_TaskPool(EventletCase):
 
     @pytest.fixture(autouse=True)
@@ -186,6 +200,23 @@ class test_TaskPool(EventletCase):
         pool.terminate_job(12345)
         assert len(pool._pool_map) == 0
 
+    def test_cleanup_after_job_finish(self):
+        testMap = {'1': None}
+        TaskPool._cleanup_after_job_finish(None, testMap, '1')
+        assert len(testMap) == 0
+
+
+class test_TaskPoolKillableTarget:
+    """Tests for TaskPool helpers that do not need eventlet installed.
+
+    celery/concurrency/eventlet.py does not import eventlet at module
+    level, so _make_killable_target() can be exercised without it.
+    These tests must keep running when eventlet is not installed: CI
+    (Python 3.11+) does not install eventlet, so a test skipped along
+    with the eventlet-dependent ones never runs in CI and the #11086
+    fix in this module gets no patch coverage (codecov/patch fails).
+    """
+
     def test_make_killable_target(self):
         def valid_target():
             return "some result..."
@@ -205,17 +236,11 @@ class test_TaskPool(EventletCase):
             exc = exc.exc
         assert isinstance(exc, Terminated)
 
-    def test_cleanup_after_job_finish(self):
-        testMap = {'1': None}
-        TaskPool._cleanup_after_job_finish(None, testMap, '1')
-        assert len(testMap) == 0
 
-
+@requires_eventlet
 class test_TaskPool_eventlet:
 
     def test_grow_wakes_spawn_waiter(self):
-        import eventlet
-
         pool = TaskPool(1)
         pool.on_start()
         first_started = eventlet.Event()
