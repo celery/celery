@@ -162,11 +162,24 @@ class TaskPool(base.BasePool):
     @staticmethod
     def _make_killable_target(target):
         def killable_target(*args, **kwargs):
+            from billiard.einfo import ExceptionInfo
+            from billiard.exceptions import Terminated
             from greenlet import GreenletExit
             try:
                 return target(*args, **kwargs)
             except GreenletExit:
-                return (False, None, None)
+                # The greenlet was killed, e.g. a cold shutdown cancels
+                # the request and terminate_job() kills its greenlet.
+                # Report the job as terminated -- the failure prefork
+                # reports for a terminated job, which leaves a cancelled
+                # late-ack request unacknowledged so its message is
+                # redelivered -- instead of as a success: the old
+                # (False, None, None) return made Request.on_success()
+                # acknowledge a task that never finished, losing it.
+                try:
+                    raise Terminated('greenlet killed')
+                except Terminated:
+                    return (True, ExceptionInfo(), None)
 
         return killable_target
 
