@@ -311,6 +311,21 @@ class test_TaskPool:
 
         gevent.kill.assert_called_once()
 
+    def test_terminate_job_unknown_pid(self):
+        pool = TaskPool(10)
+        pool.on_start()
+
+        # Unknown pid: terminate_job() is a no-op, not an error.
+        pool.terminate_job(12345)
+        assert len(pool._pool_map) == 0
+
+    def test_terminate_is_noop(self):
+        # Termination is done in TaskPool.terminate_job(); the
+        # greenlet.terminate hook bound in on_apply() is a no-op.
+        from celery.concurrency.gevent import _terminate
+
+        _terminate(Mock(), None)
+
     def test_make_killable_target(self):
         def valid_target():
             return "some result..."

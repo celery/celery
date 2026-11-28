@@ -178,6 +178,14 @@ class test_TaskPool(EventletCase):
         greenlet.link.assert_called_once()
         greenlet.kill.assert_called_once()
 
+    def test_terminate_job_unknown_pid(self):
+        pool = TaskPool(10)
+        pool.on_start()
+
+        # Unknown pid: terminate_job() is a no-op, not an error.
+        pool.terminate_job(12345)
+        assert len(pool._pool_map) == 0
+
     def test_make_killable_target(self):
         def valid_target():
             return "some result..."
