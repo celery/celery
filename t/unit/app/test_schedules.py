@@ -661,6 +661,38 @@ class test_crontab_parser:
         with pytest.raises(ParseException):
             crontab_parser(60).parse('*/')
 
+    @pytest.mark.parametrize('spec', [
+        '*/2-3',
+        '*/15/2',
+        '1-10/2/3',
+        '0-30/10-20',
+        '1-5 x',
+    ])
+    def test_parse_errors_on_trailing_text(self, spec):
+        with pytest.raises(ValueError):
+            crontab_parser(60).parse(spec)
+
+    @pytest.mark.parametrize('max_, spec', [
+        (7, 'mon-fri x'),
+        (7, 'mon-fri/2/3'),
+        (12, 'jan-mar x'),
+        (7, 'mon x'),
+    ])
+    def test_parse_errors_on_trailing_text_after_names(self, max_, spec):
+        with pytest.raises(ValueError):
+            crontab_parser(max_).parse(spec)
+
+    @pytest.mark.parametrize('max_, min_, spec, expected', [
+        (60, 0, '0-30 ', set(range(31))),
+        (60, 0, '*/15 ', {0, 15, 30, 45}),
+        (60, 0, ' 0-30 ,45', set(range(31)) | {45}),
+        (60, 0, '7 ', {7}),
+        (7, 0, 'sat-sun ', {0, 6}),
+        (12, 1, 'jan-mar ', {1, 2, 3}),
+    ])
+    def test_parse_ignores_whitespace_around_parts(self, max_, min_, spec, expected):
+        assert crontab_parser(max_, min_).parse(spec) == expected
+
     def test_parse_errors_on_negative_number(self):
         with pytest.raises(ParseException):
             crontab_parser(60).parse('-20')
