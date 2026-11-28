@@ -10,6 +10,7 @@ from time import sleep
 import celery.utils
 from celery import Task, current_app, shared_task, signature
 from celery.canvas import Signature
+from celery.exceptions import Ignore
 from t.integration.tasks import *  # noqa
 from t.integration.tasks import replaced_with_me
 
@@ -126,3 +127,8 @@ def kill_child_process_once(marker="/tmp/kill_child_process_once"):
         open(marker, "w").close()
         os._exit(1)
     return "survived"
+
+
+@shared_task
+def ignores():
+    raise Ignore()

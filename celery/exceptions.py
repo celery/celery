@@ -74,7 +74,7 @@ __all__ = (
     'OperationalError',
 
     # Task semi-predicates
-    'TaskPredicate', 'Ignore', 'Reject', 'Retry',
+    'TaskPredicate', 'Ignore', 'Replaced', 'Reject', 'Retry',
 
     # Task related errors.
     'TaskError', 'QueueNotFound', 'IncompleteStream',
@@ -195,6 +195,10 @@ RetryTaskError = Retry  # XXX compat
 
 class Ignore(TaskPredicate):
     """A task can raise this to ignore doing state updates."""
+
+
+class Replaced(Ignore):
+    """The task was replaced by another one that keeps its id."""
 
 
 class Reject(TaskPredicate):

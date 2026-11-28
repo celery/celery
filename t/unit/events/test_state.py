@@ -478,6 +478,53 @@ class test_State:
         assert task2.root is task
         assert task2 in task.children
 
+    def test_task_ignored_event_sets_ignored_state(self):
+        # Issue #11093: task-ignored is a terminal event for monitors.
+        state = State()
+        state.event({
+            'type': 'task-started', 'uuid': 'x', 'hostname': 'h',
+            'timestamp': 1.0, 'local_received': 1.0, 'clock': 1,
+            'name': 'proj.add', 'args': '(2, 2)', 'kwargs': '{}',
+        })
+        state.event({
+            'type': 'task-ignored', 'uuid': 'x', 'hostname': 'h',
+            'timestamp': 2.0, 'local_received': 2.0, 'clock': 2,
+        })
+        task = state.tasks['x']
+        assert task.state == states.IGNORED
+        assert task.ignored == 2.0
+
+    def test_task_ignored_is_kept_and_exported(self):
+        # A task-started that arrives late must not move the task back,
+        # and the timestamp is part of what a monitor exports.
+        state = State()
+        tid = uuid()
+        for type_, clock in (('task-received', 1), ('task-started', 2),
+                             ('task-ignored', 3), ('task-started', 2)):
+            state.event({
+                'type': type_, 'uuid': tid, 'hostname': 'h', 'clock': clock,
+                'timestamp': float(clock), 'local_received': float(clock),
+            })
+        task = state.tasks[tid]
+        assert task.state == states.IGNORED
+        assert task.as_dict()['ignored'] == task.ignored
+
+    def test_task_ignored_is_not_ready(self):
+        # IGNORED is not in READY_STATES (it follows the REJECTED
+        # precedent), so a monitor still counts an ignored task as not
+        # ready; this pins that behaviour down.
+        state = State()
+        tid = uuid()
+        for type_, clock in (('task-received', 1), ('task-started', 2),
+                             ('task-ignored', 3)):
+            state.event({
+                'type': type_, 'uuid': tid, 'hostname': 'h', 'clock': clock,
+                'timestamp': float(clock), 'local_received': float(clock),
+            })
+        task = state.tasks[tid]
+        assert task.state == states.IGNORED
+        assert task.ready is False
+
     def test_task_children_set_if_received_in_wrong_order(self):
         r = ev_task_states(State())
         r.events.insert(0, r.events.pop())

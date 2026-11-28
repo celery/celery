@@ -16,7 +16,7 @@ from celery import states
 from celery.app.trace import (TraceInfo, build_tracer, fast_trace_task, mro_lookup, reset_worker_optimizations,
                               setup_worker_optimizations, trace_task, trace_task_ret)
 from celery.backends.base import BaseDictBackend
-from celery.exceptions import (Ignore, InvalidTaskError, Reject, Retry, TaskRevokedError, Terminated,
+from celery.exceptions import (Ignore, InvalidTaskError, Reject, Replaced, Retry, TaskRevokedError, Terminated,
                                TimeLimitExceeded, WorkerLostError)
 from celery.signals import task_failure, task_retry, task_revoked
 from celery.utils.time import maybe_make_aware
@@ -352,6 +352,34 @@ class test_Request(RequestCase):
         assert einfo is not None
         req = self.get_request(self.add.s(2, 2))
         req.on_failure(einfo)
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+
+    def test_on_failure_Ignore_sends_task_ignored_event(self):
+        # Issue #11093: an ignored task must emit a terminal event so
+        # event monitors do not leave it in STARTED forever.
+        einfo = None
+        try:
+            raise Ignore()
+        except Ignore:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.on_failure(einfo)
+        req.eventer.send.assert_called_with('task-ignored', uuid=req.id)
+        req.on_ack.assert_called_with(req_logger, req.connection_errors)
+
+    def test_on_failure_Replaced_sends_no_task_ignored_event(self):
+        # A replaced task continues under the same id, so a monitor must
+        # not see it as ignored while the replacement runs.
+        einfo = None
+        try:
+            raise Replaced()
+        except Replaced:
+            einfo = ExceptionInfo(internal=True)
+        assert einfo is not None
+        req = self.get_request(self.add.s(2, 2))
+        req.on_failure(einfo)
+        req.eventer.send.assert_not_called()
         req.on_ack.assert_called_with(req_logger, req.connection_errors)
 
     def test_on_failure_Reject_rejects(self):
