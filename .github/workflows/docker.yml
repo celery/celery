@@ -1,32 +1,34 @@
 name: Docker
 
 on:
-    pull_request:
-      branches: [ 'main']
-      paths:
-          - '**.py'
-          - '**.txt'
-          - '**.toml'
-          - '/docker/**'
-          - '.github/workflows/docker.yml'
-          - 'docker/Dockerfile'
-          - 't/smoke/workers/docker/**'
-    push:
-      branches: [ 'main']
-      paths:
-          - '**.py'
-          - '**.txt'
-          - '**.toml'
-          - '/docker/**'
-          - '.github/workflows/docker.yml'
-          - 'docker/Dockerfile'
-          - 't/smoke/workers/docker/**'
-    workflow_dispatch:
+  pull_request:
+    branches: ['main']
+    paths:
+      - '**.py'
+      - '**.txt'
+      - '**.toml'
+      - 'docker/**'
+      - '.github/workflows/docker.yml'
+      - 'docker/Dockerfile'
+      - 't/smoke/workers/docker/**'
+  push:
+    branches: ['main']
+    paths:
+      - '**.py'
+      - '**.txt'
+      - '**.toml'
+      - 'docker/**'
+      - '.github/workflows/docker.yml'
+      - 'docker/Dockerfile'
+      - 't/smoke/workers/docker/**'
+  workflow_dispatch:
 
+permissions:
+  contents: read
 
 jobs:
   docker-build:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v7
@@ -36,7 +38,7 @@ jobs:
       run: make docker-build
 
   smoke-tests_dev:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
@@ -46,7 +48,7 @@ jobs:
       run: docker build -f t/smoke/workers/docker/dev .
 
   smoke-tests_latest:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
@@ -56,7 +58,7 @@ jobs:
       run: docker build -f t/smoke/workers/docker/pypi .
 
   smoke-tests_pypi:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7
@@ -66,7 +68,7 @@ jobs:
       run: docker build -f t/smoke/workers/docker/pypi --build-arg CELERY_VERSION="5" .
 
   smoke-tests_legacy:
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     timeout-minutes: 10
     steps:
     - uses: actions/checkout@v7

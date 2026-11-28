@@ -5,98 +5,89 @@ name: Celery
 
 on:
   push:
-    branches: [ 'main']
+    branches: ['main']
     paths:
-        - '**.py'
-        - '**.txt'
-        - '.github/workflows/python-package.yml'
-        - '.github/workflows/integration-tests.yml'
-        - '.github/workflows/smoke-tests.yml'
-        - '**.toml'
-        - "tox.ini"
+      - '**.py'
+      - '**.txt'
+      - '.github/workflows/python-package.yml'
+      - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/smoke-tests.yml'
+      - '**.toml'
+      - 'tox.ini'
   pull_request:
-    branches: [ 'main' ]
+    branches: ['main']
     paths:
-        - '**.py'
-        - '**.txt'
-        - '**.toml'
-        - '.github/workflows/python-package.yml'
-        - '.github/workflows/integration-tests.yml'
-        - '.github/workflows/smoke-tests.yml'
-        - "tox.ini"
+      - '**.py'
+      - '**.txt'
+      - '**.toml'
+      - '.github/workflows/python-package.yml'
+      - '.github/workflows/integration-tests.yml'
+      - '.github/workflows/smoke-tests.yml'
+      - 'tox.ini'
   workflow_dispatch:
-
 
 permissions:
   contents: read # to fetch code (actions/checkout)
 
 jobs:
   Unit:
-
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15', 'pypy3.11']
-        os: ["blacksmith-4vcpu-ubuntu-2404", "windows-latest"]
-        exclude:
-            - python-version: '3.11'
-              os: "windows-latest"
-            - python-version: '3.12'
-              os: "windows-latest"
-            - python-version: '3.13'
-              os: "windows-latest"
-            - python-version: '3.15'
-              os: "windows-latest"
-            - python-version: 'pypy3.11'
-              os: "windows-latest"
+        python-version: ['3.11', '3.12', '3.13', '3.14', '3.15', 'pypy-3.11']
+        os: ['blacksmith-4vcpu-ubuntu-2604']
+        include:
+          - python-version: '3.15'
+            os: 'windows-latest'
 
     steps:
-    - name: Install apt packages
-      if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
-      run: |
-        echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
-        sudo apt-get update
-        sudo apt-get install -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
+      - name: Install apt packages
+        if: startsWith(matrix.os, 'blacksmith-4vcpu-ubuntu')
+        run: |
+          echo 'Acquire::ForceIPv4 "true";' | sudo tee /etc/apt/apt.conf.d/99force-ipv4
+          sudo apt-get update
+          sudo apt-get install -y -f libcurl4-openssl-dev libev-dev libssl-dev libgnutls28-dev httping expect
 
-    - uses: actions/checkout@v7
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-        allow-prereleases: true
-        cache: 'pip'
-        cache-dependency-path: '**/setup.py'
+      - uses: actions/checkout@v7
 
-    - name: Install tox
-      run: python -m pip install --upgrade pip 'tox<4.67.14' tox-gh-actions
-    - name: >
-        Run tox for
-        "${{ matrix.python-version }}-unit"
-      timeout-minutes: 30
-      run: |
-        tox --verbose --verbose
+      - name: Set up uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: 'requirements/**/*.txt'
 
-    - name: Upload coverage to Codecov
-      if: ${{ !cancelled() }}
-      continue-on-error: true
-      uses: codecov/codecov-action@v7
-      with:
-        flags: unittests
-        fail_ci_if_error: false
-        token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: false
+      - name: Install tox with tox-uv, tox-gh, and tox-docker
+        run: uv tool install tox --with tox-uv --with tox-gh --with tox-docker
 
-    - name: Upload test results to Codecov
-      if: ${{ !cancelled() }}
-      continue-on-error: true
-      uses: codecov/codecov-action@v7
-      with:
-        report_type: test_results
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: >
+          Run tox for
+          "${{ matrix.python-version }}-unit"
+        timeout-minutes: 30
+        run: tox -vv
+
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: codecov/codecov-action@v7
+        with:
+          flags: unittests
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: false
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: codecov/codecov-action@v7
+        with:
+          report_type: test_results
+          files: junit.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   Discover-test-modules:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2604
     outputs:
       integration: ${{ steps.discover.outputs.integration }}
       smoke: ${{ steps.discover.outputs.smoke }}
@@ -124,6 +115,7 @@ jobs:
     needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
+      fail-fast: false
       matrix:
         test_path: ${{ fromJson(needs.Discover-test-modules.outputs.integration) }}
     uses: ./.github/workflows/integration-tests.yml
@@ -134,6 +126,7 @@ jobs:
     needs: [Unit, Discover-test-modules]
     if: needs.Unit.result == 'success'
     strategy:
+      fail-fast: false
       matrix:
         test_path: ${{ fromJson(needs.Discover-test-modules.outputs.smoke) }}
     uses: ./.github/workflows/smoke-tests.yml

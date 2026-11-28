@@ -445,10 +445,11 @@ class test_Scheduler:
             scheduler._when(broken, scheduler.max_interval), abs=1)
 
     def test_pending_tick(self):
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
         scheduler = mScheduler(app=self.app)
         scheduler.add(name='test_pending_tick',
-                      schedule=always_pending)
-        assert 0 < scheduler.tick() <= 1 - 0.010
+                      schedule=mocked_schedule(False, 1, nowfun=lambda: now))
+        assert scheduler.tick() == pytest.approx(1 - 0.010)
 
     def test_pending_left_10_milliseconds_tick(self):
         scheduler = mScheduler(app=self.app)
@@ -464,12 +465,13 @@ class test_Scheduler:
         assert scheduler.tick() == maxi
 
     def test_ticks(self):
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
         scheduler = mScheduler(app=self.app)
         nums = [600, 300, 650, 120, 250, 36]
-        s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j)}
+        s = {'test_ticks%s' % i: {'schedule': mocked_schedule(False, j, nowfun=lambda: now)}
              for i, j in enumerate(nums)}
         scheduler.update_from_dict(s)
-        assert 0 < scheduler.tick() <= min(nums) - 0.010
+        assert scheduler.tick() == pytest.approx(min(nums) - 0.010)
 
     def test_ticks_microseconds(self):
         scheduler = mScheduler(app=self.app)
