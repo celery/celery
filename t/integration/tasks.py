@@ -50,6 +50,16 @@ def pending_operations_count(state, **kwargs):
     return len(state.consumer._pending_operations)
 
 
+@inspect_command(visible=False)
+def rate_limit_timers_count(state, **kwargs):
+    """Return the number of pending rate limit timers on the worker timer."""
+    callbacks = ('_schedule_bucket_request', '_on_bucket_wakeup')
+    return sum(
+        1 for item in state.consumer.timer.queue
+        if getattr(item.entry.fun, '__name__', None) in callbacks
+    )
+
+
 @shared_task
 def identity(x):
     """Return the argument."""

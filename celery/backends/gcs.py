@@ -165,6 +165,7 @@ class GCSBackend(GCSBackendBase):
     """
 
     implements_incr = True
+    implements_add = True
     supports_native_join = True
 
     # Blobs are uploaded from and downloaded to bytes.
@@ -262,6 +263,9 @@ class GCSBackend(GCSBackendBase):
         gid = request.group
         if not gid:
             return
+        # As in KeyValueStoreBackend.on_chord_part_return.
+        if not self._chord_part_returns(request):
+            return
         key = self.get_key_for_chord(gid)
         val = self.incr(key)
         size = request.chord.get("chord_size")
@@ -270,14 +274,10 @@ class GCSBackend(GCSBackendBase):
             if deps is None:
                 return
             size = len(deps)
-        if val > size:  # pragma: no cover
-            logger.warning(
-                'Chord counter incremented too many times for %r', gid
-            )
-        elif val == size:
+        if val >= size:
             # Read the deps once, to reduce the number of reads from GCS ($$)
             deps = self._restore_deps(gid, request)
-            if deps is None:
+            if deps is None or not self._complete_chord_once(request, deps):
                 return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native
@@ -313,6 +313,26 @@ class GCSBackend(GCSBackendBase):
                 deps.delete()
                 # Firestore doesn't have an exact ttl policy, so delete the key.
                 self._delete_chord_key(key)
+                self._delete_chord_part_keys(gid, deps)
+
+    def _add_chord_key(self, key, token):
+        doc = self._firestore_document(key)
+        data = {'token': token}
+        expires = self._chord_key_expires(self.ttl)
+        if expires:
+            data[self._field_expires] = datetime.now(timezone.utc) + timedelta(
+                seconds=expires)
+        try:
+            doc.create(data)
+        except Conflict:
+            return (doc.get().to_dict() or {}).get('token') == token
+        return True
+
+    def _chord_keys_exist(self, keys):
+        documents = [self._firestore_document(key) for key in keys]
+        found = {snapshot.id for snapshot in
+                 self.firestore_client.get_all(documents) if snapshot.exists}
+        return [bytes_to_str(key) in found for key in keys]
 
     def _restore_deps(self, gid, request):
         app = self.app
@@ -327,6 +347,9 @@ class GCSBackend(GCSBackendBase):
             )
             return
         if deps is None:
+            # As in KeyValueStoreBackend.on_chord_part_return.
+            if not self._claim_chord(gid):
+                return
             try:
                 raise ValueError(gid)
             except ValueError as exc:
@@ -337,6 +360,14 @@ class GCSBackend(GCSBackendBase):
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
         return deps
+
+    def _delete_keys(self, keys):
+        # A Firestore batch takes up to 500 writes.
+        for start in range(0, len(keys), 500):
+            batch = self.firestore_client.batch()
+            for key in keys[start:start + 500]:
+                batch.delete(self._firestore_document(key))
+            batch.commit()
 
     def _delete_chord_key(self, key):
         doc = self._firestore_document(key)
