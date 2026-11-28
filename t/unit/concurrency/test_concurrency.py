@@ -5,6 +5,7 @@ from itertools import count
 from unittest.mock import Mock, patch
 
 import pytest
+from billiard.einfo import ExceptionInfo
 
 from celery import concurrency
 from celery.concurrency.base import BasePool, apply_target
@@ -78,7 +79,11 @@ class test_BasePool:
         callback = Mock(name='callback')
         target.side_effect = BaseException()
         apply_target(target, callback=callback)
-        callback.assert_called()
+        callback.assert_called_once()
+        (failed, retval, runtime), = callback.call_args.args
+        assert failed
+        assert isinstance(retval, ExceptionInfo)
+        assert isinstance(runtime, float)
 
     @patch('celery.concurrency.base.reraise')
     def test_apply_target__raises_BaseException_raises_else(self, reraise):

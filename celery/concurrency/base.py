@@ -39,7 +39,10 @@ def apply_target(target, args=(), kwargs=None, callback=None,
             reraise(WorkerLostError, WorkerLostError(repr(exc)),
                     sys.exc_info()[2])
         except WorkerLostError:
-            callback(ExceptionInfo())
+            # The callback is Request.on_success, which unpacks a failed
+            # result tuple; a bare ExceptionInfo raised TypeError before
+            # task_ready() ran and leaked the request into active state.
+            callback((1, ExceptionInfo(), 0.0))
     else:
         callback(ret)
 
