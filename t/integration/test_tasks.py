@@ -10,6 +10,7 @@ import pytest
 
 import celery
 from celery import chain, chord, group
+from celery.backends.base import SyncBackendMixin
 from celery.canvas import StampingVisitor
 from celery.signals import before_task_publish, task_received
 from celery.utils.serialization import UnpickleableExceptionWrapper
@@ -256,6 +257,44 @@ class test_tasks:
         result = sleeping.delay(10)
         with pytest.raises(celery.exceptions.TimeoutError):
             result.get(timeout=5)
+
+    def test_wait_for_timeout_with_slow_backend(self, manager, monkeypatch):
+        """A slow backend poll must count against the wait_for timeout (#11111).
+
+        The fake clock advances 0.5s inside counting_get_task_meta, so
+        each poll costs 0.5s against a 1s timeout: the wait must raise
+        after exactly 2 polls. Without the fix the poll time is ignored
+        and the wait only times out after 6 polls (one per 0.2s sleep).
+        Advancing the clock in the mocked backend call, rather than on
+        every monotonic() call, keeps the test independent of how the
+        implementation reads the clock. The poll-interval sleep is
+        patched out too, so the test never really sleeps. Everything
+        else (real backend, real round-trip) is live. wait_for is called
+        directly: AsyncResult.get() takes the async consumer path on
+        backends that have one, which never polls. Skipped on backends
+        without a polling wait_for (e.g. redis, rpc).
+        """
+        backend = manager.app.backend
+        if not isinstance(backend, SyncBackendMixin):
+            raise pytest.skip('Backend has no polling wait_for')
+        polls = []
+        orig_get_task_meta = backend.get_task_meta
+        clock = [0.0]
+
+        def counting_get_task_meta(*args, **kwargs):
+            polls.append(1)
+            clock[0] += 0.5
+            return orig_get_task_meta(*args, **kwargs)
+
+        def fake_monotonic():
+            return clock[0]
+
+        monkeypatch.setattr(backend, 'get_task_meta', counting_get_task_meta)
+        monkeypatch.setattr('celery.backends.base.monotonic', fake_monotonic)
+        monkeypatch.setattr('time.sleep', lambda s: None)
+        with pytest.raises(celery.exceptions.TimeoutError):
+            backend.wait_for(str(uuid4()), timeout=1, interval=0.2)
+        assert len(polls) == 2
 
     @pytest.mark.timeout(60)
     @flaky

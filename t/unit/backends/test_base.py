@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import re
+import time
 from contextlib import contextmanager
 from unittest.mock import ANY, MagicMock, Mock, call, patch, sentinel
 from uuid import UUID
@@ -242,6 +243,33 @@ class test_Backend_interface:
                                    state=states.SUCCESS, traceback=None,
                                    request=request, format_date=False)
         assert isinstance(meta['date_done'], datetime.datetime)
+
+
+class FakeClock:
+    """Deterministic clock for timeout tests (#11111).
+
+    ``sleep()`` advances ``monotonic()`` instead of waiting, so slow
+    backend polls and callbacks are simulated without real sleeps or
+    wall-clock assertions. Patch it in with::
+
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            ...
+
+    Patching ``celery.backends.base.time.sleep`` also covers the
+    ``time.sleep`` calls inside the test's own slow fakes, since they
+    share the ``time`` module object.
+    """
+
+    def __init__(self):
+        self.now = 0.0
+
+    def monotonic(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
 
 
 class test_BaseBackend_interface:
@@ -1339,7 +1367,79 @@ class test_BaseBackend_dict:
         b._get_task_meta_for.return_value = {'status': states.PENDING}
         with pytest.raises(TimeoutError):
             b.wait_for(task_id='1', timeout=0.1, interval=0.5)
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        # The sleep is the remaining budget less the (tiny, real) time the
+        # poll itself took, so it lands just under the timeout.
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=0.01)
+
+    def test_wait_for__slow_backend_counts_towards_timeout(self):
+        """A slow get_task_meta must count against the timeout, not just sleeps.
+
+        Each poll takes 0.5s with timeout=1 and interval=0.2: the second
+        poll pushes the elapsed time past the deadline, so the wait must
+        raise after exactly 2 polls, not after ~4s of polls plus sleeps
+        (#11111). The fake clock makes the poll count exact.
+        """
+        b = BaseBackend(app=self.app)
+
+        def slow_meta(*args, **kwargs):
+            time.sleep(0.5)
+            return {'status': states.PENDING}
+
+        b._get_task_meta_for = Mock(side_effect=slow_meta)
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            with pytest.raises(TimeoutError):
+                b.wait_for(task_id='1', timeout=1, interval=0.2)
+        assert b._get_task_meta_for.call_count == 2
+        assert clock.now == pytest.approx(1.2)
+
+    def test_wait_for__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after exactly 2 callbacks,
+        not after ~4s of callbacks plus sleeps (#11111).
+        """
+        b = BaseBackend(app=self.app)
+        b._get_task_meta_for = Mock(return_value={'status': states.PENDING})
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        callback = Mock(side_effect=slow_interval)
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            with pytest.raises(TimeoutError):
+                b.wait_for(task_id='1', timeout=1, interval=0.2,
+                           on_interval=callback)
+        assert callback.call_count == 2
+        assert clock.now == pytest.approx(1.2)
+
+    def test_wait_for__ready_on_final_poll_beats_deadline(self):
+        """A result that is ready on the poll crossing the deadline wins.
+
+        The single poll takes 0.6s with timeout=0.5, but it returns
+        SUCCESS, so wait_for returns the result instead of raising
+        TimeoutError: completed results take precedence over an expired
+        deadline.
+        """
+        b = BaseBackend(app=self.app)
+
+        def slow_ready_meta(*args, **kwargs):
+            time.sleep(0.6)
+            return {'status': states.SUCCESS, 'result': 42}
+
+        b._get_task_meta_for = Mock(side_effect=slow_ready_meta)
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            assert b.wait_for(task_id='1', timeout=0.5,
+                              interval=0.2)['result'] == 42
+        assert clock.now == pytest.approx(0.6)
 
     def test_get_children(self):
         b = BaseBackend(app=self.app)
@@ -2038,7 +2138,10 @@ class test_KeyValueStoreBackend:
         self.b._cache[tasks[1]] = {'status': 'PENDING'}
         with pytest.raises(self.b.TimeoutError):
             list(self.b.get_many(tasks, timeout=0.1, interval=0.5))
-        assert sum(c.args[0] for c in sleep.call_args_list) == 0.1
+        # The sleep is the remaining budget less the (tiny, real) time the
+        # poll itself took, so it lands just under the timeout.
+        assert sum(c.args[0] for c in sleep.call_args_list) == pytest.approx(
+            0.1, abs=0.01)
 
     def test_get_many__timeout_zero_returns_results_that_are_ready(self):
         """A timeout of 0 still gets to return work that is already done."""
@@ -2104,7 +2207,94 @@ class test_KeyValueStoreBackend:
         got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.5))
 
         assert {id: state['result'] for id, state in got.items()} == ids
-        assert sleep.call_args_list == [call(0.5)]
+        # One sleep of (almost) the full interval: the poll itself took a
+        # tiny amount of real time, which now counts against the budget.
+        assert len(sleep.call_args_list) == 1
+        assert sleep.call_args_list[0].args[0] == pytest.approx(0.5, abs=0.01)
+
+    def test_get_many__slow_backend_counts_towards_timeout(self):
+        """A slow mget must count against the timeout, not just sleeps.
+
+        Each poll takes 0.5s with timeout=1 and interval=0.2: the second
+        poll pushes the elapsed time past the deadline, so the wait must
+        raise after exactly 2 polls, not after ~4s of polls plus sleeps
+        (#11111). The fake clock makes the poll count exact.
+        """
+        self.b._cache.clear()
+        tasks = [uuid() for _ in range(4)]
+        polls = []
+
+        def slow_mget(keys):
+            polls.append(1)
+            time.sleep(0.5)
+            return [None for _ in keys]
+
+        self.b.mget = slow_mget
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            with pytest.raises(self.b.TimeoutError):
+                list(self.b.get_many(tasks, timeout=1, interval=0.2))
+        assert len(polls) == 2
+        assert clock.now == pytest.approx(1.2)
+
+    def test_get_many__slow_on_interval_counts_towards_timeout(self):
+        """A slow on_interval callback must count against the timeout.
+
+        Each iteration's callback takes 0.5s with timeout=1 and
+        interval=0.2: the second callback pushes the elapsed time past
+        the deadline, so the wait must raise after exactly 2 callbacks,
+        not after ~4s of callbacks plus sleeps (#11111).
+        """
+        self.b._cache.clear()
+        tasks = [uuid() for _ in range(4)]
+
+        def slow_mget(keys):
+            return [None for _ in keys]
+
+        def slow_interval():
+            time.sleep(0.5)
+
+        callback = Mock(side_effect=slow_interval)
+        self.b.mget = slow_mget
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            with pytest.raises(self.b.TimeoutError):
+                list(self.b.get_many(tasks, timeout=1, interval=0.2,
+                                     on_interval=callback))
+        assert callback.call_count == 2
+        assert clock.now == pytest.approx(1.2)
+
+    def test_get_many__slow_final_poll_returns_results_instead_of_timing_out(self):
+        """A final poll that returns everything wins over the deadline (#11111).
+
+        The single poll takes 0.6s with timeout=0.5 but returns all four
+        results, so get_many must hand them back instead of raising
+        TimeoutError: with no ids left there is nothing left to time out
+        on, and list(get_many(...)) would otherwise lose the completed
+        results to the raise.
+        """
+        self.b._cache.clear()
+        ids = {uuid(): i for i in range(4)}
+        polls = []
+        orig_mget = self.b.mget
+
+        def slow_mget(keys):
+            polls.append(1)
+            time.sleep(0.6)
+            for task_id, i in ids.items():
+                self.b.mark_as_done(task_id, i)
+            return orig_mget(keys)
+
+        self.b.mget = slow_mget
+        clock = FakeClock()
+        with patch('celery.backends.base.monotonic', clock.monotonic), \
+             patch('celery.backends.base.time.sleep', clock.sleep):
+            got = dict(self.b.get_many(list(ids), timeout=0.5, interval=0.2))
+        assert {id: state['result'] for id, state in got.items()} == ids
+        assert len(polls) == 1
+        assert clock.now == pytest.approx(0.6)
 
     def test_get_many_passes_ready_states(self):
         tasks_length = 10

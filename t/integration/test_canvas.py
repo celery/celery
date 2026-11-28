@@ -1494,6 +1494,45 @@ class test_result_set:
         rs.backend._cache.clear()
         assert rs.join_native(timeout=0, interval=30) == [2, 4, 6]
 
+    def test_get_many_slow_backend_counts_towards_timeout(self, manager, monkeypatch):
+        """A slow backend poll must count against the get_many timeout (#11111).
+
+        The fake clock advances 0.5s inside counting_mget, so each poll
+        costs 0.5s against a 1s timeout: the wait must raise after
+        exactly 2 polls. Without the fix the poll time is ignored and the
+        wait only times out after 6 polls (one per 0.2s sleep). Advancing
+        the clock in the mocked backend call, rather than on every
+        monotonic() call, keeps the test independent of how the
+        implementation reads the clock. The poll-interval sleep is
+        patched out too, so the test never really sleeps. Everything
+        else (real backend, real round-trip) is live. get_many is called
+        directly: ResultSet.join_native() takes the async consumer path
+        on backends that have one, which never calls get_many.
+        """
+        if not isinstance(manager.app.backend, BaseKeyValueStoreBackend):
+            raise pytest.skip('get_many is the key/value backend poll loop')
+
+        backend = manager.app.backend
+        polls = []
+        orig_mget = backend.mget
+        clock = [0.0]
+
+        def counting_mget(keys):
+            polls.append(1)
+            clock[0] += 0.5
+            return orig_mget(keys)
+
+        def fake_monotonic():
+            return clock[0]
+
+        monkeypatch.setattr(backend, 'mget', counting_mget)
+        monkeypatch.setattr('celery.backends.base.monotonic', fake_monotonic)
+        monkeypatch.setattr('time.sleep', lambda s: None)
+        task_ids = [str(uuid.uuid4()) for _ in range(3)]
+        with pytest.raises(TimeoutError):
+            list(backend.get_many(task_ids, timeout=1, interval=0.2))
+        assert len(polls) == 2
+
 
 class test_group:
     @flaky
