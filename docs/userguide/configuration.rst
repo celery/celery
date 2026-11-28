@@ -1511,7 +1511,7 @@ Cache backend settings
     Support for the :pypi:`pylibmc` and :pypi:`python-memcached` libraries
     has been removed.
 
-.. versionchanged:: 5.7
+.. versionchanged:: 5.7.1
 
     A chord now completes once, after every header task stored its result,
     even when the broker delivers a header task again. A copy that returns
@@ -2339,7 +2339,7 @@ Timeout in seconds for reading of an azure block blob.
 GCS backend settings
 --------------------
 
-.. versionchanged:: 5.7
+.. versionchanged:: 5.7.1
 
     A chord now completes once, after every header task stored its result,
     even when the broker delivers a header task again. A copy that returns
@@ -2511,7 +2511,7 @@ Result is always serialized as text.
 AWS DynamoDB backend settings
 -----------------------------
 
-.. versionchanged:: 5.7
+.. versionchanged:: 5.7.1
 
     A chord now completes once, after every header task stored its result,
     even when the broker delivers a header task again. A copy that returns
