@@ -9,6 +9,14 @@ in the main branch & 5.7.x series, please see :ref:`whatsnew-5.7` for
 an overview of what's new in Celery 5.7.0.
 
 
+Unreleased
+==========
+
+- Preserve the chord body's configured priority when ``apply_async()``
+  receives ``priority=None``, including when the chord follows another
+  task in a chain (#7517).
+
+
 .. _version-5.7.0:
 
 5.7.0
