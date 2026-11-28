@@ -5,6 +5,7 @@ how tasks are executed.
 """
 import logging
 import sys
+import threading
 from datetime import datetime
 from time import monotonic, time
 from weakref import ref
@@ -89,6 +90,9 @@ class Request:
     #: ``None`` for requests without an ETA.
     _eta_timer_entry = None
 
+    #: Lock guarding the creation of per-instance acknowledgement locks.
+    _ack_lock_creation_lock = threading.Lock()
+
     if not IS_PYPY:  # pragma: no cover
         __slots__ = (
             '_app', '_type', 'name', 'id', '_root_id', '_parent_id',
@@ -133,6 +137,7 @@ class Request:
         self._kwargsrepr = self._request_dict.get('kwargsrepr', '')
         self._on_ack = on_ack
         self._on_reject = on_reject
+        self._ack_lock = threading.Lock()
         self._hostname = hostname or gethostname()
         self._eventer = eventer
         self._connection_errors = connection_errors or ()
@@ -966,17 +971,38 @@ class Request:
         except WorkerLostError:
             return ExceptionInfo()
 
+    def _acknowledgement_lock(self):
+        """Return the lock serializing acknowledgement delivery.
+
+        The lock is created in :meth:`__init__`, but it is created lazily
+        here as well so that requests built without :meth:`__init__` still
+        deliver an acknowledgement at most once.  Creation is guarded by a
+        class-level lock so concurrent callers cannot end up with two
+        different locks for the same request.
+        """
+        try:
+            return self._ack_lock
+        except AttributeError:
+            with Request._ack_lock_creation_lock:
+                try:
+                    return self._ack_lock
+                except AttributeError:
+                    self._ack_lock = lock = threading.Lock()
+                    return lock
+
     def acknowledge(self):
         """Acknowledge task."""
-        if not self.acknowledged:
-            self._on_ack(logger, self._connection_errors)
-            self.acknowledged = True
+        with self._acknowledgement_lock():
+            if not self.acknowledged:
+                self._on_ack(logger, self._connection_errors)
+                self.acknowledged = True
 
     def reject(self, requeue=False):
-        if not self.acknowledged:
-            self._on_reject(logger, self._connection_errors, requeue)
-            self.acknowledged = True
-            self.send_event('task-rejected', requeue=requeue)
+        with self._acknowledgement_lock():
+            if not self.acknowledged:
+                self._on_reject(logger, self._connection_errors, requeue)
+                self.acknowledged = True
+                self.send_event('task-rejected', requeue=requeue)
 
     def info(self, safe=False):
         return {

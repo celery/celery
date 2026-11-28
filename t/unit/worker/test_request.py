@@ -2,6 +2,7 @@ import numbers
 import os
 import signal
 import socket
+import threading
 from datetime import datetime, timedelta, timezone
 from time import monotonic, time
 from unittest.mock import ANY, Mock, patch
@@ -1811,6 +1812,105 @@ class test_Request(RequestCase):
         req = Request(m, app=self.app)
         with pytest.raises(InvalidTaskError):
             raise req.execute().exception.exc
+
+    def test_acknowledge_concurrent_delivers_once(self):
+        # Regression test for #11140: concurrent acknowledge() calls must
+        # deliver the acknowledgement exactly once.  The first delivery
+        # blocks inside the ack hook until the test releases it; the second
+        # call is started while the first delivery is still in flight, so
+        # without the lock both calls pass the acknowledged check.
+        # Note the reproduction in #11140 synchronizes the two threads with
+        # a barrier inside the delivery hook; that cannot be used here, as
+        # the barrier requires both threads to be inside the hook at once,
+        # which is exactly what the lock prevents.
+        entered = threading.Event()
+        release = threading.Event()
+        calls = []
+
+        def on_ack(logger, connection_errors):
+            calls.append('ack')
+            entered.set()
+            assert release.wait(timeout=10)
+
+        job = self.xRequest(on_ack=on_ack)
+        first = threading.Thread(target=job.acknowledge)
+        first.start()
+        assert entered.wait(timeout=10)
+        second = threading.Thread(target=job.acknowledge)
+        second.start()
+        # Give the second call time to reach the delivery hook (without
+        # the fix) or block on the lock (with the fix).
+        release.wait(timeout=0.5)
+        release.set()
+        first.join(timeout=10)
+        second.join(timeout=10)
+        assert not first.is_alive()
+        assert not second.is_alive()
+        assert len(calls) == 1
+        assert job.acknowledged
+
+    def test_acknowledge_reject_concurrent_delivers_once(self):
+        # Regression test for #11140: an acknowledge() racing with a
+        # reject() must deliver only one of the two.
+        entered = threading.Event()
+        release = threading.Event()
+        acks = []
+        rejects = []
+
+        def on_ack(logger, connection_errors):
+            acks.append('ack')
+            entered.set()
+            assert release.wait(timeout=10)
+
+        def on_reject(logger, connection_errors, requeue):
+            rejects.append('reject')
+
+        job = self.xRequest(on_ack=on_ack, on_reject=on_reject)
+        first = threading.Thread(target=job.acknowledge)
+        first.start()
+        assert entered.wait(timeout=10)
+        second = threading.Thread(target=job.reject, kwargs={'requeue': True})
+        second.start()
+        release.wait(timeout=0.5)
+        release.set()
+        first.join(timeout=10)
+        second.join(timeout=10)
+        assert not first.is_alive()
+        assert not second.is_alive()
+        assert len(acks) == 1
+        assert rejects == []
+        assert job.acknowledged
+
+    def test_acknowledge_concurrent_without_init_delivers_once(self):
+        # Same race as test_acknowledge_concurrent_delivers_once, but for
+        # a request built without __init__, as in the reproduction in
+        # #11140: the acknowledgement lock must be created lazily.
+        req = Request.__new__(Request)
+        req.acknowledged = False
+        req._connection_errors = ()
+        entered = threading.Event()
+        release = threading.Event()
+        calls = []
+
+        def on_ack(logger, connection_errors):
+            calls.append('ack')
+            entered.set()
+            assert release.wait(timeout=10)
+
+        req._on_ack = on_ack
+        first = threading.Thread(target=req.acknowledge)
+        first.start()
+        assert entered.wait(timeout=10)
+        second = threading.Thread(target=req.acknowledge)
+        second.start()
+        release.wait(timeout=0.5)
+        release.set()
+        first.join(timeout=10)
+        second.join(timeout=10)
+        assert not first.is_alive()
+        assert not second.is_alive()
+        assert len(calls) == 1
+        assert req.acknowledged
 
     def test_on_hard_timeout_acks_late(self, patching):
         error = patching('celery.worker.request.error')
