@@ -21,6 +21,7 @@ from kombu.serialization import dumps, loads, prepare_accept_content
 from kombu.serialization import registry as serializer_registry
 from kombu.utils.encoding import bytes_to_str, ensure_bytes
 from kombu.utils.url import maybe_sanitize_url
+from kombu.utils.uuid import uuid
 
 import celery.exceptions
 from celery import chord, current_app, group, maybe_signature, states
@@ -1021,6 +1022,147 @@ class Backend:
     def set_chord_size(self, group_id, chord_size):
         pass
 
+    #: How long (in seconds) a chord_unlock dispatch claim counts as
+    #: owned by a live worker.  A claim older than this is treated as
+    #: abandoned (its owner was lost before it could finish), so a
+    #: redelivered chord_unlock may take it over instead of losing
+    #: the chord body.  The lease only has to cover publishing the
+    #: body (or failing the chord), which happens right after the
+    #: claim is taken; joining the header happens before it.
+    #: The trade-off is deliberate: a worker killed while it holds
+    #: the claim delays the body by up to the lease, where the body
+    #: used to be dispatched again almost immediately.
+    #: Each chord also leaves one more stored result,
+    #: ``chord-unlock-claim-<group_id>``, until results expire, so
+    #: anyone counting or cleaning the result table sees one extra
+    #: row (or file) per chord.
+    chord_unlock_claim_lease = 60.0
+
+    def _chord_unlock_claim_id(self, group_id):
+        """Synthetic result id under which the dispatch claim is stored."""
+        return f'chord-unlock-claim-{group_id}'
+
+    def try_claim_chord_unlock(self, group_id):
+        """Claim the right to finish the chord waiting on ``group_id``.
+
+        Backends without native chord support finish a chord in the
+        ``celery.chord_unlock`` task, which records nothing about
+        having dispatched the body.  With ``task_acks_late`` a worker
+        lost after dispatching the body but before acking causes the
+        broker to redeliver ``chord_unlock``, and the copy dispatched
+        the body again (#11037).
+
+        The claim is stored as an ordinary result under a synthetic
+        id derived from the group id, so every backend that can store
+        a result supports it through the semantics it already has:
+        a lease is stored with state ``STARTED`` carrying a unique
+        token and the time it was taken, and a finished dispatch is
+        stored with state ``SUCCESS``, which the key/value, database,
+        MongoDB and Cassandra backends already refuse to overwrite
+        with a later result.  The stored claim expires like any other
+        result (``result_expires`` and backend cleanup), mirroring
+        the expiring ``done`` marker of the Redis backend.
+
+        Returns a ``(status, token)`` pair:
+
+        - ``('claimed', token)``: the caller owns the claim and must
+          finish the chord, then call
+          :meth:`mark_chord_unlock_dispatched`.  This is also
+          returned when the backend cannot store or read the claim
+          at all (for example the disabled backend): failing open
+          preserves the previous at-least-once behaviour instead of
+          losing the body.
+        - ``('dispatched', None)``: a previous run already finished
+          this chord; the caller must not dispatch or fail it again.
+        - ``('in_progress', None)``: another live worker holds a
+          fresh claim; the caller should poll again later rather
+          than finish the chord itself.
+
+        This is a check-and-set built from separate reads and
+        writes, not a single atomic operation, so two copies running
+        at exactly the same moment can still both claim.  It closes
+        the reported case -- a redelivery that starts after the
+        first run stored its claim -- and the token re-read after
+        taking over an abandoned lease narrows the remaining race
+        to copies whose claim writes interleave before either
+        re-reads.  Backends that can decide the claim in one step
+        override this: the database backend inserts the claim row
+        against the unique ``task_id``, so exactly one copy wins.
+        """
+        from kombu.utils.uuid import uuid
+
+        token = uuid()
+        claim_id = self._chord_unlock_claim_id(group_id)
+        try:
+            meta = self.get_task_meta(claim_id, cache=False)
+        except Exception:  # pylint: disable=broad-except
+            return 'claimed', token
+        if meta.get('status') == states.SUCCESS:
+            return 'dispatched', None
+        if meta.get('status') == states.STARTED:
+            payload = meta.get('result')
+            claimed_at = payload.get('claimed_at', 0) if isinstance(payload, dict) else 0
+            try:
+                claimed_at = float(claimed_at)
+            except (TypeError, ValueError):
+                claimed_at = 0.0
+            if time.time() - claimed_at < self.chord_unlock_claim_lease:
+                return 'in_progress', None
+            # The lease was abandoned: fall through and take it over.
+        try:
+            self.store_result(
+                claim_id,
+                {'token': token, 'claimed_at': time.time()},
+                states.STARTED,
+            )
+            meta = self.get_task_meta(claim_id, cache=False)
+        except Exception:  # pylint: disable=broad-except
+            return 'claimed', token
+        if meta.get('status') == states.SUCCESS:
+            return 'dispatched', None
+        payload = meta.get('result')
+        if not isinstance(payload, dict) or payload.get('token') != token:
+            # Another copy stored its claim after ours.
+            return 'in_progress', None
+        return 'claimed', token
+
+    def mark_chord_unlock_dispatched(self, group_id, token=None):
+        """Record that the chord waiting on ``group_id`` was finished.
+
+        Best effort: if storing the marker fails the claim lease is
+        left behind and expires, after which a redelivery may finish
+        the chord again -- the previous behaviour -- rather than the
+        body being lost because of a failed marker write.
+        """
+        try:
+            self.store_result(
+                self._chord_unlock_claim_id(group_id),
+                {'token': token, 'dispatched_at': time.time()},
+                states.SUCCESS,
+            )
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(
+                'Chord %r: could not store the chord_unlock dispatch '
+                'marker; a redelivered chord_unlock may dispatch the '
+                'body again', group_id, exc_info=True,
+            )
+
+    def reset_chord_unlock_claim(self, group_id):
+        """Forget any dispatch claim for ``group_id``.
+
+        Called when a new chord run is launched for the group, as a
+        frozen chord can be reapplied under the same group id for a
+        new run whose body must be dispatched again.  Best effort,
+        like :meth:`mark_chord_unlock_dispatched`.
+        """
+        try:
+            self.forget(self._chord_unlock_claim_id(group_id))
+        except Exception:  # pylint: disable=broad-except
+            logger.debug(
+                'Chord %r: could not reset the chord_unlock dispatch '
+                'claim', group_id, exc_info=True,
+            )
+
     def fallback_chord_unlock(self, header_result, body, countdown=1,
                               **kwargs):
         kwargs['result'] = [r.as_tuple() for r in header_result]
@@ -1056,6 +1198,11 @@ class Backend:
         if 'exchange_type' in routing_options:
             # unlock_chord needs this for retries.
             kwargs['_chord_unlock_exchange_type'] = routing_options['exchange_type']
+
+        # A new chord run starts here: clear the dispatch claim of
+        # any previous run under the same group id, so only copies of
+        # this run's chord_unlock are deduplicated against each other.
+        self.reset_chord_unlock_claim(header_result.id)
 
         self.app.tasks['celery.chord_unlock'].apply_async(
             (header_result.id, body,), kwargs,
@@ -1178,6 +1325,8 @@ class BaseKeyValueStoreBackend(Backend):
     group_keyprefix = 'celery-taskset-meta-'
     chord_keyprefix = 'chord-unlock-'
     implements_incr = False
+    #: Set by backends with ``_add_chord_key(key, token)``: add unless present.
+    implements_add = False
 
     def __init__(self, *args, **kwargs):
         if hasattr(self.key_t, '__func__'):  # pragma: no cover
@@ -1241,6 +1390,88 @@ class BaseKeyValueStoreBackend(Backend):
 
     def incr(self, key):
         raise NotImplementedError('Does not implement incr')
+
+    def _chord_key_expires(self, result_ttl=None):
+        # Twice the header results' lifetime, including the backend's own
+        # result TTL: a header's key outlives its result, and the done key
+        # outlives late copies of header tasks. 0 means no expiry.
+        expires = self._chord_result_expires
+        return 2 * int(max(expires, result_ttl or 0)) if expires else 0
+
+    def _claim_chord(self, group_id):
+        """Return :const:`True` for the one run that completes or fails it."""
+        return self._add_chord_key(
+            self.get_key_for_chord(group_id, '.done'), uuid())
+
+    def _fail_chord_once(self, request, message):
+        if self._claim_chord(request.group):
+            try:
+                raise ChordError(message)
+            except ChordError as exc:
+                self.chord_error_from_stack(
+                    maybe_signature(request.chord, app=self.app), exc)
+
+    def _chord_part_returns(self, request):
+        """Record that a header part returned; fail the chord if it can't."""
+        if not self.implements_add:
+            return True
+        # A failure is stored even when the result is ignored, if the task
+        # sets store_errors_even_if_ignored: only a header with nothing
+        # stored fails the chord here.
+        if (_is_request_ignore_result(request)
+                and self._missing_results([request.id])):
+            self._fail_chord_once(
+                request, f'Chord header task {request.task}[{request.id}] '
+                'ignores its result: header tasks must store it')
+            return False
+        self._add_chord_key(
+            self._get_key_for_chord_part(request.group, request.id), uuid())
+        return True
+
+    def _delete_chord_part_keys(self, group_id, deps):
+        # The chord's done key stays: it stops a late copy of a header task.
+        # Header entries can share a task id, and so a key.
+        if self.implements_add:
+            self._delete_keys(list(dict.fromkeys(
+                self._get_key_for_chord_part(group_id, result.id)
+                for result in deps.results)))
+
+    def _delete_keys(self, keys):
+        for key in keys:
+            self.delete(key)
+
+    def _get_key_for_chord_part(self, group_id, task_id):
+        # As a str, so that every backend reads it back with mget().
+        return bytes_to_str(self.get_key_for_chord(group_id, f'.{task_id}'))
+
+    def _chord_keys_exist(self, keys):
+        values = self.mget(keys)
+        if hasattr(values, 'items'):
+            values = [values.get(key) for key in keys]
+        return [value is not None for value in values]
+
+    def _complete_chord_once(self, request, deps):
+        """Return :const:`True` for the one run that completes the chord.
+
+        A missing result whose header returned was lost: fail the chord.
+        """
+        missing = self._missing_results([r.id for r in deps.results])
+        if missing and all(self._chord_keys_exist([
+                self._get_key_for_chord_part(request.group, task_id)
+                for task_id in missing])):
+            # A header stores its result before its key, so one that
+            # returned between the two reads shows up on a second read.
+            missing = self._missing_results(missing)
+            if missing:
+                self._fail_chord_once(
+                    request,
+                    f'Chord header results missing: {", ".join(missing)}')
+        return not missing and self._claim_chord(request.group)
+
+    def _missing_results(self, ids):
+        ready = self._mget_to_results(
+            self.mget([self.get_key_for_task(task_id) for task_id in ids]), ids)
+        return [task_id for task_id in ids if task_id not in ready]
 
     def expire(self, key, value):
         pass
@@ -1449,6 +1680,10 @@ class BaseKeyValueStoreBackend(Backend):
                 ChordError(f'Cannot restore group: {exc!r}'),
             )
         if deps is None:
+            # A copy that returns after the chord completed finds it claimed.
+            # Otherwise the group expired: fail the chord, once.
+            if self.implements_add and not self._claim_chord(gid):
+                return
             try:
                 raise ValueError(gid)
             except ValueError as exc:
@@ -1458,16 +1693,23 @@ class BaseKeyValueStoreBackend(Backend):
                     callback,
                     ChordError(f'GroupResult {gid} no longer exists'),
                 )
+        if not self._chord_part_returns(request):
+            return
         val = self.incr(key)
         # Set the chord size to the value defined in the request, or fall back
         # to the number of dependencies we can see from the restored result
         size = request.chord.get("chord_size")
         if size is None:
             size = len(deps)
-        if val > size:  # pragma: no cover
+        if val > size and not self.implements_add:  # pragma: no cover
             logger.warning('Chord counter incremented too many times for %r',
                            gid)
-        elif val == size:
+        elif val >= size:
+            # A header task that runs again counts again, so the counter can
+            # reach the size before every header returned.
+            if self.implements_add and not self._complete_chord_once(
+                    request, deps):
+                return
             callback = maybe_signature(request.chord, app=app)
             j = deps.join_native if deps.supports_native_join else deps.join
             try:
@@ -1498,6 +1740,7 @@ class BaseKeyValueStoreBackend(Backend):
             finally:
                 deps.delete()
                 self.delete(key)
+                self._delete_chord_part_keys(gid, deps)
                 # The chord is done: give the header results back their
                 # normal lifetime.
                 for dep in deps.results:

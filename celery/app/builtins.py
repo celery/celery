@@ -105,6 +105,8 @@ def add_unlock_chord_task(app):
             app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
             raise
 
+        join_error = None
+        ret = None
         try:
             with allow_join_result():
                 ret = j(
@@ -118,15 +120,73 @@ def add_unlock_chord_task(app):
             except StopIteration:
                 reason = repr(exc)
             logger.exception('Chord %r raised: %r', group_id, exc)
-            chord_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
-            app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
-        else:
+            join_error = _create_chord_error_with_cause(message=reason, original_exc=exc)
+
+        # The header is finished, one way or the other: this run is
+        # about to either dispatch the body or fail the chord.  Claim
+        # that terminal step first, so a copy of this task redelivered
+        # after a lost worker (task_acks_late) does not dispatch the
+        # body -- or fail the chord -- a second time (#11037).  The
+        # claim is only taken now, not while polling above, so the
+        # normal retry chain is unaffected.
+        try:
+            claim_status, claim_token = app.backend.try_claim_chord_unlock(group_id)
+        except Exception:  # pylint: disable=broad-except
+            # A backend (or a test double) without the claim API must
+            # not lose the body: fall back to finishing the chord.
+            claim_status, claim_token = 'claimed', None
+        if claim_status == 'dispatched':
+            logger.info(
+                'Chord %r: body already dispatched by a previous '
+                'chord_unlock run, skipping', group_id,
+            )
+            return
+        if claim_status == 'in_progress':
+            # Another live worker is finishing this chord.  Poll
+            # again later: by then it will either have stored the
+            # dispatched marker (and this run skips) or its claim
+            # lease will have been abandoned (and this run takes
+            # over, so the body is not lost with the worker).
             try:
-                app.amqp._retry_publish(callback.delay, ret)
-            except Exception as exc:  # pylint: disable=broad-except
-                logger.exception('Chord %r raised: %r', group_id, exc)
-                chord_error = _create_chord_error_with_cause(message=f'Callback error: {exc!r}', original_exc=exc)
-                app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
+                raise self.retry(
+                    countdown=interval, max_retries=max_retries,
+                    **retry_options,
+                )
+            except Retry:
+                raise
+            except Exception:  # pylint: disable=broad-except
+                # The retry could not be scheduled, but failing the
+                # chord would race the worker that owns it: leave the
+                # chord to that worker instead.
+                logger.warning(
+                    'Chord %r: chord_unlock is being finished by '
+                    'another worker and could not be rescheduled to '
+                    'wait for it', group_id, exc_info=True,
+                )
+                return
+
+        try:
+            if join_error is not None:
+                try:
+                    raise join_error
+                except Exception:  # pylint: disable=broad-except
+                    # chord_error_from_stack() ends in
+                    # fail_from_current_stack(), which reads
+                    # sys.exc_info(): it must run inside an except
+                    # block handling this error, or the traceback is
+                    # None and it crashes before the body's failure
+                    # is stored.
+                    app.backend.chord_error_from_stack(callback=callback, exc=join_error)
+            else:
+                try:
+                    app.amqp._retry_publish(callback.delay, ret)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception('Chord %r raised: %r', group_id, exc)
+                    chord_error = _create_chord_error_with_cause(
+                        message=f'Callback error: {exc!r}', original_exc=exc)
+                    app.backend.chord_error_from_stack(callback=callback, exc=chord_error)
+        finally:
+            app.backend.mark_chord_unlock_dispatched(group_id, claim_token)
     return unlock_chord
 
 
