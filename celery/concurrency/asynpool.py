@@ -570,7 +570,17 @@ class AsynPool(_pool.Pool):
     def _event_process_exit(self, hub, proc):
         # This method is called whenever the process sentinel is readable.
         self._untrack_child_process(proc, hub)
+        self._maintain_until_reaped(hub, proc)
+
+    def _maintain_until_reaped(self, hub, proc, delay=0.01, waited=0.0):
+        # The sentinel can be readable before waitpid() is able to reap the
+        # child (Issue #9588), which left its slot empty until the
+        # maintain_pool timer.  Retry shortly instead, with backoff, and let
+        # the timer take over once the retries would wait as long as it does.
         self.maintain_pool()
+        if proc in self._pool and waited + delay <= self.timers[self.maintain_pool]:
+            hub.call_later(delay, self._maintain_until_reaped,
+                           hub, proc, delay * 2, waited + delay)
 
     def _track_child_process(self, proc, hub):
         """Helper method determines appropriate fd for process."""
@@ -1082,11 +1092,15 @@ class AsynPool(_pool.Pool):
         # cancel all tasks that haven't been accepted so that NACK is sent
         # if synack is enabled, otherwise discard them from the cache
         # since they will be redelivered by the broker.
+        # Without synack a job that was written runs in its child whether
+        # or not we saw it accepted: keep it, so that its result is handled
+        # and its message acked, and not also delivered again. A write that
+        # started but didn't finish is completed below.
         for job in tuple(self._cache.values()):
             if not job._accepted:
                 if self.synack:
                     job._cancel()
-                else:
+                elif job._write_to is None:
                     job.discard()
 
         # clear the outgoing buffer as the tasks will be redelivered by
@@ -1181,9 +1195,13 @@ class AsynPool(_pool.Pool):
             # always has a live worker, while a worker that died (whose fd may
             # since have been reused by a fresh replacement) must not be
             # re-counted as busy.
+            #
+            # Without synack a written job counts as running too, accepted
+            # or not: flush() kept it above because its child runs it.
             still_busy = set()
             for job in self._cache.values():
-                if not job._accepted:
+                if not job._accepted and (
+                        self.synack or job._write_to is None):
                     continue
                 proc = job._write_to or job._scheduled_for
                 if proc is not None and proc._is_alive():

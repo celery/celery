@@ -716,3 +716,21 @@ class test_unreachable_result_backend(SuiteOperations):
         # check its log instead of a result.
         alive = identity.si("alive").set(queue=queue).delay()
         celery_setup.worker.assert_log_exists(f"{alive.id}] received", timeout=RESULT_TIMEOUT)
+
+
+class test_worker_shutdown_early_ack(SuiteOperations):
+    # #11079: the default early-ack path (no task_acks_late override,
+    # unlike test_worker_shutdown above).  On main res.get() times out,
+    # since the state stays RETRY.
+    def test_cold_shutdown_fails_the_running_task(self, celery_setup: CeleryTestSetup):
+        queue = celery_setup.worker.worker_queue
+        worker = celery_setup.worker
+        res = long_running_task.si(5, verbose=True).set(queue=queue).delay()
+
+        worker.assert_log_exists("Starting long running task")
+        self.kill_worker(worker, WorkerKill.Method.SIGQUIT)
+        worker.assert_log_exists("worker: Cold shutdown (MainProcess)")
+        assert_container_exited(worker)
+
+        with pytest.raises(celery.exceptions.WorkerLostError):
+            res.get(timeout=RESULT_TIMEOUT)

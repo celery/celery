@@ -74,14 +74,19 @@ class Request:
     time_limits = (None, None)
     _already_revoked = False
     _already_cancelled = False
+    _time_limit_failure_handled = False
     _terminate_on_ack = None
     _apply_result = None
     _tzlocal = None
 
-    #: Timer entry for this request's pending ETA/countdown callback, set by
+    #: Weak reference to the timer entry for this request's pending
+    #: ETA/countdown callback, set by
     #: :mod:`celery.worker.strategy` when the request is scheduled so that
     #: :meth:`celery.worker.consumer.Consumer.on_close` can cancel it on
-    #: connection loss.  ``None`` for requests without an ETA.
+    #: connection loss.  It must be a weak reference: the entry's args hold
+    #: this request, so a strong one would create a reference cycle that
+    #: keeps the request (and its message body) alive until a full GC run.
+    #: ``None`` for requests without an ETA.
     _eta_timer_entry = None
 
     if not IS_PYPY:  # pragma: no cover
@@ -447,6 +452,55 @@ class Request:
         task_ready(self)
         self.send_event('task-cancelled')
 
+        if emit_retry and self.acknowledged:
+            # The message has already been acknowledged (the default
+            # early-ack case: on_accepted() acks when the task starts),
+            # so the broker will not redeliver it and nothing will run
+            # this task again.  Storing RETRY would claim otherwise and
+            # leave a caller waiting on the result until its timeout,
+            # so store a terminal FAILURE instead, as the worker-lost
+            # path does (#11079).  Unacknowledged requests keep the
+            # RETRY behaviour below: their message is redelivered, so
+            # the task really will run again (e.g. acks_late tasks
+            # cancelled on connection loss).
+            exc = WorkerLostError('cancelled by Celery')
+            self.task.backend.mark_as_failure(
+                self.id, exc, request=self._context,
+                store_result=self.store_errors,
+            )
+            # Like the other terminal-FAILURE paths in this file (the
+            # worker-lost branch of on_failure(), Reject(requeue=False),
+            # the hard time-limit path), fire the task_failure signal
+            # so that alerting (Sentry and similar) sees the failure.
+            # The RETRY branch this replaces fired on_retry/task_retry
+            # instead, but those do not apply here: the message is
+            # already acknowledged, so this task will never run again.
+            einfo = None
+            try:
+                try:
+                    raise exc
+                except WorkerLostError:
+                    einfo = ExceptionInfo()
+                # Temporarily add the context to the request stack so
+                # that the task_failure handlers can access it.
+                self.task.request_stack.push(self._context)
+                try:
+                    signals.task_failure.send(
+                        sender=self.task, task_id=self.id, exception=exc,
+                        args=self.args, kwargs=self.kwargs,
+                        traceback=einfo.traceback, einfo=einfo,
+                    )
+                finally:
+                    self.task.request_stack.pop()
+            finally:
+                # Break the exc -> traceback -> frame reference cycle
+                # so this frame can be garbage-collected promptly.
+                if einfo is not None:
+                    del einfo
+                exc.__traceback__ = None
+            self._already_cancelled = True
+            return
+
         if emit_retry:
             reason = 'cancelled by Celery'
             exc = Retry(message=reason)
@@ -547,12 +601,18 @@ class Request:
             # the cold shutdown process.
             if not state.should_terminate:
                 error('Hard time limit (%ss) exceeded for %s[%s]', timeout, self.name, self.id)
+                # on_failure() may already have stored the failure, run the
+                # errbacks and sent task_failure/task-failed for this same hard
+                # limit; only skip those here. Task.on_failure and after_return
+                # are not called from Request.on_failure, so they still run.
+                already_handled = self._time_limit_failure_handled
                 exc = TimeLimitExceeded(timeout)
 
-                self.task.backend.mark_as_failure(
-                    self.id, exc, request=self._context,
-                    store_result=self.store_errors,
-                )
+                if not already_handled:
+                    self.task.backend.mark_as_failure(
+                        self.id, exc, request=self._context,
+                        store_result=self.store_errors,
+                    )
 
                 # Invoke the same failure hooks that a normal task failure
                 # triggers so that on_failure callbacks, errbacks, and
@@ -571,21 +631,22 @@ class Request:
                             states.FAILURE, exc, self.id, self.args, self.kwargs, None,
                         )
 
-                    signals.task_failure.send(
-                        sender=self.task,
-                        task_id=self.id,
-                        exception=exc,
-                        args=self.args,
-                        kwargs=self.kwargs,
-                        traceback=exc.__traceback__,
-                        einfo=einfo,
-                    )
+                    if not already_handled:
+                        signals.task_failure.send(
+                            sender=self.task,
+                            task_id=self.id,
+                            exception=exc,
+                            args=self.args,
+                            kwargs=self.kwargs,
+                            traceback=exc.__traceback__,
+                            einfo=einfo,
+                        )
 
-                    self.send_event(
-                        'task-failed',
-                        exception=safe_repr(get_pickled_exception(einfo.exception)),
-                        traceback=einfo.traceback,
-                    )
+                        self.send_event(
+                            'task-failed',
+                            exception=safe_repr(get_pickled_exception(einfo.exception)),
+                            traceback=einfo.traceback,
+                        )
                 finally:
                     # Break the exc → traceback → frame reference cycle
                     # (this frame's own `exc` local points at exc, and
@@ -793,6 +854,13 @@ class Request:
                                           einfo=exc_info)
             finally:
                 self.task.request_stack.pop()
+
+            if isinstance(exc, TimeLimitExceeded):
+                # A hard time limit makes the pool call on_timeout() for
+                # this same exception right after on_failure(); the failure
+                # handling above (backend store, errbacks, task_failure)
+                # must not run a second time there.
+                self._time_limit_failure_handled = True
 
         if send_failed_event:
             self.send_event(

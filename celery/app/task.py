@@ -99,6 +99,7 @@ class Context:
     """Task request variables (Task.request)."""
 
     _children = None   # see property
+    _eager_chord_added = None   # see Task.add_to_chord
     _protected = 0
     args = None
     callbacks = None
@@ -1030,6 +1031,8 @@ class Task:
             request['stamps'] = {
                 header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
             }
+        if '_eager_chord_added' in options:
+            request['_eager_chord_added'] = options['_eager_chord_added']
 
         tb = None
         tracer = build_tracer(
@@ -1043,7 +1046,11 @@ class Task:
             if isinstance(retval, ExceptionWithTraceback):
                 retval = retval.exc
         if isinstance(retval, Retry) and retval.sig is not None:
-            return retval.sig.apply(retries=retries + 1)
+            retry_options = {'retries': retries + 1}
+            if '_eager_chord_added' in options:
+                # The retried run is still a member of the eager chord.
+                retry_options['_eager_chord_added'] = options['_eager_chord_added']
+            return retval.sig.apply(**retry_options)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
@@ -1199,13 +1206,41 @@ class Task:
 
         .. versionadded:: 4.0
 
-        Currently only supported by the Redis result backend.
+        .. versionchanged:: 5.7
+
+            Also supported in chords run eagerly.
+
+        Currently only supported by the Redis result backend, and by
+        chords run eagerly (:setting:`task_always_eager` or ``chord.apply()``),
+        where the signature is applied at once and its result is passed to
+        the chord body after the results of the header.  On a worker the
+        results can come in any order, so the body shouldn't rely on the
+        order of its results.  ``lazy`` isn't supported in eager chords.
 
         Arguments:
             sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
+
+        Raises:
+            ValueError: If the current task isn't a member of any chord.
+            NotImplementedError: If ``lazy`` is enabled in a chord that
+                runs eagerly.
         """
+        added = self.request._eager_chord_added
+        if added is not None:
+            # An eager chord has no result backend to count on: it runs
+            # the signature here and keeps its result for the body.
+            if lazy:
+                # The result of a later sig.delay() can't reach the body,
+                # so refuse rather than silently leave it out.
+                raise NotImplementedError(
+                    'add_to_chord(lazy=True) is not supported in a chord '
+                    'that runs eagerly')
+            # The added task is a member of the chord too.
+            result = sig.apply(_eager_chord_added=added)
+            added.append(result)
+            return result
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
         sig.set(

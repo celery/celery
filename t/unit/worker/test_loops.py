@@ -787,7 +787,7 @@ class test_synloop:
         assert x.obj.timer.call_repeatedly.call_count == 2
         last_call_args, _ = x.obj.timer.call_repeatedly.call_args
         assert last_call_args[0] == 20 / 2.0
-        x.obj.event_dispatcher.connection.drain_events.assert_called_once_with(timeout=0.1)
+        x.obj.event_dispatcher.connection.drain_events.assert_called_once_with(timeout=0.001)
 
     def test_dispatcher_heartbeat_error(self):
         x = X(self.app, heartbeat=10)
