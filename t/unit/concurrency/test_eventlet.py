@@ -7,7 +7,7 @@ from billiard.einfo import ExceptionWithTraceback
 from celery.exceptions import Terminated
 
 try:
-    import eventlet  # noqa: F401
+    import eventlet
     HAS_EVENTLET = True
 except ImportError:
     HAS_EVENTLET = False
