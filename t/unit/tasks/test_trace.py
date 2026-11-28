@@ -1409,7 +1409,7 @@ class test_trace(TraceCase):
 
         add.backend = Mock(name='backend')
         add.backend.store_result.side_effect = ConnectionError('backend gone')
-        add.backend.store_error_safe_to_retry.return_value = safe_to_retry
+        add.backend._store_error_safe_to_retry.return_value = safe_to_retry
         return add, ran
 
     def test_track_started_backend_unavailable__acks_late_requeues(self):

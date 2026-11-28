@@ -11,7 +11,7 @@ from celery import Celery, states, uuid
 from t.integration.tasks import get_redis_connection, redis_echo
 
 TASKS = 5
-# Shorter than result_backend_store_retry_timeout, 20 s by default.
+# Shorter than the 20 s a pool process waits for the backend.
 OUTAGE = 15
 
 

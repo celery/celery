@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from celery import states, uuid
-from celery.app.trace import STORE_RETRY_LIMIT_MARGIN, build_tracer
-from celery.backends.base import STORE_RETRY_MAX_SLEEP, BaseBackend, store_retry
+from celery.app.trace import _STORE_RETRY_LIMIT_MARGIN, build_tracer
+from celery.backends.base import _STORE_RETRY_MAX_SLEEP, BaseBackend, _store_retry
 from celery.exceptions import BackendStoreError, Reject
 
 redis = pytest.importorskip('redis')
@@ -37,16 +37,11 @@ def clock():
         yield clock
 
 
-def test_default_timeout(app):
-    assert app.conf.result_backend_store_retry_timeout == 20.0
-
-
 class test_started_store_with_redis_backend:
 
     @pytest.fixture(autouse=True)
     def setup_backend(self, clock):
         self.clock = clock
-        self.app.conf.result_backend_store_retry_timeout = TIMEOUT
         self.backend = RedisBackend(app=self.app)
         self.backend.client = MagicMock(name='client')
         self.backend.client.get.return_value = None
@@ -123,7 +118,7 @@ class test_started_store_with_redis_backend:
             self.trace()
 
         sleeps = self.clock.sleeps
-        assert max(sleeps) <= STORE_RETRY_MAX_SLEEP
+        assert max(sleeps) <= _STORE_RETRY_MAX_SLEEP
         # The sleeps grow up to the cap, so a long outage costs few reads.
         assert max(sleeps[-10:]) > 0.1
         assert self.backend.client.get.call_count < 200
@@ -150,10 +145,10 @@ class test_started_store_with_redis_backend:
         assert 'id-1' in logger.warning.call_args[0]
 
     def test_without_timeout_requeues_at_once(self):
-        self.app.conf.result_backend_store_retry_timeout = None
         self.backend.client.get.side_effect = ConnectionError('backend gone')
 
-        with pytest.raises(Reject):
+        with patch('celery.app.trace._STORE_RETRY_TIMEOUT', None), \
+                pytest.raises(Reject):
             self.trace()
 
         assert self.backend.client.get.call_count == 1
@@ -178,7 +173,7 @@ class test_started_store_with_redis_backend:
 
         # It stops before the limit, so the task is requeued, not interrupted.
         assert self.clock.now < 5
-        assert self.clock.now == pytest.approx(5 - STORE_RETRY_LIMIT_MARGIN)
+        assert self.clock.now == pytest.approx(5 - _STORE_RETRY_LIMIT_MARGIN)
 
     def test_stores_from_the_task_body_fail_fast(self):
         errors = []
@@ -198,7 +193,7 @@ class test_started_store_with_redis_backend:
 
     def test_timeout_only_applies_while_the_task_runs(self):
         self.trace()
-        assert store_retry.get() is None
+        assert _store_retry.get() is None
 
         self.backend.client.get.side_effect = ConnectionError('backend gone')
         with pytest.raises(ConnectionError):
@@ -230,11 +225,11 @@ class test_store_result_retry:
 
     def store(self, backend, clock):
         backend._sleep = clock.sleep
-        token = store_retry.set((TIMEOUT, None))
+        token = _store_retry.set((TIMEOUT, None))
         try:
             return backend.store_result('id-1', 42, states.SUCCESS)
         finally:
-            store_retry.reset(token)
+            _store_retry.reset(token)
 
     def test_retries_past_max_retries_until_the_timeout(self, clock):
         backend = self.FlakyBackend(10, app=self.app)
@@ -249,7 +244,7 @@ class test_store_result_retry:
             self.store(backend, clock)
 
         assert isinstance(excinfo.value.__cause__, OSError)
-        assert backend.store_error_safe_to_retry(excinfo.value)
+        assert backend._store_error_safe_to_retry(excinfo.value)
         assert clock.now == pytest.approx(TIMEOUT)
 
     def test_one_retry_loop_logs_the_backend_error(self, clock):
@@ -271,12 +266,12 @@ class test_store_result_retry:
         # without a pause.
         backend = self.FlakyBackend(10, app=self.app)
         backend._sleep = clock.sleep
-        token = store_retry.set((TIMEOUT, clock.now - 1))
+        token = _store_retry.set((TIMEOUT, clock.now - 1))
         try:
             with pytest.raises(BackendStoreError):
                 backend.store_result('id-1', 42, states.SUCCESS)
         finally:
-            store_retry.reset(token)
+            _store_retry.reset(token)
 
         assert backend.calls == 4
         assert len(clock.sleeps) == 3
@@ -299,4 +294,4 @@ class test_store_result_retry:
             self.store(backend, clock)
 
         backend._store_result.assert_called_once()
-        assert not backend.store_error_safe_to_retry(excinfo.value)
+        assert not backend._store_error_safe_to_retry(excinfo.value)

@@ -65,11 +65,11 @@ logger = get_logger(__name__)
 #: once. The worker sets it while it stores a task's state (see
 #: :func:`celery.app.trace.build_tracer`), so stores made from the worker's
 #: main process, or from the task body, still fail fast.
-store_retry = ContextVar('store_retry', default=None)
+_store_retry = ContextVar('store_retry', default=None)
 
-#: The longest sleep between tries while :data:`store_retry` is set, so a
+#: The longest sleep between tries while :data:`_store_retry` is set, so a
 #: store goes through soon after the backend is back.
-STORE_RETRY_MAX_SLEEP = 1.0
+_STORE_RETRY_MAX_SLEEP = 1.0
 
 MESSAGE_BUFFER_MAX = 8192
 
@@ -882,7 +882,7 @@ class Backend:
                     self.max_sleep_between_retries_ms, True) / 1000
                 if deadline is not None:
                     if remaining > 0:
-                        sleep_amount = min(sleep_amount, STORE_RETRY_MAX_SLEEP, remaining)
+                        sleep_amount = min(sleep_amount, _STORE_RETRY_MAX_SLEEP, remaining)
                     logger.warning(
                         'Failed operation %s: %r. Retrying in %.2fs.',
                         name, exc, sleep_amount)
@@ -898,7 +898,7 @@ class Backend:
         result = self.encode_result(result, state)
 
         deadline = None
-        retry = store_retry.get()
+        retry = _store_retry.get()
         if retry is not None:
             timeout, not_after = retry
             deadline = time.monotonic() + timeout
@@ -965,7 +965,7 @@ class Backend:
         """
         return False
 
-    def store_error_safe_to_retry(self, exc):
+    def _store_error_safe_to_retry(self, exc):
         """Check if a failed :meth:`store_result` is safe to retry.
 
         True if the error, or the error that a :exc:`BackendStoreError`

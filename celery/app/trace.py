@@ -21,7 +21,7 @@ from celery._state import _task_stack
 from celery.app.task import Context
 from celery.app.task import Task as BaseTask
 from celery.app.task import get_actual_ignore_result
-from celery.backends.base import store_retry
+from celery.backends.base import _store_retry
 from celery.exceptions import BackendGetMetaError, Ignore, InvalidTaskError, Reject, Retry
 from celery.result import AsyncResult
 from celery.utils.log import get_logger
@@ -122,9 +122,15 @@ _patched = {}
 trace_ok_t = namedtuple('trace_ok_t', ('retval', 'info', 'runtime', 'retstr'))
 
 
-#: How long before a task's time limit its result store stops waiting for
-#: the backend (see :setting:`result_backend_store_retry_timeout`).
-STORE_RETRY_LIMIT_MARGIN = 1.0
+#: How long a pool process keeps trying to store a task's state while the
+#: result backend is unreachable, so a short outage loses neither the task
+#: nor its result. A task with ``task_track_started`` and ``acks_late`` that
+#: still can't store ``STARTED`` is then requeued.
+_STORE_RETRY_TIMEOUT = 20.0
+
+#: How long before a task's time limit that wait stops, so the task can still
+#: be requeued rather than interrupted.
+_STORE_RETRY_LIMIT_MARGIN = 1.0
 
 
 def info(fmt, context):
@@ -567,7 +573,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                         # is still unacked: requeue it rather than ack a task
                         # that never ran.
                         if (task.acks_late
-                                and task.backend.store_error_safe_to_retry(exc)):
+                                and task.backend._store_error_safe_to_retry(exc)):
                             logger.warning(
                                 'Task %s[%s] requeued: storing STARTED '
                                 'failed: %r',
@@ -579,14 +585,14 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 try:
                     # Stores made by the task itself, such as
                     # update_state(), fail fast as they did.
-                    body_token = store_retry.set(None)
+                    body_token = _store_retry.set(None)
                     try:
                         if task_before_start:
                             task_before_start(uuid, args, kwargs)
 
                         R = retval = fun(*args, **kwargs)
                     finally:
-                        store_retry.reset(body_token)
+                        _store_retry.reset(body_token)
                     state = SUCCESS
                 except Reject as exc:
                     I, R = Info(REJECTED, exc), ExceptionInfo(internal=True)
@@ -721,7 +727,7 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
                 I, _, _, _ = on_error(task_request, exc)
         return trace_ok_t(R, I, T, Rstr)
 
-    store_retry_timeout = None if eager else app.conf.result_backend_store_retry_timeout
+    store_retry_timeout = None if eager else _STORE_RETRY_TIMEOUT
     if not store_retry_timeout:
         return _trace_task
 
@@ -732,13 +738,13 @@ def build_tracer(name, task, loader=None, hostname=None, store_errors=True,
         hard, soft = (request.get('timelimit') if request else None) or (None, None)
         limit = soft or task.soft_time_limit or hard or task.time_limit
         not_after = (
-            time.monotonic() + limit - STORE_RETRY_LIMIT_MARGIN if limit else None
+            time.monotonic() + limit - _STORE_RETRY_LIMIT_MARGIN if limit else None
         )
-        token = store_retry.set((store_retry_timeout, not_after))
+        token = _store_retry.set((store_retry_timeout, not_after))
         try:
             return _trace_task(uuid, args, kwargs, request)
         finally:
-            store_retry.reset(token)
+            _store_retry.reset(token)
 
     return trace_task
 
