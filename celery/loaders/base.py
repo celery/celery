@@ -195,7 +195,11 @@ class BaseLoader:
                 type_ = cast.groups()[0]
                 type_ = override_types.get(type_, type_)
                 value = value[len(cast.group()):]
-                value = typemap[type_](value)
+                try:
+                    value = typemap[type_](value)
+                except ValueError as exc:
+                    # display key name in error message.
+                    raise ValueError(f'{ns_key!r}: {exc}') from exc
             else:
                 try:
                     value = NAMESPACES[ns.lower()][key].to_python(value)

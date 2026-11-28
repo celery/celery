@@ -218,6 +218,9 @@ class Consumer:
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._limit_order = 0
+        #: ``(token, timer entry)`` of the pending timer of each rate limit
+        #: bucket that waits for tokens.
+        self._limit_timers = {}
         self.on_task_request = on_task_request
         self.on_task_message = set()
         self.amqheartbeat_rate = self.app.conf.broker_heartbeat_checkrate
@@ -362,14 +365,34 @@ class Consumer:
                 # requeue to head, keep the order.
                 bucket.contents.appendleft((request, tokens))
 
-                pri = self._limit_order = (self._limit_order + 1) % 10
-                hold = bucket.expected_time(tokens)
-                self.timer.call_after(
-                    hold, self._schedule_bucket_request, (bucket,),
-                    priority=pri,
-                )
+                # One timer for each bucket is enough: when it fires, it
+                # moves the requests that have tokens and arms the next
+                # timer.  A timer for each request that arrives while the
+                # bucket waits would start a chain of timers that lives
+                # until the bucket is empty, so on a busy queue the number
+                # of timers would grow with the number of requests.
+                if bucket not in self._limit_timers:
+                    pri = self._limit_order = (self._limit_order + 1) % 10
+                    hold = bucket.expected_time(tokens)
+                    token = object()
+                    entry = self.timer.call_after(
+                        hold, self._on_bucket_wakeup, (bucket, token),
+                        priority=pri,
+                    )
+                    self._limit_timers[bucket] = (token, entry)
                 # no tokens, break
                 break
+
+    def _on_bucket_wakeup(self, bucket, token):
+        armed = self._limit_timers.get(bucket)
+        if armed is None or armed[0] is not token:
+            # This timer is no longer the timer of the bucket: on_close()
+            # cancelled it, or a timer thread and the consumer both armed a
+            # timer at the same time.  The current timer moves the requests,
+            # so stop here, or two chains of timers would serve the bucket.
+            return
+        self._limit_timers.pop(bucket, None)
+        self._schedule_bucket_request(bucket)
 
     def _limit_task(self, request, bucket, tokens):
         bucket.add((request, tokens))
@@ -587,6 +610,19 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
+        # The buckets are empty now, so their timers have nothing to do.
+        # Cancel them (asynloop only cancels the entries it registered for
+        # the connection, not these) and forget them, so that a bucket gets
+        # a timer again when a request waits for tokens on the next
+        # connection.
+        for _, entry in self._limit_timers.values():
+            if self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling rate limit timer entry: %r', exc)
+        self._limit_timers.clear()
         for r in tuple(reserved_requests):
             if r not in active_requests:
                 requests.pop(r.id, None)
@@ -603,7 +639,8 @@ class Consumer:
         # drop our copies since the broker may redeliver these tasks to
         # another worker on reconnect.
         for r in tuple(scheduled_requests):
-            entry = r._eta_timer_entry
+            ref = r._eta_timer_entry
+            entry = ref() if ref is not None else None
             if entry is not None and self.timer is not None:
                 try:
                     self.timer.cancel(entry)
@@ -756,23 +793,98 @@ class Consumer:
               message.headers,
               message.delivery_info,
               exc_info=True)
-        try:
-            id_, name = message.headers['id'], message.headers['task']
-            root_id = message.headers.get('root_id')
-        except KeyError:  # proto1
-            payload = message.payload
-            id_, name = payload['id'], payload['task']
-            root_id = None
+        headers = getattr(message, 'headers', None) or {}
+        payload = body
+
+        # Decode payload only when the caller did not already provide it,
+        # and never access the lazy message.payload property after a decode failure.
+        if payload is None and hasattr(message, 'decode'):
+            try:
+                payload = message.decode()
+            except Exception:
+                payload = None
+
+        # Protocol v2 stores task metadata in headers. A task header without
+        # an id is malformed and must be rejected rather than killing the worker.
+        if isinstance(headers, dict) and 'task' in headers:
+            id_ = headers.get('id')
+            name = headers.get('task')
+            root_id = headers.get('root_id')
+            parent_id = headers.get('parent_id')
+            group = headers.get('group')
+            group_index = headers.get('group_index')
+        else:
+            if isinstance(payload, dict):
+                id_ = payload.get('id')
+                name = payload.get('task')
+                root_id = payload.get('root_id')
+                parent_id = payload.get('parent_id')
+                group = payload.get('group') or payload.get('taskset')
+                group_index = payload.get('group_index')
+            else:
+                id_ = name = root_id = parent_id = group = group_index = None
+
+        if id_ is None:
+            return self.on_unknown_message(body, message)
+
+        chord = None
+        errbacks = None
+        chain = None
+        callbacks = None
+
+        if isinstance(payload, (list, tuple)) and len(payload) >= 3 and isinstance(payload[2], dict):
+            embed = payload[2]
+            chord = embed.get('chord')
+            errbacks = embed.get('errbacks')
+            chain = embed.get('chain')
+            callbacks = embed.get('callbacks')
+        elif isinstance(payload, dict):
+            chord = payload.get('chord')
+            errbacks = payload.get('errbacks')
+            chain = payload.get('chain')
+            callbacks = payload.get('callbacks')
+            if group is None:
+                group = payload.get('group') or payload.get('taskset')
+            if group_index is None:
+                group_index = payload.get('group_index')
+
+        chord = chord if chord is not None else headers.get('chord')
+        errbacks = errbacks if errbacks is not None else headers.get('errbacks')
+        chain = chain if chain is not None else headers.get('chain')
+        callbacks = callbacks if callbacks is not None else headers.get('callbacks')
+        group = group if group is not None else headers.get('group')
+        group_index = group_index if group_index is not None else headers.get('group_index')
+
+        properties = getattr(message, 'properties', None) or {}
+        delivery_info = getattr(message, 'delivery_info', None) or {}
         request = Bunch(
-            name=name, chord=None, root_id=root_id,
-            correlation_id=message.properties.get('correlation_id'),
-            reply_to=message.properties.get('reply_to'),
-            errbacks=None,
+            id=id_,
+            task_id=id_,
+            name=name,
+            chord=chord,
+            chain=chain,
+            errbacks=errbacks,
+            callbacks=callbacks,
+            root_id=root_id,
+            parent_id=parent_id,
+            group=group,
+            group_index=group_index,
+            correlation_id=properties.get('correlation_id'),
+            reply_to=properties.get('reply_to'),
+            delivery_info=delivery_info,
         )
         message.reject_log_error(logger, self.connection_errors)
-        self.app.backend.mark_as_failure(
-            id_, NotRegistered(name), request=request,
-        )
+        try:
+            self.app.backend.mark_as_failure(
+                id_, NotRegistered(name), request=request,
+            )
+        except Exception:  # pylint: disable=broad-except
+            # The message is already rejected. Malformed canvas metadata must
+            # not let a backend exception terminate the consumer process.
+            logger.exception(
+                'Could not store the failure of unknown task %r (%s)',
+                name, id_,
+            )
         if self.event_dispatcher:
             self.event_dispatcher.send(
                 'task-failed', uuid=id_,
@@ -823,7 +935,7 @@ class Consumer:
             try:
                 strategy = strategies[type_]
             except KeyError as exc:
-                return on_unknown_task(None, message, exc)
+                return on_unknown_task(payload, message, exc)
             else:
                 try:
                     ack_log_error_promise = promise(
@@ -922,9 +1034,18 @@ class Consumer:
         requests_to_cancel = tuple(filter(should_cancel, active_requests))
 
         if requests_to_cancel:
+            from celery.concurrency.thread import TaskPool as ThreadPool
+
+            if isinstance(self.pool, ThreadPool):
+                logger.warning('The threads pool cannot terminate running tasks. Waiting for them to finish.')
+                return
             for request in requests_to_cancel:
                 # For acks_late tasks, don't emit RETRY signal since broker will handle redelivery
-                # For non-acks_late tasks, emit RETRY signal as usual
+                # For non-acks_late tasks, ask for the cancellation to be
+                # announced as usual; Request._announce_cancelled() stores
+                # FAILURE instead of RETRY for them, because an early-ack
+                # message has already been acknowledged and will not be
+                # redelivered or run again (#11079).
                 emit_retry = not request.task.acks_late
                 request.cancel(self.pool, emit_retry=emit_retry)
 

@@ -1,10 +1,11 @@
+import time
 from contextlib import contextmanager
 from unittest.mock import Mock, PropertyMock, patch, sentinel
 
 import pytest
 from kombu.exceptions import OperationalError
 
-from celery import canvas, group, result, uuid
+from celery import canvas, group, result, states, uuid
 from celery.canvas import Signature
 from celery.exceptions import ChordError, MaxRetriesExceededError, Reject, Retry
 from celery.result import AsyncResult, EagerResult, GroupResult
@@ -108,6 +109,172 @@ class test_unlock_chord_task(ChordCase):
         )
 
         assert applied == [([2, 4],)]
+
+    def test_unlock_redelivered_after_dispatch_does_not_redispatch(self):
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with self._chord_context(AlwaysReady) as (cb, retry, _):
+            cb.type.apply_async.assert_called_once()
+            # Broker redelivery after a lost worker (task_acks_late):
+            # the same chord_unlock runs again with the same group id
+            # and must find the body already dispatched (#11037).
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=AlwaysReady,
+            )
+            cb.type.apply_async.assert_called_once()
+            assert not retry.call_count
+
+    def test_unlock_redelivered_after_join_failure_does_not_fail_again(self):
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        with self._chord_context(Failed) as (cb, retry, fail_current):
+            fail_current.assert_called_once()
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=Failed,
+            )
+            cb.type.apply_async.assert_not_called()
+            fail_current.assert_called_once()
+
+    def test_unlock_ready_failed_stores_the_failure_on_the_body(self):
+        # The other tests replace fail_from_current_stack with a mock.
+        # This one runs the real method, which needs an exception being
+        # handled when chord_error_from_stack() calls it.
+        class Failed(TSR):
+            is_ready = True
+            value = [2, KeyError('foo'), 8, 6]
+
+        def setup(callback):
+            del self.app.backend.fail_from_current_stack
+
+        with self._chord_context(Failed, setup) as (cb, retry, _):
+            cb.type.apply_async.assert_not_called()
+            meta = self.app.backend.get_task_meta(cb.id)
+            assert meta['status'] == 'FAILURE'
+            assert isinstance(meta['result'], ChordError)
+
+    def test_unlock_not_ready_does_not_claim(self):
+        class NeverReady(TSR):
+            is_ready = False
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with self._chord_context(NeverReady, interval=10, max_retries=30) \
+                as (cb, retry, fail):
+            cb.type.apply_async.assert_not_called()
+            retry.assert_called_with(countdown=10, max_retries=30)
+            fail.assert_not_called()
+            # Polling must not claim the chord: once the header is
+            # ready, a later run of the same polling chain still
+            # dispatches the body.
+            self.app.tasks['celery.chord_unlock'](
+                self.chord_group_id, cb,
+                result=[
+                    self.app.AsyncResult(r) for r in ['1', 2, 3]
+                ],
+                GroupResult=AlwaysReady,
+            )
+            cb.type.apply_async.assert_called_once()
+
+    def test_unlock_while_another_worker_finishes_retries(self):
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        status, _token = self.app.backend.try_claim_chord_unlock(group_id)
+        assert status == 'claimed'
+        callback.apply_async = Mock()
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        with patch_unlock_retry(self.app) as (unlock, retry):
+            with pytest.raises(Retry):
+                unlock_chord(
+                    group_id, callback.s(), interval=10, max_retries=30,
+                    result=[], GroupResult=AlwaysReady,
+                )
+        retry.assert_called_with(countdown=10, max_retries=30)
+        callback.apply_async.assert_not_called()
+
+    def test_unlock_takes_over_abandoned_claim(self):
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        backend = self.app.backend
+        backend.store_result(
+            backend._chord_unlock_claim_id(group_id),
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            states.STARTED,
+        )
+        applied = []
+        callback.apply_async = Mock(
+            side_effect=lambda *a, **kw: applied.append(a))
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        unlock_chord(
+            group_id, callback.s(),
+            result=[], GroupResult=AlwaysReady,
+        )
+        assert len(applied) == 1
+
+    def test_unlock_dispatches_body_when_the_claim_raises(self):
+        # A backend that cannot answer the claim must not lose the body.
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4, 8, 6]
+
+        with patch.object(self.app.backend, 'try_claim_chord_unlock',
+                          side_effect=RuntimeError('backend down')):
+            with self._chord_context(AlwaysReady) as (cb, retry, _):
+                cb.type.apply_async.assert_called_once()
+                assert not retry.call_count
+
+    def test_unlock_retry_refused_when_another_worker_finishes(self):
+        # The copy that finds another worker's fresh claim retries;
+        # if the retry itself cannot be scheduled, the chord is left
+        # to that worker instead of being failed or dispatched twice.
+        @self.app.task(shared=False)
+        def callback(*args, **kwargs):
+            pass
+
+        class AlwaysReady(TSR):
+            is_ready = True
+            value = [2, 4]
+
+        group_id = uuid()
+        status, _token = self.app.backend.try_claim_chord_unlock(group_id)
+        assert status == 'claimed'
+        callback.apply_async = Mock()
+        unlock_chord = self.app.tasks['celery.chord_unlock']
+        with patch_unlock_retry(self.app) as (unlock, retry):
+            retry.side_effect = RuntimeError('broker down')
+            unlock_chord(
+                group_id, callback.s(), interval=10, max_retries=30,
+                result=[], GroupResult=AlwaysReady,
+            )
+        retry.assert_called_with(countdown=10, max_retries=30)
+        callback.apply_async.assert_not_called()
 
     def test_deps_ready_fails(self):
         GroupResult = Mock(name='GroupResult')
@@ -267,9 +434,14 @@ class test_unlock_chord_task(ChordCase):
                     setup(callback)
                 try:
                     assert self.app.tasks['celery.chord_unlock'] is unlock
+                    # A real chord run always gets a fresh group id, and
+                    # chord_unlock now records its dispatch against it
+                    # (#11037), so reuse across tests would look like a
+                    # redelivery of an already finished chord.
+                    self.chord_group_id = uuid()
                     try:
                         unlock(
-                            'group_id', callback_s,
+                            self.chord_group_id, callback_s,
                             result=[
                                 self.app.AsyncResult(r) for r in ['1', 2, 3]
                             ],
@@ -496,6 +668,140 @@ class test_add_to_chord:
         def adds(self, sig, lazy=False):
             return self.add_to_chord(sig, lazy)
         self.adds = adds
+
+        @self.app.task(shared=False, bind=True)
+        def add_to_all(self, nums, val):
+            for num in nums:
+                self.add_to_chord(add.s(num, val))
+            return 0
+        self.add_to_all = add_to_all
+
+        @self.app.task(shared=False)
+        def identity(x):
+            return x
+        self.identity = identity
+
+    def test_add_to_chord_eager(self):
+        # Issue #4071
+        from celery import chord
+        self.app.conf.task_always_eager = True
+        c = chord(
+            [self.add_to_all.s([1, 2], 4), self.add.si(10, 10)],
+            self.identity.s(),
+        )
+        assert c.delay().get() == [0, 20, 5, 6]
+
+    def test_add_to_chord_eager_apply_skips_result_backend(self):
+        from celery import chord
+        c = chord([self.add_to_all.s([1, 2], 4)], self.identity.s())
+        with patch.object(self.app, '_backend_cache', Mock(name='backend')) as backend:
+            res = c.apply()
+        assert res.get() == [0, 5, 6]
+        # The eager tracer reports each result with store_result=False.
+        assert {(name, args[-1]) for name, args, _ in backend.mock_calls} == {
+            ('mark_as_done', False),
+        }
+
+    def test_add_to_chord_eager_not_in_header(self):
+        from celery import chord
+        with pytest.raises(ValueError):
+            self.add_to_all.apply(([1], 4), throw=True)
+        c = chord([self.add.si(1, 1)], self.add_to_all.s(4))
+        with pytest.raises(ValueError):
+            c.apply().get()
+
+    def test_add_to_chord_eager_lazy(self):
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True)
+        def add_lazy(self):
+            self.add_to_chord(add.s(1, 2), lazy=True)
+            return 0
+
+        # The eager chord can't pass the result of the caller's own
+        # sig.delay() to the body, so lazy is refused instead.
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).apply().get()
+        self.app.conf.task_always_eager = True
+        with pytest.raises(NotImplementedError):
+            chord([add_lazy.s(), add.si(10, 10)], self.identity.s()).delay().get()
+
+    def test_add_to_chord_eager_keeps_request_headers(self):
+        from celery import chord
+
+        @self.app.task(shared=False, bind=True)
+        def headers(self):
+            return self.request.headers
+
+        assert chord([headers.s()], self.identity.s()).apply().get() == [None]
+
+    def test_add_to_chord_eager_from_an_added_task(self):
+        # A task added to the chord is a member of it, as on a worker: it
+        # can add more.
+        from celery import chord
+        add_to_all = self.add_to_all
+
+        @self.app.task(shared=False, bind=True)
+        def add_one_that_adds(self):
+            self.add_to_chord(add_to_all.s([1], 4))
+            return 'outer'
+
+        c = chord([add_one_that_adds.s()], self.identity.s())
+        assert sorted(c.apply().get(), key=str) == [0, 5, 'outer']
+
+    def test_add_to_chord_eager_after_a_retry(self):
+        # The retried run is still a member of the chord.
+        from celery import chord
+        add = self.add
+
+        @self.app.task(shared=False, bind=True, max_retries=1)
+        def add_then_retry(self):
+            if self.request.retries < 1:
+                raise self.retry(countdown=0)
+            self.add_to_chord(add.s(1, 2))
+            return 'retried'
+
+        c = chord([add_then_retry.s()], self.identity.s())
+        assert c.apply().get() == ['retried', 3]
+
+    def test_add_to_chord_eager_applies_the_added_task_once(self):
+        from celery import chord
+        ran = []
+
+        @self.app.task(shared=False)
+        def record(x):
+            ran.append(x)
+            return x
+
+        @self.app.task(shared=False, bind=True)
+        def add_record(self):
+            self.add_to_chord(record.s(1))
+            return 0
+
+        c = chord([add_record.s()], self.identity.s())
+        assert c.apply().get() == [0, 1]
+        assert ran == [1]
+
+    def test_add_to_chord_eager_added_task_fails(self):
+        # A failed added task is handled like a failed header task.
+        from celery import chord
+
+        @self.app.task(shared=False)
+        def fail():
+            raise KeyError('added')
+
+        @self.app.task(shared=False, bind=True)
+        def add_failing(self):
+            self.add_to_chord(fail.s())
+            return 0
+
+        c = chord([add_failing.s()], self.identity.s())
+        with pytest.raises(KeyError):
+            c.apply().get()
+        res = c.apply(propagate=False).get()
+        assert res[0] == 0
+        assert isinstance(res[1], KeyError)
 
     @patch('celery.Celery.backend', new=PropertyMock(name='backend'))
     def test_add_to_chord(self):
