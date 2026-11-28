@@ -7,7 +7,7 @@ from kombu.utils.encoding import bytes_to_str
 from kombu.utils.url import parse_url
 
 from celery.backends.base import KeyValueStoreBackend
-from celery.exceptions import ImproperlyConfigured
+from celery.exceptions import BackendStoreError, ImproperlyConfigured
 from celery.utils.log import get_logger
 
 try:
@@ -16,6 +16,8 @@ except ImportError:
     consul = None
 
 logger = get_logger(__name__)
+
+CONSUL_SET_RETRIES = 5
 
 __all__ = ('ConsulBackend',)
 
@@ -95,20 +97,34 @@ class ConsulBackend(KeyValueStoreBackend):
         If the session expires it will remove the key so that results
         can auto expire from the K/V store
         """
-        session_name = bytes_to_str(key)
-
         key = self._key_to_consul_key(key)
-
-        logger.debug('Trying to create Consul session %s with TTL %d',
-                     session_name, self.expires)
         client = self.client()
-        session_id = client.session.create(name=session_name,
-                                           behavior='delete',
-                                           ttl=self.expires)
-        logger.debug('Created Consul session %s', session_id)
+        for _ in range(CONSUL_SET_RETRIES):
+            _, data = client.kv.get(key)
+            session_id = data.get('Session') if data else None
+            if session_id is not None:
+                try:
+                    client.session.renew(session_id)
+                except consul.NotFound:
+                    session_id = None
 
-        logger.debug('Writing key %s to Consul', key)
-        return client.kv.put(key=key, value=value, acquire=session_id)
+            if session_id is None:
+                logger.debug('Trying to create Consul session for key %s with TTL %d',
+                             key, self.expires)
+                session_id = client.session.create(name=key,
+                                                   behavior='delete',
+                                                   ttl=self.expires,
+                                                   lock_delay=0)
+                logger.debug('Created Consul session %s', session_id)
+
+            logger.debug('Writing key %s to Consul', key)
+            if client.kv.put(key=key, value=value, acquire=session_id):
+                return True
+
+        raise BackendStoreError(
+            f'Unable to store result key {key} in Consul after '
+            f'{CONSUL_SET_RETRIES} attempts'
+        )
 
     def delete(self, key):
         key = self._key_to_consul_key(key)
