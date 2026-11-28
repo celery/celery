@@ -1,5 +1,6 @@
 import collections
 import sys
+import traceback
 
 import pytest
 from kombu.utils.functional import lazy
@@ -236,18 +237,77 @@ class test_regen:
             assert e == next(iter_g)
         with pytest.raises(AssertionError, match="Iterator errored"):
             next(iter_g)
-        # The following checks are for the known "misbehaviour"
         assert getattr(g, "_regen__done") is False
-        # If the `regen()` instance doesn't think it's done then it'll dupe the
-        # elements from the underlying iterator if it can be reused
+        # Re-iterating replays the cached elements and re-raises the same
+        # error: a repeatable base must not be pulled from again (#6794),
+        # which used to duplicate every element it had already yielded.
         iter_g = iter(g)
-        for e in original_list * 2:
+        for e in original_list:
             assert next(iter_g) == e
-        with pytest.raises(StopIteration):
+        with pytest.raises(AssertionError, match="Iterator errored"):
             next(iter_g)
+        assert getattr(g, "_regen__done") is False
+
+    def test_replayed_error_traceback_does_not_grow(self):
+        def gen():
+            yield 1
+            raise ValueError('boom')
+
+        g = regen(gen())
+        lengths = []
+        for _ in range(3):
+            with pytest.raises(ValueError, match='boom') as exc_info:
+                list(g)
+            lengths.append(len(traceback.extract_tb(exc_info.value.__traceback__)))
+
+        assert lengths[1] == lengths[2]
+
+    def test_getitem_after_mid_iteration_error(self):
+        class ExplodingList:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                yield from self.items
+                raise AssertionError("Iterator errored")
+
+        g = regen(ExplodingList([1, 2, 3]))
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g[5]
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+        # Indexing again must re-raise the recorded error instead of pulling
+        # from the repeatable base once more, which would duplicate the
+        # cached elements in __lookahead_consume() (#6794).
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g[5]
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+
+    def test_data_after_mid_iteration_error(self):
+        class ExplodingList:
+            def __init__(self, items):
+                self.items = items
+
+            def __iter__(self):
+                yield from self.items
+                raise AssertionError("Iterator errored")
+
+        g = regen(ExplodingList([1, 2, 3]))
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g.data
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+        # Accessing .data again must re-raise the recorded error instead of
+        # extending the cache a second time, which used to duplicate every
+        # element (#6794).
+        with pytest.raises(AssertionError, match="Iterator errored"):
+            g.data
+        assert getattr(g, "_regen__consumed") == [1, 2, 3]
+
+    def test_data_concretises_without_error(self):
+        g = regen(x for x in [1, 2, 3])
+        assert g.data == [1, 2, 3]
         assert getattr(g, "_regen__done") is True
-        # Finally we xfail this test to keep track of it
-        raise pytest.xfail(reason="#6794")
+        # The cache is already complete, so a second access is a no-op.
+        assert g.data == [1, 2, 3]
 
     def test_length_hint_passthrough(self, g):
         assert g.__length_hint__() == 10

@@ -108,6 +108,15 @@ class test_LoaderBase:
         with pytest.raises(ValueError):
             self.loader.cmdline_config_parser(['broker.port=foobar'])
 
+    def test_cmdline_config_ValueError_with_cast_names_setting(self):
+        with pytest.raises(ValueError, match=r"'broker_port': "):
+            self.loader.cmdline_config_parser(['broker.port=(int)foobar'])
+
+    def test_cmdline_config_with_cast_uses_the_cast(self):
+        assert self.loader.cmdline_config_parser(
+            ['worker.prefetch_multiplier=(int)7']) == {
+                'worker_prefetch_multiplier': 7}
+
 
 class test_DefaultLoader:
 
