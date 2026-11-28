@@ -777,6 +777,9 @@ task-ignored
 The task raised :exc:`~celery.exceptions.Ignore` and the worker
 acknowledged the message and did not store a state for it.
 
+This event is not sent for :exc:`~celery.exceptions.Replaced`, whose
+replacement reports the result.
+
 .. event:: task-revoked
 
 task-revoked
