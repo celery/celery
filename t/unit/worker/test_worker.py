@@ -905,6 +905,42 @@ class test_WorkController(ConsumerCase):
         self.worker.terminate()
         self.worker.blueprint.stop.assert_called_once()
 
+    def test_terminate_sends_worker_shutdown(self):
+        # Issue 11092: a cold shutdown (SIGQUIT) never sent worker_shutdown,
+        # so handlers that flush metrics or close connections there never ran.
+        with patch('celery.signals.worker_shutdown') as ws:
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.state = RUN
+            self.worker.terminate()
+            ws.send.assert_called_once_with(sender=self.worker)
+
+    def test_terminate_sends_worker_shutdown_once(self):
+        # terminate() is a no-op once the blueprint is already terminating,
+        # so a second cold shutdown must not re-fire the signal.
+        with patch('celery.signals.worker_shutdown') as ws:
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.state = RUN
+            self.worker.terminate()
+            self.worker.blueprint.state = TERMINATE
+            self.worker.terminate()
+            ws.send.assert_called_once_with(sender=self.worker)
+
+    def test_stop_then_terminate_sends_worker_shutdown_once(self):
+        # A warm stop() leaves the blueprint in TERMINATE, so a later
+        # terminate() must not re-fire the signal.  This guards against a
+        # future Blueprint.stop() change that stops setting the state.
+        with patch('celery.signals.worker_shutdown') as ws:
+            self.worker.blueprint = Mock(name='blueprint')
+            self.worker.blueprint.state = RUN
+
+            def stop(*args, **kwargs):
+                self.worker.blueprint.state = TERMINATE
+            self.worker.blueprint.stop.side_effect = stop
+
+            self.worker.stop()
+            self.worker.terminate()
+            ws.send.assert_called_once_with(sender=self.worker)
+
     def test_terminate_bounds_open_broker_sockets(self):
         # Cold paths that never run on_cold_shutdown (WorkerTerminate raised
         # by the consumer, embedded callers) all land in terminate().
