@@ -391,6 +391,161 @@ class test_BaseBackend_interface:
         assert 'headers' not in called_kwargs
 
 
+class test_chord_unlock_claim:
+
+    def setup_method(self):
+        self.b = self.app.backend
+
+        @self.app.task(shared=False)
+        def callback(result):
+            pass
+
+        self.callback = callback
+
+    def test_first_claim_wins_and_blocks_second(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+        # A second run while the lease is fresh must not finish the
+        # chord itself.
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_claim_lost_to_a_copy_that_wrote_after_ours(self):
+        # Another copy stores its claim between our write and our
+        # re-read: we must not finish the chord as well.
+        gid = uuid()
+        store_result = self.b.store_result
+
+        def store_then_be_overwritten(task_id, result, state, **kwargs):
+            store_result(task_id, result, state, **kwargs)
+            store_result(task_id, dict(result, token='other-copy'), state)
+
+        with patch.object(self.b, 'store_result', store_then_be_overwritten):
+            status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'in_progress'
+        assert token is None
+
+    def test_dispatched_blocks_later_claims(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'dispatched'
+        assert token is None
+
+    def test_abandoned_claim_can_be_taken_over(self):
+        import time
+
+        from celery import states as _states
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'lost-worker', 'claimed_at': time.time() - 3600},
+            _states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'lost-worker'
+
+    def test_reset_clears_dispatched_claim(self):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        self.b.reset_chord_unlock_claim(gid)
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+
+    def test_fallback_chord_unlock_resets_claim(self, unlock='celery.chord_unlock'):
+        gid = uuid()
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        self.b.mark_chord_unlock_dispatched(gid, token)
+        assert self.b.try_claim_chord_unlock(gid)[0] == 'dispatched'
+
+        self.app.tasks[unlock] = Mock()
+        header_result = self.app.GroupResult(
+            gid, [self.app.AsyncResult(x) for x in range(3)])
+        self.b.fallback_chord_unlock(header_result, self.callback.s())
+        assert self.app.tasks[unlock].apply_async.call_count
+        # The new run launched by fallback_chord_unlock starts with
+        # a clean claim, so its chord_unlock can finish the chord.
+        assert self.b.try_claim_chord_unlock(gid)[0] == 'claimed'
+
+    def test_claim_fails_open_without_result_storage(self):
+        # BaseBackend cannot store results: the claim must not lose
+        # the chord body, so the caller is told it owns the claim.
+        b = BaseBackend(self.app)
+        status, token = b.try_claim_chord_unlock(uuid())
+        assert status == 'claimed'
+        assert token
+
+    def test_malformed_lease_claimed_at_is_treated_as_abandoned(self):
+        # A stored lease whose claimed_at cannot be parsed must not
+        # block the chord forever: it is treated as abandoned.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            {'token': 'other-copy', 'claimed_at': 'not-a-time'},
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token != 'other-copy'
+
+    def test_non_dict_lease_payload_is_treated_as_abandoned(self):
+        # Same for a stored lease that is not a dict at all.
+        gid = uuid()
+        self.b.store_result(
+            self.b._chord_unlock_claim_id(gid),
+            'not-a-dict',
+            states.STARTED,
+        )
+        status, token = self.b.try_claim_chord_unlock(gid)
+        assert status == 'claimed'
+        assert token
+
+    def test_claim_store_failure_fails_open(self):
+        # If the lease cannot be stored, the chord must still be
+        # finished rather than lost.
+        with patch.object(
+                self.b, 'store_result',
+                side_effect=RuntimeError('backend down')):
+            status, token = self.b.try_claim_chord_unlock(uuid())
+        assert status == 'claimed'
+        assert token
+
+    def test_claim_sees_dispatched_on_second_read(self):
+        # Another copy finishes the chord between our lease write and
+        # our re-read: we must not finish it as well.
+        calls = []
+
+        def get_meta(task_id, cache=True):
+            calls.append(task_id)
+            if len(calls) == 1:
+                return {'status': states.PENDING, 'result': None}
+            return {'status': states.SUCCESS,
+                    'result': {'token': 'other-copy'}}
+
+        with patch.object(self.b, 'get_task_meta', side_effect=get_meta):
+            status, token = self.b.try_claim_chord_unlock(uuid())
+        assert status == 'dispatched'
+        assert token is None
+        assert len(calls) == 2
+
+    def test_mark_dispatched_store_failure_is_silent(self):
+        # A failed marker write must not raise: the lease is left
+        # behind and expires, as documented.
+        with patch.object(
+                self.b, 'store_result',
+                side_effect=RuntimeError('backend down')):
+            assert self.b.mark_chord_unlock_dispatched(uuid()) is None
+
+
 class test_exception_pickle:
     def test_BaseException(self):
         assert fnpe(Exception()) is None

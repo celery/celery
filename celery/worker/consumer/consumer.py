@@ -218,6 +218,9 @@ class Consumer:
 
         self._does_info = logger.isEnabledFor(logging.INFO)
         self._limit_order = 0
+        #: ``(token, timer entry)`` of the pending timer of each rate limit
+        #: bucket that waits for tokens.
+        self._limit_timers = {}
         self.on_task_request = on_task_request
         self.on_task_message = set()
         self.amqheartbeat_rate = self.app.conf.broker_heartbeat_checkrate
@@ -362,14 +365,34 @@ class Consumer:
                 # requeue to head, keep the order.
                 bucket.contents.appendleft((request, tokens))
 
-                pri = self._limit_order = (self._limit_order + 1) % 10
-                hold = bucket.expected_time(tokens)
-                self.timer.call_after(
-                    hold, self._schedule_bucket_request, (bucket,),
-                    priority=pri,
-                )
+                # One timer for each bucket is enough: when it fires, it
+                # moves the requests that have tokens and arms the next
+                # timer.  A timer for each request that arrives while the
+                # bucket waits would start a chain of timers that lives
+                # until the bucket is empty, so on a busy queue the number
+                # of timers would grow with the number of requests.
+                if bucket not in self._limit_timers:
+                    pri = self._limit_order = (self._limit_order + 1) % 10
+                    hold = bucket.expected_time(tokens)
+                    token = object()
+                    entry = self.timer.call_after(
+                        hold, self._on_bucket_wakeup, (bucket, token),
+                        priority=pri,
+                    )
+                    self._limit_timers[bucket] = (token, entry)
                 # no tokens, break
                 break
+
+    def _on_bucket_wakeup(self, bucket, token):
+        armed = self._limit_timers.get(bucket)
+        if armed is None or armed[0] is not token:
+            # This timer is no longer the timer of the bucket: on_close()
+            # cancelled it, or a timer thread and the consumer both armed a
+            # timer at the same time.  The current timer moves the requests,
+            # so stop here, or two chains of timers would serve the bucket.
+            return
+        self._limit_timers.pop(bucket, None)
+        self._schedule_bucket_request(bucket)
 
     def _limit_task(self, request, bucket, tokens):
         bucket.add((request, tokens))
@@ -587,6 +610,19 @@ class Consumer:
         for bucket in self.task_buckets.values():
             if bucket:
                 bucket.clear_pending()
+        # The buckets are empty now, so their timers have nothing to do.
+        # Cancel them (asynloop only cancels the entries it registered for
+        # the connection, not these) and forget them, so that a bucket gets
+        # a timer again when a request waits for tokens on the next
+        # connection.
+        for _, entry in self._limit_timers.values():
+            if self.timer is not None:
+                try:
+                    self.timer.cancel(entry)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception(
+                        'Error cancelling rate limit timer entry: %r', exc)
+        self._limit_timers.clear()
         for r in tuple(reserved_requests):
             if r not in active_requests:
                 requests.pop(r.id, None)
