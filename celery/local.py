@@ -130,7 +130,6 @@ class Proxy:
         except RuntimeError:  # pragma: no cover
             return False
 
-    __nonzero__ = __bool__  # Py2
 
     def __dir__(self):
         try:
