@@ -6,6 +6,7 @@ from pprint import pprint
 
 import pytest
 
+import celery.utils.saferepr as saferepr_module
 from celery.utils.saferepr import saferepr
 
 D_NUMBERS = {
@@ -118,6 +119,74 @@ class dict3(dict):
 
 
 class test_saferepr:
+
+    @pytest.mark.parametrize(('value', 'maxlen', 'expected'), [
+        (None, None, 'None'),
+        ("can't", None, "'can\\'t'"),
+        ((1,), None, '(1,)'),
+        ([1, 'two', False], None, "[1, 'two', False]"),
+        ({'one': 1, 2: None}, None, "{'one': 1, 2: None}"),
+        ((1, 2), len('(1, 2)'), '(1, 2)'),
+    ])
+    def test_flat_values_use_fast_path(
+        self, value, maxlen, expected, monkeypatch,
+    ):
+        def unexpected_fallback(*args, **kwargs):
+            pytest.fail('flat value unexpectedly used the streaming path')
+
+        monkeypatch.setattr(
+            saferepr_module, '_saferepr', unexpected_fallback,
+        )
+
+        assert saferepr(value, maxlen=maxlen) == expected
+
+    @pytest.mark.parametrize(('value', 'maxlen', 'expected'), [
+        ([1, [2]], None, '[1, [2]]'),
+        (list2([1, 2]), None, '[1, 2]'),
+        (
+            [1, 2, 3],
+            len('[1, 2, 3]') - 1,
+            '[1, 2, 3...]',
+        ),
+        (12345, len('12345'), '12345...'),
+    ])
+    def test_non_flat_values_use_streaming_path(
+        self, value, maxlen, expected, monkeypatch,
+    ):
+        streaming_calls = []
+        original_saferepr = saferepr_module._saferepr
+
+        def tracking_saferepr(*args, **kwargs):
+            streaming_calls.append((args, kwargs))
+            return original_saferepr(*args, **kwargs)
+
+        monkeypatch.setattr(
+            saferepr_module, '_saferepr', tracking_saferepr,
+        )
+
+        assert saferepr(value, maxlen=maxlen) == expected
+        assert len(streaming_calls) == 1
+
+    @pytest.mark.parametrize('value', [
+        list(range(10000)),
+        tuple(range(10000)),
+        dict.fromkeys(range(10000)),
+    ])
+    def test_large_flat_values_stop_early(self, value, monkeypatch):
+        scalar_calls = []
+        original_fast_scalar = saferepr_module._fast_scalar
+
+        def counting_fast_scalar(v):
+            scalar_calls.append(v)
+            return original_fast_scalar(v)
+
+        monkeypatch.setattr(
+            saferepr_module, '_fast_scalar', counting_fast_scalar,
+        )
+
+        expected = ''.join(saferepr_module._saferepr(value, maxlen=64))
+        assert saferepr(value, maxlen=64) == expected
+        assert len(scalar_calls) < 100
 
     @pytest.mark.parametrize('value', list(D_NUMBERS.values()))
     def test_safe_types(self, value):
