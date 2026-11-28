@@ -223,7 +223,19 @@ class DynamoDBBackend(KeyValueStoreBackend):
             error_code = e.response['Error'].get('Code', 'Unknown')
 
             if error_code == 'ResourceNotFoundException':
-                table_description = self._client.create_table(**table_schema)
+                try:
+                    table_description = self._client.create_table(
+                        **table_schema)
+                except ClientError as exc:
+                    code = exc.response['Error'].get('Code', 'Unknown')
+                    if code != 'ResourceInUseException':
+                        raise
+                    # Another process is creating the table: wait for it
+                    # to become available instead of failing this write
+                    # (and with it the task that produced the result).
+                    self._wait_for_table_status('ACTIVE')
+                    return self._client.describe_table(
+                        TableName=self.table_name)
                 logger.info(
                     'DynamoDB Table {} did not exist, creating.'.format(
                         self.table_name

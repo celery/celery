@@ -476,13 +476,14 @@ class test_Request(RequestCase):
             req_logger, req.connection_errors, True)
         req.task.backend.mark_as_failure.assert_not_called()
 
-    def _worker_lost_request(self, retries=0):
+    def _worker_lost_request(self, retries=0, **options):
         try:
             raise WorkerLostError()
         except WorkerLostError:
             einfo = ExceptionInfo(internal=True)
 
-        req = self.get_request(self.add.s(2, 2).set(retries=retries))
+        req = self.get_request(
+            self.add.s(2, 2).set(retries=retries, **options))
         req.task.acks_late = True
         req.task.reject_on_worker_lost = True
         req.task.retry_on_worker_lost = True
@@ -576,6 +577,39 @@ class test_Request(RequestCase):
         apply_async.assert_called_once()
         req.on_ack.assert_not_called()
         req.task.backend.mark_as_failure.assert_not_called()
+
+    @pytest.mark.parametrize('ignored_by', ['task', 'call'])
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_ignore_result(
+            self, ignored_by):
+        # Like Task.retry(), don't store RETRY for a result that is ignored:
+        # the retried run won't store anything, so RETRY would stay for good.
+        if ignored_by == 'task':
+            self.add.ignore_result = True
+            req, einfo = self._worker_lost_request()
+        else:
+            req, einfo = self._worker_lost_request(ignore_result=True)
+
+        with patch('celery.canvas.Signature.apply_async') as apply_async:
+            req.on_failure(einfo)
+
+        apply_async.assert_called_once()
+        req.on_ack.assert_called_once()
+        req.on_reject.assert_not_called()
+        req.task.backend.mark_as_retry.assert_not_called()
+        req.task.backend.mark_as_failure.assert_not_called()
+        assert any(
+            c.args and c.args[0] == 'task-retried'
+            for c in req.eventer.send.call_args_list
+        )
+
+    def test_on_failure_WorkerLostError_retry_on_worker_lost_store_errors_even_if_ignored(self):
+        req, einfo = self._worker_lost_request(ignore_result=True)
+        req.task.store_errors_even_if_ignored = True
+
+        with patch('celery.canvas.Signature.apply_async'):
+            req.on_failure(einfo)
+
+        req.task.backend.mark_as_retry.assert_called_once()
 
     def test_on_failure_WorkerLostError_redelivered_None(self):
         try:
@@ -913,6 +947,124 @@ class test_Request(RequestCase):
         job.cancel(pool, signal='TERM', emit_retry=False)
         pool.terminate_job.assert_called_with(job.worker_pid, signum)
         job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        assert job._already_cancelled is True
+
+    def test_cancel__acknowledged_stores_failure_not_retry(self):
+        # #11079: an early-ack task is acknowledged in on_accepted() when
+        # it starts, so cancelling it (e.g. on cold shutdown) must not
+        # store RETRY -- the message has been acked, so it will never be
+        # redelivered or run again.
+        pool = Mock()
+        signum = signal.SIGTERM
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        failure_handler = Mock(name='task_failure_handler')
+        retry_handler = Mock(name='task_retry_handler')
+        captured_request = []
+
+        def on_failure(sender, **kwargs):
+            captured_request.append(sender.request)
+            return failure_handler(sender=sender, **kwargs)
+
+        task_failure.connect(on_failure, sender=job.task, weak=False)
+        task_retry.connect(retry_handler, sender=job.task, weak=False)
+        try:
+            job.cancel(pool, signal='TERM', emit_retry=True)
+        finally:
+            task_failure.disconnect(on_failure, sender=job.task)
+            task_retry.disconnect(retry_handler, sender=job.task)
+        pool.terminate_job.assert_called_with(job.worker_pid, signum)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.on_retry.assert_not_called()
+        job.task.backend.mark_as_failure.assert_called_once()
+        failure_exc = job.task.backend.mark_as_failure.call_args[0][1]
+        assert isinstance(failure_exc, WorkerLostError)
+        # The terminal FAILURE must fire task_failure, like the
+        # worker-lost branch of on_failure() does, so that alerting
+        # (Sentry and similar) sees the cancelled task.  task_retry
+        # must not fire: the message is already acknowledged, so this
+        # task will never run again.
+        failure_handler.assert_called_once()
+        kwargs = failure_handler.call_args[1]
+        assert kwargs['task_id'] == job.id
+        assert isinstance(kwargs['exception'], WorkerLostError)
+        assert kwargs['args'] == job.args
+        assert kwargs['kwargs'] == job.kwargs
+        assert kwargs['traceback'] is not None
+        assert kwargs['einfo'] is not None
+        assert captured_request == [job._context]
+        retry_handler.assert_not_called()
+        assert job._already_cancelled is True
+
+    def test_cancel__acknowledged_failure_info_setup_raises(self):
+        # #11079: if building the failure info raises while announcing
+        # a cancelled acknowledged task, the FAILURE is already stored
+        # and the error propagates; the cleanup must not raise again.
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        with patch.object(
+                module, 'ExceptionInfo',
+                side_effect=RuntimeError('einfo failed')):
+            with pytest.raises(RuntimeError, match='einfo failed'):
+                job.cancel(pool, signal='TERM', emit_retry=True)
+        job.task.backend.mark_as_failure.assert_called_once()
+        failure_exc = job.task.backend.mark_as_failure.call_args[0][1]
+        assert isinstance(failure_exc, WorkerLostError)
+        assert failure_exc.__traceback__ is None
+
+    def test_cancel__unacknowledged_acks_late_stores_retry(self):
+        # An acks_late task that has not been acknowledged yet will be
+        # redelivered by the broker (e.g. when cancelled on connection
+        # loss), so RETRY is still the right state for it.
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job.task.acks_late = True
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        assert not job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        with self.assert_signal_called(
+                task_retry, sender=job.task, request=job._context,
+                einfo=None):
+            job.cancel(pool, signal='TERM', emit_retry=True)
+        job.task.backend.mark_as_retry.assert_called_once()
+        job.task.backend.mark_as_failure.assert_not_called()
+        job.task.on_retry.assert_called_once()
+        assert job._already_cancelled is True
+
+    def test_cancel__acknowledged_emit_retry_false_stores_nothing(self):
+        pool = Mock()
+        job = self.get_request(self.mytask.s(1, f='x'))
+        job._apply_result = Mock(name='_apply_result')
+        job.task.backend.mark_as_retry = Mock(name='mark_as_retry')
+        job.task.backend.mark_as_failure = Mock(name='mark_as_failure')
+        job.task.on_retry = Mock(name='on_retry')
+        job.acknowledge()
+        assert job.acknowledged
+        job.time_start = monotonic()
+        job.worker_pid = 314
+        job.cancel(pool, signal='TERM', emit_retry=False)
+        job.task.backend.mark_as_retry.assert_not_called()
+        job.task.backend.mark_as_failure.assert_not_called()
         job.task.on_retry.assert_not_called()
         assert job._already_cancelled is True
 
@@ -1817,6 +1969,109 @@ class test_Request(RequestCase):
             exception=ANY,
             traceback=ANY,
         )
+
+    def test_hard_time_limit_failure_not_handled_twice(self, patching):
+        """The pool reports a hard time limit by first setting the job
+        result, which calls on_failure(), and then calling on_timeout()
+        for the same exception: the failure handling (backend store,
+        task_failure signal, task-failed event) must run only once.
+        """
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        original_mark = self.mytask.backend.mark_as_failure
+        try:
+            job = self.xRequest()
+            job.send_event = Mock(name='send_event')
+            mark_mock = Mock(name='mark_as_failure')
+            job.task.backend.mark_as_failure = mark_mock
+            try:
+                raise TimeLimitExceeded(30)
+            except TimeLimitExceeded:
+                job.on_failure(ExceptionInfo())
+            job.on_timeout(soft=False, timeout=30)
+        finally:
+            task_failure.disconnect(handler)
+            self.mytask.backend.mark_as_failure = original_mark
+
+        handler.assert_called_once()
+        mark_mock.assert_called_once()
+        failed_events = [
+            c for c in job.send_event.call_args_list
+            if c.args[0] == 'task-failed'
+        ]
+        assert len(failed_events) == 1
+
+    def test_hard_time_limit_after_on_failure_still_calls_task_hooks(self, patching):
+        """Task.on_failure and after_return are only called from on_timeout(),
+        so they must still run when on_failure() already stored the failure.
+        """
+        patching('celery.worker.request.error')
+
+        on_failure_mock = Mock(name='on_failure')
+        after_return_mock = Mock(name='after_return')
+
+        class TaskWithHooks(self.app.Task):
+            name = 'test.task_with_hooks_after_on_failure'
+
+            def run(self):
+                pass
+
+            def on_failure(self, exc, task_id, args, kwargs, einfo):
+                on_failure_mock(exc, task_id)
+
+            def after_return(self, status, retval, task_id, args, kwargs, einfo):
+                after_return_mock(status, retval, task_id)
+
+        self.app.tasks.register(TaskWithHooks())
+
+        job = self.xRequest(name=TaskWithHooks.name)
+        job.send_event = Mock(name='send_event')
+        mark_mock = Mock(name='mark_as_failure')
+        job.task.backend.mark_as_failure = mark_mock
+        try:
+            raise TimeLimitExceeded(30)
+        except TimeLimitExceeded:
+            job.on_failure(ExceptionInfo())
+        job.on_timeout(soft=False, timeout=30)
+
+        mark_mock.assert_called_once()
+        on_failure_mock.assert_called_once()
+        assert isinstance(on_failure_mock.call_args[0][0], TimeLimitExceeded)
+        after_return_mock.assert_called_once()
+        assert after_return_mock.call_args[0][0] == 'FAILURE'
+
+    def test_hard_time_limit_requeued_by_on_failure_is_handled_by_on_timeout(self, patching):
+        """With acks_late and acks_on_timeout off, on_failure()
+        requeues the message and stores nothing, so on_timeout() must not
+        skip its own failure handling.
+        """
+        patching('celery.worker.request.error')
+
+        handler = Mock(name='signal_handler')
+        task_failure.connect(handler)
+        original_mark = self.mytask.backend.mark_as_failure
+        self.mytask.acks_late = True
+        self.mytask.acks_on_timeout = False
+        try:
+            job = self.xRequest()
+            job.send_event = Mock(name='send_event')
+            mark_mock = Mock(name='mark_as_failure')
+            job.task.backend.mark_as_failure = mark_mock
+            try:
+                raise TimeLimitExceeded(30)
+            except TimeLimitExceeded:
+                job.on_failure(ExceptionInfo())
+            mark_mock.assert_not_called()
+            handler.assert_not_called()
+            job.on_timeout(soft=False, timeout=30)
+        finally:
+            task_failure.disconnect(handler)
+            self.mytask.backend.mark_as_failure = original_mark
+
+        mark_mock.assert_called_once()
+        handler.assert_called_once()
 
     def test_on_hard_timeout_calls_after_return(self, patching):
         """Hard timeout must invoke task.after_return when overridden."""

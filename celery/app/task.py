@@ -73,10 +73,33 @@ def _reprtask(task, fmt=None, flags=None):
     )
 
 
+def get_actual_ignore_result(task, req):
+    """Return the effective ignore_result, with request overriding task.
+
+    If req provides an explicit ignore_result, that value is used;
+    otherwise task.ignore_result is returned.
+    """
+    if req is None:
+        return task.ignore_result
+
+    actual = getattr(req, 'ignore_result', None)
+
+    # Context defines `ignore_result = False` at class level (see Context
+    # in celery/app/task.py). getattr() above would return the class default
+    # (False) even when the request never set it explicitly, making it
+    # impossible to distinguish "override=False" from "not set". We check
+    # __dict__ to detect only instance-level (i.e., explicitly set) values.
+    if isinstance(req, Context) and 'ignore_result' not in req.__dict__:
+        actual = None
+
+    return actual if actual is not None else task.ignore_result
+
+
 class Context:
     """Task request variables (Task.request)."""
 
     _children = None   # see property
+    _eager_chord_added = None   # see Task.add_to_chord
     _protected = 0
     args = None
     callbacks = None
@@ -764,7 +787,14 @@ class Task:
         request = self.request if request is None else request
         args = request.args if args is None else args
         kwargs = request.kwargs if kwargs is None else kwargs
-        options = {**request.as_execution_options(), **extra_options}
+        options = {
+            **request.as_execution_options(),
+            # Keep the caller's ignore_result for the retry.  Read through
+            # get_actual_ignore_result(): Context's class-level False
+            # default would otherwise look like an explicit override.
+            'ignore_result': get_actual_ignore_result(self, request),
+            **extra_options
+        }
         delivery_info = request.delivery_info or {}
         priority = delivery_info.get('priority')
         if priority is not None:
@@ -988,7 +1018,7 @@ class Task:
                 None if self.time_limit is None and self.soft_time_limit is None
                 else [self.time_limit, self.soft_time_limit]
             ),
-            'ignore_result': options.get('ignore_result', False),
+            'ignore_result': options.get('ignore_result', self.ignore_result),
             'delivery_info': {
                 'is_eager': True,
                 'exchange': options.get('exchange'),
@@ -1001,6 +1031,8 @@ class Task:
             request['stamps'] = {
                 header: maybe_list(options.get(header, [])) for header in request['stamped_headers']
             }
+        if '_eager_chord_added' in options:
+            request['_eager_chord_added'] = options['_eager_chord_added']
 
         tb = None
         tracer = build_tracer(
@@ -1014,7 +1046,11 @@ class Task:
             if isinstance(retval, ExceptionWithTraceback):
                 retval = retval.exc
         if isinstance(retval, Retry) and retval.sig is not None:
-            return retval.sig.apply(retries=retries + 1)
+            retry_options = {'retries': retries + 1}
+            if '_eager_chord_added' in options:
+                # The retried run is still a member of the eager chord.
+                retry_options['_eager_chord_added'] = options['_eager_chord_added']
+            return retval.sig.apply(**retry_options)
         state = states.SUCCESS if ret.info is None else ret.info.state
         return EagerResult(task_id, retval, state, traceback=tb, name=self.name)
 
@@ -1170,13 +1206,41 @@ class Task:
 
         .. versionadded:: 4.0
 
-        Currently only supported by the Redis result backend.
+        .. versionchanged:: 5.7
+
+            Also supported in chords run eagerly.
+
+        Currently only supported by the Redis result backend, and by
+        chords run eagerly (:setting:`task_always_eager` or ``chord.apply()``),
+        where the signature is applied at once and its result is passed to
+        the chord body after the results of the header.  On a worker the
+        results can come in any order, so the body shouldn't rely on the
+        order of its results.  ``lazy`` isn't supported in eager chords.
 
         Arguments:
             sig (Signature): Signature to extend chord with.
             lazy (bool): If enabled the new task won't actually be called,
                 and ``sig.delay()`` must be called manually.
+
+        Raises:
+            ValueError: If the current task isn't a member of any chord.
+            NotImplementedError: If ``lazy`` is enabled in a chord that
+                runs eagerly.
         """
+        added = self.request._eager_chord_added
+        if added is not None:
+            # An eager chord has no result backend to count on: it runs
+            # the signature here and keeps its result for the body.
+            if lazy:
+                # The result of a later sig.delay() can't reach the body,
+                # so refuse rather than silently leave it out.
+                raise NotImplementedError(
+                    'add_to_chord(lazy=True) is not supported in a chord '
+                    'that runs eagerly')
+            # The added task is a member of the chord too.
+            result = sig.apply(_eager_chord_added=added)
+            added.append(result)
+            return result
         if not self.request.chord:
             raise ValueError('Current task is not member of any chord')
         sig.set(

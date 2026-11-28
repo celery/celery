@@ -1,5 +1,7 @@
 """Couchbase result store backend."""
 
+from datetime import timedelta
+
 from kombu.utils.url import _parse_url
 
 from celery.exceptions import ImproperlyConfigured
@@ -24,11 +26,28 @@ except ImportError:  # pragma: no cover
     GetMultiOptions = None
 
 try:
+    from couchbase.options import ClusterOptions
+except ImportError:  # pragma: no cover
+    try:
+        from couchbase.cluster import ClusterOptions  # couchbase 3
+    except ImportError:
+        ClusterOptions = None
+
+try:
     from couchbase_core._libcouchbase import FMT_AUTO
 except ImportError:
     FMT_AUTO = None
 
 __all__ = ('CouchbaseBackend',)
+
+
+def _result_value(result):
+    # couchbase 4's GetResult holds the document in ``value`` and has no
+    # ``content``, which couchbase 3 used.
+    try:
+        return result.value
+    except AttributeError:
+        return result.content
 
 
 class CouchbaseBackend(KeyValueStoreBackend):
@@ -88,12 +107,18 @@ class CouchbaseBackend(KeyValueStoreBackend):
     def _get_connection(self):
         """Connect to the Couchbase server."""
         if self._connection is None:
-            if self.host and self.port:
+            # A port in a couchbase:// connection string is the key-value
+            # port, so the HTTP port 8091, this backend's default, makes
+            # the connection time out: leave it to the SDK's default.
+            if self.host and self.port and self.port != 8091:
                 uri = f"couchbase://{self.host}:{self.port}"
             else:
                 uri = f"couchbase://{self.host}"
             if self.username and self.password:
-                opt = PasswordAuthenticator(self.username, self.password)
+                # Cluster() takes ClusterOptions: given the authenticator
+                # itself, couchbase 4 raises "Authenticator is mandatory".
+                opt = ClusterOptions(
+                    PasswordAuthenticator(self.username, self.password))
             else:
                 opt = None
 
@@ -110,7 +135,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
 
     def get(self, key):
         try:
-            return self.connection.get(key).content
+            return _result_value(self.connection.get(key))
         except DocumentNotFoundException:
             # A missing document means no (or expired) result, not an error:
             # the KV backend contract is to return None for absent keys.
@@ -120,8 +145,12 @@ class CouchbaseBackend(KeyValueStoreBackend):
         # Since 4.0.0 value is JSONType in couchbase lib, so parameter format isn't needed
         if FMT_AUTO is not None:
             self.connection.upsert(key, value, ttl=self.expires, format=FMT_AUTO)
+        elif self.expires:
+            # couchbase 4 has no ``ttl`` option: it raises AttributeError.
+            self.connection.upsert(
+                key, value, expiry=timedelta(seconds=self.expires))
         else:
-            self.connection.upsert(key, value, ttl=self.expires)
+            self.connection.upsert(key, value)
 
     def mget(self, keys):
         # ``get_multi`` returns a MultiGetResult, which is neither a mapping
@@ -136,7 +165,7 @@ class CouchbaseBackend(KeyValueStoreBackend):
             keys, GetMultiOptions(return_exceptions=True))
         values = {key: None for key in keys}
         for key, res in result.results.items():
-            values[key] = res.content
+            values[key] = _result_value(res)
         for exc in result.exceptions.values():
             if not isinstance(exc, DocumentNotFoundException):
                 raise exc

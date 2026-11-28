@@ -491,7 +491,7 @@ class Signature(dict):
 
             super().__init__(
                 task=task_name, args=tuple(args or ()),
-                kwargs=kwargs or {},
+                kwargs=dict(kwargs or {}),
                 options=dict(options or {}, **ex),
                 subtask_type=subtask_type,
                 immutable=immutable,
@@ -1755,11 +1755,42 @@ class chunks(Signature):
         return cls(task, it, n, app=app)()
 
 
+# Options that belong to the group itself, not to the tasks in it.
+_GROUP_ONLY_OPTIONS = frozenset({'task_id', 'group_id', 'group_index', 'chord'})
+
+
+def _give_options(tasks, options, app):
+    """Clone ``tasks`` with ``options``, going into nested groups.
+
+    group.apply_async() unrolls nested groups into their tasks, so their
+    tasks get the options too. A chain gets them as a whole, as it does there.
+    """
+    def give(task):
+        task = maybe_signature(task, app=app)
+        if isinstance(task, group):
+            task = task.clone()
+            task.tasks = _give_options(task.tasks, options, app)
+            return task
+        return task.clone(**options)
+
+    if isinstance(tasks, _regen):
+        return regen(give(t) for t in tasks)
+    return [give(t) for t in tasks]
+
+
 def _maybe_group(tasks, app):
     if isinstance(tasks, dict):
         tasks = signature(tasks, app=app)
 
-    if isinstance(tasks, (group, _chain)):
+    if isinstance(tasks, group):
+        # The group itself is dropped here, so give its execution options
+        # (countdown, queue, ...) to its tasks, as group.apply_async() would.
+        options = {k: v for k, v in tasks.options.items()
+                   if k not in _GROUP_ONLY_OPTIONS}
+        tasks = tasks.tasks
+        if options:
+            tasks = _give_options(tasks, options, app)
+    elif isinstance(tasks, _chain):
         tasks = tasks.tasks
     elif isinstance(tasks, abstract.CallableSignature):
         tasks = [tasks]
@@ -2516,9 +2547,14 @@ class _chord(Signature):
         body = self.body if body is None else body
         tasks = (self.tasks.clone() if isinstance(self.tasks, group)
                  else group(self.tasks, app=self.app))
-        return body.apply(
-            args=(tasks.apply(args, kwargs).get(propagate=propagate),),
-        )
+        # Header tasks that call Task.add_to_chord() put the results of
+        # the tasks they add here.
+        added = []
+        results = tasks.apply(
+            args, kwargs, _eager_chord_added=added,
+        ).get(propagate=propagate)
+        results += [result.get(propagate=propagate) for result in added]
+        return body.apply(args=(results,))
 
     @classmethod
     def _descend(cls, sig_obj):

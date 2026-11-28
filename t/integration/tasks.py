@@ -50,6 +50,16 @@ def pending_operations_count(state, **kwargs):
     return len(state.consumer._pending_operations)
 
 
+@inspect_command(visible=False)
+def rate_limit_timers_count(state, **kwargs):
+    """Return the number of pending rate limit timers on the worker timer."""
+    callbacks = ('_schedule_bucket_request', '_on_bucket_wakeup')
+    return sum(
+        1 for item in state.consumer.timer.queue
+        if getattr(item.entry.fun, '__name__', None) in callbacks
+    )
+
+
 @shared_task
 def identity(x):
     """Return the argument."""
@@ -323,6 +333,20 @@ def retry_once(self, *args, expires=None, max_retries=1, countdown=0.1):
     raise self.retry(countdown=countdown,
                      expires=expires,
                      max_retries=max_retries)
+
+
+@shared_task(bind=True, ignore_result=True)
+def retry_once_ignore_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
+
+
+@shared_task(bind=True, ignore_result=False)
+def retry_once_with_result(self):
+    if not self.request.retries:
+        raise self.retry(countdown=0)
+    return self.request.retries
 
 
 @shared_task(bind=True, max_retries=1)
